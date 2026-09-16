@@ -6,7 +6,7 @@ Nothing here is an RFC 2119 rule. There are no `MUST`, `MUST NOT`, or `SHOULD` m
 
 ## Citation Convention
 
-Each principle has a unique, memorable name. Cite a principle in PR reviews, discussions, and ADRs by name with its markdown anchor:
+Each principle has a unique, memorable name and an explicit anchor ID. Cite a principle in PR reviews, discussions, and ADRs by name with its anchor:
 - `[Quality Uncompromised](./PRINCIPLES.md#quality-uncompromised)`
 - `[Convention Over Novelty](./PRINCIPLES.md#convention-over-novelty)`
 - `[Shift Left](./PRINCIPLES.md#shift-left)`
@@ -28,7 +28,8 @@ Each principle has a unique, memorable name. Cite a principle in PR reviews, dis
 
 ---
 
-## 1. Quality Uncompromised
+<a id="quality-uncompromised"></a>
+## Quality Uncompromised
 
 Software quality is always the highest priority. There is no situation that justifies lowering quality in favor of other goals, because all other objectives become harder to reach once quality drops. Faster development, higher performance, and new features are frequently offered as justifications; none of them qualify.
 
@@ -70,13 +71,15 @@ Quality is not measured by convenience, cleverness, compactness, raw speed, or f
 
 ---
 
-## 2. Code Only for User Value
+<a id="code-only-for-user-value"></a>
+## Code Only for User Value
 
 Without a clear notion of **WHY** a piece of code is written, it should not be written at all. We never write code without a purpose, and that purpose is measured exclusively in the good it delivers to the users of the code.
 
 ---
 
-## 3. Code as a Subset of the WHY
+<a id="code-as-a-subset-of-the-why"></a>
+## Code as a Subset of the WHY
 
 The code is a **subset** of the stated **WHY**: every part of it solves some part of the WHY, and no part reaches outside it. 
 
@@ -85,7 +88,8 @@ The code is a **subset** of the stated **WHY**: every part of it solves some par
 
 ---
 
-## 4. The Simplicity Ladder
+<a id="the-simplicity-ladder"></a>
+## The Simplicity Ladder
 
 The simplest code of all is **no code**. Next in simplicity is code we do not write ourselves.
 
@@ -103,7 +107,8 @@ Every rung is gated by two criteria:
 
 ---
 
-## 5. Convention Over Novelty
+<a id="convention-over-novelty"></a>
+## Convention Over Novelty
 
 Code is maintained by developers who did not write it. Adhering to established ecosystem conventions makes this possible: a maintainer familiar with standard idioms should not have to learn custom idiosyncratic patterns.
 
@@ -113,7 +118,8 @@ Code is maintained by developers who did not write it. Adhering to established e
 
 ---
 
-## 6. Shift Left
+<a id="shift-left"></a>
+## Shift Left
 
 Bugs, invalid states, and regressions are caught earliest, cheapest, and with the greatest certainty when shifted as far left as possible:
 
@@ -125,7 +131,8 @@ A safeguard belongs at the leftmost rung capable of catching the error. Descend 
 
 ---
 
-## 7. Durable Intent Over Comments
+<a id="durable-intent-over-comments"></a>
+## Durable Intent Over Comments
 
 Comments in source code are often symptoms of missing abstraction, weak naming, or deferred work. Information conveyed in comments belongs in durable, verifiable mechanisms:
 
@@ -139,7 +146,8 @@ Comments are justified only when intended for machine consumption: shebangs, mac
 
 ---
 
-## 8. Loud Failures Over Silent Defaults
+<a id="loud-failures-over-silent-defaults"></a>
+## Loud Failures Over Silent Defaults
 
 Systems must fail loudly and immediately upon encountering an unexpected state. None of the following defensive habits constitutes valid practice:
 
