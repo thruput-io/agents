@@ -4,9 +4,31 @@ This is the foundation for engineering governance: what we mean by software qual
 
 Nothing here is an RFC 2119 rule. There are no `MUST`, `MUST NOT`, or `SHOULD` markers in this document on purpose — requirements that can be verified during review belong in [`RULES.md`](./RULES.md). What lives here is the mindset and rationale those rules serve, and the defaults to apply when resolving ambiguity or trade-offs.
 
+## Citation Convention
+
+Each principle has a unique, memorable name. Cite a principle in PR reviews, discussions, and ADRs by name with its markdown anchor:
+- `[Quality Uncompromised](./PRINCIPLES.md#quality-uncompromised)`
+- `[Convention Over Novelty](./PRINCIPLES.md#convention-over-novelty)`
+- `[Shift Left](./PRINCIPLES.md#shift-left)`
+
 ---
 
-## 1. Software Quality — What It Is
+## Summary of Named Principles
+
+| Principle | Core Idea | Anchor |
+| :--- | :--- | :--- |
+| **[Quality Uncompromised](#quality-uncompromised)** | Software quality is the non-negotiable priority above speed or features. | `#quality-uncompromised` |
+| **[Code Only for User Value](#code-only-for-user-value)** | Never write code without a clear purpose measured in user benefit. | `#code-only-for-user-value` |
+| **[Code as a Subset of the WHY](#code-as-a-subset-of-the-why)** | Every line must trace to the stated purpose without reaching outside it. | `#code-as-a-subset-of-the-why` |
+| **[The Simplicity Ladder](#the-simplicity-ladder)** | The simplest code is no code; climb from reuse to platform to dependencies. | `#the-simplicity-ladder` |
+| **[Convention Over Novelty](#convention-over-novelty)** | Assemble novel solutions from recognizable, standard ecosystem parts. | `#convention-over-novelty` |
+| **[Shift Left](#shift-left)** | Catch defects at the leftmost tier: types and compiler over tests and runtime. | `#shift-left` |
+| **[Durable Intent Over Comments](#durable-intent-over-comments)** | Express intent through types, descriptive names, and tests, not comments. | `#durable-intent-over-comments` |
+| **[Loud Failures Over Silent Defaults](#loud-failures-over-silent-defaults)** | Fail fast and explicitly; never convert errors into silent wrong answers. | `#loud-failures-over-silent-defaults` |
+
+---
+
+## 1. Quality Uncompromised
 
 Software quality is always the highest priority. There is no situation that justifies lowering quality in favor of other goals, because all other objectives become harder to reach once quality drops. Faster development, higher performance, and new features are frequently offered as justifications; none of them qualify.
 
@@ -48,16 +70,22 @@ Quality is not measured by convenience, cleverness, compactness, raw speed, or f
 
 ---
 
-## 2. Purpose and Accuracy
+## 2. Code Only for User Value
 
-Without a clear notion of **WHY** a piece of code is written, it should not be written at all. Code is written exclusively for the good it delivers to its users.
+Without a clear notion of **WHY** a piece of code is written, it should not be written at all. We never write code without a purpose, and that purpose is measured exclusively in the good it delivers to the users of the code.
 
-- **The Code as a Subset of the WHY:** Every part of the code solves some part of the stated WHY, and no part reaches outside it. A single change need not cover the entire WHY (which may take several incremental steps), but what it does solve, it solves accurately.
+---
+
+## 3. Code as a Subset of the WHY
+
+The code is a **subset** of the stated **WHY**: every part of it solves some part of the WHY, and no part reaches outside it. 
+
+- **Incremental Coverage:** A single change need not cover the entire WHY (which may take several incremental changes to satisfy), but what the code does solve, it solves accurately.
 - **No Unintended Harm:** A solution must not introduce collateral effects or friction that consumers would find unacceptable.
 
 ---
 
-## 3. Simplicity and the Ladder
+## 4. The Simplicity Ladder
 
 The simplest code of all is **no code**. Next in simplicity is code we do not write ourselves.
 
@@ -75,17 +103,17 @@ Every rung is gated by two criteria:
 
 ---
 
-## 4. Maintainability and Standards
+## 5. Convention Over Novelty
 
 Code is maintained by developers who did not write it. Adhering to established ecosystem conventions makes this possible: a maintainer familiar with standard idioms should not have to learn custom idiosyncratic patterns.
 
-- **Convention Over Novelty:** Novelty belongs in the domain solution, assembled from standard parts and recognizable idioms.
-- **Surrounding Context:** Where no universal industry standard decides an issue, consistency with surrounding codebase patterns becomes the baseline.
+- **Convention in Structure, Novelty in Solution:** Novelty belongs in the domain solution, assembled from standard parts and recognizable conventions.
+- **Surrounding Context:** Where no universal industry standard decides an issue, consistency with surrounding codebase patterns becomes the baseline rather than introducing an alternative style.
 - **Demonstrable Standards:** A standard is a published convention, a maintained framework, or a pattern actively used by a large community. Recalled habits from past experience do not qualify as standards.
 
 ---
 
-## 5. Shift Left
+## 6. Shift Left
 
 Bugs, invalid states, and regressions are caught earliest, cheapest, and with the greatest certainty when shifted as far left as possible:
 
@@ -97,7 +125,7 @@ A safeguard belongs at the leftmost rung capable of catching the error. Descend 
 
 ---
 
-## 6. Why a Comment Is Not the Place
+## 7. Durable Intent Over Comments
 
 Comments in source code are often symptoms of missing abstraction, weak naming, or deferred work. Information conveyed in comments belongs in durable, verifiable mechanisms:
 
@@ -111,13 +139,13 @@ Comments are justified only when intended for machine consumption: shebangs, mac
 
 ---
 
-## 7. Excuses That Don't Apply
+## 8. Loud Failures Over Silent Defaults
 
-These principles hold under all circumstances. None of the following constitutes valid grounds for bypassing quality:
+Systems must fail loudly and immediately upon encountering an unexpected state. None of the following defensive habits constitutes valid practice:
 
-- *"It is just test code or a mock, so strictness doesn't matter."*
-- *"This is just a prototype; tests will be added later."*
-- *"Following these guidelines would require a larger refactor."*
-- *"I cannot find a way around this warning, so I will mute it."*
-- *"The existing codebase does not follow these principles, so I don't need to either."*
-- *"These defensive guards are standard habit, so I will add them just in case."* (Generalizing defensive habits—such as suppressing errors, swallowing exceptions, or defaulting on missing input—turns loud failures into silent bugs. Add safeguards only when concrete evidence demonstrates the need).
+- Appending `|| true` or `2>/dev/null` to discard command failures or diagnostics.
+- Catching exceptions only to log them and proceed with degraded or assumed state.
+- Substituting a fallback default value when required input is missing or malformed.
+- Branching speculatively on unsupported platforms or environments.
+
+Each of these converts a loud, diagnosable failure into a silent wrong answer. Safeguards must be added only when concrete evidence demonstrates the need, and failures must abort execution cleanly.
