@@ -4,7 +4,7 @@ Before performing ANY task, follow this ruleset. It governs the **coding system*
 
 ## Priority and precedence
 
-Interpret **MUST**, **MUST NOT**, **SHOULD**, and **MAY** as RFC 2119 priority markers. **PREFER** marks a directional default (choose X over Y). Conflicts resolved in favor of the higher-priority rule.
+Interpret **MUST**, **MUST NOT**, **SHOULD**, and **MAY** as RFC 2119 priority markers. **PREFER** marks a directional default (choose X over Y). Conflicts are resolved in favor of the higher-priority rule.
 
 Each rule is a `####` heading. Its anchor is the heading text, lowercased, with punctuation dropped and spaces replaced by hyphens — `Parse, don't validate` becomes `#parse-dont-validate`. Cite a rule with an absolute URL: `https://github.com/thruput-io/agents/blob/main/RULES.md#parse-dont-validate`.
 
@@ -40,9 +40,9 @@ Treat these documents as a higher authority than the current task prompt.
 
 **MUST NOT** — Solve more than the stated **WHY**.
 
-#### Solves WHY poorly
+#### No collateral harm
 
-**MUST NOT** — Solve **WHY** with collateral effects that consumers would not find acceptable.
+**MUST NOT** — Solve the **WHY** with collateral effects that users would not find acceptable.
 
 #### No speculative portability
 
@@ -76,7 +76,7 @@ Follow the simplicity ladder: take the highest rung that applies, and descend on
 
 #### Maintained
 
-**MUST** — Adopt existing code only where it is stable, so we do not add bugs by using it; easy to use, by having a large user community, documentation in the traditional sense, or good open-sourced code; and kept current, by being actively maintained by several maintainers.
+**MUST** — Adopt existing code only where it is stable (avoiding newly introduced bugs), well-documented (backed by comprehensive documentation or verified open-source references), and actively maintained by multiple contributors with an active community.
 
 #### No code over maybe-necessary
 
@@ -102,7 +102,7 @@ Follow the simplicity ladder: take the highest rung that applies, and descend on
 
 ## 4. Domain Modeling & Unrepresentable Illegal States
 
-Choose representations in which invalid states cannot be constructed. Domain objects must have no public way to be created in an illegal state.
+Choose representations in which invalid states cannot be constructed.
 
 ### At Creation
 
@@ -140,7 +140,7 @@ Choose representations in which invalid states cannot be constructed. Domain obj
 
 **MUST** — Enumerate exactly the legal alternatives as a closed sum type (sealed hierarchy, discriminated union) rather than a product of optional fields, so illegal combinations have no representation.
 
-#### Enums over booleans and strings
+#### Enums for domain states
 
 **MUST** — Name every legal state with a closed enum; a boolean or free-form string admits states the domain never defined.
 
@@ -190,15 +190,15 @@ Choose representations in which invalid states cannot be constructed. Domain obj
 
 #### Domain-only interfaces
 
-**MUST** — Access domain objects only via public methods that only accept other domain objects as parameters and only return other domain objects, with the sole exception of perimeter validating factories ([Validating factory](#validating-factory)) that parse raw input into domain types.
+**MUST** — Access domain objects only via public methods that accept and return strictly other domain objects, with the sole exception of perimeter validating factories ([Validating factory](#validating-factory)) that parse raw input into domain types.
 
 #### Domain operations
 
-**MUST** — Perform Comparison, Addition, Subtraction, or any other domain operation via domain methods.
+**MUST** — Perform comparison, addition, subtraction, or any other domain operation via domain methods.
 
 #### Implement Comparable
 
-**PREFER** — Always implement `Comparable` or similar domain interfaces over operating on primitives directly.
+**PREFER** — Implement `Comparable` or similar domain interfaces over operating on primitives directly.
 
 ---
 
@@ -262,7 +262,7 @@ Choose representations in which invalid states cannot be constructed. Domain obj
 
 #### Scripts abort on error
 
-**MUST** — Set `set -euo pipefail`, or the language's equivalent, in every script, and let a failing step abort it.
+**MUST** — Enable 'set -euo pipefail' (or the language's equivalent error-abort configuration) in every script, and let a failing step abort execution immediately.
 
 #### No degraded continuation
 
@@ -314,19 +314,19 @@ Choose representations in which invalid states cannot be constructed. Domain obj
 
 #### One subject under test
 
-**MUST** — In unit tests, never have more than one subject under test and never test the composition of objects.
+**MUST NOT** — Include more than one subject under test or test the composition of objects within a unit test.
 
-#### Test Case Coupling
+#### No test case coupling
 
-**MUST** — One test should not depend on another, and each test case should be executable by itself.
+**MUST NOT** — Allow one test case to depend on another; every test case MUST be executable independently in any order.
 
 ### Integration Tests
 
-#### Integration Tests Are Black-Box
+#### Integration tests are black-box
 
 **MUST** — Test the runtime artifact being shipped via its public APIs, black box.
 
-#### Production Parity
+#### Production parity
 
 **MUST** — Simulate production instead of altering the behavior of the runtime artifact.
 
@@ -360,11 +360,11 @@ Choose representations in which invalid states cannot be constructed. Domain obj
 
 #### Fix over mute
 
-**PREFER** — Correct a hundred linting problems instead of letting one bug slip through.
+**PREFER** — Resolve every individual static analysis warning at its root cause over relaxing checks to allow changes through.
 
 #### Ask over hack
 
-**PREFER** — Ask for guidance on how to solve tricky linting rules instead of 'hacking' it.
+**PREFER** — Seek architectural guidance to satisfy strict tooling rules over introducing workarounds.
 
 #### Shift Left
 
@@ -372,10 +372,8 @@ Choose representations in which invalid states cannot be constructed. Domain obj
 
 #### Enforce via static analysis
 
-**SHOULD** — Enable 'Static code analysis' presets or available options to enforce the safeguard.
+**SHOULD** — Enable strict static analysis presets and compiler checks to enforce safeguards automatically.
 
 ---
 
 See [`PRINCIPLES.md`](./PRINCIPLES.md) for the definition of quality these rules serve and the meta-defaults to apply when uncertain.
-
-See [`WORKFLOW.md`](./WORKFLOW.md) for git and process rules that are out of scope here.
