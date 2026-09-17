@@ -182,11 +182,11 @@ Choose representations in which invalid states cannot be constructed.
 
 #### Strong typing
 
-**MUST** — Use strong typing.
+**MUST NOT** — Use dynamic, untyped, or unstructured types (`any`, `object`, raw maps/dictionaries), or raw primitives directly (`string`, `number`, `boolean`, etc.) to represent domain concepts, identifiers, states, or measurements. Domain logic MUST operate exclusively on strongly typed domain models and validated domain primitives.
 
 #### Strict domain modeling
 
-**MUST** — Use strict domain modeling.
+**MUST** — Model all business rules, lifecycle transitions, and domain entities with dedicated, single-purpose domain types rather than generic data bags or persistence records.
 
 #### Domain-only interfaces
 
