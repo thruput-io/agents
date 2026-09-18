@@ -17,7 +17,7 @@ The governance architecture follows [ADR 0001](docs/adrs/0001-separating-princip
 | [rules.yaml](rules.yaml) | The WHAT: universal pass/fail constraints, each guarding one principle. | [schemas/rules.schema.json](schemas/rules.schema.json) |
 | [definitions.yaml](definitions.yaml) | The vocabulary the other documents rely on: one term and its specification per entry. | [schemas/definitions.schema.json](schemas/definitions.schema.json) |
 
-Shared schema components (`axiom-key`, `principle-key`, `rule-key`, `definition-key`, `text`) live in [schemas/common.schema.json](schemas/common.schema.json). A rule can only guard a principle listed there.
+Shared schema components (`axiom-key`, `principle-key`, `rule-key`, `definition-key`, `text`) live in [schemas/common.schema.json](schemas/common.schema.json). A rule can only guard a principle listed there, and a principle can only interpret an axiom listed there.
 
 
 ## Reading the rules

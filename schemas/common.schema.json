@@ -4,7 +4,8 @@
     "axiom-key": {
       "enum": [
         "single-source-of-truth",
-        "shift-left"
+        "shift-left",
+        "orphans"
       ]
     },
     "principle-key": {

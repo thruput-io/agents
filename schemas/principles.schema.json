@@ -16,12 +16,16 @@
         "type": "object",
         "required": [
           "title",
+          "interprets",
           "body"
         ],
         "additionalProperties": false,
         "properties": {
           "title": {
             "$ref": "common.schema.json#/$defs/text"
+          },
+          "interprets": {
+            "$ref": "common.schema.json#/$defs/axiom-key"
           },
           "body": {
             "$ref": "common.schema.json#/$defs/text"

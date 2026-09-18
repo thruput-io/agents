@@ -1,8 +1,12 @@
 definitions:
+  axiom:
+    term: Axiom
+    specification: |
+      A statement accepted without argument, from which principles are reasoned. Axioms are few, short, and stable, carry no RFC 2119 marker, and are never the direct justification for a code change. Each axiom in `axioms.yaml` has an id, a title, and a body.
   principle:
     term: Principle
     specification: |
-      A foundational value, quality definition, or trade-off model: the WHY behind the rules. Principles are reasoned essays and mental models, carry no RFC 2119 marker, and supply the defaults applied when a rule is ambiguous or two rules collide. Each principle in `principles.yaml` has an id, a title, and a body.
+      A foundational value, quality definition, or trade-off model reasoned from one axiom: the WHY behind the rules. Principles are reasoned essays and mental models, carry no RFC 2119 marker, and supply the defaults applied when a rule is ambiguous or two rules collide. Each principle in `principles.yaml` has an id, a title, the axiom it interprets, and a body.
   rule:
     term: Rule
     specification: |
@@ -27,6 +31,10 @@ definitions:
     term: Guards
     specification: |
       The id of the single principle a rule exists to enforce. Every rule guards exactly one principle. A rule whose only honest candidate is `orphans` has no principle yet and is a prompt to write one or retire the rule.
+  interprets:
+    term: Interprets
+    specification: |
+      The id of the single axiom a principle is reasoned from. Every principle interprets exactly one axiom. A principle whose only honest candidate is `orphans` has no stated ground yet and is a prompt to state one or fold the principle into another.
   why:
     term: WHY
     specification: |

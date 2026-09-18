@@ -1,6 +1,7 @@
 principles:
   quality-uncompromised:
     title: Quality Uncompromised
+    interprets: orphans
     body: |
       Software quality is always the highest priority. There is no situation that justifies lowering quality in favor of other goals, because all other objectives become harder to reach once quality drops. Faster development, higher performance, and new features are frequently offered as justifications; none of them qualify.
 
@@ -41,10 +42,12 @@ principles:
       Quality is not measured by convenience, cleverness, compactness, raw speed, or feature count. Performance and feature breadth are specific requirements like any other; they do not earn credit against maintainability, correctness, or simplicity.
   code-only-for-user-value:
     title: Code Only for User Value
+    interprets: orphans
     body: |
       Without a clear notion of **WHY** a piece of code is written, it should not be written at all. We never write code without a purpose, and that purpose is measured exclusively in the good it delivers to the users of the code.
   code-as-a-subset-of-the-why:
     title: Code as a Subset of the WHY
+    interprets: orphans
     body: |
       The code is a **subset** of the stated **WHY**: every part of it solves some part of the WHY, and no part reaches outside it. 
 
@@ -52,6 +55,7 @@ principles:
       - **No Unintended Harm:** A solution must not introduce collateral effects or friction that consumers would find unacceptable.
   the-simplicity-ladder:
     title: The Simplicity Ladder
+    interprets: single-source-of-truth
     body: |
       The simplest code of all is **no code**. Next in simplicity is code we do not write ourselves.
 
@@ -68,6 +72,7 @@ principles:
       - **Maintained:** Adopt code only when it is stable, actively maintained by multiple contributors, well-documented, and backed by a healthy community.
   convention-over-novelty:
     title: Convention Over Novelty
+    interprets: single-source-of-truth
     body: |
       Code is maintained by developers who did not write it. Adhering to established ecosystem conventions makes this possible: a maintainer familiar with standard idioms should not have to learn custom idiosyncratic patterns.
 
@@ -76,6 +81,7 @@ principles:
       - **Demonstrable Standards:** A standard is a published convention, a maintained framework, or a pattern actively used by a large community. Recalled habits from past experience do not qualify as standards.
   shift-test-left:
     title: Shift Test Left
+    interprets: shift-left
     body: |
       The [Shift Left](axioms.yaml#shift-left) axiom applied to verification. Bugs, invalid states, and regressions are caught earliest, cheapest, and with the greatest certainty when shifted as far left as possible:
 
@@ -86,6 +92,7 @@ principles:
       A safeguard belongs at the leftmost rung capable of catching the error. Descend to runtime or testing rungs only when type-level or static prevention is impossible.
   durable-intent-over-comments:
     title: Durable Intent Over Comments
+    interprets: single-source-of-truth
     body: |
       Comments in source code are often symptoms of missing abstraction, weak naming, or deferred work. Information conveyed in comments belongs in durable, verifiable mechanisms:
 
@@ -98,6 +105,7 @@ principles:
       Comments are justified only when intended for machine consumption: shebangs, machine directives (such as SPDX license identifiers or file encoding headers), generated docstrings for public API sites, mandated license headers, or generated-file banners.
   loud-failures-over-silent-defaults:
     title: Loud Failures Over Silent Defaults
+    interprets: shift-left
     body: |
       Systems must fail loudly and immediately upon encountering an unexpected state. None of the following defensive habits constitutes valid practice:
 
@@ -109,6 +117,7 @@ principles:
       Each of these converts a loud, diagnosable failure into a silent wrong answer. Safeguards must be added only when concrete evidence demonstrates the need, and failures must abort execution cleanly.
   orphans:
     title: Orphans
+    interprets: orphans
     body: |
       The holding principle for rules that no existing principle clearly enforces.
 

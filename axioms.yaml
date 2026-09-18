@@ -7,3 +7,9 @@ axioms:
     title: Shift Left
     body: |
       Do every activity at the earliest point where it can be done. The earlier a question is answered, a decision is made, or a defect is found, the cheaper and more certain the outcome.
+  orphans:
+    title: Orphans
+    body: |
+      The holding axiom for principles that no stated axiom clearly grounds.
+
+      A principle that interprets this axiom is a prompt, not a resolution: either state the axiom the principle actually rests on and re-point the principle at it, or fold the principle into one that has a ground.

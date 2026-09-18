@@ -20,7 +20,7 @@ The Axioms, Principles, and Rules tiers, and the shared vocabulary they rely on,
 | Document | Schema | Entry shape |
 | :--- | :--- | :--- |
 | `axioms.yaml` | `schemas/axioms.schema.json` | `title`, `body` |
-| `principles.yaml` | `schemas/principles.schema.json` | `title`, `body` |
+| `principles.yaml` | `schemas/principles.schema.json` | `title`, `interprets`, `body` |
 | `rules.yaml` | `schemas/rules.schema.json` | `marker`, `group`, `guards`, `body` |
 | `definitions.yaml` | `schemas/definitions.schema.json` | `term`, `specification` |
 
@@ -35,6 +35,10 @@ Every entry is a key in a map, and that key is its id. An id matches `^[a-z0-9]+
 Every rule names, in `guards`, the single principle it exists to enforce. `principle-key` is an enum, so a rule that names a principle absent from `principles.yaml` fails validation. Adding a principle therefore means adding its id to the enum in `schemas/common.schema.json` and its entry in `principles.yaml` in the same change.
 
 A rule with no honest candidate guards the principle `orphans`. That principle carries no values of its own; it marks a gap. A rule under `orphans` is a standing prompt to either write the missing principle and re-point the rule, or retire the rule. Nothing new is placed under `orphans` without first checking every other principle.
+
+### Principles interpret axioms
+
+Every principle names, in `interprets`, the single axiom it is reasoned from. `axiom-key` is an enum, so a principle naming an axiom absent from `axioms.yaml` fails validation. A principle with no honest candidate interprets the axiom `orphans`, under the same obligation as rules that guard the `orphans` principle: state the missing axiom or fold the principle into one that has a ground.
 
 ### Markers and groups
 
