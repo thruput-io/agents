@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["principles"],
+  "additionalProperties": false,
+  "properties": {
+    "principles": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "$ref": "keys.schema.json#/$defs/principle-key" },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["title", "body"],
+        "additionalProperties": false,
+        "properties": {
+          "title": { "$ref": "keys.schema.json#/$defs/text" },
+          "body": { "$ref": "keys.schema.json#/$defs/text" }
+        }
+      }
+    }
+  }
+}

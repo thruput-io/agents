@@ -1,0 +1,463 @@
+rules:
+  no-learnt-pattern-retreat:
+    marker: MUST NOT
+    group: If in doubt
+    guards: convention-over-novelty
+    body: |
+      Retreat to learnt patterns or practices. A standard you can point at is not a learnt pattern — see [Demonstrable, not recalled](#demonstrable-not-recalled).
+  filling-gaps:
+    marker: MUST
+    group: If in doubt
+    guards: orphans
+    body: |
+      Apply [`principles.yaml`](./principles.yaml) when in doubt of a rule's application or priority.
+  stated-purpose:
+    marker: MUST
+    group: Purpose & Accuracy
+    guards: code-only-for-user-value
+    body: |
+      State the **WHY** of a change as what good it does for the **USERS** of the code.
+  no-code-without-purpose:
+    marker: MUST NOT
+    group: Purpose & Accuracy
+    guards: code-only-for-user-value
+    body: |
+      Write or merge code whose **WHY** is not clear.
+  every-part-solves-the-why:
+    marker: MUST
+    group: Purpose & Accuracy
+    guards: code-as-a-subset-of-the-why
+    body: |
+      Trace every part of the code to the part of the stated **WHY** that it accurately solves.
+  nothing-beyond-the-why:
+    marker: MUST NOT
+    group: Purpose & Accuracy
+    guards: code-as-a-subset-of-the-why
+    body: |
+      Solve more than the stated **WHY**.
+  no-collateral-harm:
+    marker: MUST NOT
+    group: Purpose & Accuracy
+    guards: code-as-a-subset-of-the-why
+    body: |
+      Solve the **WHY** with collateral effects that users would not find acceptable.
+  no-speculative-portability:
+    marker: MUST NOT
+    group: Purpose & Accuracy
+    guards: loud-failures-over-silent-defaults
+    body: |
+      Add platform, shell, or environment compatibility branches for environments the task does not run in.
+  reuse-code-in-this-codebase:
+    marker: MUST
+    group: Simplicity & Code Reuse
+    guards: the-simplicity-ladder
+    body: |
+      Use an existing reusable component in this codebase rather than write an equivalent, and where the code exists but is not yet reusable, refactor it into a reusable component.
+  use-the-platform-or-framework:
+    marker: MUST
+    group: Simplicity & Code Reuse
+    guards: the-simplicity-ladder
+    body: |
+      Use a component the current platform or framework already provides rather than write an equivalent.
+  use-an-external-component:
+    marker: MUST
+    group: Simplicity & Code Reuse
+    guards: the-simplicity-ladder
+    body: |
+      Add an existing external component as a dependency rather than write an equivalent.
+  use-an-external-tool-or-service:
+    marker: MUST
+    group: Simplicity & Code Reuse
+    guards: the-simplicity-ladder
+    body: |
+      Integrate an existing external tool, or call an existing service, rather than build an equivalent.
+  available:
+    marker: MUST NOT
+    group: Simplicity & Code Reuse
+    guards: the-simplicity-ladder
+    body: |
+      Adopt existing code that requires payments or license models, or an extra platform or framework, that would increase the maintenance burden.
+  maintained:
+    marker: MUST
+    group: Simplicity & Code Reuse
+    guards: the-simplicity-ladder
+    body: |
+      Adopt existing code only where it is stable (avoiding newly introduced bugs), well-documented (backed by comprehensive documentation or verified open-source references), and actively maintained by multiple contributors with an active community.
+  no-code-over-maybe-necessary:
+    marker: PREFER
+    group: Simplicity & Code Reuse
+    guards: the-simplicity-ladder
+    body: |
+      No code over maybe-necessary code.
+  industry-standards:
+    marker: MUST
+    group: Maintainability & Standards
+    guards: convention-over-novelty
+    body: |
+      Follow the established conventions, design patterns, and idioms of the language, framework, and ecosystem in use, so that any developer who knows them can maintain our code.
+  consistent-with-the-codebase:
+    marker: MUST
+    group: Maintainability & Standards
+    guards: convention-over-novelty
+    body: |
+      Follow the conventions of the surrounding code where no industry standard decides the question, rather than introduce a second way of doing the same thing.
+  demonstrable-not-recalled:
+    marker: MUST
+    group: Maintainability & Standards
+    guards: convention-over-novelty
+    body: |
+      Point at a standard whenever you invoke one as justification: a maintained library or framework, a pattern in current use by a large active community, or a published convention. Novel work is not required to cite a standard it does not have. See [No learnt-pattern retreat](#no-learnt-pattern-retreat).
+  illegal-states-are-unrepresentable:
+    marker: MUST
+    group: At Creation
+    guards: shift-left
+    body: |
+      Make illegal states unrepresentable in the domain layer. Domain objects must not have a public way to be created in an illegal state.
+  validating-factory:
+    marker: MUST
+    group: At Creation
+    guards: shift-left
+    body: |
+      Provide instances only through a named factory (smart constructor) that establishes every invariant before returning, so holding a value of the type is proof it was checked.
+  single-creation-path:
+    marker: MUST
+    group: At Creation
+    guards: shift-left
+    body: |
+      Keep the constructor private, or unexported from its module, so the factory cannot be bypassed.
+  creation-failure-in-the-signature:
+    marker: MUST
+    group: At Creation
+    guards: shift-left
+    body: |
+      Return the invalid-input case from the factory in its type signature (`Result`, `Either`, `Option`) rather than throwing, so the compiler forces every caller to handle it.
+  parse-dont-validate:
+    marker: MUST
+    group: At Creation
+    guards: shift-left
+    body: |
+      Parse raw input once at the perimeter into the constrained domain type instead of checking it and passing the primitive on, so downstream code can never receive unvalidated data. See [Domain primitives](#domain-primitives).
+  domain-primitives:
+    marker: MUST
+    group: In Representation
+    guards: shift-left
+    body: |
+      Wrap every primitive in its own validated immutable type (value object, tiny type), so a malformed value or a transposed argument is a compile error. Primitives appear only at perimeters.
+  opaque-types:
+    marker: PREFER
+    group: In Representation
+    guards: shift-left
+    body: |
+      A distinct nominal type whose representation is hidden outside its defining module (newtype, branded type) over a type alias or shared representation, so values that share a representation but not a meaning cannot be mixed.
+  sum-types:
+    marker: MUST
+    group: In Representation
+    guards: shift-left
+    body: |
+      Enumerate exactly the legal alternatives as a closed sum type (sealed hierarchy, discriminated union) rather than a product of optional fields, so illegal combinations have no representation.
+  enums-for-domain-states:
+    marker: MUST
+    group: In Representation
+    guards: shift-left
+    body: |
+      Name every legal state with a closed enum; a boolean or free-form string admits states the domain never defined.
+  compile-time-optionality:
+    marker: MUST
+    group: In Representation
+    guards: shift-left
+    body: |
+      Make absence an explicit case the compiler forces every caller to handle, so the missing case is handled exactly where it can occur. Optionality is a compile-time property (`Option`/`Maybe` or compiler-enforced nullable annotation).
+  constrained-collections:
+    marker: SHOULD
+    group: In Representation
+    guards: shift-left
+    body: |
+      Enforce a collection's invariants in its type: a non-empty list type makes `head` and `max` total functions, and a first-class collection hides the raw collection so uniqueness, bounds, and ordering are enforced in one place.
+  refinement-types:
+    marker: SHOULD
+    group: In Representation
+    guards: shift-left
+    body: |
+      Attach predicates to types and have them verified at compile time where the ecosystem provides it (refinement types, units of measure, checked type qualifiers).
+  immutability:
+    marker: MUST
+    group: Across State Changes
+    guards: shift-left
+    body: |
+      Make domain objects immutable: a validly constructed object that cannot change cannot become invalid, and a change is a new instance that passes creation validation again.
+  typestate:
+    marker: PREFER
+    group: Across State Changes
+    guards: shift-left
+    body: |
+      Encode the state machine in the type — each transition consumes the old state's type and returns the new one, so an operation invalid in the current state does not typecheck — over runtime state checks.
+  exhaustive-matching:
+    marker: MUST
+    group: Across State Changes
+    guards: shift-left
+    body: |
+      Match over the closed set of cases with no wildcard, so a new state that some transition does not handle is a compile error, not a silent fall-through.
+  self-guarding-aggregates:
+    marker: MUST
+    group: Across State Changes
+    guards: shift-left
+    body: |
+      Route every state change through a domain method that re-establishes invariants, and expose no setter or raw collection that could skip them.
+  no-unwrapping:
+    marker: MUST NOT
+    group: Domain Operations & Interfaces
+    guards: shift-left
+    body: |
+      Unwrap domain objects into primitives for comparison.
+  strong-typing:
+    marker: MUST NOT
+    group: Domain Operations & Interfaces
+    guards: shift-left
+    body: |
+      Use dynamic, untyped, or unstructured types (`any`, `object`, raw maps/dictionaries), or raw primitives directly (`string`, `number`, `boolean`, etc.) to represent domain concepts, identifiers, states, or measurements. Domain logic MUST operate exclusively on strongly typed domain models and validated domain primitives.
+  strict-domain-modeling:
+    marker: MUST
+    group: Domain Operations & Interfaces
+    guards: shift-left
+    body: |
+      Model all business rules, lifecycle transitions, and domain entities with dedicated, single-purpose domain types rather than generic data bags or persistence records.
+  domain-only-interfaces:
+    marker: MUST
+    group: Domain Operations & Interfaces
+    guards: shift-left
+    body: |
+      Access domain objects only via public methods that accept and return strictly other domain objects, with the sole exception of perimeter validating factories ([Validating factory](#validating-factory)) that parse raw input into domain types.
+  domain-operations:
+    marker: MUST
+    group: Domain Operations & Interfaces
+    guards: shift-left
+    body: |
+      Perform comparison, addition, subtraction, or any other domain operation via domain methods.
+  implement-comparable:
+    marker: PREFER
+    group: Domain Operations & Interfaces
+    guards: shift-left
+    body: |
+      Implement `Comparable` or similar domain interfaces over operating on primitives directly.
+  no-collapsed-layers:
+    marker: MUST NOT
+    group: Architecture & Layering
+    guards: orphans
+    body: |
+      Collapse layers for simplicity.
+  respect-layering:
+    marker: MUST
+    group: Architecture & Layering
+    guards: orphans
+    body: |
+      Respect architectural layering.
+  no-primitive-leakage:
+    marker: MUST
+    group: Architecture & Layering
+    guards: orphans
+    body: |
+      Prevent primitive leakage across layers.
+  separation-over-brevity:
+    marker: PREFER
+    group: Architecture & Layering
+    guards: orphans
+    body: |
+      Separate concerns over saving lines of code.
+  delete-unused:
+    marker: MUST
+    group: Dead Code & Comments
+    guards: the-simplicity-ladder
+    body: |
+      Delete tests, production code, and helper code that are no longer relevant or used.
+  no-comments-in-code:
+    marker: MUST NOT
+    group: Dead Code & Comments
+    guards: durable-intent-over-comments
+    body: |
+      Comment code, configuration, or any other version-controlled artifact. A comment is exempt only where something other than a human reader requires it: a shebang; a machine-read directive that is syntactically a comment (an SPDX identifier, file encoding declaration); API documentation extracted to a published doc site (Javadoc, KDoc, docstrings); a mandated license header; a generated-file banner. See [`principles.yaml § Durable Intent Over Comments`](principles.yaml#durable-intent-over-comments).
+  no-silent-catch:
+    marker: MUST NOT
+    group: Behavior & Failure Handling
+    guards: loud-failures-over-silent-defaults
+    body: |
+      Use try/catch blocks that do not rethrow (silencing failures).
+  no-default-on-failure:
+    marker: MUST NOT
+    group: Behavior & Failure Handling
+    guards: loud-failures-over-silent-defaults
+    body: |
+      Return or use a default value when failing.
+  no-strategy-fallback:
+    marker: MUST NOT
+    group: Behavior & Failure Handling
+    guards: loud-failures-over-silent-defaults
+    body: |
+      Make code 'hardened' by trying another strategy when the first one fails.
+  fail-fast:
+    marker: MUST
+    group: Behavior & Failure Handling
+    guards: loud-failures-over-silent-defaults
+    body: |
+      Fail fast on unexpected state.
+  no-suppressed-exit-status:
+    marker: MUST NOT
+    group: Behavior & Failure Handling
+    guards: loud-failures-over-silent-defaults
+    body: |
+      Discard a command's non-zero exit status with `|| true`, `|| :`, or an equivalent.
+  no-discarded-diagnostics:
+    marker: MUST NOT
+    group: Behavior & Failure Handling
+    guards: loud-failures-over-silent-defaults
+    body: |
+      Send a command's stderr to `/dev/null`, or use another tool to detect state instead of letting the failing tool report its error.
+  scripts-abort-on-error:
+    marker: MUST
+    group: Behavior & Failure Handling
+    guards: loud-failures-over-silent-defaults
+    body: |
+      Enable 'set -euo pipefail' (or the language's equivalent error-abort configuration) in every script, and let a failing step abort execution immediately.
+  no-degraded-continuation:
+    marker: MUST NOT
+    group: Behavior & Failure Handling
+    guards: loud-failures-over-silent-defaults
+    body: |
+      Proceed with stale, partial, or assumed input after the step that produces it failed; report and stop.
+  no-muted-tests:
+    marker: MUST NOT
+    group: All Tests
+    guards: orphans
+    body: |
+      Mute or skip tests.
+  linear-deterministic-code:
+    marker: MUST NOT
+    group: All Tests
+    guards: orphans
+    body: |
+      Write tests that contain branching logic, such as, but not limited to, `if` statements, default fallbacks, or `switch` expressions.
+  no-coverage-only-tests:
+    marker: MUST NOT
+    group: All Tests
+    guards: orphans
+    body: |
+      Write tests that discard return values just to increase coverage.
+  assert-values:
+    marker: MUST
+    group: All Tests
+    guards: orphans
+    body: |
+      Assert the actual returned values — not merely that no error occurred.
+  add-tests-for-new-code:
+    marker: MUST
+    group: All Tests
+    guards: orphans
+    body: |
+      Add tests for new code.
+  add-tests-for-updated-code:
+    marker: MUST
+    group: All Tests
+    guards: orphans
+    body: |
+      Add tests for updated code.
+  troubleshooting-unit-test:
+    marker: MUST
+    group: All Tests
+    guards: orphans
+    body: |
+      Add a unit test for any exploratory troubleshooting, even when a natural home for it does not exist.
+  refactor-over-mocking:
+    marker: SHOULD
+    group: All Tests
+    guards: orphans
+    body: |
+      Refactor over mocking — if setup is painful, split into smaller domain models or focused interfaces.
+  setup-pain-as-feedback:
+    marker: SHOULD
+    group: All Tests
+    guards: orphans
+    body: |
+      Treat setup pain as architectural feedback over reaching for mocks.
+  one-subject-under-test:
+    marker: MUST NOT
+    group: Unit Tests
+    guards: orphans
+    body: |
+      Include more than one subject under test or test the composition of objects within a unit test.
+  no-test-case-coupling:
+    marker: MUST NOT
+    group: Unit Tests
+    guards: orphans
+    body: |
+      Allow one test case to depend on another; every test case MUST be executable independently in any order.
+  integration-tests-are-black-box:
+    marker: MUST
+    group: Integration Tests
+    guards: orphans
+    body: |
+      Test the runtime artifact being shipped via its public APIs, black box.
+  production-parity:
+    marker: MUST
+    group: Integration Tests
+    guards: orphans
+    body: |
+      Simulate production instead of altering the behavior of the runtime artifact.
+  alert-on-broken-tooling:
+    marker: MUST
+    group: Quality Tooling & Shift Left
+    guards: orphans
+    body: |
+      Stop and alert if quality-measuring tools are not functioning or covering all code.
+  no-global-lint-changes:
+    marker: MUST NOT
+    group: Quality Tooling & Shift Left
+    guards: orphans
+    body: |
+      Change global or project-wide linting rules (e.g., `biome.json`, `stylecop.json`, `stylecop.ruleset`, `tsconfig.json`, `golangci.yaml`).
+  no-global-quality-changes:
+    marker: MUST NOT
+    group: Quality Tooling & Shift Left
+    guards: orphans
+    body: |
+      Change global or project-wide quality standards (e.g., `knip.json`, test coverage thresholds in `package.json`).
+  no-disabling-via-pragma:
+    marker: MUST NOT
+    group: Quality Tooling & Shift Left
+    guards: shift-left
+    body: |
+      Disable linting rules via comments or pragmas (e.g., `// eslint-disable-next-line`, `@ts-ignore`, `/* @ts-expect-error */`).
+  no-committing-generated-code:
+    marker: MUST NOT
+    group: Quality Tooling & Shift Left
+    guards: orphans
+    body: |
+      Commit generated code.
+  strict-presets:
+    marker: MUST
+    group: Quality Tooling & Shift Left
+    guards: shift-left
+    body: |
+      Use the strictest possible presets on linting and style.
+  fix-over-mute:
+    marker: PREFER
+    group: Quality Tooling & Shift Left
+    guards: shift-left
+    body: |
+      Resolve every individual static analysis warning at its root cause over relaxing checks to allow changes through.
+  ask-over-hack:
+    marker: PREFER
+    group: Quality Tooling & Shift Left
+    guards: shift-left
+    body: |
+      Seek architectural guidance to satisfy strict tooling rules over introducing workarounds.
+  shift-left:
+    marker: MUST
+    group: Quality Tooling & Shift Left
+    guards: shift-left
+    body: |
+      Place a safeguard at the leftmost rung that can catch the error, and descend only when the rung above cannot. See [`principles.yaml § Shift Left`](principles.yaml#shift-left).
+  enforce-via-static-analysis:
+    marker: SHOULD
+    group: Quality Tooling & Shift Left
+    guards: shift-left
+    body: |
+      Enable strict static analysis presets and compiler checks to enforce safeguards automatically.

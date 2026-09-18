@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["definitions"],
+  "additionalProperties": false,
+  "properties": {
+    "definitions": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "$ref": "keys.schema.json#/$defs/definition-key" },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["term", "specification"],
+        "additionalProperties": false,
+        "properties": {
+          "term": { "$ref": "keys.schema.json#/$defs/text" },
+          "specification": { "$ref": "keys.schema.json#/$defs/text" }
+        }
+      }
+    }
+  }
+}

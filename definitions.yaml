@@ -1,0 +1,65 @@
+definitions:
+  principle:
+    term: Principle
+    specification: |
+      A foundational value, quality definition, or trade-off model: the WHY behind the rules. Principles are reasoned essays and mental models, carry no RFC 2119 marker, and supply the defaults applied when a rule is ambiguous or two rules collide. Each principle in `principles.yaml` has an id, a title, and a body.
+  rule:
+    term: Rule
+    specification: |
+      A universal, language-agnostic constraint evaluated as pass or fail during review or in CI: the WHAT. Each rule in `rules.yaml` has an id, a marker, a group, the principle it guards, and a body. A rule exists only to enforce a principle.
+  standard:
+    term: Standard
+    specification: |
+      A concrete, ecosystem-specific specification of HOW a rule is satisfied for one technology: idioms, presets, and tooling configuration. Standards live one file per technology under `standards/` and never restate a rule.
+  marker:
+    term: Marker
+    specification: |
+      The RFC 2119 priority word that opens a rule. MUST and MUST NOT are absolute requirements. SHOULD and SHOULD NOT are requirements that may be set aside only with a stated, valid reason. MAY is optional. PREFER is a directional default: choose the named option over the alternative unless the alternative is demonstrably better here. Conflicts are resolved in favor of the rule with the higher-priority marker.
+  id:
+    term: Id
+    specification: |
+      The key under which a principle, rule, or definition is stored, and the only stable handle for citing it. It is the former markdown heading lowercased, punctuation dropped, spaces replaced by hyphens, matching `^[a-z0-9]+(-[a-z0-9]+)*$`. Cite as an absolute URL: `https://github.com/thruput-io/agents/blob/main/rules.yaml#parse-dont-validate`.
+  group:
+    term: Group
+    specification: |
+      The topical cluster a rule belongs to, taken from the heading the rule sat under. It orders and clusters rules for readers and has no bearing on precedence.
+  guards:
+    term: Guards
+    specification: |
+      The id of the single principle a rule exists to enforce. Every rule guards exactly one principle. A rule whose only honest candidate is `orphans` has no principle yet and is a prompt to write one or retire the rule.
+  why:
+    term: WHY
+    specification: |
+      The stated purpose of a change, expressed as the good it does for the users of the code. Code is a subset of its WHY: every part of the code traces to a part of the WHY, and no part of the code reaches outside it. A change need not cover the whole WHY.
+  users:
+    term: Users
+    specification: |
+      Whoever consumes the code being changed: end users of the product, operators, or the developers who call or maintain the component. The WHY is measured in benefit to them, not to the author.
+  domain-object:
+    term: Domain object
+    specification: |
+      A type in the domain layer that models a business concept, entity, or state and upholds its own invariants. Domain objects are immutable, are created only through a validating factory, and expose operations that accept and return other domain objects.
+  domain-primitive:
+    term: Domain primitive
+    specification: |
+      A validated, immutable wrapper around a single raw value (value object, tiny type) that gives the value its domain meaning, so a malformed value or a transposed argument is a compile error. Raw primitives appear only at perimeters.
+  perimeter:
+    term: Perimeter
+    specification: |
+      The boundary where raw, untrusted input enters the system: HTTP handlers, message consumers, file and configuration readers, command-line parsing. Raw input is parsed into domain types exactly once, here, and never crosses further inward as a primitive.
+  illegal-state:
+    term: Illegal state
+    specification: |
+      A combination of values that the domain never defined as valid. It is made unrepresentable by choosing a type in which the combination cannot be constructed, rather than by checking for it at runtime.
+  simplicity-ladder:
+    term: Simplicity ladder
+    specification: |
+      The ordered preference for how a need is met: no code; reuse code in this codebase; use what the platform or framework provides; add an external dependency; integrate an external tool or service; and only then write new code. Take the highest rung that applies and descend only when the rung above offers nothing viable. Every rung is gated by being available and maintained.
+  shift-left-rung:
+    term: Shift Left rung
+    specification: |
+      One of five places a defect can be caught, ordered from earliest and cheapest to latest and costliest: illegal states unrepresentable, static code analysis, unit tests, integration tests, end-to-end tests. A safeguard belongs at the leftmost rung able to catch the error.
+  evidence:
+    term: Evidence
+    specification: |
+      A verifiable reference that grounds a change or an assumption: a full URL to code on the main branch of an existing or public repository, a test in an existing repository, or a full URL to a specific section of an article or document. A practice recalled from experience is not evidence.
