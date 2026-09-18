@@ -45,6 +45,18 @@ scripts/validate.sh
 
 `DOCKER_HOST` defaults to `tcp://127.0.0.1:2375` and can be overridden in the environment.
 
+## Installation
+
+Install as an [AgentPlugins](https://agentplugins.pages.dev/) plugin:
+
+```bash
+npx --yes @agentplugins/cli add thruput-io/agents
+```
+
+### Skills
+
+- `dad-joke`: Programming dad jokes with zero input.
+
 ## License
 
 Licensed under the [Apache 2.0 License](LICENSE).
