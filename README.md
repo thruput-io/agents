@@ -6,7 +6,7 @@ Agentic workflows, engineering rules, and autonomous developer skills for Thrupu
 
 This repository defines the foundational quality principles, rules, and autonomous skills for AI agents operating across the Thruput ecosystem.
 
-The governance architecture follows [ADR 0001](docs/adrs/0001-separating-principles-rules-and-standards.md). Each tier is a YAML document validated against a JSON Schema on every pull request.
+The governance architecture follows [ADR 0001](docs/adrs/0001-separating-principles-rules-and-standards.md). The YAML documents, their schemas, and how they change are governed by [ADR 0002](docs/adrs/0002-schema-validated-yaml-governance-documents.md).
 
 ## Documents
 
