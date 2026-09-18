@@ -468,11 +468,11 @@ rules:
     body: |
       Use optional variables or parameters unless a framework or third-party library forces them.
   prefer-apis-without-optionality:
-    marker: PREFER
+    marker: MUST
     group: Optionality
     guards: optionality-drives-complexity
     body: |
-      An API that has no optional parameters over one that has, when choosing between Code We Cannot Control.
+      Use an API that has no optional parameters over on that has when choosing Code We Cannot Control.
   overload-per-option-combination:
     marker: MUST
     group: Optionality
