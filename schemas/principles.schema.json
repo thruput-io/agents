@@ -1,20 +1,50 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "principle-key": {
+      "enum": [
+        "quality-uncompromised",
+        "code-only-for-user-value",
+        "code-as-a-subset-of-the-why",
+        "the-simplicity-ladder",
+        "convention-over-novelty",
+        "shift-left",
+        "durable-intent-over-comments",
+        "loud-failures-over-silent-defaults",
+        "orphans"
+      ]
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
   "type": "object",
-  "required": ["principles"],
+  "required": [
+    "principles"
+  ],
   "additionalProperties": false,
   "properties": {
     "principles": {
       "type": "object",
       "minProperties": 1,
-      "propertyNames": { "$ref": "keys.schema.json#/$defs/principle-key" },
+      "propertyNames": {
+        "$ref": "#/$defs/principle-key"
+      },
       "additionalProperties": {
         "type": "object",
-        "required": ["title", "body"],
+        "required": [
+          "title",
+          "body"
+        ],
         "additionalProperties": false,
         "properties": {
-          "title": { "$ref": "keys.schema.json#/$defs/text" },
-          "body": { "$ref": "keys.schema.json#/$defs/text" }
+          "title": {
+            "$ref": "#/$defs/text"
+          },
+          "body": {
+            "$ref": "#/$defs/text"
+          }
         }
       }
     }

@@ -16,7 +16,6 @@ The governance architecture follows [ADR 0001](docs/adrs/0001-separating-princip
 | [rules.yaml](rules.yaml) | The WHAT: universal pass/fail constraints, each guarding one principle. | [schemas/rules.schema.json](schemas/rules.schema.json) |
 | [definitions.yaml](definitions.yaml) | The vocabulary the other documents rely on: one term and its specification per entry. | [schemas/definitions.schema.json](schemas/definitions.schema.json) |
 
-Shared key types (`principle-key`, `rule-key`, `definition-key`) live in [schemas/keys.schema.json](schemas/keys.schema.json). A rule can only guard a principle listed there.
 
 ## Reading the rules
 
