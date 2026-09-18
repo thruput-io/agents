@@ -18,6 +18,8 @@
         "shift-test-left",
         "durable-intent-over-comments",
         "loud-failures-over-silent-defaults",
+        "fold-at-perimeter",
+        "optionality-drives-complexity",
         "orphans"
       ]
     },

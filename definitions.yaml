@@ -51,10 +51,14 @@ definitions:
     term: Domain primitive
     specification: |
       A validated, immutable wrapper around a single raw value (value object, tiny type) that gives the value its domain meaning, so a malformed value or a transposed argument is a compile error. Raw primitives appear only at perimeters.
+  code-we-cannot-control:
+    term: Code We Cannot Control
+    specification: |
+      Code that is not part of the current code base and whose shape we cannot change: frameworks, APIs, libraries, and user input arriving through a user interface.
   perimeter:
     term: Perimeter
     specification: |
-      The boundary where raw, untrusted input enters the system: HTTP handlers, message consumers, file and configuration readers, command-line parsing. Raw input is parsed into domain types exactly once, here, and never crosses further inward as a primitive.
+      A point in our code that either invokes, or is invoked by, Code We Cannot Control.
   illegal-state:
     term: Illegal state
     specification: |

@@ -115,6 +115,20 @@ principles:
       - Branching speculatively on unsupported platforms or environments.
 
       Each of these converts a loud, diagnosable failure into a silent wrong answer. Safeguards must be added only when concrete evidence demonstrates the need, and failures must abort execution cleanly.
+  fold-at-perimeter:
+    title: Fold at Perimeter
+    interprets: shift-left
+    body: |
+      Our code has internal standards: domain types, no optionality, loud failures. Code We Cannot Control has its own shapes, and we cannot change them. Wherever the two meet, our integrity has to expand into or collapse from the non-standard shape.
+
+      That fold belongs as close to the perimeter as possible. The moment we hold a value from Code We Cannot Control, it becomes ours; the moment we hand one over, it stops being ours. Everything inward of that point sees only our standards, and the foreign shape never travels.
+  optionality-drives-complexity:
+    title: Optionality Drives Complexity
+    interprets: orphans
+    body: |
+      An optional argument, parameter, or variable makes code harder to read, because every reader carries the question of whether it is present. It also makes code harder to test, because the number of cases grows exponentially with each option.
+
+      Each allowed combination of options is a distinct operation and deserves its own name: an overload or an explicitly named method. Where a framework or third-party library forces optionality on us, the forced case is folded at the perimeter and never reaches the interior.
   orphans:
     title: Orphans
     interprets: orphans
