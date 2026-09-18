@@ -1,9 +1,5 @@
 # ADR 0002: Schema-Validated YAML Governance Documents
 
-## Status
-
-Accepted
-
 ## Date
 
 2026-09-18
