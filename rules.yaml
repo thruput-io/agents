@@ -242,25 +242,25 @@ rules:
   no-collapsed-layers:
     marker: MUST NOT
     group: Architecture & Layering
-    guards: orphans
+    guards: separation-of-concerns
     body: |
       Collapse layers for simplicity.
   respect-layering:
     marker: MUST
     group: Architecture & Layering
-    guards: orphans
+    guards: separation-of-concerns
     body: |
       Respect architectural layering.
   no-primitive-leakage:
     marker: MUST
     group: Architecture & Layering
-    guards: orphans
+    guards: separation-of-concerns
     body: |
       Prevent primitive leakage across layers.
   separation-over-brevity:
     marker: PREFER
     group: Architecture & Layering
-    guards: orphans
+    guards: separation-of-concerns
     body: |
       Separate concerns over saving lines of code.
   delete-unused:
@@ -326,97 +326,97 @@ rules:
   no-muted-tests:
     marker: MUST NOT
     group: All Tests
-    guards: orphans
+    guards: nothing-is-complete-without-verification
     body: |
       Mute or skip tests.
   linear-deterministic-code:
     marker: MUST NOT
     group: All Tests
-    guards: orphans
+    guards: nothing-is-complete-without-verification
     body: |
       Write tests that contain branching logic, such as, but not limited to, `if` statements, default fallbacks, or `switch` expressions.
   no-coverage-only-tests:
     marker: MUST NOT
     group: All Tests
-    guards: orphans
+    guards: nothing-is-complete-without-verification
     body: |
       Write tests that discard return values just to increase coverage.
   assert-values:
     marker: MUST
     group: All Tests
-    guards: orphans
+    guards: nothing-is-complete-without-verification
     body: |
       Assert the actual returned values — not merely that no error occurred.
   add-tests-for-new-code:
     marker: MUST
     group: All Tests
-    guards: orphans
+    guards: nothing-is-complete-without-verification
     body: |
       Add tests for new code.
   add-tests-for-updated-code:
     marker: MUST
     group: All Tests
-    guards: orphans
+    guards: nothing-is-complete-without-verification
     body: |
       Add tests for updated code.
   troubleshooting-unit-test:
     marker: MUST
     group: All Tests
-    guards: orphans
+    guards: nothing-is-complete-without-verification
     body: |
       Add a unit test for any exploratory troubleshooting, even when a natural home for it does not exist.
   refactor-over-mocking:
     marker: SHOULD
     group: All Tests
-    guards: orphans
+    guards: nothing-is-complete-without-verification
     body: |
       Refactor over mocking — if setup is painful, split into smaller domain models or focused interfaces.
   setup-pain-as-feedback:
     marker: SHOULD
     group: All Tests
-    guards: orphans
+    guards: nothing-is-complete-without-verification
     body: |
       Treat setup pain as architectural feedback over reaching for mocks.
   one-subject-under-test:
     marker: MUST NOT
     group: Unit Tests
-    guards: orphans
+    guards: nothing-is-complete-without-verification
     body: |
       Include more than one subject under test or test the composition of objects within a unit test.
   no-test-case-coupling:
     marker: MUST NOT
     group: Unit Tests
-    guards: orphans
+    guards: nothing-is-complete-without-verification
     body: |
       Allow one test case to depend on another; every test case MUST be executable independently in any order.
   integration-tests-are-black-box:
     marker: MUST
     group: Integration Tests
-    guards: orphans
+    guards: nothing-is-complete-without-verification
     body: |
       Test the runtime artifact being shipped via its public APIs, black box.
   production-parity:
     marker: MUST
     group: Integration Tests
-    guards: orphans
+    guards: nothing-is-complete-without-verification
     body: |
       Simulate production instead of altering the behavior of the runtime artifact.
   alert-on-broken-tooling:
     marker: MUST
     group: Quality Tooling & Shift Left
-    guards: orphans
+    guards: the-toolchain-is-the-guardrail
     body: |
       Stop and alert if quality-measuring tools are not functioning or covering all code.
   no-global-lint-changes:
     marker: MUST NOT
     group: Quality Tooling & Shift Left
-    guards: orphans
+    guards: the-toolchain-is-the-guardrail
     body: |
       Change global or project-wide linting rules (e.g., `biome.json`, `stylecop.json`, `stylecop.ruleset`, `tsconfig.json`, `golangci.yaml`).
   no-global-quality-changes:
     marker: MUST NOT
     group: Quality Tooling & Shift Left
-    guards: orphans
+    guards: the-toolchain-is-the-guardrail
     body: |
       Change global or project-wide quality standards (e.g., `knip.json`, test coverage thresholds in `package.json`).
   no-disabling-via-pragma:
@@ -428,7 +428,7 @@ rules:
   no-committing-generated-code:
     marker: MUST NOT
     group: Quality Tooling & Shift Left
-    guards: orphans
+    guards: the-toolchain-is-the-guardrail
     body: |
       Commit generated code.
   strict-presets:

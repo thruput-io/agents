@@ -7,6 +7,10 @@ axioms:
     title: Shift Left
     body: |
       Do every activity at the earliest point where it can be done. The earlier a question is answered, a decision is made, or a defect is found, the cheaper and more certain the outcome.
+  simplicity:
+    title: Simplicity
+    body: |
+      Simple solutions are better than complex.
   orphans:
     title: Orphans
     body: |

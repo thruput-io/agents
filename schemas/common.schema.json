@@ -5,6 +5,7 @@
       "enum": [
         "single-source-of-truth",
         "shift-left",
+        "simplicity",
         "orphans"
       ]
     },
@@ -20,6 +21,9 @@
         "loud-failures-over-silent-defaults",
         "fold-at-perimeter",
         "optionality-drives-complexity",
+        "nothing-is-complete-without-verification",
+        "separation-of-concerns",
+        "the-toolchain-is-the-guardrail",
         "orphans"
       ]
     },

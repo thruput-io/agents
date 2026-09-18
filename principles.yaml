@@ -47,7 +47,7 @@ principles:
       Without a clear notion of **WHY** a piece of code is written, it should not be written at all. We never write code without a purpose, and that purpose is measured exclusively in the good it delivers to the users of the code.
   code-as-a-subset-of-the-why:
     title: Code as a Subset of the WHY
-    interprets: orphans
+    interprets: simplicity
     body: |
       The code is a **subset** of the stated **WHY**: every part of it solves some part of the WHY, and no part reaches outside it. 
 
@@ -55,7 +55,7 @@ principles:
       - **No Unintended Harm:** A solution must not introduce collateral effects or friction that consumers would find unacceptable.
   the-simplicity-ladder:
     title: The Simplicity Ladder
-    interprets: single-source-of-truth
+    interprets: simplicity
     body: |
       The simplest code of all is **no code**. Next in simplicity is code we do not write ourselves.
 
@@ -124,11 +124,32 @@ principles:
       That fold belongs as close to the perimeter as possible. The moment we hold a value from Code We Cannot Control, it becomes ours; the moment we hand one over, it stops being ours. Everything inward of that point sees only our standards, and the foreign shape never travels.
   optionality-drives-complexity:
     title: Optionality Drives Complexity
-    interprets: orphans
+    interprets: simplicity
     body: |
       An optional argument, parameter, or variable makes code harder to read, because every reader carries the question of whether it is present. It also makes code harder to test, because the number of cases grows exponentially with each option.
 
       Each allowed combination of options is a distinct operation and deserves its own name: an overload or an explicitly named method. Where a framework or third-party library forces optionality on us, the forced case is folded at the perimeter and never reaches the interior.
+  nothing-is-complete-without-verification:
+    title: Nothing Is Complete Without Verification
+    interprets: shift-left
+    body: |
+      A change is not finished when the code is written. It is finished when a test shows the behaviour and fails when that behaviour breaks. Coverage that merely executes code paths proves nothing; a test earns its place by asserting the values that come back.
+
+      Verification is also the documentation of what the source code does. A reader who wants to know how a component behaves reads its tests, and finds there the cases the author considered, each executable on its own and asserting one subject. Prose and comments drift; a test that passes is true today.
+  separation-of-concerns:
+    title: Separation of Concerns
+    interprets: single-source-of-truth
+    body: |
+      Each concern is owned by one component in one layer, and changing a behaviour means touching only the component that owns it. Layers exist so that a concern is defined once and nothing else needs to know how it is done.
+
+      Collapsing layers, letting a primitive leak across a boundary, or merging two concerns to save lines all trade a small saving now for a second place that must change every time afterwards.
+  the-toolchain-is-the-guardrail:
+    title: The Toolchain Is the Guardrail
+    interprets: single-source-of-truth
+    body: |
+      The quality bar is defined once, in the build: compiler settings, linters, coverage thresholds, and generated-code checks. A rule document tells a reader what is expected; the toolchain makes the wrong thing fail.
+
+      Because the toolchain is that single definition, it is never weakened to let a change through, and a toolchain that stops measuring is a stop-the-line event, not a warning to note. Fixing the code is always the answer; relaxing the check never is.
   orphans:
     title: Orphans
     interprets: orphans

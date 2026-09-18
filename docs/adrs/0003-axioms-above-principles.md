@@ -39,7 +39,7 @@ An axiom is a statement accepted without argument. It is not derived from anythi
 
 Axioms live in `axioms.yaml`, validated by `schemas/axioms.schema.json`, with the same entry shape and identity rules as principles per [ADR 0002](./0002-schema-validated-yaml-governance-documents.md). `axiom-key` is a closed enum in `schemas/common.schema.json`. Every principle names the axiom it interprets in `interprets`, mirroring `guards` on rules, as recorded in ADR 0002.
 
-The first axioms are **Single Source of Truth**, every piece of information is defined exactly once and every other place it appears is a source of confusion, and **Shift Left**, every activity is done at the earliest point where it can be done. The former principle named Shift Left is one interpretation of that axiom, applied to verification, and is renamed **Shift Test Left**.
+The first axioms are **Single Source of Truth**, every piece of information is defined exactly once and every other place it appears is a source of confusion; **Shift Left**, every activity is done at the earliest point where it can be done; and **Simplicity**, simple solutions are better than complex. The former principle named Shift Left is one interpretation of that axiom, applied to verification, and is renamed **Shift Test Left**.
 
 ## Consequences
 
@@ -49,4 +49,4 @@ The first axioms are **Single Source of Truth**, every piece of information is d
 
 ### Negative
 - A fourth tier is one more place to look.
-- Three principles (Quality Uncompromised, Code Only for User Value, Code as a Subset of the WHY) interpret the `orphans` axiom until their ground is stated.
+- Two principles (Quality Uncompromised, Code Only for User Value) interpret the `orphans` axiom until their ground is stated.
