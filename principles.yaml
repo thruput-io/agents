@@ -74,10 +74,10 @@ principles:
       - **Convention in Structure, Novelty in Solution:** Novelty belongs in the domain solution, assembled from standard parts and recognizable conventions.
       - **Surrounding Context:** Where no universal industry standard decides an issue, consistency with surrounding codebase patterns becomes the baseline rather than introducing an alternative style.
       - **Demonstrable Standards:** A standard is a published convention, a maintained framework, or a pattern actively used by a large community. Recalled habits from past experience do not qualify as standards.
-  shift-left:
-    title: Shift Left
+  shift-test-left:
+    title: Shift Test Left
     body: |
-      Bugs, invalid states, and regressions are caught earliest, cheapest, and with the greatest certainty when shifted as far left as possible:
+      The [Shift Left](axioms.yaml#shift-left) axiom applied to verification. Bugs, invalid states, and regressions are caught earliest, cheapest, and with the greatest certainty when shifted as far left as possible:
 
       | 1. Unrepresentable Illegal States | 2. Static Code Analysis | 3. Unit Tests | 4. Integration Tests | 5. E2E Tests |
       | :--- | :--- | :--- | :--- | :--- |

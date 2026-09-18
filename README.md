@@ -32,7 +32,7 @@ The key of an entry is its id and its only stable handle. Cite with an absolute 
 
 ```
 https://github.com/thruput-io/agents/blob/main/rules.yaml#parse-dont-validate
-https://github.com/thruput-io/agents/blob/main/principles.yaml#shift-left
+https://github.com/thruput-io/agents/blob/main/principles.yaml#shift-test-left
 ```
 
 ## Validating locally

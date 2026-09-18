@@ -3,7 +3,8 @@
   "$defs": {
     "axiom-key": {
       "enum": [
-        "single-source-of-truth"
+        "single-source-of-truth",
+        "shift-left"
       ]
     },
     "principle-key": {
@@ -13,7 +14,7 @@
         "code-as-a-subset-of-the-why",
         "the-simplicity-ladder",
         "convention-over-novelty",
-        "shift-left",
+        "shift-test-left",
         "durable-intent-over-comments",
         "loud-failures-over-silent-defaults",
         "orphans"

@@ -39,7 +39,7 @@ An axiom is a statement accepted without argument. It is not derived from anythi
 
 Axioms live in `axioms.yaml`, validated by `schemas/axioms.schema.json`, with the same entry shape and identity rules as principles per [ADR 0002](./0002-schema-validated-yaml-governance-documents.md). `axiom-key` is a closed enum in `schemas/common.schema.json`.
 
-The first axiom is **Single Source of Truth**: every piece of information is defined exactly once, and every other place it appears is a source of confusion.
+The first axioms are **Single Source of Truth**, every piece of information is defined exactly once and every other place it appears is a source of confusion, and **Shift Left**, every activity is done at the earliest point where it can be done. The former principle named Shift Left is one interpretation of that axiom, applied to verification, and is renamed **Shift Test Left**.
 
 ## Consequences
 

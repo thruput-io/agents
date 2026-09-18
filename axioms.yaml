@@ -2,4 +2,8 @@ axioms:
   single-source-of-truth:
     title: Single Source of Truth
     body: |
-      Every piece of information is defined exactly once. Every other place it appears is a source of confusion.
+      Every piece of information is defined exactly once. Competing definitions is a source of confusion.
+  shift-left:
+    title: Shift Left
+    body: |
+      Do every activity at the earliest point where it can be done. The earlier a question is answered, a decision is made, or a defect is found, the cheaper and more certain the outcome.
