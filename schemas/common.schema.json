@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "axiom-key": {
+      "enum": [
+        "single-source-of-truth",
+        "shift-left",
+        "simplicity",
+        "orphans"
+      ]
+    },
+    "principle-key": {
+      "enum": [
+        "quality-uncompromised",
+        "code-only-for-user-value",
+        "code-as-a-subset-of-the-why",
+        "the-simplicity-ladder",
+        "convention-over-novelty",
+        "shift-test-left",
+        "durable-intent-over-comments",
+        "loud-failures-over-silent-defaults",
+        "fold-at-perimeter",
+        "optionality-drives-complexity",
+        "nothing-is-complete-without-verification",
+        "separation-of-concerns",
+        "the-toolchain-is-the-guardrail",
+        "orphans"
+      ]
+    },
+    "rule-key": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "definition-key": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

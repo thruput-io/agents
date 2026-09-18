@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "rules"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "rules": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "$ref": "common.schema.json#/$defs/rule-key"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "marker",
+          "group",
+          "guards",
+          "body"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "marker": {
+            "enum": [
+              "MUST",
+              "MUST NOT",
+              "SHOULD",
+              "SHOULD NOT",
+              "MAY",
+              "PREFER"
+            ]
+          },
+          "group": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "guards": {
+            "$ref": "common.schema.json#/$defs/principle-key"
+          },
+          "body": {
+            "$ref": "common.schema.json#/$defs/text"
+          }
+        }
+      }
+    }
+  }
+}

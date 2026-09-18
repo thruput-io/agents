@@ -1,0 +1,159 @@
+principles:
+  quality-uncompromised:
+    title: Quality Uncompromised
+    interprets: orphans
+    body: |
+      Software quality is always the highest priority. There is no situation that justifies lowering quality in favor of other goals, because all other objectives become harder to reach once quality drops. Faster development, higher performance, and new features are frequently offered as justifications; none of them qualify.
+
+      ### How Quality Is Measured
+
+      These axes define software quality. They characterize problem areas and frame discussions during design and review:
+
+      - **Correctness:** The software accurately delivers what users need.
+      - **Maintainability:** Changing a behavior requires understanding and touching only the component that owns it.
+      - **Readability:** A reader unfamiliar with the code understands what it does and why without asking the author.
+      - **Testability:** Behavior is exercised in isolation without standing up networks, clocks, or global state.
+      - **Simplicity:** The design carries no structure that a present requirement does not demand.
+      - **True Test Coverage:** Tests fail when behavior breaks, rather than merely executing code paths.
+      - **Ease of Doing the Right Thing:** The correct approach is the path of least resistance for the next contributor.
+      - **Guardrails Against Doing the Wrong Thing:** Types, tests, and tooling cause incorrect approaches to fail early at compile time rather than relying on human vigilance.
+      - **Automation:** The path between a change and its verified deployment runs without manual intervention.
+      - **Currency of Tools and Libraries:** Dependencies are current and easily kept that way.
+
+      ### What Wins When Values Collide
+
+      When competing values clash, resolve them according to this hierarchy:
+
+      - **Correctness:** Correct *over* Extensive
+      - **Maintainability:** Maintainable *over* Performant
+      - **Readability:** Readable *over* Commented
+      - **Testability:** Testable *over* Clickable
+      - **Simplicity:** Simple *over* Popular
+      - **True Test Coverage:** Competence *over* Measurable
+      - **Ease of Doing the Right Thing:** Open/Closed *over* Optimal
+      - **Guardrails Against Doing the Wrong Thing:** Build Checks *over* Rule Documents
+      - **Automation:** Pipelines *over* Platform Documents
+      - **Currency of Tools and Libraries:** Small & Manageable *over* Feature-Rich
+
+      Finding the right-hand value in code is a symptom that the left-hand value needs attention. The solution belongs on the left side of the pair, not in more of the right.
+
+      ### How Quality Is NOT Measured
+
+      Quality is not measured by convenience, cleverness, compactness, raw speed, or feature count. Performance and feature breadth are specific requirements like any other; they do not earn credit against maintainability, correctness, or simplicity.
+  code-only-for-user-value:
+    title: Code Only for User Value
+    interprets: orphans
+    body: |
+      Without a clear notion of **WHY** a piece of code is written, it should not be written at all. We never write code without a purpose, and that purpose is measured exclusively in the good it delivers to the users of the code.
+  code-as-a-subset-of-the-why:
+    title: Code as a Subset of the WHY
+    interprets: simplicity
+    body: |
+      The code is a **subset** of the stated **WHY**: every part of it solves some part of the WHY, and no part reaches outside it. 
+
+      - **Incremental Coverage:** A single change need not cover the entire WHY (which may take several incremental changes to satisfy), but what the code does solve, it solves accurately.
+      - **No Unintended Harm:** A solution must not introduce collateral effects or friction that consumers would find unacceptable.
+  the-simplicity-ladder:
+    title: The Simplicity Ladder
+    interprets: simplicity
+    body: |
+      The simplest code of all is **no code**. Next in simplicity is code we do not write ourselves.
+
+      When solving a problem, climb the simplicity ladder: take the highest rung that applies, and descend only when higher rungs offer nothing viable:
+
+      1. **Reuse Code in This Codebase:** Leverage or refactor existing components into reusable domain modules.
+      2. **Use What the Platform or Framework Provides:** Rely on built-in capabilities of the runtime or language.
+      3. **Use an External Dependency:** Adopt maintained third-party libraries.
+      4. **Use an External Tool or Service:** Integrate existing services rather than building equivalents.
+
+      ### Gating Conditions
+      Every rung is gated by two criteria:
+      - **Available:** Avoid components that impose restrictive licensing, payment models, or heavy secondary frameworks that increase maintenance burden.
+      - **Maintained:** Adopt code only when it is stable, actively maintained by multiple contributors, well-documented, and backed by a healthy community.
+  convention-over-novelty:
+    title: Convention Over Novelty
+    interprets: single-source-of-truth
+    body: |
+      Code is maintained by developers who did not write it. Adhering to established ecosystem conventions makes this possible: a maintainer familiar with standard idioms should not have to learn custom idiosyncratic patterns.
+
+      - **Convention in Structure, Novelty in Solution:** Novelty belongs in the domain solution, assembled from standard parts and recognizable conventions.
+      - **Surrounding Context:** Where no universal industry standard decides an issue, consistency with surrounding codebase patterns becomes the baseline rather than introducing an alternative style.
+      - **Demonstrable Standards:** A standard is a published convention, a maintained framework, or a pattern actively used by a large community. Recalled habits from past experience do not qualify as standards.
+  shift-test-left:
+    title: Shift Test Left
+    interprets: shift-left
+    body: |
+      The [Shift Left](axioms.yaml#shift-left) axiom applied to verification. Bugs, invalid states, and regressions are caught earliest, cheapest, and with the greatest certainty when shifted as far left as possible:
+
+      | 1. Unrepresentable Illegal States | 2. Static Code Analysis | 3. Unit Tests | 4. Integration Tests | 5. E2E Tests |
+      | :--- | :--- | :--- | :--- | :--- |
+      | Invalid states cannot be constructed in the type system. | Compilers, typecheckers, and linters reject code before execution. | Isolated component behavior verified in-process without external dependencies. | Components exercised together against real adapters in local containers. | Fully deployed services exercised in running staging environments. |
+
+      A safeguard belongs at the leftmost rung capable of catching the error. Descend to runtime or testing rungs only when type-level or static prevention is impossible.
+  durable-intent-over-comments:
+    title: Durable Intent Over Comments
+    interprets: single-source-of-truth
+    body: |
+      Comments in source code are often symptoms of missing abstraction, weak naming, or deferred work. Information conveyed in comments belongs in durable, verifiable mechanisms:
+
+      - **Clarification:** Introduce intent-revealing variable names, extract focused functions, or write negative tests demonstrating why a naive approach failed.
+      - **Procrastination (TODOs):** Add a failing test pinning the weakness, split work into smaller production-ready changes, or write an explicit plan document.
+      - **Architectural Decisions:** Document in an Architectural Decision Record (ADR) under `docs/adrs/`.
+      - **Usage Guidance:** Document in `README.md` or user-facing documentation.
+      - **Apologies or Confessions:** Fix the underlying design flaw or pin the limitation with a failing test.
+
+      Comments are justified only when intended for machine consumption: shebangs, machine directives (such as SPDX license identifiers or file encoding headers), generated docstrings for public API sites, mandated license headers, or generated-file banners.
+  loud-failures-over-silent-defaults:
+    title: Loud Failures Over Silent Defaults
+    interprets: shift-left
+    body: |
+      Systems must fail loudly and immediately upon encountering an unexpected state. None of the following defensive habits constitutes valid practice:
+
+      - Appending `|| true` or `2>/dev/null` to discard command failures or diagnostics.
+      - Catching exceptions only to log them and proceed with degraded or assumed state.
+      - Substituting a fallback default value when required input is missing or malformed.
+      - Branching speculatively on unsupported platforms or environments.
+
+      Each of these converts a loud, diagnosable failure into a silent wrong answer. Safeguards must be added only when concrete evidence demonstrates the need, and failures must abort execution cleanly.
+  fold-at-perimeter:
+    title: Fold at Perimeter
+    interprets: shift-left
+    body: |
+      Our code has internal standards: domain types, no optionality, loud failures. Code We Cannot Control has its own shapes, and we cannot change them. Wherever the two meet, our integrity has to expand into or collapse from the non-standard shape.
+
+      That fold belongs as close to the perimeter as possible. The moment we hold a value from Code We Cannot Control, it becomes ours; the moment we hand one over, it stops being ours. Everything inward of that point sees only our standards, and the foreign shape never travels.
+  optionality-drives-complexity:
+    title: Optionality Drives Complexity
+    interprets: simplicity
+    body: |
+      An optional argument, parameter, or variable makes code harder to read, because every reader carries the question of whether it is present. It also makes code harder to test, because the number of cases grows exponentially with each option.
+
+      Each allowed combination of options is a distinct operation and deserves its own name: an overload or an explicitly named method. Where a framework or third-party library forces optionality on us, the forced case is folded at the perimeter and never reaches the interior.
+  nothing-is-complete-without-verification:
+    title: Nothing Is Complete Without Verification
+    interprets: shift-left
+    body: |
+      A change is not finished when the code is written. It is finished when a test shows the behaviour and fails when that behaviour breaks. Coverage that merely executes code paths proves nothing; a test earns its place by asserting the values that come back.
+
+      Verification is also the documentation of what the source code does. A reader who wants to know how a component behaves reads its tests, and finds there the cases the author considered, each executable on its own and asserting one subject. Prose and comments drift; a test that passes is true today.
+  separation-of-concerns:
+    title: Separation of Concerns
+    interprets: single-source-of-truth
+    body: |
+      Each concern is owned by one component in one layer, and changing a behaviour means touching only the component that owns it. Layers exist so that a concern is defined once and nothing else needs to know how it is done.
+
+      Collapsing layers, letting a primitive leak across a boundary, or merging two concerns to save lines all trade a small saving now for a second place that must change every time afterwards.
+  the-toolchain-is-the-guardrail:
+    title: The Toolchain Is the Guardrail
+    interprets: single-source-of-truth
+    body: |
+      The quality bar is defined once, in the build: compiler settings, linters, coverage thresholds, and generated-code checks. A rule document tells a reader what is expected; the toolchain makes the wrong thing fail.
+
+      Because the toolchain is that single definition, it is never weakened to let a change through, and a toolchain that stops measuring is a stop-the-line event, not a warning to note. Fixing the code is always the answer; relaxing the check never is.
+  orphans:
+    title: Orphans
+    interprets: orphans
+    body: |
+      The holding principle for rules that no existing principle clearly enforces.
+
+      A rule that guards this principle is a prompt, not a resolution: either write the principle the rule actually serves and re-point the rule at it, or retire the rule. This principle never justifies a rule on its own, and nothing new is added under it without first checking every other principle.
