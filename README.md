@@ -6,17 +6,18 @@ Agentic workflows, engineering rules, and autonomous developer skills for Thrupu
 
 This repository defines the foundational quality principles, rules, and autonomous skills for AI agents operating across the Thruput ecosystem.
 
-The governance architecture follows [ADR 0001](docs/adrs/0001-separating-principles-rules-and-standards.md). The YAML documents, their schemas, and how they change are governed by [ADR 0002](docs/adrs/0002-schema-validated-yaml-governance-documents.md).
+The governance architecture follows [ADR 0001](docs/adrs/0001-separating-principles-rules-and-standards.md). The YAML documents, their schemas, and how they change are governed by [ADR 0002](docs/adrs/0002-schema-validated-yaml-governance-documents.md). The Axioms tier above Principles is introduced by [ADR 0003](docs/adrs/0003-axioms-above-principles.md).
 
 ## Documents
 
 | Document | Tier | Schema |
 | :--- | :--- | :--- |
+| [axioms.yaml](axioms.yaml) | The ground: statements accepted without argument, from which the principles are reasoned. | [schemas/axioms.schema.json](schemas/axioms.schema.json) |
 | [principles.yaml](principles.yaml) | The WHY: quality definitions, mental models, and the trade-off hierarchy for resolving ambiguity. | [schemas/principles.schema.json](schemas/principles.schema.json) |
 | [rules.yaml](rules.yaml) | The WHAT: universal pass/fail constraints, each guarding one principle. | [schemas/rules.schema.json](schemas/rules.schema.json) |
 | [definitions.yaml](definitions.yaml) | The vocabulary the other documents rely on: one term and its specification per entry. | [schemas/definitions.schema.json](schemas/definitions.schema.json) |
 
-Shared schema components (`principle-key`, `rule-key`, `definition-key`, `text`) live in [schemas/common.schema.json](schemas/common.schema.json). A rule can only guard a principle listed there.
+Shared schema components (`axiom-key`, `principle-key`, `rule-key`, `definition-key`, `text`) live in [schemas/common.schema.json](schemas/common.schema.json). A rule can only guard a principle listed there.
 
 
 ## Reading the rules

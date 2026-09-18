@@ -13,17 +13,18 @@
 
 ## Decision
 
-The Principles and Rules tiers, and the shared vocabulary they rely on, are YAML documents at the repository root, each validated against a JSON Schema (draft 2020-12) on every pull request. YAML is the only source; no markdown rendering of these tiers is committed.
+The Axioms, Principles, and Rules tiers, and the shared vocabulary they rely on, are YAML documents at the repository root, each validated against a JSON Schema (draft 2020-12) on every pull request. YAML is the only source; no markdown rendering of these tiers is committed.
 
 ### Documents and schemas
 
 | Document | Schema | Entry shape |
 | :--- | :--- | :--- |
+| `axioms.yaml` | `schemas/axioms.schema.json` | `title`, `body` |
 | `principles.yaml` | `schemas/principles.schema.json` | `title`, `body` |
 | `rules.yaml` | `schemas/rules.schema.json` | `marker`, `group`, `guards`, `body` |
 | `definitions.yaml` | `schemas/definitions.schema.json` | `term`, `specification` |
 
-Shared components live in `schemas/common.schema.json` and are referenced by relative `$ref` from the document schemas: `principle-key` (a closed enum of principle ids), `rule-key`, `definition-key`, and `text`. Schemas carry no `$id`, so references resolve from the file path in every environment.
+Shared components live in `schemas/common.schema.json` and are referenced by relative `$ref` from the document schemas: `axiom-key` (a closed enum of axiom ids), `principle-key` (a closed enum of principle ids), `rule-key`, `definition-key`, and `text`. Schemas carry no `$id`, so references resolve from the file path in every environment.
 
 ### Identity
 

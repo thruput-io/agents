@@ -1,6 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$defs": {
+    "axiom-key": {
+      "enum": [
+        "single-source-of-truth"
+      ]
+    },
     "principle-key": {
       "enum": [
         "quality-uncompromised",

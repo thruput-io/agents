@@ -1,0 +1,5 @@
+axioms:
+  single-source-of-truth:
+    title: Single Source of Truth
+    body: |
+      Every piece of information is defined exactly once. Every other place it appears is a source of confusion.

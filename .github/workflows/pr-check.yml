@@ -21,6 +21,9 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Validate axioms
+        run: pipx run check-jsonschema --schemafile schemas/axioms.schema.json axioms.yaml
+
       - name: Validate principles
         run: pipx run check-jsonschema --schemafile schemas/principles.schema.json principles.yaml
 
