@@ -12,6 +12,18 @@ The governance architecture follows [ADR 0001](docs/adrs/0001-separating-princip
 
 - **[PRINCIPLES.md](PRINCIPLES.md):** Defines core software quality principles, mental models, and the trade-off hierarchy for resolving ambiguity.
 
+## Installation
+
+Install as an [AgentPlugins](https://agentplugins.pages.dev/) plugin:
+
+```bash
+npx --yes @agentplugins/cli add thruput-io/agents
+```
+
+### Skills
+
+- `dad-joke`: Programming dad jokes with zero input.
+
 ## License
 
 Licensed under the [Apache 2.0 License](LICENSE).
