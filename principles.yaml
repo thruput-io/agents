@@ -1,7 +1,7 @@
 principles:
   quality-uncompromised:
     title: Quality Uncompromised
-    interprets: orphans
+    interprets: speed-through-discipline
     body: |
       Software quality is always the highest priority. There is no situation that justifies lowering quality in favor of other goals, because all other objectives become harder to reach once quality drops. Faster development, higher performance, and new features are frequently offered as justifications; none of them qualify.
 
@@ -42,7 +42,7 @@ principles:
       Quality is not measured by convenience, cleverness, compactness, raw speed, or feature count. Performance and feature breadth are specific requirements like any other; they do not earn credit against maintainability, correctness, or simplicity.
   code-only-for-user-value:
     title: Code Only for User Value
-    interprets: orphans
+    interprets: outcome-over-output
     body: |
       Without a clear notion of **WHY** a piece of code is written, it should not be written at all. We never write code without a purpose, and that purpose is measured exclusively in the good it delivers to the users of the code.
   code-as-a-subset-of-the-why:
@@ -135,6 +135,8 @@ principles:
     body: |
       A change is not finished when the code is written. It is finished when a test shows the behaviour and fails when that behaviour breaks. Coverage that merely executes code paths proves nothing; a test earns its place by asserting the values that come back.
 
+      The pipeline is where that verification is believed, so it is kept green and kept robust. A flaky test is a critical bug rather than background noise: it has stopped carrying information, and every bypass trains the team to disregard the signal.
+
       Verification is also the documentation of what the source code does. A reader who wants to know how a component behaves reads its tests, and finds there the cases the author considered, each executable on its own and asserting one subject. Prose and comments drift; a test that passes is true today.
   separation-of-concerns:
     title: Separation of Concerns
@@ -150,6 +152,56 @@ principles:
       The quality bar is defined once, in the build: compiler settings, linters, coverage thresholds, and generated-code checks. A rule document tells a reader what is expected; the toolchain makes the wrong thing fail.
 
       Because the toolchain is that single definition, it is never weakened to let a change through, and a toolchain that stops measuring is a stop-the-line event, not a warning to note. Fixing the code is always the answer; relaxing the check never is.
+  reproducible-by-construction:
+    title: Reproducible by Construction
+    interprets: single-source-of-truth
+    body: |
+      If it works on your machine but not in production, the environment is the bug. The environment is described once, as code, so that local, staging, and production are one system rather than three that happen to resemble each other.
+
+      - **One-Command Setup:** A new engineer clones, builds, and tests the entire stack with a single command. Wherever that is not true, the gap is an onboarding cost every later contributor pays again.
+      - **Automation Over Manual:** A task that has to be done twice is a task to automate. A manual step is a second definition of the procedure, kept only in the operator's head.
+  own-the-runtime:
+    title: Own the Runtime
+    interprets: shift-left
+    body: |
+      We do not hope a feature works. Telemetry, logs, and alerts are in place at deploy time rather than added after the first incident, because the alternative is learning about a regression from the customer.
+
+      This is the [Shift Left](axioms.yaml#shift-left) axiom applied past the point of release: the earliest place a production defect can be observed is by us, and the target is to resolve it before the customer notices a flicker. If we cannot see it, it is not shipped.
+  surface-what-you-do-not-know:
+    title: Surface What You Do Not Know
+    interprets: excellence-through-transparency
+    body: |
+      A blocker, a warning, or an unexpected result is worth most the moment it is said out loud, and worth nothing once it has been quietly worked around. Uncertainty is reported as uncertainty rather than settled by assumption.
+
+      This carries an obligation to interrupt. Stopping to say that something is unclear costs one conversation; continuing past it costs everything later built on the guess. Confidence is not evidence, and a claim that cannot be traced to something verifiable is stated as the guess it is.
+  ai-amplifies-the-operator:
+    title: AI Amplifies the Operator
+    interprets: leverage
+    body: |
+      AI is leverage — *hävstång* — applied to the person operating it. It supplies no judgement of its own; it multiplies the competence already there. An operator who does not know what good looks like produces a mess at a speed no human could have reached unaided, and that mess arrives reviewed, formatted, and entirely plausible. An operator working from these principles produces the same quality faster, and more of it.
+
+      This decides where the investment goes: into operator competence, and into stating our rules explicitly enough to be applied, rather than into the expectation that a better model compensates for the absence of both. The model is not the variable that decides the outcome. It is the multiplier on the variable that does.
+  the-capability-gap-is-closing:
+    title: The Capability Gap Is Closing
+    interprets: leverage
+    body: |
+      The distance between what a person and what a model can do narrows every day. Any principle, process, or division of labour justified by *"AI cannot do this yet"* carries an expiry date, and writing it down as though it were permanent guarantees it will be wrong.
+
+      What survives the closing gap is the part that was never about capability: knowing which problem is worth solving, what *good* means in this context, and whether the result is actually true.
+  adoption-is-articulation:
+    title: Adoption Is Articulation
+    interprets: single-source-of-truth
+    body: |
+      Adopting AI is, in most cases, refining and defining what we already know. The rules that let an agent produce good work are the rules a new colleague needs, and the reason they were never written down is that they lived as tacit habit in experienced heads.
+
+      Stating them once, explicitly and in a form that can be checked, is the work of adoption, and it pays for itself whether or not an agent ever reads the result. An adoption that produced no clearer articulation of our craft has adopted nothing.
+  our-own-tools-and-methods:
+    title: Our Own Tools and Methods
+    interprets: leverage
+    body: |
+      Our tools and methods are our own. A vendor's defaults encode a vendor's standards — an average of everybody's practice rather than ours — so adopting them wholesale outsources the definition of quality to whoever shipped the template.
+
+      This is not an argument for building models or editors. [The Simplicity Ladder](principles.yaml#the-simplicity-ladder) governs what we consume, and we consume plenty. It is the layer that carries our standards, the rules and prompts and harnesses and pipelines, that is ours to write, own, and keep current.
   orphans:
     title: Orphans
     interprets: orphans

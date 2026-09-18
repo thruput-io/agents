@@ -11,6 +11,26 @@ axioms:
     title: Simplicity
     body: |
       Simple solutions are better than complex.
+  speed-through-discipline:
+    title: Speed Through Discipline
+    body: |
+      We do not move fast and break things. We move fast because we build things right. Skipping tests, security, or rigour in automation is not a shortcut but debt, and a disciplined foundation is what makes the highest true speed available at all.
+  excellence-through-transparency:
+    title: Excellence Through Transparency
+    body: |
+      We hire for talent and grow by collaboration. Staying humble, surfacing blockers early, and saying plainly what we do not know makes the product the sum of our competence, rather than the competence of whoever touched it last.
+  outcome-over-output:
+    title: Outcome Over Output
+    body: |
+      The job is not to check off a requirements list. It is to solve a problem. We value customer collaboration over a rigid plan, and the path that delivers the most meaningful impact over the easy one.
+  joy-through-craft:
+    title: Joy Through Craft
+    body: |
+      Working this way is, quite simply, the most fun. Doing things the right way, with discipline, transparency, and purpose, is the most rewarding way to spend the time. Fun is not a distraction from the craft; it is the byproduct of mastering it.
+  leverage:
+    title: Leverage
+    body: |
+      A tool multiplies the competence applied to it and supplies no judgement of its own. It magnifies whatever is already there, so the operator decides what the outcome is and the tool decides only how fast it arrives.
   orphans:
     title: Orphans
     body: |
