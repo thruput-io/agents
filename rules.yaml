@@ -461,12 +461,6 @@ rules:
     guards: shift-test-left
     body: |
       Enable strict static analysis presets and compiler checks to enforce safeguards automatically.
-  fold-at-perimeter:
-    marker: MUST
-    group: Perimeter
-    guards: fold-at-perimeter
-    body: |
-      Convert between our types and the shapes of Code We Cannot Control in the statement immediately before, or chained with, the invocation, and in the statement immediately after, or combined with, its return.
   no-optionality:
     marker: MUST NOT
     group: Optionality
