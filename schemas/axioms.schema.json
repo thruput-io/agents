@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "axioms"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "axioms": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "$ref": "common.schema.json#/$defs/axiom-key"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "title",
+          "body"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "body": {
+            "$ref": "common.schema.json#/$defs/text"
+          }
+        }
+      }
+    }
+  }
+}

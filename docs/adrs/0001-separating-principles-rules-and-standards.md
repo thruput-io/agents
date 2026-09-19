@@ -1,9 +1,5 @@
 # ADR 0001: Separating Principles, Rules, and Standards
 
-## Status
-
-Accepted
-
 ## Date
 
 2026-09-16
