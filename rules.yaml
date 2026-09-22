@@ -331,10 +331,12 @@ rules:
       Mute or skip tests.
   linear-deterministic-code:
     marker: MUST NOT
-    group: All Tests
-    guards: nothing-is-complete-without-verification
+    group: Behavior & Failure Handling
+    guards: loud-failures-over-silent-defaults
     body: |
-      Write tests that contain branching logic, such as, but not limited to, `if` statements, default fallbacks, or `switch` expressions.
+      Write test, build, or configuration code that contains branching logic or default
+      fallback values, such as, but not limited to, `if` statements, `switch`/`case`
+      expressions, or defaulted values.
   no-coverage-only-tests:
     marker: MUST NOT
     group: All Tests
