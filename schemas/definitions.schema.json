@@ -36,12 +36,41 @@
         },
         "criteria": {
           "$ref": "#/$defs/Criteria"
+        },
+        "closedEnumerationOf": {
+          "$ref": "#/$defs/ClosedEnumeration"
+        },
+        "openEnumerationOf": {
+          "$ref": "#/$defs/OpenEnumeration"
         }
       },
       "required": [
         "id",
         "specification"
-      ]
+      ],
+      "not": {
+        "required": [
+          "closedEnumerationOf",
+          "openEnumerationOf"
+        ]
+      }
+    },
+    "ClosedEnumeration": {
+      "description": "Every narrower definition of the term, by id. Each listed definition is a kind of the term, and nothing outside the list is. A definition is either a closed or an open enumeration, never both.",
+      "$ref": "#/$defs/Enumeration"
+    },
+    "OpenEnumeration": {
+      "description": "Narrower definitions of the term known so far, by id. Each listed definition is a kind of the term, and other kinds may exist that are not listed. A definition is either a closed or an open enumeration, never both.",
+      "$ref": "#/$defs/Enumeration"
+    },
+    "Enumeration": {
+      "description": "The ids of the narrower definitions a term enumerates, each listed once. A listed definition does not restate the term in its own specification.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/DefinitionId"
+      }
     },
     "Specification": {
       "description": "The precise meaning of the term.",

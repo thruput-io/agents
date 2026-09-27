@@ -53,19 +53,9 @@ principles:
 - id: The Simplicity Ladder
   parent: Descend only when the rung above cannot serve
   body: |
-    The simplest code of all is **no code**. Next in simplicity is code we do not write ourselves.
+    The simplest code of all is [[No code]]. Next in simplicity is code we do not write ourselves.
 
-    When solving a problem, climb the simplicity ladder: take the highest rung that applies, and descend only when higher rungs offer nothing viable:
-
-    1. **Reuse Code in This Codebase:** Leverage or refactor existing components into reusable domain modules.
-    2. **Use What the Platform or Framework Provides:** Rely on built-in capabilities of the runtime or language.
-    3. **Use an External Dependency:** Adopt maintained third-party libraries.
-    4. **Use an External Tool or Service:** Integrate existing services rather than building equivalents.
-
-    ### Gating Conditions
-    Every rung is gated by two criteria:
-    - **Available:** Avoid components that impose restrictive licensing, payment models, or heavy secondary frameworks that increase maintenance burden.
-    - **Maintained:** Adopt code only when it is stable, actively maintained by multiple contributors, well-documented, and backed by a healthy community.
+    When solving a problem, climb the [[Simplicity ladder]].
 - id: Convention Over Novelty
   parent: Convention over invention
   body: |
@@ -73,17 +63,11 @@ principles:
 
     - **Convention in Structure, Novelty in Solution:** Novelty belongs in the domain solution, assembled from standard parts and recognizable conventions.
     - **Surrounding Context:** Where no universal industry standard decides an issue, consistency with surrounding codebase patterns becomes the baseline rather than introducing an alternative style.
-    - **Demonstrable Standards:** A standard is a published convention, a maintained framework, or a pattern actively used by a large community. Recalled habits from past experience do not qualify as standards.
+    - **Demonstrable Standards:** Only a [[Demonstrable standard]] qualifies as a standard.
 - id: Shift Test Left
   parent: Descend only when the rung above cannot serve
   body: |
-    The [[Shift Left]] axiom applied to verification. Bugs, invalid states, and regressions are caught earliest, cheapest, and with the greatest certainty when shifted as far left as possible:
-
-    | 1. Unrepresentable Illegal States | 2. Static Code Analysis | 3. Unit Tests | 4. Integration Tests | 5. E2E Tests |
-    | :--- | :--- | :--- | :--- | :--- |
-    | Invalid states cannot be constructed in the type system. | Compilers, typecheckers, and linters reject code before execution. | Isolated component behavior verified in-process without external dependencies. | Components exercised together against real adapters in local containers. | Fully deployed services exercised in running staging environments. |
-
-    A safeguard belongs at the leftmost rung capable of catching the error. Descend to runtime or testing rungs only when type-level or static prevention is impossible.
+    The [[Shift Left]] axiom applied to verification. A defect is caught earliest, cheapest, and with the greatest certainty on the leftmost [[Shift Left rung]] able to catch it. Descend past [[Unrepresentable illegal state]] and [[Static code analysis]] only when neither can prevent the defect.
 - id: Durable Intent Over Comments
   parent: Intent lives where it is checked
   body: |
@@ -95,7 +79,7 @@ principles:
     - **Usage Guidance:** Document in `README.md` or user-facing documentation.
     - **Apologies or Confessions:** Fix the underlying design flaw or pin the limitation with a failing test.
 
-    Comments are justified only when intended for machine consumption: shebangs, machine directives (such as SPDX license identifiers or file encoding headers), generated docstrings for public API sites, mandated license headers, or generated-file banners.
+    The only justified comment is a [[Machine-read comment]].
 - id: Loud Failures Over Silent Defaults
   parent: "Crash, don't guess"
   body: |
@@ -108,7 +92,7 @@ principles:
 
     Each of these converts a loud, diagnosable failure into a silent wrong answer. Safeguards must be added only when concrete evidence demonstrates the need, and failures must abort execution cleanly.
 - id: Fold at Perimeter
-  parent: Translate at the door
+  parent: Encapsulation
   body: |
     Our code has internal standards: domain types, no optionality, loud failures. Code We Cannot Control has its own shapes, and we cannot change them. Wherever the two meet, our integrity has to expand into or collapse from the non-standard shape.
 

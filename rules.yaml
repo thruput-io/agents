@@ -4,7 +4,7 @@ rules:
   group: If in doubt
   parent: Convention Over Novelty
   body: |
-    Retreat to learnt patterns or practices. A standard you can point at is not a learnt pattern — see [[Demonstrable, not recalled]].
+    Retreat to learnt patterns or practices. A [[Demonstrable standard]] is not a learnt pattern.
 - id: Stated purpose
   marker: MUST
   group: Purpose & Accuracy
@@ -100,7 +100,7 @@ rules:
   group: Maintainability & Standards
   parent: Convention Over Novelty
   body: |
-    Point at a standard whenever you invoke one as justification: a maintained library or framework, a pattern in current use by a large active community, or a published convention. Novel work is not required to cite a standard it does not have. See [[No learnt-pattern retreat]].
+    Point at a [[Demonstrable standard]] whenever you invoke a standard as justification. Novel work is not required to cite a standard it does not have.
 - id: Illegal states are unrepresentable
   marker: MUST
   group: At Creation
@@ -130,13 +130,13 @@ rules:
   group: At Creation
   parent: Shift Test Left
   body: |
-    Parse raw input once at the perimeter into the constrained domain type instead of checking it and passing the primitive on, so downstream code can never receive unvalidated data. See [[Domain primitives]].
+    Parse raw input once at the perimeter into the constrained domain type instead of checking it and passing the primitive on, so downstream code can never receive unvalidated data. See [[Encapsulated type]].
 - id: Domain primitives
   marker: MUST
   group: In Representation
   parent: Shift Test Left
   body: |
-    Wrap every primitive in its own validated immutable type (value object, tiny type), so a malformed value or a transposed argument is a compile error. Primitives appear only at perimeters.
+    Wrap every primitive in its own [[Domain primitive]]. Primitives appear only at perimeters.
 - id: Opaque types
   marker: PREFER
   group: In Representation
@@ -268,7 +268,7 @@ rules:
   group: Dead Code & Comments
   parent: Durable Intent Over Comments
   body: |
-    Comment code, configuration, or any other version-controlled artifact. A comment is exempt only where something other than a human reader requires it: a shebang; a machine-read directive that is syntactically a comment (an SPDX identifier, file encoding declaration); API documentation extracted to a published doc site (Javadoc, KDoc, docstrings); a mandated license header; a generated-file banner. See [[Durable Intent Over Comments]].
+    Comment any version-controlled artifact. Only a [[Machine-read comment]] is exempt.
 - id: No silent catch
   marker: MUST NOT
   group: Behavior & Failure Handling
@@ -406,19 +406,19 @@ rules:
   group: Quality Tooling & Shift Left
   parent: The Toolchain Is the Guardrail
   body: |
-    Change global or project-wide linting rules (e.g., `biome.json`, `stylecop.json`, `stylecop.ruleset`, `tsconfig.json`, `golangci.yaml`).
+    Change global or project-wide linting rules.
 - id: No global quality changes
   marker: MUST NOT
   group: Quality Tooling & Shift Left
   parent: The Toolchain Is the Guardrail
   body: |
-    Change global or project-wide quality standards (e.g., `knip.json`, test coverage thresholds in `package.json`).
+    Change global or project-wide quality standards.
 - id: No disabling via pragma
   marker: MUST NOT
   group: Quality Tooling & Shift Left
   parent: Shift Test Left
   body: |
-    Disable linting rules via comments or pragmas (e.g., `// eslint-disable-next-line`, `@ts-ignore`, `/* @ts-expect-error */`).
+    Disable linting rules via comments or pragmas.
 - id: No committing generated code
   marker: MUST NOT
   group: Quality Tooling & Shift Left

@@ -80,6 +80,24 @@ rationales:
   - marker: MAY
     body: |
       Introduce an anti-corruption layer where the foreign model's meaning differs from ours ([Anti-Corruption Layer](https://learn.microsoft.com/en-us/azure/architecture/patterns/anti-corruption-layer)).
+- id: Encapsulation
+  parent: Shift Left
+  body: |
+    A type that encapsulates its values and limits the paths of creation to one that validates everything it can makes illegal states unrepresentable: holding a value of the type is proof it was checked. Yaron Minsky's [Effective ML Revisited](https://blog.janestreet.com/effective-ml-revisited/) names the idiom, make illegal states unrepresentable, and Scott Wlaschin's [Designing with types](https://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/) works it through. Any weaker typing, one that does not fully encapsulate or leaves a second path of creation open, hands the validation back to every caller.
+
+    When an API passes `int x, int y` as coordinates, fold them into a `CarPosition`, not a `Coordinate`. A `CarPosition` is never collapsed into ints again: all our code keeps it as a `CarPosition`, perhaps uses a generic `Position`, or converts it into a `DriverPosition` once it is verified to be moving. In the best case `CarPosition` stays opaque, the best encapsulation: no code ever knows or depends on the fact that there might be two ints inside. When it is written to the database, at the perimeter, the database context consumes it as a `CarPosition` and, by contract, perhaps a visitor, folds it into a database parameter belonging to the `CAR_POSITION` table. A domain primitive is the special case where a single primitive is wrapped.
+
+    Every typing add-on to a weakly typed language exists to be used for this. Even an environment without types can mint a naming standard in which a variable prefix carries the signature "validated by factory", and a linter enforcing that standard shifts the validated contract further left.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Use every typing add-on the language offers to give every type one validating path of creation and no other.
+  - marker: SHOULD
+    body: |
+      Where code smells of [[Optionality]] and [[Primitive Obsession]], improve it first by introducing encapsulation: refactor to opaque types, and retire the tests that only guarded against values the types can no longer hold.
+  - marker: MAY
+    body: |
+      Where the environment has no types, mint a naming prefix that marks a value validated by its factory, and enforce it with a linter.
 - id: Name the case, not the knob
   parent: Simplicity
   body: |

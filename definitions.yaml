@@ -1,7 +1,32 @@
 definitions:
 - id: Marker
   specification: |
-    The RFC 2119 priority word that opens a rule. MUST and MUST NOT are absolute requirements. SHOULD and SHOULD NOT are requirements that may be set aside only with a stated, valid reason. MAY is optional. PREFER is a directional default: choose the named option over the alternative unless the alternative is demonstrably better here. Conflicts are resolved in favor of the rule with the higher-priority marker.
+    The RFC 2119 priority word that opens a rule. Conflicts are resolved in favor of the rule with the higher-priority marker.
+  closedEnumerationOf:
+  - MUST
+  - MUST NOT
+  - SHOULD
+  - SHOULD NOT
+  - MAY
+  - PREFER
+- id: MUST
+  specification: |
+    An absolute requirement.
+- id: MUST NOT
+  specification: |
+    An absolute prohibition.
+- id: SHOULD
+  specification: |
+    A requirement that may be set aside only with a stated, valid reason.
+- id: SHOULD NOT
+  specification: |
+    A prohibition that may be set aside only with a stated, valid reason.
+- id: MAY
+  specification: |
+    An option.
+- id: PREFER
+  specification: |
+    A directional default: choose the named option over the alternative unless the alternative is demonstrably better here.
 - id: Id
   specification: |
     The name of an entry, and the only stable handle for citing it. Ids are unique across every document, compared case-insensitively with whitespace normalized. In prose an id is cited as [[Id]].
@@ -13,22 +38,85 @@ definitions:
     The id of the entry directly above. Every entry below the root has exactly one parent.
 - id: Purpose
   specification: |
-    The stated reason for a change, component, or system, expressed as the benefit it delivers to [[Users]]. Purpose is measured in benefit to users, not to developers. Code is a subset of its Purpose: every part of the code traces to a part of the Purpose, and no part of the code reaches outside it.
+    The stated reason something is built or changed, expressed as the benefit it delivers to [[Users]]. Purpose is measured in benefit to users, not to developers. Code is a subset of its Purpose: every part of the code traces to a part of the Purpose, and no part of the code reaches outside it.
 - id: WHY
   specification: |
     Alias for [[Purpose]].
 - id: Users
   specification: |
-    Whoever consumes the software or system to fulfill a need: human end users, operators, external systems, or AI agents. Developers who write, call, or maintain the code are not users.
+    Whoever consumes the software or system to fulfill a need. Developers who write, call, or maintain the code are not users.
+  openEnumerationOf:
+  - End user
+  - Operator
+  - External system
+  - AI agent
+- id: End user
+  specification: |
+    A person who uses the product to meet their own need.
+- id: Operator
+  specification: |
+    A person who keeps the system running in production.
+- id: External system
+  specification: |
+    A system outside the current code base that calls it or is called by it.
+- id: AI agent
+  specification: |
+    A program that pursues a goal autonomously, using a model to decide its next action.
+- id: Class
+  specification: |
+    A construct that defines a type as a set of values together with the operations on them. A rule that names a Class applies to every construct that does this, whatever the language calls it.
+- id: Interface
+  specification: |
+    The boundary through which code outside a component invokes it. A component is a [[Class]] or any larger unit of code.
+- id: API
+  specification: |
+    Alias for [[Interface]].
+- id: Public method
+  specification: |
+    A single invocation receiver of an [[Interface]]: one operation that code outside the component can invoke through it. An operation that only code inside the component can invoke is not a public method.
 - id: Domain object
   specification: |
-    A type in the domain layer that models a business concept, entity, or state and upholds its own invariants. Domain objects are immutable, are created only through a validating factory, and expose operations that accept and return other domain objects.
+    A type in the domain layer that models a business concept and upholds its own invariants. Domain objects are immutable, are created only through a validating factory, and expose operations that accept and return other domain objects.
+- id: Encapsulated type
+  specification: |
+    A [[Class]] into which one or more raw values are folded at the [[Perimeter]], named for what the values mean rather than for their shape, with a single validating path of creation. Inside our code it is never collapsed back into raw values; it becomes another type only through a verified conversion, and at an outbound perimeter a contract of the type folds it into the foreign shape. Kept opaque, no code depends on its internal representation.
+  openEnumerationOf:
+  - Domain primitive
 - id: Domain primitive
   specification: |
-    A validated, immutable wrapper around a single raw value (value object, tiny type) that gives the value its domain meaning, so a malformed value or a transposed argument is a compile error. Raw primitives appear only at perimeters.
+    The special case where a single raw value is wrapped.
+- id: Representable illegal state
+  specification: |
+    An [[Illegal state]] that a type can still represent: the gap between the states the type can hold and the states the domain defines as legal. The gap is measured by the type's cardinality, which every field and every open choice multiplies while the legal states stay few.
+- id: Loose type
+  specification: |
+    A type that admits [[Representable illegal state]]s.
+  openEnumerationOf:
+  - Optionality
+  - Primitive Obsession
+- id: Primitive Obsession
+  specification: |
+    Representing a value by one or more general-purpose primitive types instead of a type of its own, leaving its meaning and constraints to every piece of code that handles it.
+- id: Optionality
+  specification: |
+    A choice left open in a value or parameter, such as whether it is present at all.
 - id: Code We Cannot Control
   specification: |
-    Code that is not part of the current code base and whose shape we cannot change: frameworks, APIs, libraries, and user input arriving through a user interface.
+    Code that is not part of the current code base and whose shape we cannot change.
+  openEnumerationOf:
+  - Framework
+  - Library
+  - External system
+  - User input
+- id: Framework
+  specification: |
+    Code outside the current code base that calls our code and owns the flow of control.
+- id: Library
+  specification: |
+    Code outside the current code base that our code calls, leaving the flow of control with our code.
+- id: User input
+  specification: |
+    Data a person enters through a user interface.
 - id: Perimeter
   specification: |
     A point in our code that either invokes, or is invoked by, Code We Cannot Control.
@@ -37,13 +125,115 @@ definitions:
     A combination of values that the domain never defined as valid. It is made unrepresentable by choosing a type in which the combination cannot be constructed, rather than by checking for it at runtime.
 - id: Simplicity ladder
   specification: |
-    The ordered preference for how a need is met: no code; reuse code in this codebase; use what the platform or framework provides; add an external dependency; integrate an external tool or service; and only then write new code. Take the highest rung that applies and descend only when the rung above offers nothing viable. Every rung is gated by being available and maintained.
+    The preference for meeting a need at the highest [[Simplicity rung]] that applies, descending only when the rung above offers nothing viable. The rungs rank from highest to lowest in the order [[Simplicity rung]] enumerates them. Every rung is gated by being available and maintained.
+- id: Simplicity rung
+  specification: |
+    A way to meet a need, ranked by how little code we own afterwards.
+  closedEnumerationOf:
+  - No code
+  - Codebase reuse
+  - Platform or framework
+  - External dependency
+  - External tool or service
+  - New code
+- id: No code
+  specification: |
+    Meeting the need without any code.
+- id: Codebase reuse
+  specification: |
+    Meeting the need with code already in this codebase, refactored into a reusable component where it is not one yet.
+- id: Platform or framework
+  specification: |
+    Meeting the need with what the platform or framework in use already provides.
+- id: External dependency
+  specification: |
+    Meeting the need by adding an existing external component as a dependency.
+- id: External tool or service
+  specification: |
+    Meeting the need by integrating an existing external tool or calling an existing service.
+- id: New code
+  specification: |
+    Meeting the need by writing new code.
 - id: Shift Left rung
   specification: |
-    One of five places a defect can be caught, ordered from earliest and cheapest to latest and costliest: illegal states unrepresentable, static code analysis, unit tests, integration tests, end-to-end tests. A safeguard belongs at the leftmost rung able to catch the error.
+    A place where a defect can be caught. The rungs rank from earliest and cheapest to latest and costliest in the order this term enumerates them. A safeguard belongs at the leftmost rung able to catch the error.
+  closedEnumerationOf:
+  - Unrepresentable illegal state
+  - Static code analysis
+  - Unit test
+  - Integration test
+  - End-to-end test
+- id: Unrepresentable illegal state
+  specification: |
+    Preventing a defect by choosing a type in which the [[Illegal state]] cannot be constructed.
+- id: Static code analysis
+  specification: |
+    Catching a defect by analysing the code before it runs.
+- id: Unit test
+  specification: |
+    Catching a defect by exercising one component in-process, without external dependencies.
+- id: Integration test
+  specification: |
+    Catching a defect by exercising components together against real adapters in local containers.
+- id: End-to-end test
+  specification: |
+    Catching a defect by exercising fully deployed services in a running staging environment.
 - id: Evidence
   specification: |
-    A verifiable reference that grounds a change or an assumption: a full URL to code on the main branch of an existing or public repository, a test in an existing repository, or a full URL to a specific section of an article or document. A practice recalled from experience is not evidence.
+    A verifiable reference that grounds a change or an assumption. A practice recalled from experience is not evidence.
+  closedEnumerationOf:
+  - Code reference
+  - Test reference
+  - Document reference
+- id: Code reference
+  specification: |
+    A full URL to code on the main branch of an existing or public repository.
+- id: Test reference
+  specification: |
+    A test in an existing repository.
+- id: Document reference
+  specification: |
+    A full URL to a specific section of an article or document.
+- id: Demonstrable standard
+  specification: |
+    A standard that can be pointed at. A habit recalled from past experience, or a practice whose community has moved on, is not a demonstrable standard.
+  closedEnumerationOf:
+  - Published convention
+  - Maintained library or framework
+  - Community pattern
+- id: Published convention
+  specification: |
+    A convention that is written down and published.
+- id: Maintained library or framework
+  specification: |
+    A [[Library]] or [[Framework]] that is actively maintained.
+- id: Community pattern
+  specification: |
+    A pattern in current use by a large, active community.
+- id: Machine-read comment
+  specification: |
+    A comment that something other than a human reader requires.
+  closedEnumerationOf:
+  - Shebang
+  - Machine-read directive
+  - Published API documentation
+  - Mandated license header
+  - Generated-file banner
+- id: Shebang
+  specification: |
+    The first line of a script, naming the interpreter that runs it.
+- id: Machine-read directive
+  specification: |
+    A directive to a tool that is syntactically a comment.
+- id: Published API documentation
+  specification: |
+    Documentation of an [[Interface]] that a tool extracts to a published documentation site.
+- id: Mandated license header
+  specification: |
+    A license notice that a license or policy requires at the top of a file.
+- id: Generated-file banner
+  specification: |
+    A notice marking a file as generated by a tool.
 - id: Good Code
   specification: |
     Code that avoids a [[System Failed State]].
@@ -58,28 +248,34 @@ definitions:
     The degree to which the system does what [[Users]] need.
 - id: Inaccurate
   specification: |
-    The state where system behavior, calculations, or outputs diverge from what [[Users]] need, failing to fulfill their intended outcome.
+    The state where the system diverges from what [[Users]] need, failing to fulfill their intended outcome.
 - id: System Decay
   specification: |
     The progressive transition of a software system from a healthy state into one or more [[System Failed State]]s, caused by the accumulation of [[Bad Code]].
 - id: System Failed State
   specification: |
     A non-operational state the software transitions into when bad code accumulates.
+  openEnumerationOf:
+  - Velocity Stagnation
+  - Regression Cascades
+  - Knowledge Dissipation
+  - Deployment Paralysis
+  - Value Failure
 - id: Velocity Stagnation
   specification: |
-    A [[System Failed State]] where the codebase becomes so complex or fragile that the team can no longer deliver value at a sustainable pace.
+    The codebase has become so complex or fragile that the team can no longer deliver value at a sustainable pace.
 - id: Regression Cascades
   specification: |
-    A [[System Failed State]] where fixing one bug consistently introduces new, unrelated bugs elsewhere in the application.
+    Fixing one bug consistently introduces new, unrelated bugs elsewhere in the application.
 - id: Knowledge Dissipation
   specification: |
-    A [[System Failed State]] where the codebase can still run, but no active team member understands how or why the core logic works.
+    The codebase still runs, but no active team member understands how or why its core logic works.
 - id: Deployment Paralysis
   specification: |
-    A [[System Failed State]] where code changes are complete, but the system cannot be safely or reliably shipped to production due to brittle infrastructure, flaky tests, or massive merge conflicts.
+    Code changes are complete, but the system cannot be safely or reliably shipped to production.
 - id: Value Failure
   specification: |
-    A [[System Failed State]] where the system becomes [[Inaccurate]], failing to do what [[Users]] need.
+    The system has become [[Inaccurate]], failing to do what [[Users]] need.
 - id: Architectural Direction
   specification: |
     The fold of every ADR, read from the highest-numbered downward: a later ADR supersedes an earlier one, so where ADRs are ambiguous or conflict, the first read holds. ADRs are immutable; a change is a new ADR, never an edit, because the history explains why decisions were made and why the project is designed the way it is. The Architectural Direction governs where the project is heading; it does not describe its current state.

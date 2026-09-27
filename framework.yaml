@@ -22,7 +22,7 @@ levels:
     parent: Value
 
   - id: Rationale
-    specification: 'How we apply axioms in our domain: principle frameworks, design patterns, data authority models, and boundary isolation. This is the level where motivations, rationales, and explanations for decisions belong.'
+    specification: 'How we apply axioms in our domain. This is the level where motivations, rationales, and explanations for decisions belong.'
     criteria:
       - include: Requires design docs, books, or RFCs to explain.
       - include: Weighs two goods against each other, either of which could be chosen, or explains a mechanism. Every 'X over Y' between two goods is a rationale.
