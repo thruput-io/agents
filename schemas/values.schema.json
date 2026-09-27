@@ -1,37 +1,34 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thruput-io.github.io/agents/schemas/axioms.schema.json",
-  "title": "Axioms",
+  "$id": "https://thruput-io.github.io/agents/schemas/values.schema.json",
+  "title": "Values",
   "type": "object",
   "required": [
-    "axioms"
+    "values"
   ],
   "properties": {
-    "axioms": {
+    "values": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/Axiom"
+        "$ref": "#/$defs/Value"
       }
     }
   },
   "$defs": {
-    "Axiom": {
-      "description": "One axiom.",
+    "Value": {
+      "description": "One value.",
       "allOf": [
         {
-          "$ref": "entry.schema.json#/$defs/Entry"
+          "$ref": "entry.schema.json#/$defs/RootEntry"
         }
       ],
       "properties": {
         "id": {
-          "$ref": "#/$defs/AxiomId"
-        },
-        "parent": {
-          "$ref": "values.schema.json#/$defs/ValueId"
+          "$ref": "#/$defs/ValueId"
         }
       }
     },
-    "AxiomId": {
+    "ValueId": {
       "allOf": [
         {
           "$ref": "id.schema.json#/$defs/Id"

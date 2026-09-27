@@ -1,0 +1,64 @@
+levels:
+  - id: Value
+    specification: Terminal human intent.
+    criteria:
+      - include: Asking 'Why?' exits this system and collapses into ethics, biology, or theology. The fractal ends here.
+      - include: Speaks of people and what they care about.
+      - include: A disposition or attitude we hold.
+      - include: A weighing with nothing above it to decide it. A value is what decides the weighings below.
+      - exclude: Is about software, a system, or a method. Mentioning one in passing does not make it so.
+
+  - id: Axiom
+    specification: A universal meta-truth governing systems and entropy across all domains.
+    criteria:
+      - include: Expresses an irreducible truth, and asking 'Why?' leads straight to a value.
+      - include: 'Held beyond argument: a stone tablet. It cannot be moved down the ladder.'
+      - include: Its body may state the mechanism that makes it true; stating a mechanism is not weighing.
+      - include: Stays true when 'code' is replaced by any other artifact.
+      - include: Carries no marker.
+      - exclude: Names a software concept.
+      - exclude: Follows from another axiom.
+      - exclude: Addresses how people should act.
+    parent: Value
+
+  - id: Rationale
+    specification: 'How we apply axioms in our domain: principle frameworks, design patterns, data authority models, and boundary isolation. This is the level where motivations, rationales, and explanations for decisions belong.'
+    criteria:
+      - include: Requires design docs, books, or RFCs to explain.
+      - include: Weighs two goods against each other, either of which could be chosen, or explains a mechanism. Every 'X over Y' between two goods is a rationale.
+      - include: 'A weighing is measured against the level above: the parent decides which side wins. A weighing the parent cannot decide points at a defect in the parent.'
+      - include: The losing side of its trade-off is a candidate candidate code smell.
+      - exclude: Can be stated in two sentences without loss and weighs nothing.
+      - exclude: Rejects a smell rather than weighing two goods. 'Do X, not Y' where Y is a smell is a principle or a rule.
+      - exclude: Has no level above it to decide the weighing.
+    parent: Axiom
+
+  - id: Principle
+    specification: 'A memorable statement that breaks a rationale down so it is easy to adopt in daily problem-solving. Often behavioral, and not yet specific enough for a rule: there is room for interpretation and many side conditions.'
+    criteria:
+      - include: Can be expressed in one or two sentences that you can act on or adhere to without having to reason about it, typically 'given this, do that' or 'we do it like this'.
+      - include: States a stance, applied by understanding the idea behind it. Its violation shows in code as a smell a rule can name.
+      - include: May enumerate the cases it covers. Enumeration is not reasoning and does not make it a rationale.
+      - exclude: A name alone.
+      - exclude: Weighs one option against another.
+      - exclude: Names a technology.
+    parent: Rationale
+
+  - id: Rule
+    specification: An unambiguous RFC 2119 MUST or MUST NOT boundary that breaks a principle down into an enforceable statement in applied context, specific enough to tell whether a piece of code is a violation without understanding more than a small context. Could probably be expressed as a standard given time.
+    criteria:
+      - include: An explicit imperative directive in natural language meant for coding and pull request reviews, which an engineer or an LLM can evaluate in a ten-line diff without understanding the whole system.
+      - include: An instruction, or names a code smell, whose violation is seen in a small context without understanding more than the statement.
+      - include: Opens with an RFC 2119 marker other than PREFER.
+      - include: A Candidate Rule MUST explicitly name the [[Bad Code]] it forbids.
+      - exclude: Names a technology. A statement that names a technology and still holds an instruction without it is split into a rule and a standard.
+      - exclude: Needs an idea explained to be applied.
+    parent: Principle
+
+  - id: Standard
+    specification: Implementation of a rule in code for one technology. Each standard is specific and context aware, including layering with enforced dependency arrows.
+    criteria:
+      - include: Names a language, framework, library, or tool.
+      - include: Code, an ArchUnit test, an AST parser, or a linter evaluates it and rejects a violation deterministically in milliseconds.
+      - exclude: Can be evaluated without knowing the technology in use.
+    parent: Rule

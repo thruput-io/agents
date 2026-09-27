@@ -10,25 +10,11 @@ permissions:
 
 jobs:
   validate:
-    name: Validate YAML Against Schemas
+    name: Validate Documents Against Schemas
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Validate axioms
-        run: pipx run check-jsonschema --schemafile schemas/axioms.schema.json axioms.yaml
-
-      - name: Validate principles
-        run: pipx run check-jsonschema --schemafile schemas/principles.schema.json principles.yaml
-
-      - name: Validate rules
-        run: pipx run check-jsonschema --schemafile schemas/rules.schema.json rules.yaml
-
-      - name: Validate definitions
-        run: pipx run check-jsonschema --schemafile schemas/definitions.schema.json definitions.yaml
+      - name: Validate documents
+        run: scripts/validate.sh

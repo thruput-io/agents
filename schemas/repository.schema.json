@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput-io.github.io/agents/schemas/repository.schema.json",
+  "title": "Repository",
+  "description": "How every repository is laid out. Each key is a location in the file tree, relative to the repository root, and its value is what lives there.",
+  "type": "object",
+  "required": [
+    "README.md",
+    "docs/plans",
+    "docs/adrs"
+  ],
+  "properties": {
+    "README.md": {
+      "$ref": "#/$defs/Readme"
+    },
+    "docs/plans": {
+      "$ref": "#/$defs/Plans"
+    },
+    "docs/adrs": {
+      "$ref": "#/$defs/Adrs"
+    }
+  },
+  "$defs": {
+    "Readme": {
+      "description": "The usage documentation of the repository.",
+      "type": "object"
+    },
+    "Plans": {
+      "description": "The plans, one directory per problem.",
+      "type": "array"
+    },
+    "Adrs": {
+      "description": "The Architecture Decision Records, which together form the Architectural Direction.",
+      "type": "array",
+      "items": {
+        "$ref": "adr.schema.json"
+      }
+    }
+  }
+}

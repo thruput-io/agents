@@ -1,23 +1,28 @@
 # Thruput Agents
 
-Agentic workflows, engineering rules, and autonomous developer skills for Thruput.
+The talent of our people, demystified and put into writing: the values, reasoning, and rules behind how we build software. It is the foundation of a development rig of tools, runtimes, and agent instructions, onto which synthetic colleagues are onboarded.
 
 ## Overview
 
 This repository defines the foundational quality principles, rules, and autonomous skills for AI agents operating across the Thruput ecosystem.
 
-The governance architecture follows [ADR 0001](docs/adrs/0001-separating-principles-rules-and-standards.md). The YAML documents, their schemas, and how they change are governed by [ADR 0002](docs/adrs/0002-schema-validated-yaml-governance-documents.md). The Axioms tier above Principles is introduced by [ADR 0003](docs/adrs/0003-axioms-above-principles.md).
-
+The governance architecture follows [ADR 0001](docs/adrs/0001-separating-principles-rules-and-standards.md). The YAML documents, their schemas, and how they change are governed by [ADR 0002](docs/adrs/0002-schema-validated-yaml-governance-documents.md).
 ## Documents
 
 | Document | Tier | Schema |
 | :--- | :--- | :--- |
+| [values.yaml](values.yaml) | Terminal human intent: why we care at all. | [schemas/values.schema.json](schemas/values.schema.json) |
 | [axioms.yaml](axioms.yaml) | The ground: statements accepted without argument, from which the principles are reasoned. | [schemas/axioms.schema.json](schemas/axioms.schema.json) |
+| [rationales.yaml](rationales.yaml) | The arguments behind the principles, each reasoned from one axiom. | [schemas/rationales.schema.json](schemas/rationales.schema.json) |
 | [principles.yaml](principles.yaml) | The WHY: quality definitions, mental models, and the trade-off hierarchy for resolving ambiguity. | [schemas/principles.schema.json](schemas/principles.schema.json) |
 | [rules.yaml](rules.yaml) | The WHAT: universal pass/fail constraints, each guarding one principle. | [schemas/rules.schema.json](schemas/rules.schema.json) |
-| [definitions.yaml](definitions.yaml) | The vocabulary the other documents rely on: one term and its specification per entry. | [schemas/definitions.schema.json](schemas/definitions.schema.json) |
+| [standards.yaml](standards.yaml) | The HOW: each standard implements one rule for one technology, named in its context. | [schemas/standards.schema.json](schemas/standards.schema.json) |
+| [definitions.yaml](definitions.yaml) | The glossary: the definitions of terms the other documents rely on. | [schemas/definitions.schema.json](schemas/definitions.schema.json) |
+| [framework.yaml](framework.yaml) | Our taxonomy: each level is a definition with criteria for what belongs to it and, below the root, the level above it. | [schemas/taxonomy.schema.json](schemas/taxonomy.schema.json) |
 
-Shared schema components (`axiom-key`, `principle-key`, `rule-key`, `definition-key`, `text`) live in [schemas/common.schema.json](schemas/common.schema.json). A rule can only guard a principle listed there, and a principle can only interpret an axiom listed there.
+Every id inherits the abstract `Id` in [schemas/id.schema.json](schemas/id.schema.json); each entity schema defines its own concrete id (`AxiomId`, `PrincipleId`, `RuleId`, `DefinitionId`). Whether a `parent` value names an existing entry is not a schema concern. [schemas/taxonomy.schema.json](schemas/taxonomy.schema.json) describes what a taxonomy is, and `framework.yaml` is our instance of one: a list of levels where every level but the root names its parent by id. A level extends the definition from the definitions schema, so a level is a definition and carries an `id` like every definition.
+
+Every schema carries an `$id` under `https://thruput-io.github.io/agents/schemas/`, where the `Publish Schemas` workflow deploys the `schemas/` directory to GitHub Pages on every push to `main`. Local and CI validation load the schemas from the working tree into a registry keyed by `$id`, so no network access is needed and a pull request is validated against its own schemas.
 
 
 ## Reading the rules
@@ -28,22 +33,22 @@ Every rule opens with an RFC 2119 marker. **MUST**, **MUST NOT**, **SHOULD**, **
 
 ## Citing
 
-The key of an entry is its id and its only stable handle. Cite with an absolute URL and the id as fragment:
+The id of an entry is its readable name and its only stable handle. Ids are unique across every document, compared case-insensitively with whitespace normalized. In prose, cite an entry or a glossary term by its id in double brackets; the schema rejects brackets that do not form a reference:
 
 ```
-https://github.com/thruput-io/agents/blob/main/rules.yaml#parse-dont-validate
-https://github.com/thruput-io/agents/blob/main/principles.yaml#shift-test-left
+[[Parse, don't validate]]
+[[Code We Cannot Control]]
 ```
 
 ## Validating locally
 
-The same checks that run in the `PR Check` workflow run locally inside Docker:
+The `PR Check` workflow runs the same script as a local run. It validates every schema against its metaschema and every document against its schema, using the [Sourcemeta JSON Schema CLI](https://github.com/sourcemeta/jsonschema) image pinned by digest:
 
 ```
 scripts/validate.sh
 ```
 
-`DOCKER_HOST` defaults to `tcp://127.0.0.1:2375` and can be overridden in the environment.
+Docker is reached through the environment, so a local run needs `DOCKER_HOST` set when the daemon is not on the default socket.
 
 ## Installation
 

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput-io.github.io/agents/schemas/standards.schema.json",
+  "title": "Standards",
+  "type": "object",
+  "required": [
+    "standards"
+  ],
+  "properties": {
+    "standards": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Standard"
+      }
+    }
+  },
+  "$defs": {
+    "Standard": {
+      "description": "One standard: how a rule is implemented for one technology.",
+      "allOf": [
+        {
+          "$ref": "entry.schema.json#/$defs/Entry"
+        }
+      ],
+      "required": [
+        "context"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/StandardId"
+        },
+        "parent": {
+          "$ref": "rules.schema.json#/$defs/RuleId"
+        },
+        "context": {
+          "$ref": "#/$defs/Context"
+        }
+      }
+    },
+    "StandardId": {
+      "allOf": [
+        {
+          "$ref": "id.schema.json#/$defs/Id"
+        }
+      ]
+    },
+    "Context": {
+      "description": "The single technology a standard applies to, such as a language, a schema dialect, or a tool.",
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}
