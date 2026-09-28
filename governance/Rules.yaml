@@ -368,6 +368,12 @@ rules:
   parent: Nothing Is Complete Without Verification
   body: |
     Treat setup pain as architectural feedback over reaching for mocks.
+- id: No retry on failure
+  marker: MUST NOT
+  group: All Tests
+  parent: Nothing Is Complete Without Verification
+  body: |
+    Configure a test to run again until it passes, by a retry count, a retry annotation, or a flaky marker. A test that passes on its second run proves that the run agreed with us, not that the behaviour holds; fix the nondeterminism or the code.
 - id: One subject under test
   marker: MUST NOT
   group: Unit Tests
@@ -488,3 +494,27 @@ rules:
   parent: Producer moves first
   body: |
     Declare the most generic parameter types and the most specific return type a method or function can honour, so callers may pass more and receive no less than they need.
+- id: No unstated standard
+  marker: MUST NOT
+  group: Agents
+  parent: Adoption is articulation
+  body: |
+    Instruct an [[AI agent]], in a skill, prompt, or configuration, to follow a coding standard that has no entry in these documents; add the entry and cite it as [[Id]] instead. An instruction that carries its own standard is a second definition of it.
+- id: One-command setup
+  marker: MUST
+  group: Reproducibility
+  parent: The environment is code
+  body: |
+    Keep clone, build, and test of the entire stack to one documented command; a change that needs a new setup step adds it to that command, never to a list of manual steps.
+- id: Twice is automated
+  marker: MUST
+  group: Reproducibility
+  parent: The environment is code
+  body: |
+    Script a procedure the second time it is performed. A manual procedure written down to be repeated is the smell.
+- id: Ship with telemetry
+  marker: MUST
+  group: Runtime
+  parent: Own the Runtime
+  body: |
+    Add, in the change that adds a runtime behaviour, the log line, metric, or alert that shows the behaviour working in production. A behaviour without a signal is unobservable.

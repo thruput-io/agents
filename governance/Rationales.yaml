@@ -122,3 +122,41 @@ rationales:
   - marker: SHOULD
     body: |
       Let each tool write its report untouched, and compare the report against the thresholds in a separate step.
+- id: The practitioner decides the outcome
+  parent: Leverage
+  body: |
+    AI is [[Leverage]] applied to a [[Practitioner]]: a lever, a *hävstång*, that multiplies the force on it and adds none. Applied by someone who does not know what good looks like, it produces a mess at a speed no one could reach unaided, and the mess arrives reviewed, formatted, and entirely plausible. Applied by someone working from these documents, it produces the same [[Quality]] faster, and more of it. Lisanne Bainbridge's [Ironies of Automation](https://doi.org/10.1016/0005-1098(83)90046-8) (1983) names the mechanism: automation takes over the routine and leaves the practitioner exactly the judgement it could not encode, so the more capable the tool, the more the outcome rests on the person. Two measurements show it from both sides. [Generative AI at Work](https://www.nber.org/papers/w31161) (Brynjolfsson, Li, Raymond, 2023) found the gains concentrated in novices, because the model disseminated the practice of the most able workers: the tool carried competence that already existed. METR's [early-2025 study](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/) found experienced developers 19% slower with AI tools while believing themselves 20% faster: what the tool multiplied there was the confidence, not the result.
+
+    The distance between what a person and what a model can do narrows every day, so anything justified by "AI cannot do this yet" carries an expiry date and is not written as permanent. What does not narrow is Fred Brooks's [essential complexity](https://worrydream.com/refs/Brooks_1986_-_No_Silver_Bullet.pdf): tools attack the accidental, and knowing which problem is worth solving, what good means here, and whether the result is true stays with the practitioner. Investment therefore goes to the practitioner's competence, and to stating our standard explicitly enough to be applied, over the expectation that a better model compensates for the absence of both.
+  solutions:
+  - marker: SHOULD
+    body: |
+      State a standard in these documents before handing it to a tool to apply, so the tool multiplies a definition and not a habit.
+  - marker: SHOULD
+    body: |
+      Keep the rules, prompts, harnesses, and pipelines that carry our standard under our own control; a vendor's default encodes the vendor's standard, an average of everyone's practice rather than ours. Everything below that layer is consumed by the [[Simplicity ladder]] like any other component.
+  - marker: SHOULD
+    body: |
+      Verify generated output by the same means as any other change; fluency and confidence are properties of its form and say nothing about its [[Correctness]].
+- id: Environment parity
+  parent: Single Source of Truth
+  body: |
+    If it works on your machine but not in production, the environment is the bug. [The Twelve-Factor App, X. Dev/prod parity](https://12factor.net/dev-prod-parity) names three gaps that open between the two, in time, in personnel, and in tools, and every gap is a place where a defect hides until the deploy. Closing them means the environment stops being a state each machine has drifted into and becomes a definition every machine is provisioned from: one description, in code, from which local, staging, and production are all built. GitHub's [Scripts to Rule Them All](https://github.blog/engineering/scripts-to-rule-them-all/) applies the same idea at the entry point: one consistent bootstrap across every project, so a newcomer clones, builds, and tests with a single command instead of a page of steps. A manual step is a second definition of the procedure, kept in the head of whoever last ran it.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Provision every environment, the local one included, from the same infrastructure-as-code definition.
+  - marker: SHOULD
+    body: |
+      Run the production artifact itself locally and in [[Integration test]]s, rather than a lighter stand-in for it.
+- id: Telemetry over guesswork
+  parent: Shift Left
+  body: |
+    A feature that has shipped without a signal is a feature we hope works. The [[Shift Left]] axiom does not stop at release: the earliest point at which a production defect can be observed is by us, from telemetry, and the latest is by the customer, from the symptom. The Google SRE book's [Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/) reduces what to watch to four golden signals, latency, traffic, errors, and saturation, and pages only on symptoms already affecting users, which is possible only if the signals were in place before the change was. Telemetry, logs, and alerts therefore ship with the behaviour they observe, not after its first incident, and a regression is found and resolved before the customer notices a flicker. Adding them afterwards is the same shortcut as adding the test afterwards, and is skipped for the same reasons.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Instrument every service for the four golden signals before its first deploy.
+  - marker: SHOULD
+    body: |
+      Alert on symptoms [[Users]] experience, and keep cause-level signals for diagnosis rather than paging.

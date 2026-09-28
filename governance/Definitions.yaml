@@ -400,3 +400,6 @@ definitions:
 
 
 
+- id: Practitioner
+  specification: |
+    The person who applies a tool, method, or standard to produce or change software, and whose competence the result reflects. Not an [[Operator]], who keeps the system running, and not a [[User]], who consumes it.

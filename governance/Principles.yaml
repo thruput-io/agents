@@ -125,3 +125,15 @@ principles:
   parent: Robustness Principle
   body: |
     The producer moves first; consumers accept what they do not know.
+- id: Adoption is articulation
+  parent: The practitioner decides the outcome
+  body: |
+    Adopting a tool that applies our standard begins by writing the standard down: the rule an [[AI agent]] needs is the rule a new colleague needs, and the reason it was never written is that it lived as habit. An adoption that leaves our craft no more clearly stated than before has adopted nothing.
+- id: The environment is code
+  parent: Environment parity
+  body: |
+    Every environment, the local one included, is provisioned from one definition kept in version control, and no environment is assembled by hand. A newcomer clones, builds, and tests the entire stack with a single command.
+- id: Own the Runtime
+  parent: Telemetry over guesswork
+  body: |
+    We do not hope a feature works. The telemetry, logs, and alerts that show a behaviour working ship in the same change as the behaviour; if we cannot see it, it is not shipped.
