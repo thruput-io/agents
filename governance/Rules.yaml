@@ -10,7 +10,7 @@ rules:
   group: Purpose & Accuracy
   parent: Code Only for User Value
   body: |
-    State the **WHY** of a change as what good it does for the **USERS** of the code.
+    State the **WHY** of a change as what good it does for the **[[Users]]** of the code.
 - id: No code without purpose
   marker: MUST NOT
   group: Purpose & Accuracy
@@ -34,7 +34,7 @@ rules:
   group: Purpose & Accuracy
   parent: Code as a Subset of the WHY
   body: |
-    Solve the **WHY** with collateral effects that users would not find acceptable.
+    Solve the **WHY** with collateral effects that [[Users]] would not find acceptable.
 - id: No speculative portability
   marker: MUST NOT
   group: Purpose & Accuracy
@@ -52,7 +52,7 @@ rules:
   group: Simplicity & Code Reuse
   parent: The Simplicity Ladder
   body: |
-    Use a component the current platform or framework already provides rather than write an equivalent.
+    Use a component the current [[Platform or framework]] already provides rather than write an equivalent.
 - id: Use an external component
   marker: MUST
   group: Simplicity & Code Reuse
@@ -70,7 +70,7 @@ rules:
   group: Simplicity & Code Reuse
   parent: The Simplicity Ladder
   body: |
-    Adopt existing code that requires payments or license models, or an extra platform or framework, that would increase the maintenance burden.
+    Adopt existing code that requires payments or license models, or an extra [[Platform or framework]], that would increase the maintenance burden.
 - id: Maintained
   marker: MUST
   group: Simplicity & Code Reuse
@@ -82,13 +82,13 @@ rules:
   group: Simplicity & Code Reuse
   parent: The Simplicity Ladder
   body: |
-    No code over maybe-necessary code.
+    [[No code]] over maybe-necessary code.
 - id: Industry standards
   marker: MUST
   group: Maintainability & Standards
   parent: Convention Over Novelty
   body: |
-    Follow the established conventions, design patterns, and idioms of the language, framework, and ecosystem in use, so that any developer who knows them can maintain our code.
+    Follow the established conventions, design patterns, and idioms of the language, [[Framework]], and ecosystem in use, so that any developer who knows them can maintain our code.
 - id: Consistent with the codebase
   marker: MUST
   group: Maintainability & Standards
@@ -106,7 +106,7 @@ rules:
   group: At Creation
   parent: Shift Test Left
   body: |
-    Make illegal states unrepresentable in the domain layer. Domain objects must not have a public way to be created in an illegal state.
+    Make [[Illegal states unrepresentable]] in the domain layer. [[Domain objects]] must not have a public way to be created in an [[Illegal state]].
 - id: Validating factory
   marker: MUST
   group: At Creation
@@ -130,7 +130,7 @@ rules:
   group: At Creation
   parent: Shift Test Left
   body: |
-    Parse raw input once at the perimeter into the constrained domain type instead of checking it and passing the primitive on, so downstream code can never receive unvalidated data. See [[Encapsulated type]].
+    Parse raw input once at the [[Perimeter]] into the constrained domain type instead of checking it and passing the primitive on, so downstream code can never receive unvalidated data. See [[Encapsulated type]].
 - id: Domain primitives
   marker: MUST
   group: In Representation
@@ -160,7 +160,7 @@ rules:
   group: In Representation
   parent: Shift Test Left
   body: |
-    Make absence an explicit case the compiler forces every caller to handle, so the missing case is handled exactly where it can occur. Optionality is a compile-time property (`Option`/`Maybe` or compiler-enforced nullable annotation).
+    Make absence an explicit case the compiler forces every caller to handle, so the missing case is handled exactly where it can occur. [[Optionality]] is a compile-time property (`Option`/`Maybe` or compiler-enforced nullable annotation).
 - id: Constrained collections
   marker: SHOULD
   group: In Representation
@@ -178,13 +178,12 @@ rules:
   group: Across State Changes
   parent: Shift Test Left
   body: |
-    Make domain objects immutable: a validly constructed object that cannot change cannot become invalid, and a change is a new instance that passes creation validation again.
+    Make [[Domain objects]] [[Immutable]]: a validly constructed object that cannot change cannot become invalid, and a change is a new instance that passes creation validation again.
 - id: Typestate
   marker: PREFER
   group: Across State Changes
   parent: Shift Test Left
-  body: |
-    Encode the state machine in the type — each transition consumes the old state's type and returns the new one, so an operation invalid in the current state does not typecheck — over runtime state checks.
+  body: "Encode the state machine in the type \u2014 each transition consumes the old state's type and returns the new one, so an operation invalid in the current state does not typecheck \u2014 over runtime state checks.\n"
 - id: Exhaustive matching
   marker: MUST
   group: Across State Changes
@@ -196,13 +195,13 @@ rules:
   group: Across State Changes
   parent: Shift Test Left
   body: |
-    Route every state change through a domain method that re-establishes invariants, and expose no setter or raw collection that could skip them.
+    Route every state change through a domain method that re-establishes invariants, and expose no [[Setter]] or raw collection that could skip them.
 - id: No unwrapping
   marker: MUST NOT
   group: Domain Operations & Interfaces
   parent: Shift Test Left
   body: |
-    Unwrap domain objects into primitives for comparison.
+    Unwrap [[Domain objects]] into primitives for comparison.
 - id: Strong typing
   marker: MUST NOT
   group: Domain Operations & Interfaces
@@ -214,13 +213,13 @@ rules:
   group: Domain Operations & Interfaces
   parent: Shift Test Left
   body: |
-    Model all business rules, lifecycle transitions, and domain entities with dedicated, single-purpose domain types rather than generic data bags or persistence records.
+    Model all business rules, lifecycle transitions, and domain entities with dedicated, single-[[Purpose]] domain types rather than generic data bags or persistence records.
 - id: Domain-only interfaces
   marker: MUST
   group: Domain Operations & Interfaces
   parent: Shift Test Left
   body: |
-    Access domain objects only via public methods that accept and return strictly other domain objects, with the sole exception of perimeter validating factories ([[Validating factory]]) that parse raw input into domain types.
+    Access [[Domain objects]] only via public methods that accept and return strictly other [[Domain objects]], with the sole exception of [[Perimeter]] validating factories ([[Validating factory]]) that parse raw input into domain types.
 - id: Domain operations
   marker: MUST
   group: Domain Operations & Interfaces
@@ -238,7 +237,7 @@ rules:
   group: Architecture & Layering
   parent: Separation of Concerns
   body: |
-    Collapse layers for simplicity.
+    Collapse layers for [[Simplicity]].
 - id: Respect layering
   marker: MUST
   group: Architecture & Layering
@@ -339,14 +338,13 @@ rules:
   marker: MUST
   group: All Tests
   parent: Nothing Is Complete Without Verification
-  body: |
-    Assert the actual returned values — not merely that no error occurred.
+  body: "Assert the actual returned values \u2014 not merely that no error occurred.\n"
 - id: Add tests for new code
   marker: MUST
   group: All Tests
   parent: Nothing Is Complete Without Verification
   body: |
-    Add tests for new code.
+    Add tests for [[New code]].
 - id: Add tests for updated code
   marker: MUST
   group: All Tests
@@ -358,13 +356,12 @@ rules:
   group: All Tests
   parent: Nothing Is Complete Without Verification
   body: |
-    Add a unit test for any exploratory troubleshooting, even when a natural home for it does not exist.
+    Add a [[Unit test]] for any exploratory troubleshooting, even when a natural home for it does not exist.
 - id: Refactor over mocking
   marker: SHOULD
   group: All Tests
   parent: Nothing Is Complete Without Verification
-  body: |
-    Refactor over mocking — if setup is painful, split into smaller domain models or focused interfaces.
+  body: "Refactor over mocking \u2014 if setup is painful, split into smaller domain models or focused interfaces.\n"
 - id: Setup pain as feedback
   marker: SHOULD
   group: All Tests
@@ -376,7 +373,7 @@ rules:
   group: Unit Tests
   parent: Nothing Is Complete Without Verification
   body: |
-    Include more than one subject under test or test the composition of objects within a unit test.
+    Include more than one subject under test or test the composition of objects within a [[Unit test]].
 - id: No test case coupling
   marker: MUST NOT
   group: Unit Tests
@@ -400,7 +397,7 @@ rules:
   group: Quality Tooling & Shift Left
   parent: The Toolchain Is the Guardrail
   body: |
-    Stop and alert if quality-measuring tools are not functioning or covering all code.
+    Stop and alert if [[Quality]]-measuring tools are not functioning or covering all code.
 - id: No global lint changes
   marker: MUST NOT
   group: Quality Tooling & Shift Left
@@ -412,7 +409,7 @@ rules:
   group: Quality Tooling & Shift Left
   parent: The Toolchain Is the Guardrail
   body: |
-    Change global or project-wide quality standards.
+    Change global or project-wide [[Quality]] standards.
 - id: No disabling via pragma
   marker: MUST NOT
   group: Quality Tooling & Shift Left
@@ -460,25 +457,25 @@ rules:
   group: Optionality
   parent: Optionality Drives Complexity
   body: |
-    Use optional variables or parameters unless a framework or third-party library forces them.
+    Use optional variables or parameters unless a [[Framework]] or third-party [[Library]] forces them.
 - id: Prefer APIs without optionality
   marker: MUST
   group: Optionality
   parent: Optionality Drives Complexity
   body: |
-    Use an API that has no optional parameters over on that has when choosing Code We Cannot Control.
+    Use an API that has no optional parameters over on that has when choosing [[Code We Cannot Control]].
 - id: Overload per option combination
   marker: MUST
   group: Optionality
   parent: Optionality Drives Complexity
   body: |
-    Provide an overload or an explicitly named method for each allowed combination of options instead of optional parameters.
+    Provide an overload or an [[Explicitly named method]] for each allowed combination of options instead of optional parameters.
 - id: Forced optionality at perimeter
   marker: MUST
   group: Optionality
   parent: Optionality Drives Complexity
   body: |
-    Handle optionality forced by Code We Cannot Control at the perimeter, in the statement that invokes it or receives its return, so no optional value travels inward.
+    Handle [[Optionality]] forced by [[Code We Cannot Control]] at the [[Perimeter]], in the statement that invokes it or receives its return, so no optional value travels inward.
 - id: Accept unknown properties
   marker: MUST
   group: Robustness

@@ -11,16 +11,16 @@ The governance architecture follows [ADR 0001](docs/adrs/0001-separating-princip
 
 | Document | Tier | Schema |
 | :--- | :--- | :--- |
-| [values.yaml](values.yaml) | Terminal human intent: why we care at all. | [schemas/values.schema.json](schemas/values.schema.json) |
-| [axioms.yaml](axioms.yaml) | The ground: statements accepted without argument, from which the principles are reasoned. | [schemas/axioms.schema.json](schemas/axioms.schema.json) |
-| [rationales.yaml](rationales.yaml) | The arguments behind the principles, each reasoned from one axiom. | [schemas/rationales.schema.json](schemas/rationales.schema.json) |
-| [principles.yaml](principles.yaml) | The WHY: quality definitions, mental models, and the trade-off hierarchy for resolving ambiguity. | [schemas/principles.schema.json](schemas/principles.schema.json) |
-| [rules.yaml](rules.yaml) | The WHAT: universal pass/fail constraints, each guarding one principle. | [schemas/rules.schema.json](schemas/rules.schema.json) |
-| [standards.yaml](standards.yaml) | The HOW: each standard implements one rule for one technology, named in its context. | [schemas/standards.schema.json](schemas/standards.schema.json) |
-| [definitions.yaml](definitions.yaml) | The glossary: the definitions of terms the other documents rely on. | [schemas/definitions.schema.json](schemas/definitions.schema.json) |
-| [framework.yaml](framework.yaml) | Our taxonomy: each level is a definition with criteria for what belongs to it and, below the root, the level above it. | [schemas/taxonomy.schema.json](schemas/taxonomy.schema.json) |
+| [Values.yaml](governance/Values.yaml) | Terminal human intent: why we care at all. | [schemas/values.schema.json](schemas/values.schema.json) |
+| [Axioms.yaml](governance/Axioms.yaml) | The ground: statements accepted without argument, from which the principles are reasoned. | [schemas/axioms.schema.json](schemas/axioms.schema.json) |
+| [Rationales.yaml](governance/Rationales.yaml) | The arguments behind the principles, each reasoned from one axiom. | [schemas/rationales.schema.json](schemas/rationales.schema.json) |
+| [Principles.yaml](governance/Principles.yaml) | The WHY: quality definitions, mental models, and the trade-off hierarchy for resolving ambiguity. | [schemas/principles.schema.json](schemas/principles.schema.json) |
+| [Rules.yaml](governance/Rules.yaml) | The WHAT: universal pass/fail constraints, each guarding one principle. | [schemas/rules.schema.json](schemas/rules.schema.json) |
+| [Standards.yaml](governance/Standards.yaml) | The HOW: each standard implements one rule for one technology, named in its context. | [schemas/standards.schema.json](schemas/standards.schema.json) |
+| [Definitions.yaml](governance/Definitions.yaml) | The glossary: the definitions of terms the other documents rely on. | [schemas/definitions.schema.json](schemas/definitions.schema.json) |
+| [ImperataDerivata.yaml](governance/ImperataDerivata.yaml) | Our taxonomy: each level is a definition with criteria for what belongs to it and, below the root, the level above it. | [schemas/taxonomy.schema.json](schemas/taxonomy.schema.json) |
 
-Every id inherits the abstract `Id` in [schemas/id.schema.json](schemas/id.schema.json); each entity schema defines its own concrete id (`AxiomId`, `PrincipleId`, `RuleId`, `DefinitionId`). Whether a `parent` value names an existing entry is not a schema concern. [schemas/taxonomy.schema.json](schemas/taxonomy.schema.json) describes what a taxonomy is, and `framework.yaml` is our instance of one: a list of levels where every level but the root names its parent by id. A level extends the definition from the definitions schema, so a level is a definition and carries an `id` like every definition.
+Every id inherits the abstract `Id` in [schemas/id.schema.json](schemas/id.schema.json); each entity schema defines its own concrete id (`AxiomId`, `PrincipleId`, `RuleId`, `DefinitionId`). Whether a `parent` value names an existing entry is not a schema concern. [schemas/taxonomy.schema.json](schemas/taxonomy.schema.json) describes what a taxonomy is, and `governance/ImperataDerivata.yaml` is our instance of one: a list of levels where every level but the root names its parent by id. A level extends the definition from the definitions schema, so a level is a definition and carries an `id` like every definition.
 
 Every schema carries an `$id` under `https://thruput-io.github.io/agents/schemas/`, where the `Publish Schemas` workflow deploys the `schemas/` directory to GitHub Pages on every push to `main`. Local and CI validation load the schemas from the working tree into a registry keyed by `$id`, so no network access is needed and a pull request is validated against its own schemas.
 

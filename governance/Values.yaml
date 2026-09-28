@@ -1,0 +1,12 @@
+values:
+- id: Speed Through Discipline
+  body: "We don't \"move fast and break things\"\u2014we move fast because we build things right. We recognize that skipping tests, security, or rigor in [[Automation]] and reproducibility isn't a shortcut; it's technical debt. By maintaining a disciplined foundation, we ensure optimal conditions and the highest possible true speed.\n\nStrictness and discipline are the way to efficiency and speed. Strictness and discipline are the same as performance, and [[Outcome Over Output]] defines performance.\n"
+- id: Excellence Through Transparency
+  body: |
+    We hire for talent and grow by collaboration. By staying humble, surfacing blockers early, and sharing what we don't know, our product becomes the sum of our competence. Transparency is our shortcut to deliver excellence.
+
+    Without this we are not truly a team, and the software we deliver does not have the leverage of our combined competence behind it. Sharing what we don't know is positive: it shows where our code or our [[Framework]] needs mending. We don't brush bugs under the carpet. Bugs are valuable gems; they point out defects in our [[Quality]] system and give us the chance to improve.
+- id: Outcome Over Output
+  body: "We value customer collaboration over following a rigid plan. Our job isn't to check off a requirements list; it's to solve a problem. We challenge assumptions and connect the dots across architecture and culture to uncover what's truly needed. We don't take the \"easy\" path\u2014we take the path that delivers the most meaningful impact.\n"
+- id: Joy Through Craft
+  body: "We founded this company on a simple realization: working by these values is, quite simply, the most fun. We believe that doing things the right way\u2014with discipline, transparency, and [[Purpose]]\u2014is the most rewarding way to spend our time. For us, \"fun\" isn't a distraction from the work; it is the byproduct of mastering our craft and building something we're proud of. We didn't just build a company to solve a problem; we built it to enjoy the journey together.\n\nRepetition leads to boredom; any form of repetition is, for us, a challenge to automate. Adopting bleeding-edge technology correctly gives us technical supremacy, and we use that supremacy to conquer the next level of [[Automation]]. Technology advances relentlessly, and we are fast to respond and embrace change. Staying current is constant elevation. Hunting boredom with bleeding-edge technology is our craft and our joy.\n"

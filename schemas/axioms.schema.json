@@ -2,6 +2,18 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput-io.github.io/agents/schemas/axioms.schema.json",
   "title": "Axioms",
+  "description": "The axioms: entries whose parent is a value",
+  "examples": [
+    {
+      "axioms": [
+        {
+          "id": "Simplicity",
+          "parent": "Outcome Over Output",
+          "body": "Simple solutions are better than complex.\n"
+        }
+      ]
+    }
+  ],
   "type": "object",
   "required": [
     "axioms"
@@ -16,12 +28,8 @@
   },
   "$defs": {
     "Axiom": {
-      "description": "One axiom.",
-      "allOf": [
-        {
-          "$ref": "entry.schema.json#/$defs/Entry"
-        }
-      ],
+      "description": "One axiom",
+      "$ref": "entry.schema.json#/$defs/Entry",
       "properties": {
         "id": {
           "$ref": "#/$defs/AxiomId"
@@ -32,11 +40,7 @@
       }
     },
     "AxiomId": {
-      "allOf": [
-        {
-          "$ref": "id.schema.json#/$defs/Id"
-        }
-      ]
+      "$ref": "id.schema.json"
     }
   }
 }

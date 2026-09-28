@@ -2,6 +2,18 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput-io.github.io/agents/schemas/principles.schema.json",
   "title": "Principles",
+  "description": "The principles: entries whose parent is a rationale",
+  "examples": [
+    {
+      "principles": [
+        {
+          "id": "Producer moves first",
+          "parent": "Robustness Principle",
+          "body": "The producer moves first; consumers accept what they do not know.\n"
+        }
+      ]
+    }
+  ],
   "type": "object",
   "required": [
     "principles"
@@ -16,12 +28,8 @@
   },
   "$defs": {
     "Principle": {
-      "description": "One principle.",
-      "allOf": [
-        {
-          "$ref": "entry.schema.json#/$defs/Entry"
-        }
-      ],
+      "description": "One principle",
+      "$ref": "entry.schema.json#/$defs/Entry",
       "properties": {
         "id": {
           "$ref": "#/$defs/PrincipleId"
@@ -32,11 +40,7 @@
       }
     },
     "PrincipleId": {
-      "allOf": [
-        {
-          "$ref": "id.schema.json#/$defs/Id"
-        }
-      ]
+      "$ref": "id.schema.json"
     }
   }
 }

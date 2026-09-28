@@ -1,9 +1,14 @@
-name: PR Check
+name: CI Check
 
 on:
+  push:
+    branches:
+      - main
+      - yaml-governance-documents
   pull_request:
     branches:
       - main
+      - yaml-governance-documents
 
 permissions:
   contents: read
@@ -18,3 +23,4 @@ jobs:
 
       - name: Validate documents
         run: scripts/validate.sh
+

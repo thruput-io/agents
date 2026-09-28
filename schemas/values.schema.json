@@ -2,6 +2,17 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput-io.github.io/agents/schemas/values.schema.json",
   "title": "Values",
+  "description": "The values: the root entries of the taxonomy, which have no parent",
+  "examples": [
+    {
+      "values": [
+        {
+          "id": "Outcome Over Output",
+          "body": "We value customer collaboration over following a rigid plan.\n"
+        }
+      ]
+    }
+  ],
   "type": "object",
   "required": [
     "values"
@@ -16,12 +27,8 @@
   },
   "$defs": {
     "Value": {
-      "description": "One value.",
-      "allOf": [
-        {
-          "$ref": "entry.schema.json#/$defs/RootEntry"
-        }
-      ],
+      "description": "One value",
+      "$ref": "entry.schema.json#/$defs/RootEntry",
       "properties": {
         "id": {
           "$ref": "#/$defs/ValueId"
@@ -29,11 +36,7 @@
       }
     },
     "ValueId": {
-      "allOf": [
-        {
-          "$ref": "id.schema.json#/$defs/Id"
-        }
-      ]
+      "$ref": "id.schema.json"
     }
   }
 }

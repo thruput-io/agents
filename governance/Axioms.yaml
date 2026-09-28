@@ -18,4 +18,4 @@ axioms:
 - id: Users Prove Correctness
   parent: Outcome Over Output
   body: |
-    Code proves execution; users prove correctness. Clean, well-architected code that fails to solve a real-world problem is not almost good. It is noise, and noise is bad. Truth is measured by user outcome and real-world utility, not by internal assumptions.
+    Code proves execution; [[Users]] prove [[Correctness]]. Clean, well-architected code that fails to solve a real-world problem is not almost good. It is noise, and noise is bad. Truth is measured by [[User]] outcome and real-world utility, not by internal assumptions.

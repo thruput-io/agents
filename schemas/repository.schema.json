@@ -2,35 +2,42 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput-io.github.io/agents/schemas/repository.schema.json",
   "title": "Repository",
-  "description": "How every repository is laid out. Each key is a location in the file tree, relative to the repository root, and its value is what lives there.",
+  "description": "How every repository is laid out. Each property is a location in the file tree, named in its description relative to the repository root, and its value is what lives there",
+  "examples": [
+    {
+      "readme": {},
+      "plans": [],
+      "adrs": []
+    }
+  ],
   "type": "object",
   "required": [
-    "README.md",
-    "docs/plans",
-    "docs/adrs"
+    "readme",
+    "plans",
+    "adrs"
   ],
   "properties": {
-    "README.md": {
+    "readme": {
       "$ref": "#/$defs/Readme"
     },
-    "docs/plans": {
+    "plans": {
       "$ref": "#/$defs/Plans"
     },
-    "docs/adrs": {
+    "adrs": {
       "$ref": "#/$defs/Adrs"
     }
   },
   "$defs": {
     "Readme": {
-      "description": "The usage documentation of the repository.",
+      "description": "The usage documentation of the repository, at README.md",
       "type": "object"
     },
     "Plans": {
-      "description": "The plans, one directory per problem.",
+      "description": "The plans, one directory per problem, under docs/plans",
       "type": "array"
     },
     "Adrs": {
-      "description": "The Architecture Decision Records, which together form the Architectural Direction.",
+      "description": "The Architecture Decision Records, which together form the Architectural Direction, under docs/adrs",
       "type": "array",
       "items": {
         "$ref": "adr.schema.json"

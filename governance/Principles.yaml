@@ -2,49 +2,49 @@ principles:
 - id: Quality Uncompromised
   parent: Not Yet Decided Axiom
   body: |
-    Software quality is always the highest priority. There is no situation that justifies lowering quality in favor of other goals, because all other objectives become harder to reach once quality drops. Faster development, higher performance, and new features are frequently offered as justifications; none of them qualify.
+    [[Software Quality]] is always the highest priority. There is no situation that justifies lowering [[Quality]] in favor of other goals, because all other objectives become harder to reach once [[Quality]] drops. Faster development, higher performance, and new features are frequently offered as justifications; none of them qualify.
 
-    ### How Quality Is Measured
+    ### How [[Quality]] Is Measured
 
-    These axes define software quality. They characterize problem areas and frame discussions during design and review:
+    These axes define [[Software Quality]]. They characterize problem areas and frame discussions during design and review:
 
-    - **Correctness:** The software accurately delivers what users need.
-    - **Maintainability:** Changing a behavior requires understanding and touching only the component that owns it.
-    - **Readability:** A reader unfamiliar with the code understands what it does and why without asking the author.
-    - **Testability:** Behavior is exercised in isolation without standing up networks, clocks, or global state.
-    - **Simplicity:** The design carries no structure that a present requirement does not demand.
-    - **True Test Coverage:** Tests fail when behavior breaks, rather than merely executing code paths.
-    - **Ease of Doing the Right Thing:** The correct approach is the path of least resistance for the next contributor.
-    - **Guardrails Against Doing the Wrong Thing:** Types, tests, and tooling cause incorrect approaches to fail early at compile time rather than relying on human vigilance.
-    - **Automation:** The path between a change and its verified deployment runs without manual intervention.
-    - **Currency of Tools and Libraries:** Dependencies are current and easily kept that way.
+    - **[[Correctness]]:** The software accurately delivers what [[Users]] need.
+    - **[[Maintainability]]:** Changing a behavior requires understanding and touching only the component that owns it.
+    - **[[Readability]]:** A reader unfamiliar with the code understands what it does and why without asking the author.
+    - **[[Testability]]:** Behavior is exercised in isolation without standing up networks, clocks, or global state.
+    - **[[Simplicity]]:** The design carries no structure that a present requirement does not demand.
+    - **[[True Test Coverage]]:** Tests fail when behavior breaks, rather than merely executing code paths.
+    - **[[Ease of Doing the Right Thing]]:** The correct approach is the [[Path of least resistance]] for the next contributor.
+    - **[[Guardrails Against Doing the Wrong Thing]]:** Types, tests, and tooling cause incorrect approaches to fail early at compile time rather than relying on human vigilance.
+    - **[[Automation]]:** The path between a change and its verified deployment runs without manual intervention.
+    - **[[Currency of Tools and Libraries]]:** Dependencies are current and easily kept that way.
 
     ### What Wins When Values Collide
 
     When competing values clash, resolve them according to this hierarchy:
 
-    - **Correctness:** Correct *over* Extensive
-    - **Maintainability:** Maintainable *over* Performant
-    - **Readability:** Readable *over* Commented
-    - **Testability:** Testable *over* Clickable
-    - **Simplicity:** Simple *over* Popular
-    - **True Test Coverage:** Competence *over* Measurable
-    - **Ease of Doing the Right Thing:** Open/Closed *over* Optimal
-    - **Guardrails Against Doing the Wrong Thing:** Build Checks *over* Rule Documents
-    - **Automation:** Pipelines *over* Platform Documents
-    - **Currency of Tools and Libraries:** Small & Manageable *over* Feature-Rich
+    - **[[Correctness]]:** Correct *over* Extensive
+    - **[[Maintainability]]:** Maintainable *over* Performant
+    - **[[Readability]]:** Readable *over* Commented
+    - **[[Testability]]:** Testable *over* Clickable
+    - **[[Simplicity]]:** Simple *over* Popular
+    - **[[True Test Coverage]]:** Competence *over* Measurable
+    - **[[Ease of Doing the Right Thing]]:** Open/Closed *over* Optimal
+    - **[[Guardrails Against Doing the Wrong Thing]]:** Build Checks *over* Rule Documents
+    - **[[Automation]]:** Pipelines *over* Platform Documents
+    - **[[Currency of Tools and Libraries]]:** Small & Manageable *over* Feature-Rich
 
     Finding the right-hand value in code is a symptom that the left-hand value needs attention. The solution belongs on the left side of the pair, not in more of the right.
 
-    ### How Quality Is NOT Measured
+    ### How [[Quality]] Is NOT Measured
 
-    Quality is not measured by convenience, cleverness, compactness, raw speed, or feature count. Performance and feature breadth are specific requirements like any other; they do not earn credit against maintainability, correctness, or simplicity.
+    [[Quality]] is not measured by convenience, cleverness, compactness, raw speed, or feature count. Performance and feature breadth are specific requirements like any other; they do not earn credit against [[Maintainability]], [[Correctness]], or [[Simplicity]].
 - id: Code Only for User Value
-  parent: "Every line serves the users' WHY"
+  parent: Every line serves the users' WHY
   body: |
-    Without a clear notion of **WHY** a piece of code is written, it should not be written at all. We never write code without a purpose, and that purpose is measured exclusively in the good it delivers to the users of the code.
+    Without a clear notion of **WHY** a piece of code is written, it should not be written at all. We never write code without a [[Purpose]], and that [[Purpose]] is measured exclusively in the good it delivers to the [[Users]] of the code.
 - id: Code as a Subset of the WHY
-  parent: "Every line serves the users' WHY"
+  parent: Every line serves the users' WHY
   body: |
     The code is a **subset** of the stated **WHY**: every part of it solves some part of the WHY, and no part reaches outside it.
 
@@ -53,7 +53,7 @@ principles:
 - id: The Simplicity Ladder
   parent: Descend only when the rung above cannot serve
   body: |
-    The simplest code of all is [[No code]]. Next in simplicity is code we do not write ourselves.
+    The simplest code of all is [[No code]]. Next in [[Simplicity]] is code we do not write ourselves.
 
     When solving a problem, climb the [[Simplicity ladder]].
 - id: Convention Over Novelty
@@ -73,15 +73,15 @@ principles:
   body: |
     Comments in source code are often symptoms of missing abstraction, weak naming, or deferred work. Information conveyed in comments belongs in durable, verifiable mechanisms:
 
-    - **Clarification:** Introduce intent-revealing variable names, extract focused functions, or write negative tests demonstrating why a naive approach failed.
-    - **Procrastination (TODOs):** Add a failing test pinning the weakness, split work into smaller production-ready changes, or write an explicit plan document.
-    - **Architectural Decisions:** Document in an Architectural Decision Record (ADR) under `docs/adrs/`.
-    - **Usage Guidance:** Document in `README.md` or user-facing documentation.
-    - **Apologies or Confessions:** Fix the underlying design flaw or pin the limitation with a failing test.
+    - **[[Clarification]]:** Introduce intent-revealing variable names, extract focused functions, or write negative tests demonstrating why a naive approach failed.
+    - **[[Procrastination]] ([[TODOs]]):** Add a [[Failing test]] pinning the weakness, split work into smaller production-ready changes, or write an explicit plan document.
+    - **Architectural Decisions:** Document in an [[Architectural decision]] Record ([[ADR]]) under `docs/[[ADRs]]/`.
+    - **[[Usage guidance]]:** Document in `README.md` or [[User]]-facing documentation.
+    - **Apologies or Confessions:** Fix the underlying design flaw or pin the limitation with a [[Failing test]].
 
     The only justified comment is a [[Machine-read comment]].
 - id: Loud Failures Over Silent Defaults
-  parent: "Crash, don't guess"
+  parent: Crash, don't guess
   body: |
     Systems must fail loudly and immediately upon encountering an unexpected state. None of the following defensive habits constitutes valid practice:
 
@@ -90,19 +90,19 @@ principles:
     - Substituting a fallback default value when required input is missing or malformed.
     - Branching speculatively on unsupported platforms or environments.
 
-    Each of these converts a loud, diagnosable failure into a silent wrong answer. Safeguards must be added only when concrete evidence demonstrates the need, and failures must abort execution cleanly.
+    Each of these converts a loud, diagnosable failure into a silent wrong answer. Safeguards must be added only when concrete [[Evidence]] demonstrates the need, and failures must abort execution cleanly.
 - id: Fold at Perimeter
   parent: Encapsulation
   body: |
-    Our code has internal standards: domain types, no optionality, loud failures. Code We Cannot Control has its own shapes, and we cannot change them. Wherever the two meet, our integrity has to expand into or collapse from the non-standard shape.
+    Our code has internal standards: domain types, no [[Optionality]], loud failures. [[Code We Cannot Control]] has its own shapes, and we cannot change them. Wherever the two meet, our integrity has to expand into or collapse from the non-standard shape.
 
-    That fold belongs as close to the perimeter as possible. The moment we hold a value from Code We Cannot Control, it becomes ours; the moment we hand one over, it stops being ours. Everything inward of that point sees only our standards, and the foreign shape never travels.
+    That fold belongs as close to the [[Perimeter]] as possible. The moment we hold a value from [[Code We Cannot Control]], it becomes ours; the moment we hand one over, it stops being ours. Everything inward of that point sees only our standards, and the foreign shape never travels.
 - id: Optionality Drives Complexity
   parent: Name the case, not the knob
   body: |
     An optional argument, parameter, or variable makes code harder to read, because every reader carries the question of whether it is present. It also makes code harder to test, because the number of cases grows exponentially with each option.
 
-    Each allowed combination of options is a distinct operation and deserves its own name: an overload or an explicitly named method. Where a framework or third-party library forces optionality on us, the forced case is folded at the perimeter and never reaches the interior.
+    Each allowed combination of options is a distinct operation and deserves its own name: an overload or an [[Explicitly named method]]. Where a [[Framework]] or third-party [[Library]] forces [[Optionality]] on us, the forced case is folded at the [[Perimeter]] and never reaches the interior.
 - id: Nothing Is Complete Without Verification
   parent: Tests prove behaviour, not execution
   body: |
@@ -118,7 +118,7 @@ principles:
 - id: The Toolchain Is the Guardrail
   parent: Make the wrong thing fail
   body: |
-    The quality bar is defined once, in the build: compiler settings, linters, coverage thresholds, and generated-code checks. A rule document tells a reader what is expected; the toolchain makes the wrong thing fail.
+    The [[Quality]] bar is defined once, in the build: compiler settings, linters, coverage thresholds, and generated-code checks. A rule document tells a reader what is expected; the toolchain makes the wrong thing fail.
 
     Because the toolchain is that single definition, it is never weakened to let a change through, and a toolchain that stops measuring is a stop-the-line event, not a warning to note. Fixing the code is always the answer; relaxing the check never is.
 - id: Producer moves first

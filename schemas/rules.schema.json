@@ -2,6 +2,20 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput-io.github.io/agents/schemas/rules.schema.json",
   "title": "Rules",
+  "description": "The rules: entries whose parent is a principle, each opened by a marker and placed in a group",
+  "examples": [
+    {
+      "rules": [
+        {
+          "id": "Stated purpose",
+          "marker": "MUST",
+          "group": "Purpose & Accuracy",
+          "parent": "Code Only for User Value",
+          "body": "State the **WHY** of a change as what good it does for the **[[Users]]** of the code.\n"
+        }
+      ]
+    }
+  ],
   "type": "object",
   "required": [
     "rules"
@@ -16,12 +30,8 @@
   },
   "$defs": {
     "Rule": {
-      "description": "One rule.",
-      "allOf": [
-        {
-          "$ref": "entry.schema.json#/$defs/Entry"
-        }
-      ],
+      "description": "One rule",
+      "$ref": "entry.schema.json#/$defs/Entry",
       "required": [
         "marker",
         "group"
@@ -50,11 +60,7 @@
       }
     },
     "RuleId": {
-      "allOf": [
-        {
-          "$ref": "id.schema.json#/$defs/Id"
-        }
-      ]
+      "$ref": "id.schema.json"
     }
   }
 }

@@ -111,7 +111,7 @@ Alias for [[Purpose]].
 #### Users
 Whoever consumes the software or system to fulfill a need: human end users, operators, external systems, or AI agents. Developers who write, call, or maintain the code are not users.
 
-#### Good Code
+#### Great Code
 Code that avoids a [[System Failed State]].
 
 #### Bad Code
@@ -150,7 +150,7 @@ A [[System Failed State]] where the system becomes [[Inaccurate]], failing to do
 - A principle's parent is always a rationale, never an axiom.
 - Every axiom's parent is a value; the values are complete, so there is no placeholder value. Single Source of Truth and Shift Left under Speed Through Discipline; Simplicity and Users Prove Correctness under Outcome Over Output; Great software is easy to maintain and extend under Joy Through Craft.
 - Not Yet Decided Axiom and Not Yet Decided Principle are removed. The rule Filling gaps is retired: it describes how to read the taxonomy and cannot be checked in a diff.
-- The glossary lives in `definitions.yaml`, apart from the taxonomy. Great Code is an alias for Good Code; ADRs is an alias for Architectural Direction.
+- The glossary lives in `definitions.yaml`, apart from the taxonomy. Great Code is an alias for Great Code; ADRs is an alias for Architectural Direction.
 
 ## References checked by the schemas
 

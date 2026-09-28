@@ -2,6 +2,19 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput-io.github.io/agents/schemas/standards.schema.json",
   "title": "Standards",
+  "description": "The standards: entries whose parent is a rule, each implementing it for one technology",
+  "examples": [
+    {
+      "standards": [
+        {
+          "id": "additionalProperties never false",
+          "context": "JSON Schema",
+          "parent": "Accept unknown properties",
+          "body": "`additionalProperties` is never `false`.\n"
+        }
+      ]
+    }
+  ],
   "type": "object",
   "required": [
     "standards"
@@ -16,12 +29,8 @@
   },
   "$defs": {
     "Standard": {
-      "description": "One standard: how a rule is implemented for one technology.",
-      "allOf": [
-        {
-          "$ref": "entry.schema.json#/$defs/Entry"
-        }
-      ],
+      "description": "One standard: how a rule is implemented for one technology",
+      "$ref": "entry.schema.json#/$defs/Entry",
       "required": [
         "context"
       ],
@@ -38,14 +47,10 @@
       }
     },
     "StandardId": {
-      "allOf": [
-        {
-          "$ref": "id.schema.json#/$defs/Id"
-        }
-      ]
+      "$ref": "id.schema.json"
     },
     "Context": {
-      "description": "The single technology a standard applies to, such as a language, a schema dialect, or a tool.",
+      "description": "The single technology a standard applies to, such as a language, a schema dialect, or a tool",
       "type": "string",
       "minLength": 1
     }

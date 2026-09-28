@@ -1,10 +1,7 @@
 rationales:
 - id: Robustness Principle
   parent: Great software is easy to maintain and extend
-  body: |
-    Be conservative in what you send and liberal in what you accept ([RFC 1122 § 1.2.2](https://datatracker.ietf.org/doc/html/rfc1122#section-1.2.2), Postel's law). A producer emits exactly the shape it defines; a consumer takes what it needs from what it receives and is not disturbed by what it does not know.
-
-    This includes Martin Fowler's [Tolerant Reader](https://martinfowler.com/bliki/TolerantReader.html): with one producer and many consumers, the producer is the single source of the shape and moves first, its consumers catch up at their own pace, and nothing breaks in between. Gating the producer on the slowest consumer is the unmaintainable order.
+  body: "Be conservative in what you send and liberal in what you accept ([RFC 1122 \xA7 1.2.2](https://datatracker.ietf.org/doc/html/rfc1122#section-1.2.2), Postel's law). A producer emits exactly the shape it defines; a consumer takes what it needs from what it receives and is not disturbed by what it does not know.\n\nThis includes Martin Fowler's [Tolerant Reader](https://martinfowler.com/bliki/TolerantReader.html): with one producer and many consumers, the producer is the single source of the shape and moves first, its consumers catch up at their own pace, and nothing breaks in between. Gating the producer on the slowest consumer is the unmaintainable order.\n"
   solutions:
   - marker: SHOULD
     body: |
@@ -15,15 +12,15 @@ rationales:
 - id: Every line serves the users' WHY
   parent: Users Prove Correctness
   body: |
-    Code outside the stated purpose is not free. Martin Fowler's [Yagni](https://martinfowler.com/bliki/Yagni.html) names four costs: building it, delaying real features, carrying its complexity, and repairing it when the guess proves wrong. Ron Jeffries: "the best way to have fewer bugs is to implement less code." Keeping every part inside the [[WHY]] keeps the codebase small enough to understand and change quickly, and every test and review aimed at what [[Users]] need.
+    Code outside the stated [[Purpose]] is not free. Martin Fowler's [Yagni](https://martinfowler.com/bliki/Yagni.html) names four costs: building it, delaying real features, carrying its complexity, and repairing it when the guess proves wrong. Ron Jeffries: "the best way to have fewer bugs is to implement less code." Keeping every part inside the [[WHY]] keeps the codebase small enough to understand and change quickly, and every test and review aimed at what [[Users]] need.
   solutions:
   - marker: SHOULD
     body: |
-      State the user need before the change is reviewed, so every part of the change can be traced to it.
+      State the [[User]] need before the change is reviewed, so every part of the change can be traced to it.
 - id: Descend only when the rung above cannot serve
   parent: Simplicity
   body: |
-    Every rung down a ladder adds ownership cost and failure modes. Dan McKinley's [Choose Boring Technology](https://mcfunley.com/choose-boring-technology): each new component spends a scarce innovation token and brings failures nobody knows yet. On the [[Shift Left rung]]s, Yaron Minsky's "make illegal states unrepresentable" and Alexis King's [Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) remove whole classes of bugs before a test exists. Higher rungs give faster, more precise feedback and leave less to maintain.
+    Every rung down a ladder adds ownership cost and failure modes. Dan McKinley's [Choose Boring Technology](https://mcfunley.com/choose-boring-technology): each new component spends a scarce innovation token and brings failures nobody knows yet. On the [[Shift Left rung]]s, Yaron Minsky's "make [[Illegal states unrepresentable]]" and Alexis King's [Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) remove whole classes of bugs before a test exists. Higher rungs give faster, more precise feedback and leave less to maintain.
   solutions:
   - marker: SHOULD
     body: |
@@ -42,7 +39,7 @@ rationales:
 - id: Intent lives where it is checked
   parent: Single Source of Truth
   body: |
-    A comment is prose no tool checks, and it drifts from the code it describes. Knowledge placed where drift is caught stays true: a name appears at every call site, a failing test turns unfinished work into a red build, an Architecture Decision Record keeps the why of a design with its context. Michael Nygard's [Documenting Architecture Decisions](https://www.cognitect.com/blog/2011/11/15/documenting-architecture-decisions) shows the cost of losing that why: teams blindly accept a decision or blindly reverse it.
+    A comment is prose no tool checks, and it drifts from the code it describes. Knowledge placed where drift is caught stays true: a name appears at every call site, a [[Failing test]] turns unfinished work into a red build, an Architecture Decision Record keeps the why of a design with its context. Michael Nygard's [Documenting Architecture Decisions](https://www.cognitect.com/blog/2011/11/15/documenting-architecture-decisions) shows the cost of losing that why: teams blindly accept a decision or blindly reverse it.
   solutions:
   - marker: SHOULD
     body: |
@@ -72,7 +69,7 @@ rationales:
 - id: Translate at the door
   parent: Shift Left
   body: |
-    [[Code We Cannot Control]] speaks its own dialect. Alistair Cockburn's [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/) and Eric Evans's Anti-Corruption Layer both put translation at a port, so foreign models never leak inward. Parsed once at the [[Perimeter]] into types that cannot hold illegal states, a value is never checked again. Tony Hoare's [billion-dollar mistake](https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/) shows the cost of uncertainty travelling through every reference. One adapter per foreign shape keeps upgrades local.
+    [[Code We Cannot Control]] speaks its own dialect. Alistair Cockburn's [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/) and Eric Evans's Anti-Corruption Layer both put translation at a port, so foreign models never leak inward. Parsed once at the [[Perimeter]] into types that cannot hold [[Illegal states]], a value is never checked again. Tony Hoare's [billion-dollar mistake](https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/) shows the cost of uncertainty travelling through every reference. One adapter per foreign shape keeps upgrades local.
   solutions:
   - marker: SHOULD
     body: |
@@ -83,15 +80,15 @@ rationales:
 - id: Encapsulation
   parent: Shift Left
   body: |
-    A type that encapsulates its values and limits the paths of creation to one that validates everything it can makes illegal states unrepresentable: holding a value of the type is proof it was checked. Yaron Minsky's [Effective ML Revisited](https://blog.janestreet.com/effective-ml-revisited/) names the idiom, make illegal states unrepresentable, and Scott Wlaschin's [Designing with types](https://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/) works it through. Any weaker typing, one that does not fully encapsulate or leaves a second path of creation open, hands the validation back to every caller.
+    A type that encapsulates its values and limits the paths of creation to one that validates everything it can makes [[Illegal states unrepresentable]]: holding a value of the type is proof it was checked. Yaron Minsky's [Effective ML Revisited](https://blog.janestreet.com/effective-ml-revisited/) names the idiom, make [[Illegal states unrepresentable]], and Scott Wlaschin's [Designing with types](https://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/) works it through. Any weaker typing, one that does not fully encapsulate or leaves a second path of creation open, hands the validation back to every caller.
 
-    When an API passes `int x, int y` as coordinates, fold them into a `CarPosition`, not a `Coordinate`. A `CarPosition` is never collapsed into ints again: all our code keeps it as a `CarPosition`, perhaps uses a generic `Position`, or converts it into a `DriverPosition` once it is verified to be moving. In the best case `CarPosition` stays opaque, the best encapsulation: no code ever knows or depends on the fact that there might be two ints inside. When it is written to the database, at the perimeter, the database context consumes it as a `CarPosition` and, by contract, perhaps a visitor, folds it into a database parameter belonging to the `CAR_POSITION` table. A domain primitive is the special case where a single primitive is wrapped.
+    When an API passes `int x, int y` as coordinates, fold them into a `CarPosition`, not a `Coordinate`. A `CarPosition` is never collapsed into ints again: all our code keeps it as a `CarPosition`, perhaps uses a generic `Position`, or converts it into a `DriverPosition` once it is verified to be moving. In the best case `CarPosition` stays opaque, the best encapsulation: [[No code]] ever knows or depends on the fact that there might be two ints inside. When it is written to the database, at the [[Perimeter]], the database context consumes it as a `CarPosition` and, by contract, perhaps a visitor, folds it into a database parameter belonging to the `CAR_POSITION` table. A [[Domain primitive]] is the special case where a single primitive is wrapped.
 
     Every typing add-on to a weakly typed language exists to be used for this. Even an environment without types can mint a naming standard in which a variable prefix carries the signature "validated by factory", and a linter enforcing that standard shifts the validated contract further left.
   solutions:
   - marker: SHOULD
     body: |
-      Use every typing add-on the language offers to give every type one validating path of creation and no other.
+      Use every typing add-on the language offers to give every type one [[Validating path of creation]] and no other.
   - marker: SHOULD
     body: |
       Where code smells of [[Optionality]] and [[Primitive Obsession]], improve it first by introducing encapsulation: refactor to opaque types, and retire the tests that only guarded against values the types can no longer hold.
