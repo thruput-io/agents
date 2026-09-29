@@ -20,7 +20,7 @@ rationales:
 - id: Descend only when the rung above cannot serve
   parent: Simplicity
   body: |
-    Every rung down a ladder adds ownership cost and failure modes. Dan McKinley's [Choose Boring Technology](https://mcfunley.com/choose-boring-technology): each new component spends a scarce innovation token and brings failures nobody knows yet. On the [[Shift Left rung]]s, Yaron Minsky's "make [[Illegal states unrepresentable]]" and Alexis King's [Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) remove whole classes of bugs before a test exists. Higher rungs give faster, more precise feedback and leave less to maintain.
+    Every rung down a ladder adds ownership cost and failure modes. Dan McKinley's [Choose Boring Technology](https://mcfunley.com/choose-boring-technology): each new component spends a scarce innovation token and brings failures nobody knows yet. On the [[Shift Left ladder]], Yaron Minsky's "make [[Illegal states unrepresentable]]" and Alexis King's [Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) remove whole classes of bugs before a test exists. Higher rungs give faster, more precise feedback and leave less to maintain.
   solutions:
   - marker: SHOULD
     body: |

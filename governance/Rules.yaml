@@ -34,7 +34,7 @@ rules:
   group: Simplicity & Code Reuse
   parent: The Simplicity Ladder
   body: |
-    Write [[New code]], or add a dependency, where a higher [[Simplicity rung]] serves the need.
+    Write [[New code]], or add a dependency, where a higher rung of the [[Simplicity ladder]] serves the need.
 - id: Available
   marker: MUST NOT
   group: Simplicity & Code Reuse

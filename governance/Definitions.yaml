@@ -125,10 +125,7 @@ definitions:
     A combination of values that the domain never defined as valid.
 - id: Simplicity ladder
   specification: |
-    One aspect of [[Simplicity]], ranking how much code we own afterwards. The preference for meeting a need at the highest [[Simplicity rung]] that applies, descending only when the rung above offers nothing viable. The rungs rank from highest to lowest in the order [[Simplicity rung]] enumerates them. Every rung is gated by being available and maintained.
-- id: Simplicity rung
-  specification: |
-    A way to meet a need, ranked by how little code we own afterwards.
+    The ways to meet a need, in order of how little code we own afterwards.
   closedEnumerationOf:
   - No code
   - Codebase reuse
@@ -154,9 +151,9 @@ definitions:
 - id: New code
   specification: |
     Meeting the need by writing new code.
-- id: Shift Left rung
+- id: Shift Left ladder
   specification: |
-    A place where a defect can be caught. The rungs rank from earliest and cheapest to latest and costliest in the order this term enumerates them. A safeguard belongs at the leftmost rung able to catch the error.
+    The places a defect can be caught, in order from earliest to latest.
   closedEnumerationOf:
   - Illegal states unrepresentable
   - Static code analysis
