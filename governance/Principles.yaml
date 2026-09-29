@@ -18,7 +18,7 @@ principles:
 - id: Shift Test Left
   parent: Descend only when the rung above cannot serve
   body: |
-    Catch a defect on the leftmost [[Shift Left rung]] that can.
+    Catch a defect on the leftmost rung of the [[Shift Left ladder]] that can.
 - id: Durable Intent Over Comments
   parent: Intent lives where it is checked
   body: |
