@@ -34,7 +34,7 @@ definitions:
     The id of the entry directly above. Every entry below the root has exactly one parent.
 - id: Purpose
   specification: |
-    The stated reason something is built or changed, expressed as the benefit it delivers to [[Users]]. Purpose is measured in benefit to users, not to developers. Code is a subset of its Purpose: every part of the code traces to a part of the Purpose, and no part of the code reaches outside it.
+    The stated reason something is built or changed, expressed as the benefit it delivers to [[Users]].
 - id: Users
   specification: |
     Whoever consumes the software or system to fulfill a need. A [[Developer]] is not a user.
@@ -122,7 +122,7 @@ definitions:
     A point in our code that either invokes, or is invoked by, Code We Cannot Control.
 - id: Illegal state
   specification: |
-    A combination of values that the domain never defined as valid. It is made unrepresentable by choosing a type in which the combination cannot be constructed, rather than by checking for it at runtime.
+    A combination of values that the domain never defined as valid.
 - id: Simplicity ladder
   specification: |
     One aspect of [[Simplicity]], ranking how much code we own afterwards. The preference for meeting a need at the highest [[Simplicity rung]] that applies, descending only when the rung above offers nothing viable. The rungs rank from highest to lowest in the order [[Simplicity rung]] enumerates them. Every rung is gated by being available and maintained.
@@ -373,7 +373,7 @@ definitions:
     Alias for [[Domain object]].
 - id: Validating path of creation
   specification: |
-    The single path through which an [[Encapsulated type]] or [[Domain primitive]] is constructed at the [[Perimeter]], running all required checks before a value is minted.
+    The single path through which an [[Encapsulated type]] or [[Domain primitive]] is constructed at the [[Perimeter]], running all required checks before a value is minted. Holding a value of the type is proof it was checked.
 - id: Path of least resistance
   specification: |
     The design property where the easiest and most convenient option for a contributor is also the correct one.
@@ -399,3 +399,6 @@ definitions:
 - id: Practitioner
   specification: |
     A human [[Developer]] in the act of applying a tool, method, or standard, and whose competence the tool multiplies. Not an [[Operator]], who keeps the system running, and not a [[User]], who consumes it.
+- id: Signal
+  specification: |
+    A log line, metric, or alert that shows a behaviour working in production.

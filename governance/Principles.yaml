@@ -2,57 +2,55 @@ principles:
 - id: Code Only for User Value
   parent: Every line serves the users' Purpose
   body: |
-    Without a clear notion of the [[Purpose]] a piece of code serves, it should not be written at all. We never write code without a [[Purpose]], and that [[Purpose]] is measured exclusively in the good it delivers to the [[Users]] of the code.
+    Code exists only for a stated [[Purpose]]. Without one it is not written.
 - id: Code as a Subset of the Purpose
   parent: Every line serves the users' Purpose
   body: |
-    The code is a subset of the stated [[Purpose]]: every part of it solves some part of the [[Purpose]], and no part reaches outside it. A change need not cover the whole [[Purpose]], but what it solves it solves accurately and without harm the [[Users]] would not accept.
+    Every part of the code solves some part of its [[Purpose]], and no part reaches outside it. What it solves, it solves accurately and without harm the [[Users]] would not accept.
 - id: The Simplicity Ladder
   parent: Descend only when the rung above cannot serve
   body: |
-    The simplest code of all is [[No code]]. Next in [[Simplicity]] is code we do not write ourselves.
-
-    When solving a problem, climb the [[Simplicity ladder]].
+    Meet a need at the highest [[Simplicity rung]] that serves, and descend only when the rung above cannot.
 - id: Convention Over Novelty
   parent: Convention over invention
   body: |
-    Code is maintained by [[Developer]]s who did not write it, so its structure follows the conventions of the ecosystem and of the surrounding code; novelty belongs in the domain solution, assembled from parts a maintainer already recognises. Only a [[Demonstrable standard]] counts as a convention.
+    Structure follows the conventions of the ecosystem and of the surrounding code; novelty belongs in the domain solution. Only a [[Demonstrable standard]] is a convention.
 - id: Shift Test Left
   parent: Descend only when the rung above cannot serve
   body: |
-    A defect is caught earliest, cheapest, and with the greatest certainty on the leftmost [[Shift Left rung]] able to catch it: choosing that rung is [[Simplicity]] applied to verification, and catching it there is [[Shift Left]]. Descend past [[Illegal states unrepresentable]] and [[Static code analysis]] only when neither can prevent the defect.
+    Catch a defect on the leftmost [[Shift Left rung]] able to catch it, and descend only when the rung above cannot.
 - id: Durable Intent Over Comments
   parent: Intent lives where it is checked
   body: |
-    What a comment would say belongs where it is checked: a name, a [[Failing test]], an [[Architectural decision]] record, or [[Usage guidance]]. Every [[Comment intent]] has such a home, and only a [[Machine-read comment]] stays in the code.
+    What a comment would say lives where it is checked. Every [[Comment intent]] has such a home, and only a [[Machine-read comment]] stays in the code.
 - id: Loud Failures Over Silent Defaults
   parent: Crash, don't guess
   body: |
-    A system fails loudly and at once on an unexpected state; it never continues on a guess. A safeguard that swallows a failure turns a diagnosable error into a silent wrong answer, and is added only where concrete [[Evidence]] shows the need.
+    A system fails loudly and at once on an unexpected state; it never continues on a guess. A safeguard that swallows a failure is added only where [[Evidence]] shows the need.
 - id: Fold at Perimeter
   parent: Translate at the door
   body: |
-    Whatever shape [[Code We Cannot Control]] hands us is folded into ours at the [[Perimeter]], and ours is folded back into theirs only there. Inward of that point nothing sees the foreign shape.
+    The shape of [[Code We Cannot Control]] is folded into an [[Encapsulated type]] at the [[Perimeter]] and back only there. Inward of that point nothing sees the foreign shape.
 - id: Make illegal states unrepresentable
   parent: Encapsulation
   body: |
-    Choose a type in which the [[Illegal state]] cannot be constructed rather than a check that rejects it at runtime, and model every business rule, lifecycle transition, and domain entity as a dedicated type rather than a generic data bag. A state that cannot be held needs no validator, no test, and no bug report.
+    Choose [[Illegal states unrepresentable]] over a runtime check, and model every business rule, transition, and entity as a dedicated type rather than a data bag. A state that cannot be held needs no validator, no test, and no bug report.
 - id: Parse, don't validate
   parent: Translate at the door
   body: |
-    Parse raw input once, at the [[Perimeter]], into the constrained domain type and pass the type on; never check a primitive and pass the primitive on. Holding a value of the type is proof it was checked.
+    Parse raw input once, at the [[Perimeter]], through the [[Validating path of creation]], and pass the type on; never check a primitive and pass the primitive on.
 - id: Immutable by default
   parent: Encapsulation
   body: |
-    A [[Domain object]] does not change after creation; a change is a new instance that passes the same [[Validating path of creation]]. A validly constructed object that cannot change cannot become invalid.
+    A [[Domain object]] is [[Immutable]]. A validly constructed object that cannot change cannot become invalid.
 - id: Primitives only at the perimeter
   parent: Encapsulation
   body: |
-    Every raw value is wrapped in a [[Domain primitive]] the moment we hold it, and unwrapped only at the [[Perimeter]] that hands it out. Inside our code a primitive has no meaning of its own.
+    Every raw value becomes a [[Domain primitive]] the moment we hold it, and a raw value again only at the [[Perimeter]] that hands it out.
 - id: Optionality Drives Complexity
   parent: Name the case, not the knob
   body: |
-    An optional parameter doubles the paths through a function and burdens every reader with whether it is present. Each allowed combination of options is its own operation with its own name.
+    Each allowed combination of options is its own operation with its own name; [[Optionality]] is never a parameter.
 - id: Nothing Is Complete Without Verification
   parent: Tests prove behaviour, not execution
   body: |
@@ -60,11 +58,11 @@ principles:
 - id: Separation of Concerns
   parent: One concern, one owner
   body: |
-    Each concern is owned by one component in one layer, so changing a behaviour touches only its owner. Layers exist so that a concern is defined once and nothing else knows how it is done.
+    Each concern has one owner in one layer, and a change to a behaviour touches only its owner.
 - id: The Toolchain Is the Guardrail
   parent: Make the wrong thing fail
   body: |
-    The quality bar is defined once, in the build, and the build makes the wrong thing fail. The toolchain is never weakened to let a change through, and a toolchain that stops measuring stops the line.
+    The quality bar is defined once, in the build, and the build makes the wrong thing fail; it is never weakened to let a change through.
 - id: Producer moves first
   parent: Robustness Principle
   body: |
@@ -76,8 +74,8 @@ principles:
 - id: The environment is code
   parent: Environment parity
   body: |
-    Every environment, the local one included, is provisioned from one definition kept in version control, and no environment is assembled by hand. A newcomer clones, builds, and tests the entire stack with a single command.
+    Every environment is provisioned from one definition in version control; none is assembled by hand.
 - id: Own the Runtime
   parent: Telemetry over guesswork
   body: |
-    We do not hope a feature works. The telemetry, logs, and alerts that show a behaviour working ship in the same change as the behaviour; if we cannot see it, it is not shipped.
+    A behaviour ships with its [[Signal]]; if we cannot see it, it is not shipped.
