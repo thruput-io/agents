@@ -34,7 +34,7 @@ rationales:
 - id: Convention over invention
   parent: Single Source of Truth
   body: |
-    Code is read far more often than it is written ([PEP 8](https://peps.python.org/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds)) and maintained by people who did not write it. Following the ecosystem's conventions and the surrounding code lets a reader predict structure instead of decoding it. The [Rails Doctrine](https://rubyonrails.org/doctrine#convention-over-configuration) calls it removing the mundane decisions so effort goes to what is new.
+    Code is read far more often than it is written ([PEP 8](https://peps.python.org/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds)) and maintained by people who did not write it. Following the ecosystem's conventions and the [[Surrounding code]] lets a reader predict structure instead of decoding it. The [Rails Doctrine](https://rubyonrails.org/doctrine#convention-over-configuration) calls it removing the mundane decisions so effort goes to what is new.
   solutions:
   - marker: SHOULD
     body: |
@@ -75,7 +75,7 @@ rationales:
 - id: Translate at the door
   parent: Shift Left
   body: |
-    [[Code We Cannot Control]] speaks its own dialect. Alistair Cockburn's [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/) and Eric Evans's Anti-Corruption Layer both put translation at a port, so foreign models never leak inward. Parsed once at the [[Perimeter]] into types that cannot hold [[Illegal states]], a value is never checked again. Tony Hoare's [billion-dollar mistake](https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/) shows the cost of uncertainty travelling through every reference. One adapter per foreign shape keeps upgrades local.
+    [[Code We Cannot Control]] speaks its own dialect, a [[Foreign shape]]. Alistair Cockburn's [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/) and Eric Evans's Anti-Corruption Layer both put translation at a port, so foreign models never leak inward. Parsed once at the [[Perimeter]] into types that cannot hold [[Illegal states]], a value is never checked again. Tony Hoare's [billion-dollar mistake](https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/) shows the cost of uncertainty travelling through every reference. One adapter per foreign shape keeps upgrades local.
   solutions:
   - marker: SHOULD
     body: |
@@ -155,9 +155,9 @@ rationales:
 - id: The practitioner decides the outcome
   parent: Leverage
   body: |
-    AI is [[Leverage]] applied to a [[Practitioner]]. Applied by someone who does not know what good looks like, it produces a mess at a speed no one could reach unaided, and the mess arrives reviewed, formatted, and entirely plausible. Applied by someone working from these documents, it produces the same [[Quality]] faster, and more of it. Lisanne Bainbridge's [Ironies of Automation](https://doi.org/10.1016/0005-1098(83)90046-8) (1983) names the mechanism: automation takes over the routine and leaves the practitioner exactly the judgement it could not encode, so the more capable the tool, the more the outcome rests on the person. Two measurements show it from both sides. [Generative AI at Work](https://www.nber.org/papers/w31161) (Brynjolfsson, Li, Raymond, 2023) found the gains concentrated in novices, because the model disseminated the practice of the most able workers: the tool carried competence that already existed. METR's [early-2025 study](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/) found experienced developers 19% slower with AI tools while believing themselves 20% faster: what the tool multiplied there was the confidence, not the result.
+    AI is [[Leverage]] applied to a [[Practitioner]]. Applied by someone who does not know what good looks like, it produces a mess at a speed no one could reach unaided, and the mess arrives reviewed, formatted, and entirely plausible. Applied by someone working from these documents, it produces the same [[Quality]] faster, and more of it. Lisanne Bainbridge's [Ironies of Automation](https://doi.org/10.1016/0005-1098(83)90046-8) (1983) names the mechanism: automation takes over the routine and leaves the [[Practitioner]] exactly the judgement it could not encode, so the more capable the tool, the more the outcome rests on the person. Two measurements show it from both sides. [Generative AI at Work](https://www.nber.org/papers/w31161) (Brynjolfsson, Li, Raymond, 2023) found the gains concentrated in novices, because the model disseminated the practice of the most able workers: the tool carried competence that already existed. METR's [early-2025 study](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/) found experienced [[Developer]]s 19% slower with AI tools while believing themselves 20% faster: what the tool multiplied there was the confidence, not the result.
 
-    The distance between what a person and what a model can do narrows every day, so anything justified by "AI cannot do this yet" carries an expiry date and is not written as permanent. What does not narrow is Fred Brooks's [essential complexity](https://worrydream.com/refs/Brooks_1986_-_No_Silver_Bullet.pdf): tools attack the accidental, and knowing which problem is worth solving, what good means here, and whether the result is true stays with the practitioner. Investment therefore goes to the practitioner's competence, and to stating our standard explicitly enough to be applied, over the expectation that a better model compensates for the absence of both.
+    The distance between what a person and what a model can do narrows every day, so anything justified by "AI cannot do this yet" carries an expiry date and is not written as permanent. What does not narrow is Fred Brooks's [essential complexity](https://worrydream.com/refs/Brooks_1986_-_No_Silver_Bullet.pdf): tools attack the accidental, and knowing which problem is worth solving, what good means here, and whether the result is true stays with the [[Practitioner]]. Investment therefore goes to the [[Practitioner]]'s competence, and to stating our standard explicitly enough to be applied, over the expectation that a better model compensates for the absence of both.
   solutions:
   - marker: SHOULD
     body: |
@@ -182,14 +182,14 @@ rationales:
 - id: Telemetry over guesswork
   parent: Shift Left
   body: |
-    A feature that has shipped without a signal is a feature we hope works. The [[Shift Left]] axiom does not stop at release: the earliest point at which a production defect can be observed is by us, from telemetry, and the latest is by the customer, from the symptom. The Google SRE book's [Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/) reduces what to watch to four golden signals, latency, traffic, errors, and saturation, and pages only on symptoms already affecting users, which is possible only if the signals were in place before the change was. The [[Signal]] therefore ships with the behaviour it shows, not after its first incident, and a regression is found and resolved before the customer notices a flicker. Adding them afterwards is the same shortcut as adding the test afterwards, and is skipped for the same reasons.
+    A feature that has shipped without a signal is a feature we hope works. The [[Shift Left]] axiom does not stop at release: the earliest point at which a production defect can be observed is by us, from telemetry, and the latest is by the customer, from the symptom. The Google SRE book's [Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/) reduces what to watch to four golden signals, latency, traffic, errors, and saturation, and pages only on symptoms already affecting users, which is possible only if the [[Signal]]s were in place before the change was. The [[Signal]] therefore ships with the behaviour it shows, not after its first incident, and a regression is found and resolved before the customer notices a flicker. Adding them afterwards is the same shortcut as adding the test afterwards, and is skipped for the same reasons.
   solutions:
   - marker: SHOULD
     body: |
       Instrument every service for the four golden signals before its first deploy.
   - marker: SHOULD
     body: |
-      Alert on symptoms [[Users]] experience, and keep cause-level signals for diagnosis rather than paging.
+      Alert on symptoms [[Users]] experience, and keep cause-level [[Signal]]s for diagnosis rather than paging.
 - id: What wins when values collide
   parent: Quality Uncompromised
   body: |

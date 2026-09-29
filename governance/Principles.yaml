@@ -14,7 +14,7 @@ principles:
 - id: Convention Over Novelty
   parent: Convention over invention
   body: |
-    Structure follows the conventions of the ecosystem and of the surrounding code; novelty belongs in the domain solution. Only a [[Demonstrable standard]] is a convention.
+    Structure follows the conventions of the ecosystem and of the [[Surrounding code]]; novelty belongs in the domain solution. Only a [[Demonstrable standard]] is a convention.
 - id: Shift Test Left
   parent: Descend only when the rung above cannot serve
   body: |
@@ -30,11 +30,11 @@ principles:
 - id: Fold at Perimeter
   parent: Translate at the door
   body: |
-    The shape of [[Code We Cannot Control]] is folded into an [[Encapsulated type]] at the [[Perimeter]] and back only there. Inward of that point nothing sees the foreign shape.
+    The [[Foreign shape]] is folded into an [[Encapsulated type]] at the [[Perimeter]] and back only there. Inward of that point nothing sees it.
 - id: Make illegal states unrepresentable
   parent: Encapsulation
   body: |
-    Choose [[Illegal states unrepresentable]] over a runtime check, and model every business rule, transition, and entity as a dedicated type rather than a data bag. A state that cannot be held needs no validator, no test, and no bug report.
+    Choose [[Illegal states unrepresentable]] over a [[Runtime check]], and model every business rule, transition, and entity as a dedicated type rather than a data bag. A state that cannot be held needs no validator, no test, and no bug report.
 - id: Parse, don't validate
   parent: Translate at the door
   body: |
@@ -46,7 +46,7 @@ principles:
 - id: Primitives only at the perimeter
   parent: Encapsulation
   body: |
-    Every raw value becomes a [[Domain primitive]] the moment we hold it, and a raw value again only at the [[Perimeter]] that hands it out.
+    Every [[Raw value]] becomes a [[Domain primitive]] the moment we hold it, and a raw value again only at the [[Perimeter]] that hands it out.
 - id: Optionality Drives Complexity
   parent: Name the case, not the knob
   body: |
