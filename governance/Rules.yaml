@@ -52,7 +52,7 @@ rules:
   group: Maintainability & Standards
   parent: Convention Over Novelty
   body: |
-    Follow the surrounding code where no [[Demonstrable standard]] decides the question; a second way of doing the same thing is the smell.
+    Follow the [[Surrounding code]] where no [[Demonstrable standard]] decides the question; a second way of doing the same thing is the smell.
 - id: Demonstrable, not recalled
   marker: MUST
   group: Maintainability & Standards
@@ -94,13 +94,13 @@ rules:
   group: In Representation
   parent: Make illegal states unrepresentable
   body: |
-    Make absence an explicit case the compiler forces every caller to handle; a runtime check for absence is the smell.
+    Make absence an explicit case the compiler forces every caller to handle; a [[Runtime check]] for absence is the smell.
 - id: Wrap primitives
   marker: MUST
   group: In Representation
   parent: Primitives only at the perimeter
   body: |
-    Wrap a raw value in its [[Domain primitive]] before it crosses any interface of ours; a raw primitive in a domain signature is the smell.
+    Wrap a [[Raw value]] in its [[Domain primitive]] before it crosses any interface of ours; a raw value in a domain signature is the smell.
 - id: Exhaustive matching
   marker: MUST
   group: Across State Changes
@@ -304,7 +304,7 @@ rules:
   group: Quality Tooling & Shift Left
   parent: Shift Test Left
   body: |
-    Catch a defect on a rung of the [[Shift Left ladder]] when an earlier rung can catch it. A runtime check, or a test, for what a type or a linter would reject is the smell.
+    Catch a defect on a rung of the [[Shift Left ladder]] when an earlier rung can catch it. A [[Runtime check]], or a test, for what a type or a linter would reject is the smell.
 - id: No committing generated code
   marker: MUST NOT
   group: Quality Tooling & Shift Left

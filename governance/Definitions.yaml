@@ -64,23 +64,20 @@ definitions:
 - id: Interface
   specification: |
     The boundary through which code outside a component invokes it. A component is a [[Class]] or any larger unit of code.
-- id: API
-  specification: |
-    Alias for [[Interface]].
 - id: Public method
   specification: |
     A single invocation receiver of an [[Interface]]: one operation that code outside the component can invoke through it. An operation that only code inside the component can invoke is not a public method.
 - id: Domain object
   specification: |
-    A type in the domain layer that models a business concept and upholds its own invariants. Domain objects are immutable, are created only through a validating factory, and expose operations that accept and return other domain objects.
+    A type in the domain layer that models a business concept and upholds its own invariants: [[Immutable]], created only through its [[Validating path of creation]], and operated on only through other domain objects.
 - id: Encapsulated type
   specification: |
-    A [[Class]] into which one or more raw values are folded at the [[Perimeter]], named for what the values mean rather than for their shape, with a single validating path of creation, and [[Immutable]]. Inside our code it is never collapsed back into raw values; it becomes another type only through a verified conversion, and at an outbound perimeter a contract of the type folds it into the foreign shape. Kept opaque, no code depends on its internal representation.
+    A [[Class]] into which one or more [[Raw value]]s are folded at the [[Perimeter]], named for what the values mean rather than for their shape, with a single [[Validating path of creation]], and [[Immutable]]. Inside our code it is never collapsed back into raw values; it becomes another type only through a verified conversion, and at an outbound [[Perimeter]] a contract of the type folds it into the [[Foreign shape]]. Kept opaque, no code depends on its internal representation.
   openEnumerationOf:
   - Domain primitive
 - id: Domain primitive
   specification: |
-    The special case where a single raw value is wrapped.
+    The special case where a single [[Raw value]] is wrapped.
 - id: Loose type
   specification: |
     The shape of a variable, defined so loosely that it admits [[Illegal state]]s by design, the opposite of [[Illegal states unrepresentable]]. Its looseness shows in the type's cardinality, which every field and every open choice multiplies while the legal states stay few.
@@ -99,7 +96,7 @@ definitions:
     An operation that assigns a new value to a field of an existing object, a second path of creation that skips the validation of the first. A strong code smell.
 - id: Immutable
   specification: |
-    Unable to change after creation. A change produces a new value, which passes the same validating path of creation as the first. Without it, a factory's validation holds only for the moment of creation.
+    Unable to change after creation. A change produces a new value, which passes the same [[Validating path of creation]] as the first. Without it, a factory's validation holds only for the moment of creation.
 - id: Code We Cannot Control
   specification: |
     Code that is not part of the current code base and whose shape we cannot change.
@@ -119,7 +116,7 @@ definitions:
     Data a person enters through a user interface.
 - id: Perimeter
   specification: |
-    A point in our code that either invokes, or is invoked by, Code We Cannot Control.
+    A point in our code that either invokes, or is invoked by, [[Code We Cannot Control]].
 - id: Illegal state
   specification: |
     A combination of values that the domain never defined as valid.
@@ -141,7 +138,7 @@ definitions:
     Meeting the need with code already in this codebase, refactored into a reusable component where it is not one yet.
 - id: Platform or framework
   specification: |
-    Meeting the need with what the platform or framework in use already provides.
+    Meeting the need with what the platform or [[Framework]] in use already provides.
 - id: External dependency
   specification: |
     Meeting the need by adding an existing external component as a dependency.
@@ -248,7 +245,7 @@ definitions:
     The progressive transition of a software system from a healthy state into one or more [[System Failed State]]s, caused by the accumulation of [[Bad Code]].
 - id: System Failed State
   specification: |
-    A non-operational state the software transitions into when bad code accumulates.
+    A non-operational state the software transitions into when [[Bad Code]] accumulates.
   openEnumerationOf:
   - Velocity Stagnation
   - Regression Cascades
@@ -273,9 +270,6 @@ definitions:
 - id: Architectural Direction
   specification: |
     The fold of every ADR, read from the highest-numbered downward: a later ADR supersedes an earlier one, so where ADRs are ambiguous or conflict, the first read holds. ADRs are immutable; a change is a new ADR, never an edit, because the history explains why decisions were made and why the project is designed the way it is. The Architectural Direction governs where the project is heading; it does not describe its current state.
-- id: ADRs
-  specification: |
-    Alias for [[Architectural Direction]].
 - id: Software quality axis
   specification: |
     One of ten dimensions defining software quality.
@@ -310,7 +304,7 @@ definitions:
     The property that tests fail when behavior breaks, rather than merely executing code paths.
 - id: Ease of Doing the Right Thing
   specification: |
-    The property that the correct approach is the path of least resistance for the next contributor.
+    The property that the correct approach is the [[Path of least resistance]] for the next contributor.
 - id: Guardrails Against Doing the Wrong Thing
   specification: |
     The property that types, tests, and tooling cause incorrect approaches to fail early at compile time rather than relying on human vigilance.
@@ -334,7 +328,7 @@ definitions:
     Explaining intent in code, replaced by intent-revealing variable names, focused functions, or negative tests.
 - id: Procrastination
   specification: |
-    Deferring work via a TODO, replaced by a failing test pinning the weakness, smaller production-ready changes, or an explicit plan document.
+    Deferring work via a TODO, replaced by a [[Failing test]] pinning the weakness, smaller production-ready changes, or an explicit plan document.
 - id: Architectural decision
   specification: |
     Recording a design choice, replaced by an [[Architectural Direction]] record under `docs/adrs/`.
@@ -343,26 +337,11 @@ definitions:
     Explaining how to use code, replaced by user documentation or a README.
 - id: Apology or confession
   specification: |
-    Apologizing for or confessing weak code, replaced by fixing the underlying design flaw or pinning the limitation with a failing test.
-- id: ADR
-  specification: |
-    Alias for [[Architectural Direction]].
-- id: TODO
-  specification: |
-    Alias for [[Procrastination]].
-- id: TODOs
-  specification: |
-    Alias for [[Procrastination]].
+    Apologizing for or confessing weak code, replaced by fixing the underlying design flaw or pinning the limitation with a [[Failing test]].
 - id: User
   specification: |
     Alias for [[Users]].
 - id: Quality
-  specification: |
-    Alias for [[Software quality axis]].
-- id: Software Quality
-  specification: |
-    Alias for [[Software quality axis]].
-- id: Quality axis
   specification: |
     Alias for [[Software quality axis]].
 - id: Domain objects
@@ -383,9 +362,6 @@ definitions:
 - id: Explicitly named method
   specification: |
     A method whose name states the specific domain action or concept it performs rather than using generic control knobs or boolean flags.
-- id: Single creation path
-  specification: |
-    The requirement that a domain type provides exactly one factory or constructor that validates invariants, preventing second unvalidated paths of creation such as setters.
 - id: Mutator
   specification: |
     Alias for [[Setter]].
@@ -399,3 +375,15 @@ definitions:
 - id: Signal
   specification: |
     A log line, metric, or alert that shows a behaviour working in production.
+- id: Runtime check
+  specification: |
+    A check on a value while the program runs, for a condition a type or a [[Static code analysis]] could have rejected before it ran.
+- id: Raw value
+  specification: |
+    A value carried by a general-purpose primitive type, with no meaning of its own.
+- id: Foreign shape
+  specification: |
+    The form in which [[Code We Cannot Control]] represents a value.
+- id: Surrounding code
+  specification: |
+    The code a change sits among. Its conventions decide what no [[Demonstrable standard]] decides.

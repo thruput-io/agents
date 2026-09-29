@@ -58,7 +58,7 @@ levels:
 - id: Standard
   specification: A rule implemented in code for one technology.
   criteria:
-  - include: Names a language, framework, library, or tool.
+  - include: Names a language, [[Framework]], [[Library]], or tool.
   - include: Code, an ArchUnit test, an AST parser, or a linter evaluates it and rejects a violation deterministically in milliseconds.
   - exclude: Can be evaluated without knowing the technology in use.
   parent: Rule
