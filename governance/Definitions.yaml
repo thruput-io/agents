@@ -37,7 +37,7 @@ definitions:
     The stated reason something is built or changed, expressed as the benefit it delivers to [[Users]]. Purpose is measured in benefit to users, not to developers. Code is a subset of its Purpose: every part of the code traces to a part of the Purpose, and no part of the code reaches outside it.
 - id: Users
   specification: |
-    Whoever consumes the software or system to fulfill a need. Developers who write, call, or maintain the code are not users.
+    Whoever consumes the software or system to fulfill a need. A [[Developer]] is not a user.
   openEnumerationOf:
   - End user
   - Operator
@@ -55,6 +55,9 @@ definitions:
 - id: AI agent
   specification: |
     A program that pursues a goal autonomously, using a model to decide its next action.
+- id: Developer
+  specification: |
+    Whoever writes, reviews, or maintains the code: a person or an [[AI agent]]. Every rule is applied by a developer, on a diff, and holds the same for either kind. A developer is not a [[User]].
 - id: Class
   specification: |
     A construct that defines a type as a set of values together with the operations on them. A rule that names a Class applies to every construct that does this, whatever the language calls it.
@@ -395,4 +398,4 @@ definitions:
 
 - id: Practitioner
   specification: |
-    The person who applies a tool, method, or standard to produce or change software, and whose competence the result reflects. Not an [[Operator]], who keeps the system running, and not a [[User]], who consumes it.
+    A human [[Developer]] in the act of applying a tool, method, or standard, and whose competence the tool multiplies. Not an [[Operator]], who keeps the system running, and not a [[User]], who consumes it.
