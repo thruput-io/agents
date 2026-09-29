@@ -21,6 +21,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Install the JSON Schema CLI
+        uses: sourcemeta/jsonschema@v17.0.0
+
       - name: Validate documents
         run: scripts/validate.sh
 
