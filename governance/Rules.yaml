@@ -4,25 +4,25 @@ rules:
   group: Purpose & Accuracy
   parent: Code Only for User Value
   body: |
-    State the **WHY** of a change as what good it does for the **[[Users]]** of the code.
+    State the [[Purpose]] of a change as what good it does for the **[[Users]]** of the code.
 - id: No code without purpose
   marker: MUST NOT
   group: Purpose & Accuracy
   parent: Code Only for User Value
   body: |
-    Write or merge code whose **WHY** is not clear.
-- id: Every part solves the WHY
+    Write or merge code whose [[Purpose]] is not clear.
+- id: Every part solves the Purpose
   marker: MUST
   group: Purpose & Accuracy
-  parent: Code as a Subset of the WHY
+  parent: Code as a Subset of the Purpose
   body: |
-    Trace every part of the code to the part of the stated **WHY** that it accurately solves.
-- id: Nothing beyond the WHY
+    Trace every part of the code to the part of the stated [[Purpose]] that it accurately solves.
+- id: Nothing beyond the Purpose
   marker: MUST NOT
   group: Purpose & Accuracy
-  parent: Code as a Subset of the WHY
+  parent: Code as a Subset of the Purpose
   body: |
-    Solve more than the stated **WHY**.
+    Solve more than the stated [[Purpose]].
 - id: No speculative portability
   marker: MUST NOT
   group: Purpose & Accuracy

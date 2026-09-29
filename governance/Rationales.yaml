@@ -9,10 +9,10 @@ rationales:
   - marker: MAY
     body: |
       Let consumers publish the parts of the contract they rely on, so the producer sees what a change would break before it ships (Ian Robinson, [Consumer-Driven Contracts](https://martinfowler.com/articles/consumerDrivenContracts.html)).
-- id: Every line serves the users' WHY
+- id: Every line serves the users' Purpose
   parent: Users Prove Correctness
   body: |
-    Code outside the stated [[Purpose]] is not free. Martin Fowler's [Yagni](https://martinfowler.com/bliki/Yagni.html) names four costs: building it, delaying real features, carrying its complexity, and repairing it when the guess proves wrong. Ron Jeffries: "the best way to have fewer bugs is to implement less code." Keeping every part inside the [[WHY]] keeps the codebase small enough to understand and change quickly, and every test and review aimed at what [[Users]] need.
+    Code outside the stated [[Purpose]] is not free. Martin Fowler's [Yagni](https://martinfowler.com/bliki/Yagni.html) names four costs: building it, delaying real features, carrying its complexity, and repairing it when the guess proves wrong. Ron Jeffries: "the best way to have fewer bugs is to implement less code." Keeping every part inside the [[Purpose]] keeps the codebase small enough to understand and change quickly, and every test and review aimed at what [[Users]] need.
   solutions:
   - marker: SHOULD
     body: |

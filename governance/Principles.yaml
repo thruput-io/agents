@@ -1,12 +1,12 @@
 principles:
 - id: Code Only for User Value
-  parent: Every line serves the users' WHY
+  parent: Every line serves the users' Purpose
   body: |
-    Without a clear notion of **WHY** a piece of code is written, it should not be written at all. We never write code without a [[Purpose]], and that [[Purpose]] is measured exclusively in the good it delivers to the [[Users]] of the code.
-- id: Code as a Subset of the WHY
-  parent: Every line serves the users' WHY
+    Without a clear notion of the [[Purpose]] a piece of code serves, it should not be written at all. We never write code without a [[Purpose]], and that [[Purpose]] is measured exclusively in the good it delivers to the [[Users]] of the code.
+- id: Code as a Subset of the Purpose
+  parent: Every line serves the users' Purpose
   body: |
-    The code is a subset of the stated [[WHY]]: every part of it solves some part of the WHY, and no part reaches outside it. A change need not cover the whole WHY, but what it solves it solves accurately and without harm the [[Users]] would not accept.
+    The code is a subset of the stated [[Purpose]]: every part of it solves some part of the [[Purpose]], and no part reaches outside it. A change need not cover the whole [[Purpose]], but what it solves it solves accurately and without harm the [[Users]] would not accept.
 - id: The Simplicity Ladder
   parent: Descend only when the rung above cannot serve
   body: |
