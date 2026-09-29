@@ -46,11 +46,7 @@
         "marker": {
           "enum": [
             "MUST",
-            "MUST NOT",
-            "SHOULD",
-            "SHOULD NOT",
-            "MAY",
-            "PREFER"
+            "MUST NOT"
           ]
         },
         "group": {

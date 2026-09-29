@@ -23,3 +23,7 @@ axioms:
   parent: Excellence Through Transparency
   body: |
     A tool multiplies the competence applied to it and supplies none of its own. What it produces is what its [[Practitioner]] already knew, arriving faster and in greater quantity; the tool decides how fast the outcome arrives, never what it is.
+- id: Quality Uncompromised
+  parent: Speed Through Discipline
+  body: |
+    Quality is always the highest priority. Every other objective becomes harder to reach once quality drops, so nothing offered in exchange for it, faster delivery, higher performance, or more features, is worth what it costs.

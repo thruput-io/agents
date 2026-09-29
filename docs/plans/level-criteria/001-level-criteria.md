@@ -188,3 +188,24 @@ Ideas raised during the pass, to be taken after it. Add, do not act.
 - Whether `context` on standards becomes a closed set of technologies.
 - Decide on `.idea/`.
 - A formatter for the YAML documents in the build, so every document has one layout, blank lines between entries included, and a deviation fails validation.
+
+## Applied on 2026-09-29
+
+The levels restated: a rule is a MUST or MUST NOT a reviewer answers on the diff, violation or not, and becomes a standard where a tool can answer it; why on a rule is its principle, a memorable statement of how and what we code; why on a principle is its rationale, how an axiom is turned into that principle; an axiom is a truth, and why we hold these truths and not others is answered by the values. `ImperataDerivata.yaml` carries the criteria; the rules schema admits only MUST and MUST NOT; PREFER leaves the glossary.
+
+| Statement | Was | Now |
+|---|---|---|
+| No code over maybe-necessary; Opaque types; Typestate; Implement Comparable; Constrained collections; Refinement types; Separation over brevity; Refactor over mocking; Setup pain as feedback; Fix over mute; Ask over hack; Enforce via static analysis | PREFER or SHOULD rule | Solution on the rationale above its principle |
+| Illegal states are unrepresentable (with Strict domain modeling folded in) | rule | principle Make illegal states unrepresentable, under Encapsulation, with Sum types, Enums for domain states, Compile-time optionality, Exhaustive matching, Self-guarding aggregates, Strong typing, No unwrapping, Domain-only interfaces, Domain operations |
+| Parse, don't validate | rule | principle under Translate at the door, with Validating factory, Private constructor, Creation failure in the signature |
+| Immutability | rule | principle Immutable by default, under Encapsulation, with the rule No mutators |
+| Domain primitives | rule | principle Primitives only at the perimeter, under Encapsulation, with Wrap primitives and No primitive leakage |
+| Fold at Perimeter | under Encapsulation, no rule | under Translate at the door, with Forced optionality at perimeter and Prefer APIs without optionality |
+| No learnt-pattern retreat; Industry standards; Fail fast; Alert on broken tooling; Shift left verifications; No collateral harm | rule restating its principle | removed |
+| No collapsed layers | rule | removed: no one can name the smell |
+| Respect layering | rule | reworded to the declared dependency direction; standard as an ArchUnit test |
+| No suppressed exit status; No discarded diagnostics; Scripts abort on error; Strong typing | rule naming a technology | rule without the syntax; standards for Bash and TypeScript carry it |
+| Single creation path | rule and glossary term | rule renamed Private constructor |
+| Quality Uncompromised | principle holding axiom, rationale, and glossary | axiom Quality Uncompromised under Speed Through Discipline; rationale What wins when values collide; the axes stay in the glossary |
+
+Open: What wins when values collide has no principle beneath it. Each right-hand side of its pairs is a smell that wants a rule, and the principle that names them is not yet stated.

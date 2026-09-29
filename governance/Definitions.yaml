@@ -1,14 +1,13 @@
 definitions:
 - id: Marker
   specification: |
-    The RFC 2119 priority word that opens a rule. Conflicts are resolved in favor of the rule with the higher-priority marker.
+    The RFC 2119 priority word that opens a rule or a solution. A rule opens with MUST or MUST NOT; a solution with SHOULD or MAY.
   closedEnumerationOf:
   - MUST
   - MUST NOT
   - SHOULD
   - SHOULD NOT
   - MAY
-  - PREFER
 - id: MUST
   specification: |
     An absolute requirement.
@@ -24,9 +23,6 @@ definitions:
 - id: MAY
   specification: |
     An option.
-- id: PREFER
-  specification: |
-    A directional default: choose the named option over the alternative unless the alternative is demonstrably better here.
 - id: Id
   specification: |
     The name of an entry, and the only stable handle for citing it. Ids are unique across every document, compared case-insensitively with whitespace normalized. In prose an id is cited as [[Id]].
