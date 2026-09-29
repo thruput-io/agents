@@ -1,7 +1,7 @@
 definitions:
 - id: Marker
   specification: |
-    The RFC 2119 priority word that opens a rule or a solution. A rule opens with MUST or MUST NOT; a solution with SHOULD or MAY.
+    The RFC 2119 priority word that opens a rule or a solution.
   closedEnumerationOf:
   - MUST
   - MUST NOT
