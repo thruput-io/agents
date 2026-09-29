@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput-io.github.io/agents/schemas/governance.schema.json",
+  "title": "Governance",
+  "description": "Any one governance document: exactly one of the document schemas it lists applies, told apart by the document's top-level key",
+  "examples": [
+    {
+      "axioms": [
+        {
+          "id": "Simplicity",
+          "parent": "Outcome Over Output",
+          "body": "Simple solutions are better than complex.\n"
+        }
+      ]
+    }
+  ],
+  "oneOf": [
+    {
+      "$ref": "values.schema.json"
+    },
+    {
+      "$ref": "axioms.schema.json"
+    },
+    {
+      "$ref": "rationales.schema.json"
+    },
+    {
+      "$ref": "principles.schema.json"
+    },
+    {
+      "$ref": "rules.schema.json"
+    },
+    {
+      "$ref": "standards.schema.json"
+    },
+    {
+      "$ref": "definitions.schema.json"
+    },
+    {
+      "$ref": "taxonomy.schema.json"
+    }
+  ]
+}

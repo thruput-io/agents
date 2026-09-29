@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput-io.github.io/agents/schemas/rationales.schema.json",
+  "title": "Rationales",
+  "description": "The rationales: entries whose parent is an axiom, with any solutions that apply them",
+  "examples": [
+    {
+      "rationales": [
+        {
+          "id": "Robustness Principle",
+          "parent": "Great software is easy to maintain and extend",
+          "body": "Be conservative in what you send and liberal in what you accept.\n",
+          "solutions": [
+            {
+              "marker": "SHOULD",
+              "body": "Ship the expanded contract, migrate its consumers, then remove what is left over.\n"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "type": "object",
+  "required": [
+    "rationales"
+  ],
+  "properties": {
+    "rationales": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Rationale"
+      }
+    }
+  },
+  "$defs": {
+    "Rationale": {
+      "description": "One rationale",
+      "$ref": "entry.schema.json#/$defs/Entry",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/RationaleId"
+        },
+        "parent": {
+          "$ref": "axioms.schema.json#/$defs/AxiomId"
+        },
+        "solutions": {
+          "$ref": "#/$defs/Solutions"
+        }
+      }
+    },
+    "Solutions": {
+      "description": "Ways to apply the rationale. Each says how, never restates a principle, and is phrased positively",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Solution"
+      }
+    },
+    "Solution": {
+      "description": "One way to apply the rationale, opened by SHOULD or MAY; MUST belongs to rules",
+      "type": "object",
+      "required": [
+        "marker",
+        "body"
+      ],
+      "properties": {
+        "marker": {
+          "enum": [
+            "SHOULD",
+            "MAY"
+          ]
+        },
+        "body": {
+          "$ref": "definitions.schema.json#/$defs/Prose"
+        }
+      }
+    },
+    "RationaleId": {
+      "$ref": "id.schema.json"
+    }
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput-io.github.io/agents/schemas/taxonomy.schema.json",
+  "title": "Taxonomy",
+  "description": "A classification scheme: a hierarchy of levels, each a definition with criteria for what belongs to it",
+  "examples": [
+    {
+      "levels": [
+        {
+          "id": "Value",
+          "specification": "Terminal human intent."
+        },
+        {
+          "id": "Axiom",
+          "specification": "A universal meta-truth governing systems and entropy across all domains.",
+          "parent": "Value"
+        }
+      ]
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "levels": {
+      "$ref": "#/$defs/Levels"
+    }
+  },
+  "required": [
+    "levels"
+  ],
+  "$defs": {
+    "Levels": {
+      "description": "The root level first, then every level below it in the order of the parent chain",
+      "type": "array",
+      "minItems": 1,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/RootLevel"
+        }
+      ],
+      "items": {
+        "$ref": "#/$defs/Level"
+      }
+    },
+    "RootLevel": {
+      "description": "A level is a definition; the root level is one with nothing above it",
+      "$ref": "definitions.schema.json#/$defs/Definition"
+    },
+    "Level": {
+      "description": "A level below the root: a root level extended with its parent",
+      "$ref": "#/$defs/RootLevel",
+      "properties": {
+        "parent": {
+          "$ref": "#/$defs/ParentLevel"
+        }
+      },
+      "required": [
+        "parent"
+      ]
+    },
+    "ParentLevel": {
+      "description": "The id of the level directly above",
+      "$ref": "definitions.schema.json#/$defs/DefinitionId"
+    }
+  }
+}

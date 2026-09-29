@@ -1,0 +1,162 @@
+rationales:
+- id: Robustness Principle
+  parent: Great software is easy to maintain and extend
+  body: "Be conservative in what you send and liberal in what you accept ([RFC 1122 \xA7 1.2.2](https://datatracker.ietf.org/doc/html/rfc1122#section-1.2.2), Postel's law). A producer emits exactly the shape it defines; a consumer takes what it needs from what it receives and is not disturbed by what it does not know.\n\nThis includes Martin Fowler's [Tolerant Reader](https://martinfowler.com/bliki/TolerantReader.html): with one producer and many consumers, the producer is the single source of the shape and moves first, its consumers catch up at their own pace, and nothing breaks in between. Gating the producer on the slowest consumer is the unmaintainable order.\n"
+  solutions:
+  - marker: SHOULD
+    body: |
+      Ship the expanded contract, migrate its consumers, then remove what is left over, so every step deploys on its own (Danilo Sato, [Parallel Change](https://martinfowler.com/bliki/ParallelChange.html)).
+  - marker: MAY
+    body: |
+      Let consumers publish the parts of the contract they rely on, so the producer sees what a change would break before it ships (Ian Robinson, [Consumer-Driven Contracts](https://martinfowler.com/articles/consumerDrivenContracts.html)).
+- id: Every line serves the users' WHY
+  parent: Users Prove Correctness
+  body: |
+    Code outside the stated [[Purpose]] is not free. Martin Fowler's [Yagni](https://martinfowler.com/bliki/Yagni.html) names four costs: building it, delaying real features, carrying its complexity, and repairing it when the guess proves wrong. Ron Jeffries: "the best way to have fewer bugs is to implement less code." Keeping every part inside the [[WHY]] keeps the codebase small enough to understand and change quickly, and every test and review aimed at what [[Users]] need.
+  solutions:
+  - marker: SHOULD
+    body: |
+      State the [[User]] need before the change is reviewed, so every part of the change can be traced to it.
+- id: Descend only when the rung above cannot serve
+  parent: Simplicity
+  body: |
+    Every rung down a ladder adds ownership cost and failure modes. Dan McKinley's [Choose Boring Technology](https://mcfunley.com/choose-boring-technology): each new component spends a scarce innovation token and brings failures nobody knows yet. On the [[Shift Left rung]]s, Yaron Minsky's "make [[Illegal states unrepresentable]]" and Alexis King's [Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) remove whole classes of bugs before a test exists. Higher rungs give faster, more precise feedback and leave less to maintain.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Record, for every rung above the one chosen, the search performed and what it found.
+  - marker: SHOULD
+    body: |
+      Choose the technology the team already operates before adopting a new one.
+- id: Convention over invention
+  parent: Single Source of Truth
+  body: |
+    Code is read far more often than it is written ([PEP 8](https://peps.python.org/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds)) and maintained by people who did not write it. Following the ecosystem's conventions and the surrounding code lets a reader predict structure instead of decoding it. The [Rails Doctrine](https://rubyonrails.org/doctrine#convention-over-configuration) calls it removing the mundane decisions so effort goes to what is new.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Cite the convention followed: the section of the style guide, or the neighbouring code it mirrors ([Google Engineering Practices](https://google.github.io/eng-practices/review/reviewer/looking-for.html)).
+- id: Intent lives where it is checked
+  parent: Single Source of Truth
+  body: |
+    A comment is prose no tool checks, and it drifts from the code it describes. Knowledge placed where drift is caught stays true: a name appears at every call site, a [[Failing test]] turns unfinished work into a red build, an Architecture Decision Record keeps the why of a design with its context. Michael Nygard's [Documenting Architecture Decisions](https://www.cognitect.com/blog/2011/11/15/documenting-architecture-decisions) shows the cost of losing that why: teams blindly accept a decision or blindly reverse it.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Name each test after the behaviour it pins, so the tests read as the specification.
+- id: One concern, one owner
+  parent: Single Source of Truth
+  body: |
+    Edsger Dijkstra named separation of concerns the only reliable way to order one's thoughts ([EWD447](https://www.cs.utexas.edu/~EWD/transcriptions/EWD04xx/EWD447.html)); David Parnas made it structural: each module hides one decision likely to change. When a behaviour has one owner in one layer, changing it touches one place and one set of tests. Scattering it saves minutes today and costs a hunt, and a missed copy, on every future change.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Hide each design decision likely to change behind one module interface.
+  - marker: SHOULD
+    body: |
+      Keep configuration out of the code and read it from the environment ([The Twelve-Factor App, III. Config](https://12factor.net/config)).
+- id: Crash, don't guess
+  parent: Shift Left
+  body: |
+    A program that continues past an unexpected state runs on a guess. Jim Shore's [Fail Fast](https://www.jamesshore.com/v2/blog/2004/fail-fast): code that works around errors fails mysteriously later; code that stops at once reveals the defect where it lives. Joe Armstrong's Erlang thesis: skip the defensive code, let the process die, recover elsewhere. [RFC 9413](https://www.rfc-editor.org/rfc/rfc9413.html) shows that tolerated faults become permanent contracts.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Make processes safe to kill at any moment, so a crash costs nothing but a restart ([The Twelve-Factor App, IX. Disposability](https://12factor.net/disposability)).
+  - marker: SHOULD
+    body: |
+      Leave recovery to a supervisor outside the failing process.
+- id: Translate at the door
+  parent: Shift Left
+  body: |
+    [[Code We Cannot Control]] speaks its own dialect. Alistair Cockburn's [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/) and Eric Evans's Anti-Corruption Layer both put translation at a port, so foreign models never leak inward. Parsed once at the [[Perimeter]] into types that cannot hold [[Illegal states]], a value is never checked again. Tony Hoare's [billion-dollar mistake](https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/) shows the cost of uncertainty travelling through every reference. One adapter per foreign shape keeps upgrades local.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Give every foreign system its own adapter behind a port.
+  - marker: MAY
+    body: |
+      Introduce an anti-corruption layer where the foreign model's meaning differs from ours ([Anti-Corruption Layer](https://learn.microsoft.com/en-us/azure/architecture/patterns/anti-corruption-layer)).
+- id: Encapsulation
+  parent: Shift Left
+  body: |
+    A type that encapsulates its values and limits the paths of creation to one that validates everything it can makes [[Illegal states unrepresentable]]: holding a value of the type is proof it was checked. Yaron Minsky's [Effective ML Revisited](https://blog.janestreet.com/effective-ml-revisited/) names the idiom, make [[Illegal states unrepresentable]], and Scott Wlaschin's [Designing with types](https://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/) works it through. Any weaker typing, one that does not fully encapsulate or leaves a second path of creation open, hands the validation back to every caller.
+
+    When an API passes `int x, int y` as coordinates, fold them into a `CarPosition`, not a `Coordinate`. A `CarPosition` is never collapsed into ints again: all our code keeps it as a `CarPosition`, perhaps uses a generic `Position`, or converts it into a `DriverPosition` once it is verified to be moving. In the best case `CarPosition` stays opaque, the best encapsulation: [[No code]] ever knows or depends on the fact that there might be two ints inside. When it is written to the database, at the [[Perimeter]], the database context consumes it as a `CarPosition` and, by contract, perhaps a visitor, folds it into a database parameter belonging to the `CAR_POSITION` table. A [[Domain primitive]] is the special case where a single primitive is wrapped.
+
+    Every typing add-on to a weakly typed language exists to be used for this. Even an environment without types can mint a naming standard in which a variable prefix carries the signature "validated by factory", and a linter enforcing that standard shifts the validated contract further left.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Use every typing add-on the language offers to give every type one [[Validating path of creation]] and no other.
+  - marker: SHOULD
+    body: |
+      Where code smells of [[Optionality]] and [[Primitive Obsession]], improve it first by introducing encapsulation: refactor to opaque types, and retire the tests that only guarded against values the types can no longer hold.
+  - marker: MAY
+    body: |
+      Where the environment has no types, mint a naming prefix that marks a value validated by its factory, and enforce it with a linter.
+- id: Name the case, not the knob
+  parent: Simplicity
+  body: |
+    Each optional flag doubles the paths a function can take, and most of them are never tested (Pete Hodgson, [Feature Toggles](https://martinfowler.com/articles/feature-toggles.html)). Martin Fowler's [FlagArgument](https://martinfowler.com/bliki/FlagArgument.html): a named operation states intent where a bare boolean hides it. Robert Harper's [Boolean Blindness](https://existentialtype.wordpress.com/2011/03/15/boolean-blindness/): a flag carries no meaning of its own.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Retire a feature toggle as soon as its case is decided.
+- id: Tests prove behaviour, not execution
+  parent: Shift Left
+  body: |
+    A line that runs under test is not a line that is checked. Martin Fowler's [AssertionFreeTesting](https://martinfowler.com/bliki/AssertionFreeTesting.html) describes suites with full coverage that verified nothing; Inozemtseva and Holmes found coverage predicts little about fault detection once suite size is controlled for. A test that asserts outcomes is an executable specification that documents and guards behaviour on every commit.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Run mutation testing to show that the tests fail when the code is wrong ([State of Mutation Testing at Google](https://research.google.com/pubs/archive/46584.pdf)).
+- id: Make the wrong thing fail
+  parent: Single Source of Truth
+  body: |
+    Documents advise; the build decides. Compiler strictness, linters, and thresholds live in the self-testing build ([Continuous Integration](https://martinfowler.com/articles/continuousIntegration.html)), where every change, human or agent, meets the same bar. As in Toyota's jidoka, an abnormality stops the line instead of travelling downstream. A gate that is relaxed is a broken window: it tells everyone the standard is gone.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Run the same build locally and in the pipeline, so a change meets one bar wherever it runs.
+  - marker: SHOULD
+    body: |
+      Let each tool write its report untouched, and compare the report against the thresholds in a separate step.
+- id: The practitioner decides the outcome
+  parent: Leverage
+  body: |
+    AI is [[Leverage]] applied to a [[Practitioner]]: a lever, a *hävstång*, that multiplies the force on it and adds none. Applied by someone who does not know what good looks like, it produces a mess at a speed no one could reach unaided, and the mess arrives reviewed, formatted, and entirely plausible. Applied by someone working from these documents, it produces the same [[Quality]] faster, and more of it. Lisanne Bainbridge's [Ironies of Automation](https://doi.org/10.1016/0005-1098(83)90046-8) (1983) names the mechanism: automation takes over the routine and leaves the practitioner exactly the judgement it could not encode, so the more capable the tool, the more the outcome rests on the person. Two measurements show it from both sides. [Generative AI at Work](https://www.nber.org/papers/w31161) (Brynjolfsson, Li, Raymond, 2023) found the gains concentrated in novices, because the model disseminated the practice of the most able workers: the tool carried competence that already existed. METR's [early-2025 study](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/) found experienced developers 19% slower with AI tools while believing themselves 20% faster: what the tool multiplied there was the confidence, not the result.
+
+    The distance between what a person and what a model can do narrows every day, so anything justified by "AI cannot do this yet" carries an expiry date and is not written as permanent. What does not narrow is Fred Brooks's [essential complexity](https://worrydream.com/refs/Brooks_1986_-_No_Silver_Bullet.pdf): tools attack the accidental, and knowing which problem is worth solving, what good means here, and whether the result is true stays with the practitioner. Investment therefore goes to the practitioner's competence, and to stating our standard explicitly enough to be applied, over the expectation that a better model compensates for the absence of both.
+  solutions:
+  - marker: SHOULD
+    body: |
+      State a standard in these documents before handing it to a tool to apply, so the tool multiplies a definition and not a habit.
+  - marker: SHOULD
+    body: |
+      Keep the rules, prompts, harnesses, and pipelines that carry our standard under our own control; a vendor's default encodes the vendor's standard, an average of everyone's practice rather than ours. Everything below that layer is consumed by the [[Simplicity ladder]] like any other component.
+  - marker: SHOULD
+    body: |
+      Verify generated output by the same means as any other change; fluency and confidence are properties of its form and say nothing about its [[Correctness]].
+- id: Environment parity
+  parent: Single Source of Truth
+  body: |
+    If it works on your machine but not in production, the environment is the bug. [The Twelve-Factor App, X. Dev/prod parity](https://12factor.net/dev-prod-parity) names three gaps that open between the two, in time, in personnel, and in tools, and every gap is a place where a defect hides until the deploy. Closing them means the environment stops being a state each machine has drifted into and becomes a definition every machine is provisioned from: one description, in code, from which local, staging, and production are all built. GitHub's [Scripts to Rule Them All](https://github.blog/engineering/scripts-to-rule-them-all/) applies the same idea at the entry point: one consistent bootstrap across every project, so a newcomer clones, builds, and tests with a single command instead of a page of steps. A manual step is a second definition of the procedure, kept in the head of whoever last ran it.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Provision every environment, the local one included, from the same infrastructure-as-code definition.
+  - marker: SHOULD
+    body: |
+      Run the production artifact itself locally and in [[Integration test]]s, rather than a lighter stand-in for it.
+- id: Telemetry over guesswork
+  parent: Shift Left
+  body: |
+    A feature that has shipped without a signal is a feature we hope works. The [[Shift Left]] axiom does not stop at release: the earliest point at which a production defect can be observed is by us, from telemetry, and the latest is by the customer, from the symptom. The Google SRE book's [Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/) reduces what to watch to four golden signals, latency, traffic, errors, and saturation, and pages only on symptoms already affecting users, which is possible only if the signals were in place before the change was. Telemetry, logs, and alerts therefore ship with the behaviour they observe, not after its first incident, and a regression is found and resolved before the customer notices a flicker. Adding them afterwards is the same shortcut as adding the test afterwards, and is skipped for the same reasons.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Instrument every service for the four golden signals before its first deploy.
+  - marker: SHOULD
+    body: |
+      Alert on symptoms [[Users]] experience, and keep cause-level signals for diagnosis rather than paging.

@@ -1,0 +1,405 @@
+definitions:
+- id: Marker
+  specification: |
+    The RFC 2119 priority word that opens a rule. Conflicts are resolved in favor of the rule with the higher-priority marker.
+  closedEnumerationOf:
+  - MUST
+  - MUST NOT
+  - SHOULD
+  - SHOULD NOT
+  - MAY
+  - PREFER
+- id: MUST
+  specification: |
+    An absolute requirement.
+- id: MUST NOT
+  specification: |
+    An absolute prohibition.
+- id: SHOULD
+  specification: |
+    A requirement that may be set aside only with a stated, valid reason.
+- id: SHOULD NOT
+  specification: |
+    A prohibition that may be set aside only with a stated, valid reason.
+- id: MAY
+  specification: |
+    An option.
+- id: PREFER
+  specification: |
+    A directional default: choose the named option over the alternative unless the alternative is demonstrably better here.
+- id: Id
+  specification: |
+    The name of an entry, and the only stable handle for citing it. Ids are unique across every document, compared case-insensitively with whitespace normalized. In prose an id is cited as [[Id]].
+- id: Group
+  specification: |
+    The topical cluster a rule belongs to, taken from the heading the rule sat under. It orders and clusters rules for readers and has no bearing on precedence.
+- id: Parent
+  specification: |
+    The id of the entry directly above. Every entry below the root has exactly one parent.
+- id: Purpose
+  specification: |
+    The stated reason something is built or changed, expressed as the benefit it delivers to [[Users]]. Purpose is measured in benefit to users, not to developers. Code is a subset of its Purpose: every part of the code traces to a part of the Purpose, and no part of the code reaches outside it.
+- id: WHY
+  specification: |
+    Alias for [[Purpose]].
+- id: Users
+  specification: |
+    Whoever consumes the software or system to fulfill a need. Developers who write, call, or maintain the code are not users.
+  openEnumerationOf:
+  - End user
+  - Operator
+  - External system
+  - AI agent
+- id: End user
+  specification: |
+    A person who uses the product to meet their own need.
+- id: Operator
+  specification: |
+    A person who keeps the system running in production.
+- id: External system
+  specification: |
+    A system outside the current code base that calls it or is called by it.
+- id: AI agent
+  specification: |
+    A program that pursues a goal autonomously, using a model to decide its next action.
+- id: Class
+  specification: |
+    A construct that defines a type as a set of values together with the operations on them. A rule that names a Class applies to every construct that does this, whatever the language calls it.
+- id: Interface
+  specification: |
+    The boundary through which code outside a component invokes it. A component is a [[Class]] or any larger unit of code.
+- id: API
+  specification: |
+    Alias for [[Interface]].
+- id: Public method
+  specification: |
+    A single invocation receiver of an [[Interface]]: one operation that code outside the component can invoke through it. An operation that only code inside the component can invoke is not a public method.
+- id: Domain object
+  specification: |
+    A type in the domain layer that models a business concept and upholds its own invariants. Domain objects are immutable, are created only through a validating factory, and expose operations that accept and return other domain objects.
+- id: Encapsulated type
+  specification: |
+    A [[Class]] into which one or more raw values are folded at the [[Perimeter]], named for what the values mean rather than for their shape, with a single validating path of creation, and [[Immutable]]. Inside our code it is never collapsed back into raw values; it becomes another type only through a verified conversion, and at an outbound perimeter a contract of the type folds it into the foreign shape. Kept opaque, no code depends on its internal representation.
+  openEnumerationOf:
+  - Domain primitive
+- id: Domain primitive
+  specification: |
+    The special case where a single raw value is wrapped.
+- id: Loose type
+  specification: |
+    The shape of a variable, defined so loosely that it admits [[Illegal state]]s by design, the opposite of [[Illegal states unrepresentable]]. Its looseness shows in the type's cardinality, which every field and every open choice multiplies while the legal states stay few.
+  openEnumerationOf:
+  - Optionality
+  - Primitive Obsession
+  - Mutator
+- id: Primitive Obsession
+  specification: |
+    Representing a value by one or more general-purpose primitive types instead of a type of its own, leaving its meaning and constraints to every piece of code that handles it.
+- id: Optionality
+  specification: |
+    A choice left open in a value or parameter, such as whether it is present at all.
+- id: Setter
+  specification: |
+    An operation that assigns a new value to a field of an existing object, a second path of creation that skips the validation of the first. A strong code smell.
+- id: Immutable
+  specification: |
+    Unable to change after creation. A change produces a new value, which passes the same validating path of creation as the first. Without it, a factory's validation holds only for the moment of creation.
+- id: Code We Cannot Control
+  specification: |
+    Code that is not part of the current code base and whose shape we cannot change.
+  openEnumerationOf:
+  - Framework
+  - Library
+  - External system
+  - User input
+- id: Framework
+  specification: |
+    Code outside the current code base that calls our code and owns the flow of control.
+- id: Library
+  specification: |
+    Code outside the current code base that our code calls, leaving the flow of control with our code.
+- id: User input
+  specification: |
+    Data a person enters through a user interface.
+- id: Perimeter
+  specification: |
+    A point in our code that either invokes, or is invoked by, Code We Cannot Control.
+- id: Illegal state
+  specification: |
+    A combination of values that the domain never defined as valid. It is made unrepresentable by choosing a type in which the combination cannot be constructed, rather than by checking for it at runtime.
+- id: Simplicity ladder
+  specification: |
+    One aspect of [[Simplicity]], ranking how much code we own afterwards. The preference for meeting a need at the highest [[Simplicity rung]] that applies, descending only when the rung above offers nothing viable. The rungs rank from highest to lowest in the order [[Simplicity rung]] enumerates them. Every rung is gated by being available and maintained.
+- id: Simplicity rung
+  specification: |
+    A way to meet a need, ranked by how little code we own afterwards.
+  closedEnumerationOf:
+  - No code
+  - Codebase reuse
+  - Platform or framework
+  - External dependency
+  - External tool or service
+  - New code
+- id: No code
+  specification: |
+    Meeting the need without any code.
+- id: Codebase reuse
+  specification: |
+    Meeting the need with code already in this codebase, refactored into a reusable component where it is not one yet.
+- id: Platform or framework
+  specification: |
+    Meeting the need with what the platform or framework in use already provides.
+- id: External dependency
+  specification: |
+    Meeting the need by adding an existing external component as a dependency.
+- id: External tool or service
+  specification: |
+    Meeting the need by integrating an existing external tool or calling an existing service.
+- id: New code
+  specification: |
+    Meeting the need by writing new code.
+- id: Shift Left rung
+  specification: |
+    A place where a defect can be caught. The rungs rank from earliest and cheapest to latest and costliest in the order this term enumerates them. A safeguard belongs at the leftmost rung able to catch the error.
+  closedEnumerationOf:
+  - Illegal states unrepresentable
+  - Static code analysis
+  - Unit test
+  - Integration test
+  - End-to-end test
+- id: Illegal states unrepresentable
+  specification: |
+    Preventing a defect by choosing a type in which the [[Illegal state]] cannot be constructed.
+- id: Static code analysis
+  specification: |
+    Catching a defect by analysing the code before it runs.
+- id: Unit test
+  specification: |
+    Catching a defect by exercising one component in-process, without external dependencies.
+- id: Integration test
+  specification: |
+    Catching a defect by exercising components together against real adapters in local containers.
+- id: End-to-end test
+  specification: |
+    Catching a defect by exercising fully deployed services in a running staging environment.
+- id: Evidence
+  specification: |
+    A verifiable reference that grounds a change or an assumption. A practice recalled from experience is not evidence.
+  closedEnumerationOf:
+  - Code reference
+  - Test reference
+  - Document reference
+- id: Code reference
+  specification: |
+    A full URL to code on the main branch of an existing or public repository.
+- id: Test reference
+  specification: |
+    A test in an existing repository.
+- id: Document reference
+  specification: |
+    A full URL to a specific section of an article or document.
+- id: Demonstrable standard
+  specification: |
+    A standard that can be pointed at. A habit recalled from past experience, or a practice whose community has moved on, is not a demonstrable standard.
+  closedEnumerationOf:
+  - Published convention
+  - Maintained library or framework
+  - Community pattern
+- id: Published convention
+  specification: |
+    A convention that is written down and published.
+- id: Maintained library or framework
+  specification: |
+    A [[Library]] or [[Framework]] that is actively maintained.
+- id: Community pattern
+  specification: |
+    A pattern in current use by a large, active community.
+- id: Machine-read comment
+  specification: |
+    A comment that something other than a human reader requires.
+  closedEnumerationOf:
+  - Shebang
+  - Machine-read directive
+  - Published API documentation
+  - Mandated license header
+  - Generated-file banner
+- id: Shebang
+  specification: |
+    The first line of a script, naming the interpreter that runs it.
+- id: Machine-read directive
+  specification: |
+    A directive to a tool that is syntactically a comment.
+- id: Published API documentation
+  specification: |
+    Documentation of an [[Interface]] that a tool extracts to a published documentation site.
+- id: Mandated license header
+  specification: |
+    A license notice that a license or policy requires at the top of a file.
+- id: Generated-file banner
+  specification: |
+    A notice marking a file as generated by a tool.
+- id: Great Code
+  specification: |
+    Code that avoids becoming a [[System Failed State]].
+- id: Bad Code
+  specification: |
+    Code that drives the system toward a [[System Failed State]].
+- id: Accuracy
+  specification: |
+    The degree to which the system does what [[Users]] need.
+- id: Inaccurate
+  specification: |
+    The state where the system diverges from what [[Users]] need, failing to fulfill their intended outcome.
+- id: System Decay
+  specification: |
+    The progressive transition of a software system from a healthy state into one or more [[System Failed State]]s, caused by the accumulation of [[Bad Code]].
+- id: System Failed State
+  specification: |
+    A non-operational state the software transitions into when bad code accumulates.
+  openEnumerationOf:
+  - Velocity Stagnation
+  - Regression Cascades
+  - Knowledge Dissipation
+  - Deployment Paralysis
+  - Value Failure
+- id: Velocity Stagnation
+  specification: |
+    The codebase has become so complex or fragile that the team can no longer deliver value at a sustainable pace.
+- id: Regression Cascades
+  specification: |
+    Fixing one bug consistently introduces new, unrelated bugs elsewhere in the application.
+- id: Knowledge Dissipation
+  specification: |
+    The codebase still runs, but no active team member understands how or why its core logic works.
+- id: Deployment Paralysis
+  specification: |
+    Code changes are complete, but the system cannot be safely or reliably shipped to production.
+- id: Value Failure
+  specification: |
+    The system has become [[Inaccurate]], failing to do what [[Users]] need.
+- id: Architectural Direction
+  specification: |
+    The fold of every ADR, read from the highest-numbered downward: a later ADR supersedes an earlier one, so where ADRs are ambiguous or conflict, the first read holds. ADRs are immutable; a change is a new ADR, never an edit, because the history explains why decisions were made and why the project is designed the way it is. The Architectural Direction governs where the project is heading; it does not describe its current state.
+- id: ADRs
+  specification: |
+    Alias for [[Architectural Direction]].
+- id: Software quality axis
+  specification: |
+    One of ten dimensions defining software quality.
+  closedEnumerationOf:
+  - Correctness
+  - Maintainability
+  - Readability
+  - Testability
+  - Structural simplicity
+  - True Test Coverage
+  - Ease of Doing the Right Thing
+  - Guardrails Against Doing the Wrong Thing
+  - Automation
+  - Currency of Tools and Libraries
+- id: Correctness
+  specification: |
+    The degree to which software accurately delivers what [[Users]] need.
+- id: Maintainability
+  specification: |
+    The property that changing a behavior requires understanding and touching only the component that owns it.
+- id: Readability
+  specification: |
+    The property that a reader unfamiliar with the code understands what it does and why without asking the author.
+- id: Testability
+  specification: |
+    The property that behavior is exercised in isolation without standing up networks, clocks, or global state.
+- id: Structural simplicity
+  specification: |
+    [[Simplicity]] as it shows in the design: the property that the design carries no structure that a present requirement does not demand.
+- id: True Test Coverage
+  specification: |
+    The property that tests fail when behavior breaks, rather than merely executing code paths.
+- id: Ease of Doing the Right Thing
+  specification: |
+    The property that the correct approach is the path of least resistance for the next contributor.
+- id: Guardrails Against Doing the Wrong Thing
+  specification: |
+    The property that types, tests, and tooling cause incorrect approaches to fail early at compile time rather than relying on human vigilance.
+- id: Automation
+  specification: |
+    The property that the path between a change and its verified deployment runs without manual intervention.
+- id: Currency of Tools and Libraries
+  specification: |
+    The property that dependencies are current and easily kept that way.
+- id: Comment intent
+  specification: |
+    A reason prose is written as a comment in code. Every comment intent is replaced by a durable, verifiable mechanism, leaving only [[Machine-read comment]]s exempt.
+  closedEnumerationOf:
+  - Clarification
+  - Procrastination
+  - Architectural decision
+  - Usage guidance
+  - Apology or confession
+- id: Clarification
+  specification: |
+    Explaining intent in code, replaced by intent-revealing variable names, focused functions, or negative tests.
+- id: Procrastination
+  specification: |
+    Deferring work via a TODO, replaced by a failing test pinning the weakness, smaller production-ready changes, or an explicit plan document.
+- id: Architectural decision
+  specification: |
+    Recording a design choice, replaced by an [[Architectural Direction]] record under `docs/adrs/`.
+- id: Usage guidance
+  specification: |
+    Explaining how to use code, replaced by user documentation or a README.
+- id: Apology or confession
+  specification: |
+    Apologizing for or confessing weak code, replaced by fixing the underlying design flaw or pinning the limitation with a failing test.
+- id: ADR
+  specification: |
+    Alias for [[Architectural Direction]].
+- id: TODO
+  specification: |
+    Alias for [[Procrastination]].
+- id: TODOs
+  specification: |
+    Alias for [[Procrastination]].
+- id: User
+  specification: |
+    Alias for [[Users]].
+- id: Quality
+  specification: |
+    Alias for [[Software quality axis]].
+- id: Software Quality
+  specification: |
+    Alias for [[Software quality axis]].
+- id: Quality axis
+  specification: |
+    Alias for [[Software quality axis]].
+- id: Domain objects
+  specification: |
+    Alias for [[Domain object]].
+- id: Validating path of creation
+  specification: |
+    The single path through which an [[Encapsulated type]] or [[Domain primitive]] is constructed at the [[Perimeter]], running all required checks before a value is minted.
+- id: Path of least resistance
+  specification: |
+    The design property where the easiest and most convenient option for a contributor is also the correct one.
+- id: Illegal states
+  specification: |
+    Alias for [[Illegal state]].
+- id: Failing test
+  specification: |
+    A test that exercises a capability or defect and fails until the correct behavior is implemented.
+- id: Explicitly named method
+  specification: |
+    A method whose name states the specific domain action or concept it performs rather than using generic control knobs or boolean flags.
+- id: Single creation path
+  specification: |
+    The requirement that a domain type provides exactly one factory or constructor that validates invariants, preventing second unvalidated paths of creation such as setters.
+- id: Mutator
+  specification: |
+    Alias for [[Setter]].
+
+
+
+
+- id: Practitioner
+  specification: |
+    The person who applies a tool, method, or standard to produce or change software, and whose competence the result reflects. Not an [[Operator]], who keeps the system running, and not a [[User]], who consumes it.

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput-io.github.io/agents/schemas/id.schema.json",
+  "title": "Id",
+  "description": "Abstract stable handle for citing an entity: readable text with no leading or trailing whitespace. Each entity schema defines its concrete id by inheriting this",
+  "examples": [
+    "Demonstrable standard"
+  ],
+  "type": "string",
+  "pattern": "^\\S(.*\\S)?$"
+}

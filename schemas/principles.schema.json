@@ -1,37 +1,46 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput-io.github.io/agents/schemas/principles.schema.json",
+  "title": "Principles",
+  "description": "The principles: entries whose parent is a rationale",
+  "examples": [
+    {
+      "principles": [
+        {
+          "id": "Producer moves first",
+          "parent": "Robustness Principle",
+          "body": "The producer moves first; consumers accept what they do not know.\n"
+        }
+      ]
+    }
+  ],
   "type": "object",
   "required": [
     "principles"
   ],
-  "additionalProperties": false,
   "properties": {
     "principles": {
-      "type": "object",
-      "minProperties": 1,
-      "propertyNames": {
-        "$ref": "common.schema.json#/$defs/principle-key"
-      },
-      "additionalProperties": {
-        "type": "object",
-        "required": [
-          "title",
-          "interprets",
-          "body"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "title": {
-            "$ref": "common.schema.json#/$defs/text"
-          },
-          "interprets": {
-            "$ref": "common.schema.json#/$defs/axiom-key"
-          },
-          "body": {
-            "$ref": "common.schema.json#/$defs/text"
-          }
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Principle"
+      }
+    }
+  },
+  "$defs": {
+    "Principle": {
+      "description": "One principle",
+      "$ref": "entry.schema.json#/$defs/Entry",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/PrincipleId"
+        },
+        "parent": {
+          "$ref": "rationales.schema.json#/$defs/RationaleId"
         }
       }
+    },
+    "PrincipleId": {
+      "$ref": "id.schema.json"
     }
   }
 }

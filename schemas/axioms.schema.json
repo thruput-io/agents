@@ -1,33 +1,46 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput-io.github.io/agents/schemas/axioms.schema.json",
+  "title": "Axioms",
+  "description": "The axioms: entries whose parent is a value",
+  "examples": [
+    {
+      "axioms": [
+        {
+          "id": "Simplicity",
+          "parent": "Outcome Over Output",
+          "body": "Simple solutions are better than complex.\n"
+        }
+      ]
+    }
+  ],
   "type": "object",
   "required": [
     "axioms"
   ],
-  "additionalProperties": false,
   "properties": {
     "axioms": {
-      "type": "object",
-      "minProperties": 1,
-      "propertyNames": {
-        "$ref": "common.schema.json#/$defs/axiom-key"
-      },
-      "additionalProperties": {
-        "type": "object",
-        "required": [
-          "title",
-          "body"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "title": {
-            "$ref": "common.schema.json#/$defs/text"
-          },
-          "body": {
-            "$ref": "common.schema.json#/$defs/text"
-          }
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Axiom"
+      }
+    }
+  },
+  "$defs": {
+    "Axiom": {
+      "description": "One axiom",
+      "$ref": "entry.schema.json#/$defs/Entry",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/AxiomId"
+        },
+        "parent": {
+          "$ref": "values.schema.json#/$defs/ValueId"
         }
       }
+    },
+    "AxiomId": {
+      "$ref": "id.schema.json"
     }
   }
 }

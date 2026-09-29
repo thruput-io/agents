@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput-io.github.io/agents/schemas/adr.schema.json",
+  "title": "ADR",
+  "description": "One Architecture Decision Record. ADRs together form the Architectural Direction, defined in definitions.yaml: they are read from the highest number downward, a later ADR supersedes an earlier one, and an ADR is never edited once written; a change is a new ADR. An ADR governs direction and does not describe current state",
+  "examples": [
+    {
+      "number": 3,
+      "title": "Axioms Above Principles",
+      "date": "2026-09-18",
+      "context": "Several principles rest on the same unstated premise, and when two principles pull in different directions there is nothing above them to settle the question.\n",
+      "decision": "Add a fourth tier, **Axioms**, above Principles.\n"
+    }
+  ],
+  "type": "object",
+  "required": [
+    "number",
+    "title",
+    "date",
+    "context"
+  ],
+  "properties": {
+    "number": {
+      "$ref": "#/$defs/Number"
+    },
+    "title": {
+      "$ref": "#/$defs/Title"
+    },
+    "date": {
+      "$ref": "#/$defs/Date"
+    },
+    "context": {
+      "$ref": "#/$defs/Context"
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/SingleDecision"
+    },
+    {
+      "$ref": "#/$defs/SeveralDecisions"
+    }
+  ],
+  "$defs": {
+    "Number": {
+      "description": "The sequence number, which orders the ADRs and decides which supersedes which: the higher number wins",
+      "type": "integer",
+      "minimum": 1
+    },
+    "Title": {
+      "description": "What was decided, in a few words",
+      "type": "string",
+      "minLength": 1
+    },
+    "Date": {
+      "description": "The day the decision was taken",
+      "type": "string",
+      "format": "date"
+    },
+    "Context": {
+      "description": "The forces and circumstances that called for the decision",
+      "$ref": "definitions.schema.json#/$defs/Prose"
+    },
+    "Decisions": {
+      "description": "What is decided, when several decisions are taken together. A single decision is written as decision, so each ADR has exactly one valid shape",
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "$ref": "#/$defs/Decision"
+      }
+    },
+    "Decision": {
+      "description": "One decision",
+      "$ref": "definitions.schema.json#/$defs/Prose"
+    },
+    "SingleDecision": {
+      "description": "An ADR that takes one decision",
+      "properties": {
+        "decision": {
+          "$ref": "#/$defs/Decision"
+        }
+      },
+      "required": [
+        "decision"
+      ]
+    },
+    "SeveralDecisions": {
+      "description": "An ADR that takes several decisions together",
+      "properties": {
+        "decisions": {
+          "$ref": "#/$defs/Decisions"
+        }
+      },
+      "required": [
+        "decisions"
+      ]
+    }
+  }
+}

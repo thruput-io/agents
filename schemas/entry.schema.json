@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput-io.github.io/agents/schemas/entry.schema.json",
+  "title": "Entry",
+  "description": "What every entry in the taxonomy carries: an id and a body, and below the root the id of its parent one level up. Each level schema extends an entry and narrows its id and its parent to its own level",
+  "examples": [
+    {
+      "id": "Shift Left",
+      "parent": "Speed Through Discipline",
+      "body": "Do every activity at the earliest point where it can be done.\n"
+    }
+  ],
+  "oneOf": [
+    {
+      "$ref": "#/$defs/RootEntry"
+    },
+    {
+      "$ref": "#/$defs/Entry"
+    }
+  ],
+  "$defs": {
+    "RootEntry": {
+      "description": "An entry at the root level, which has no parent",
+      "type": "object",
+      "required": [
+        "id",
+        "body"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "id.schema.json"
+        },
+        "body": {
+          "$ref": "definitions.schema.json#/$defs/Prose"
+        },
+        "parent": false
+      }
+    },
+    "Entry": {
+      "description": "An entry below the root, pointing at its parent one level up",
+      "type": "object",
+      "required": [
+        "id",
+        "body",
+        "parent"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "id.schema.json"
+        },
+        "body": {
+          "$ref": "definitions.schema.json#/$defs/Prose"
+        },
+        "parent": {
+          "$ref": "id.schema.json"
+        }
+      }
+    }
+  }
+}

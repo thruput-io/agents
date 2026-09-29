@@ -1,48 +1,66 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput-io.github.io/agents/schemas/rules.schema.json",
+  "title": "Rules",
+  "description": "The rules: entries whose parent is a principle, each opened by a marker and placed in a group",
+  "examples": [
+    {
+      "rules": [
+        {
+          "id": "Stated purpose",
+          "marker": "MUST",
+          "group": "Purpose & Accuracy",
+          "parent": "Code Only for User Value",
+          "body": "State the **WHY** of a change as what good it does for the **[[Users]]** of the code.\n"
+        }
+      ]
+    }
+  ],
   "type": "object",
   "required": [
     "rules"
   ],
-  "additionalProperties": false,
   "properties": {
     "rules": {
-      "type": "object",
-      "minProperties": 1,
-      "propertyNames": {
-        "$ref": "common.schema.json#/$defs/rule-key"
-      },
-      "additionalProperties": {
-        "type": "object",
-        "required": [
-          "marker",
-          "group",
-          "guards",
-          "body"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "marker": {
-            "enum": [
-              "MUST",
-              "MUST NOT",
-              "SHOULD",
-              "SHOULD NOT",
-              "MAY",
-              "PREFER"
-            ]
-          },
-          "group": {
-            "$ref": "common.schema.json#/$defs/text"
-          },
-          "guards": {
-            "$ref": "common.schema.json#/$defs/principle-key"
-          },
-          "body": {
-            "$ref": "common.schema.json#/$defs/text"
-          }
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Rule"
+      }
+    }
+  },
+  "$defs": {
+    "Rule": {
+      "description": "One rule",
+      "$ref": "entry.schema.json#/$defs/Entry",
+      "required": [
+        "marker",
+        "group"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/RuleId"
+        },
+        "parent": {
+          "$ref": "principles.schema.json#/$defs/PrincipleId"
+        },
+        "marker": {
+          "enum": [
+            "MUST",
+            "MUST NOT",
+            "SHOULD",
+            "SHOULD NOT",
+            "MAY",
+            "PREFER"
+          ]
+        },
+        "group": {
+          "type": "string",
+          "minLength": 1
         }
       }
+    },
+    "RuleId": {
+      "$ref": "id.schema.json"
     }
   }
 }

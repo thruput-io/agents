@@ -1,33 +1,139 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput-io.github.io/agents/schemas/definitions.schema.json",
+  "title": "Definitions",
+  "description": "The glossary: the definitions of terms the other documents rely on",
+  "examples": [
+    {
+      "definitions": [
+        {
+          "id": "API",
+          "specification": "Alias for [[Interface]].\n"
+        }
+      ]
+    }
+  ],
   "type": "object",
   "required": [
     "definitions"
   ],
-  "additionalProperties": false,
   "properties": {
     "definitions": {
-      "type": "object",
-      "minProperties": 1,
-      "propertyNames": {
-        "$ref": "common.schema.json#/$defs/definition-key"
-      },
-      "additionalProperties": {
-        "type": "object",
-        "required": [
-          "term",
-          "specification"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "term": {
-            "$ref": "common.schema.json#/$defs/text"
-          },
-          "specification": {
-            "$ref": "common.schema.json#/$defs/text"
-          }
-        }
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Definition"
       }
+    }
+  },
+  "$defs": {
+    "DefinitionId": {
+      "description": "The stable handle for citing the definition",
+      "$ref": "id.schema.json"
+    },
+    "Definition": {
+      "description": "A term, named by its id, with its specification and optionally the criteria deciding whether a concept is an instance of the term. A definition is refined over time by adding criteria. Schemas that extend it add properties",
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/DefinitionId"
+        },
+        "specification": {
+          "$ref": "#/$defs/Specification"
+        },
+        "criteria": {
+          "$ref": "#/$defs/Criteria"
+        },
+        "closedEnumerationOf": {
+          "$ref": "#/$defs/ClosedEnumeration"
+        },
+        "openEnumerationOf": {
+          "$ref": "#/$defs/OpenEnumeration"
+        }
+      },
+      "required": [
+        "id",
+        "specification"
+      ],
+      "not": {
+        "required": [
+          "closedEnumerationOf",
+          "openEnumerationOf"
+        ]
+      }
+    },
+    "ClosedEnumeration": {
+      "description": "Every narrower definition of the term, by id. Each listed definition is a kind of the term, and nothing outside the list is. A definition is either a closed or an open enumeration, never both",
+      "$ref": "#/$defs/Enumeration"
+    },
+    "OpenEnumeration": {
+      "description": "Narrower definitions of the term known so far, by id. Each listed definition is a kind of the term, and other kinds may exist that are not listed. A definition is either a closed or an open enumeration, never both",
+      "$ref": "#/$defs/Enumeration"
+    },
+    "Enumeration": {
+      "description": "The ids of the narrower definitions a term enumerates, each listed once. A listed definition does not restate the term in its own specification",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/DefinitionId"
+      }
+    },
+    "Specification": {
+      "description": "The precise meaning of the term",
+      "$ref": "#/$defs/Prose"
+    },
+    "Criteria": {
+      "description": "Classification criteria deciding whether a concept is an instance of the term",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Criterion"
+      }
+    },
+    "Criterion": {
+      "description": "One classification criterion, either including a concept or excluding it",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/IncludeCriterion"
+        },
+        {
+          "$ref": "#/$defs/ExcludeCriterion"
+        }
+      ]
+    },
+    "IncludeCriterion": {
+      "description": "A concept matching the statement is an instance of the term",
+      "type": "object",
+      "properties": {
+        "include": {
+          "$ref": "#/$defs/CriterionStatement"
+        }
+      },
+      "required": [
+        "include"
+      ]
+    },
+    "ExcludeCriterion": {
+      "description": "A concept matching the statement is not an instance of the term",
+      "type": "object",
+      "properties": {
+        "exclude": {
+          "$ref": "#/$defs/CriterionStatement"
+        }
+      },
+      "required": [
+        "exclude"
+      ]
+    },
+    "CriterionStatement": {
+      "description": "The heuristic a concept is matched against",
+      "$ref": "#/$defs/Prose"
+    },
+    "Prose": {
+      "description": "Markdown text. A reference to an entry or a glossary term is its id in double square brackets, [[Id]]: every [[ opens a reference that closes with ]], holds no brackets, and is not blank. The reference must name an existing id",
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\[]*(?:(?:\\[\\[[^\\[\\]]*[^\\[\\]\\s][^\\[\\]]*\\]\\]|\\[[^\\[])[^\\[]*)*\\[?$"
     }
   }
 }
