@@ -191,7 +191,7 @@ Ideas raised during the pass, to be taken after it. Add, do not act.
 
 ## Applied on 2026-09-29
 
-The levels restated: a rule is a MUST or MUST NOT a reviewer answers on the diff, violation or not, and becomes a standard where a tool can answer it; why on a rule is its principle, a memorable statement of how and what we code; why on a principle is its rationale, how an axiom is turned into that principle; an axiom is a truth, and why we hold these truths and not others is answered by the values. `ImperataDerivata.yaml` carries the criteria; the rules schema admits only MUST and MUST NOT; PREFER leaves the glossary.
+The levels are restated in `ImperataDerivata.yaml`; the rules schema admits only MUST and MUST NOT; PREFER leaves the glossary.
 
 | Statement | Was | Now |
 |---|---|---|
