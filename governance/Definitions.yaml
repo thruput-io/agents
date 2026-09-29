@@ -35,9 +35,6 @@ definitions:
 - id: Purpose
   specification: |
     The stated reason something is built or changed, expressed as the benefit it delivers to [[Users]]. Purpose is measured in benefit to users, not to developers. Code is a subset of its Purpose: every part of the code traces to a part of the Purpose, and no part of the code reaches outside it.
-- id: WHY
-  specification: |
-    Alias for [[Purpose]].
 - id: Users
   specification: |
     Whoever consumes the software or system to fulfill a need. Developers who write, call, or maintain the code are not users.

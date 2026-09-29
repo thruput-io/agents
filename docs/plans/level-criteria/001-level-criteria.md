@@ -209,3 +209,5 @@ The levels restated: a rule is a MUST or MUST NOT a reviewer answers on the diff
 | Quality Uncompromised | principle holding axiom, rationale, and glossary | axiom Quality Uncompromised under Speed Through Discipline; rationale What wins when values collide; the axes stay in the glossary |
 
 Open: What wins when values collide has no principle beneath it. Each right-hand side of its pairs is a smell that wants a rule, and the principle that names them is not yet stated.
+
+WHY was an alias of Purpose and is retired; every entry says Purpose, and the ids that carried the term are renamed: Every line serves the users' Purpose, Code as a Subset of the Purpose, Every part solves the Purpose, Nothing beyond the Purpose.
