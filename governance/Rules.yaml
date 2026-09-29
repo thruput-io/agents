@@ -29,12 +29,12 @@ rules:
   parent: Loud Failures Over Silent Defaults
   body: |
     Add platform, shell, or environment compatibility branches for environments the task does not run in.
-- id: No code below a rung that serves
+- id: Earlier rung that serves
   marker: MUST NOT
   group: Simplicity & Code Reuse
   parent: The Simplicity Ladder
   body: |
-    Write [[New code]], or add a dependency, where a higher rung of the [[Simplicity ladder]] serves the need.
+    Meet a need on a rung of the [[Simplicity ladder]] when an earlier rung serves it. [[New code]], or a new dependency, where an earlier rung serves is the smell.
 - id: Available
   marker: MUST NOT
   group: Simplicity & Code Reuse
@@ -299,6 +299,12 @@ rules:
   parent: Shift Test Left
   body: |
     Disable linting rules via comments or pragmas.
+- id: Earlier rung that can
+  marker: MUST NOT
+  group: Quality Tooling & Shift Left
+  parent: Shift Test Left
+  body: |
+    Catch a defect on a rung of the [[Shift Left ladder]] when an earlier rung can catch it. A runtime check, or a test, for what a type or a linter would reject is the smell.
 - id: No committing generated code
   marker: MUST NOT
   group: Quality Tooling & Shift Left
