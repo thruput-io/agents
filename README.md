@@ -56,6 +56,7 @@ npx --yes @agentplugins/cli add thruput-io/agents
 ### Skills
 
 - `dad-joke`: Programming dad jokes with zero input.
+- `pr-review`: Reviews a GitHub or Azure DevOps Pull Request against the thruput-io handbook rules and posts the review as inline comments on the correct lines.
 
 ## License
 

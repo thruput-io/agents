@@ -1,0 +1,142 @@
+[
+  {
+    "id": "domain-driven-design",
+    "title": "Domain-Driven Design",
+    "author": "Eric Evans",
+    "focus": "Domain Modeling & Strategic Architecture",
+    "when_to_use": "Strategic & Tactical modeling. Solves database/controller leakage into business rules.",
+    "review_checklist": "Create Ubiquitous Language, boundary contexts, guard aggregates.",
+    "tree_url": "https://github.com/ciembor/agent-rules-books/tree/main/domain-driven-design",
+    "canonical_url": "https://github.com/ciembor/agent-rules-books/blob/main/domain-driven-design/domain-driven-design.md"
+  },
+  {
+    "id": "implementing-domain-driven-design",
+    "title": "Implementing Domain-Driven Design",
+    "author": "Vaughn Vernon",
+    "focus": "Domain Modeling & Strategic Architecture",
+    "when_to_use": "Real-world tactical patterns: Aggregates, Domain Events, and Application Services.",
+    "review_checklist": null,
+    "tree_url": "https://github.com/ciembor/agent-rules-books/tree/main/implementing-domain-driven-design",
+    "canonical_url": "https://github.com/ciembor/agent-rules-books/blob/main/implementing-domain-driven-design/implementing-domain-driven-design.md"
+  },
+  {
+    "id": "domain-driven-design-distilled",
+    "title": "Domain-Driven Design Distilled",
+    "author": "Vaughn Vernon",
+    "focus": "Domain Modeling & Strategic Architecture",
+    "when_to_use": "Lightweight, high-impact tactical patterns with minimal ceremony.",
+    "review_checklist": null,
+    "tree_url": "https://github.com/ciembor/agent-rules-books/tree/main/domain-driven-design-distilled",
+    "canonical_url": "https://github.com/ciembor/agent-rules-books/blob/main/domain-driven-design-distilled/domain-driven-design-distilled.md"
+  },
+  {
+    "id": "clean-architecture",
+    "title": "Clean Architecture",
+    "author": "Robert C. Martin",
+    "focus": "Domain Modeling & Strategic Architecture",
+    "when_to_use": "Stable boundaries, the dependency rule, and keeping frameworks decoupled from business policies.",
+    "review_checklist": "Isolate frameworks, strictly enforce the dependency rule, decouple logic from DB.",
+    "tree_url": "https://github.com/ciembor/agent-rules-books/tree/main/clean-architecture",
+    "canonical_url": "https://github.com/ciembor/agent-rules-books/blob/main/clean-architecture/clean-architecture.md"
+  },
+  {
+    "id": "patterns-of-enterprise-application-architecture",
+    "title": "Patterns of Enterprise Application Architecture",
+    "author": "Martin Fowler",
+    "focus": "Domain Modeling & Strategic Architecture",
+    "when_to_use": "Enforcing clear data access, application-logic, and presentation layers.",
+    "review_checklist": null,
+    "tree_url": "https://github.com/ciembor/agent-rules-books/tree/main/patterns-of-enterprise-application-architecture",
+    "canonical_url": "https://github.com/ciembor/agent-rules-books/blob/main/patterns-of-enterprise-application-architecture/patterns-of-enterprise-application-architecture.md"
+  },
+  {
+    "id": "a-philosophy-of-software-design",
+    "title": "A Philosophy of Software Design",
+    "author": "John Ousterhout",
+    "focus": "Code Craftsmanship & Module Design",
+    "when_to_use": "Deep modules, simple interfaces, low cognitive load, and strategic vs. tactical design.",
+    "review_checklist": "Fight shallow classes, maximize information hiding, minimize cognitive load.",
+    "tree_url": "https://github.com/ciembor/agent-rules-books/tree/main/a-philosophy-of-software-design",
+    "canonical_url": "https://github.com/ciembor/agent-rules-books/blob/main/a-philosophy-of-software-design/a-philosophy-of-software-design.md"
+  },
+  {
+    "id": "clean-code",
+    "title": "Clean Code",
+    "author": "Robert C. Martin",
+    "focus": "Code Craftsmanship & Module Design",
+    "when_to_use": "Readability, meaningful naming conventions, tiny functions, and clean exception handling.",
+    "review_checklist": "Descriptive naming, single-responsibility functions, readable error handling.",
+    "tree_url": "https://github.com/ciembor/agent-rules-books/tree/main/clean-code",
+    "canonical_url": "https://github.com/ciembor/agent-rules-books/blob/main/clean-code/clean-code.md"
+  },
+  {
+    "id": "code-complete",
+    "title": "Code Complete",
+    "author": "Steve McConnell",
+    "focus": "Code Craftsmanship & Module Design",
+    "when_to_use": "General software construction: variables, loops, control flow, and disciplined design decision-making.",
+    "review_checklist": null,
+    "tree_url": "https://github.com/ciembor/agent-rules-books/tree/main/code-complete",
+    "canonical_url": "https://github.com/ciembor/agent-rules-books/blob/main/code-complete/code-complete.md"
+  },
+  {
+    "id": "the-pragmatic-programmer",
+    "title": "The Pragmatic Programmer",
+    "author": "Andrew Hunt & David Thomas",
+    "focus": "Code Craftsmanship & Module Design",
+    "when_to_use": "DRY (Don't Repeat Yourself), orthogonality, automation, fast feedback loops, and agility.",
+    "review_checklist": null,
+    "tree_url": "https://github.com/ciembor/agent-rules-books/tree/main/the-pragmatic-programmer",
+    "canonical_url": "https://github.com/ciembor/agent-rules-books/blob/main/the-pragmatic-programmer/the-pragmatic-programmer.md"
+  },
+  {
+    "id": "refactoring",
+    "title": "Refactoring",
+    "author": "Martin Fowler",
+    "focus": "Refactoring & Legacy Codebases",
+    "when_to_use": "Systematic code transformations, identifying code smells, and taking precise micro-steps with tests.",
+    "review_checklist": "Prevent \"feature creep during cleanup\", mandate step-by-step green-to-green refactoring.",
+    "tree_url": "https://github.com/ciembor/agent-rules-books/tree/main/refactoring",
+    "canonical_url": "https://github.com/ciembor/agent-rules-books/blob/main/refactoring/refactoring.md"
+  },
+  {
+    "id": "refactoring-guru",
+    "title": "Refactoring.Guru",
+    "author": null,
+    "focus": "Refactoring & Legacy Codebases",
+    "when_to_use": "Practical refactoring processes, Design Patterns mapping, and diagnostic treatment of smells.",
+    "review_checklist": null,
+    "tree_url": "https://github.com/ciembor/agent-rules-books/tree/main/refactoring-guru",
+    "canonical_url": "https://github.com/ciembor/agent-rules-books/blob/main/refactoring-guru/refactoring-guru.md"
+  },
+  {
+    "id": "working-effectively-with-legacy-code",
+    "title": "Working Effectively with Legacy Code",
+    "author": "Michael Feathers",
+    "focus": "Refactoring & Legacy Codebases",
+    "when_to_use": "Breaking dependencies, establishing seams, writing characterization tests, and mitigating change risks.",
+    "review_checklist": "Establish integration characterization tests, locate seams, sprout/wrap safely.",
+    "tree_url": "https://github.com/ciembor/agent-rules-books/tree/main/working-effectively-with-legacy-code",
+    "canonical_url": "https://github.com/ciembor/agent-rules-books/blob/main/working-effectively-with-legacy-code/working-effectively-with-legacy-code.md"
+  },
+  {
+    "id": "designing-data-intensive-applications",
+    "title": "Designing Data-Intensive Applications",
+    "author": "Martin Kleppmann",
+    "focus": "High Availability, Data, & Production Resilience",
+    "when_to_use": "Reliability, schemas, partition/replication strategies, and consistency trade-offs.",
+    "review_checklist": "Mitigate data corruption, design for eventual consistency, validate transactions.",
+    "tree_url": "https://github.com/ciembor/agent-rules-books/tree/main/designing-data-intensive-applications",
+    "canonical_url": "https://github.com/ciembor/agent-rules-books/blob/main/designing-data-intensive-applications/designing-data-intensive-applications.md"
+  },
+  {
+    "id": "release-it",
+    "title": "Release It!",
+    "author": "Michael T. Nygard",
+    "focus": "High Availability, Data, & Production Resilience",
+    "when_to_use": "Resilience patterns: circuit breakers, bulkheads, timeouts, retries, and production observability.",
+    "review_checklist": null,
+    "tree_url": "https://github.com/ciembor/agent-rules-books/tree/main/release-it",
+    "canonical_url": "https://github.com/ciembor/agent-rules-books/blob/main/release-it/release-it.md"
+  }
+]
