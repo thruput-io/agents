@@ -1,44 +1,4 @@
 principles:
-- id: Quality Uncompromised
-  parent: Not Yet Decided Axiom
-  body: |
-    [[Software Quality]] is always the highest priority. There is no situation that justifies lowering [[Quality]] in favor of other goals, because all other objectives become harder to reach once [[Quality]] drops. Faster development, higher performance, and new features are frequently offered as justifications; none of them qualify.
-
-    ### How [[Quality]] Is Measured
-
-    These axes define [[Software Quality]]. They characterize problem areas and frame discussions during design and review:
-
-    - **[[Correctness]]:** The software accurately delivers what [[Users]] need.
-    - **[[Maintainability]]:** Changing a behavior requires understanding and touching only the component that owns it.
-    - **[[Readability]]:** A reader unfamiliar with the code understands what it does and why without asking the author.
-    - **[[Testability]]:** Behavior is exercised in isolation without standing up networks, clocks, or global state.
-    - **[[Structural simplicity]]:** The design carries no structure that a present requirement does not demand.
-    - **[[True Test Coverage]]:** Tests fail when behavior breaks, rather than merely executing code paths.
-    - **[[Ease of Doing the Right Thing]]:** The correct approach is the [[Path of least resistance]] for the next contributor.
-    - **[[Guardrails Against Doing the Wrong Thing]]:** Types, tests, and tooling cause incorrect approaches to fail early at compile time rather than relying on human vigilance.
-    - **[[Automation]]:** The path between a change and its verified deployment runs without manual intervention.
-    - **[[Currency of Tools and Libraries]]:** Dependencies are current and easily kept that way.
-
-    ### What Wins When Values Collide
-
-    When competing values clash, resolve them according to this hierarchy:
-
-    - **[[Correctness]]:** Correct *over* Extensive
-    - **[[Maintainability]]:** Maintainable *over* Performant
-    - **[[Readability]]:** Readable *over* Commented
-    - **[[Testability]]:** Testable *over* Clickable
-    - **[[Structural simplicity]]:** Simple *over* Popular
-    - **[[True Test Coverage]]:** Competence *over* Measurable
-    - **[[Ease of Doing the Right Thing]]:** Open/Closed *over* Optimal
-    - **[[Guardrails Against Doing the Wrong Thing]]:** Build Checks *over* Rule Documents
-    - **[[Automation]]:** Pipelines *over* Platform Documents
-    - **[[Currency of Tools and Libraries]]:** Small & Manageable *over* Feature-Rich
-
-    Finding the right-hand value in code is a symptom that the left-hand value needs attention. The solution belongs on the left side of the pair, not in more of the right.
-
-    ### How [[Quality]] Is NOT Measured
-
-    [[Quality]] is not measured by convenience, cleverness, compactness, raw speed, or feature count. Performance and feature breadth are specific requirements like any other; they do not earn credit against [[Maintainability]], [[Correctness]], or [[Structural simplicity]].
 - id: Code Only for User Value
   parent: Every line serves the users' WHY
   body: |
@@ -46,10 +6,7 @@ principles:
 - id: Code as a Subset of the WHY
   parent: Every line serves the users' WHY
   body: |
-    The code is a **subset** of the stated **WHY**: every part of it solves some part of the WHY, and no part reaches outside it.
-
-    - **Incremental Coverage:** A single change need not cover the entire WHY (which may take several incremental changes to satisfy), but what the code does solve, it solves accurately.
-    - **No Unintended Harm:** A solution must not introduce collateral effects or friction that consumers would find unacceptable.
+    The code is a subset of the stated [[WHY]]: every part of it solves some part of the WHY, and no part reaches outside it. A change need not cover the whole WHY, but what it solves it solves accurately and without harm the [[Users]] would not accept.
 - id: The Simplicity Ladder
   parent: Descend only when the rung above cannot serve
   body: |
@@ -59,11 +16,7 @@ principles:
 - id: Convention Over Novelty
   parent: Convention over invention
   body: |
-    Code is maintained by developers who did not write it. Adhering to established ecosystem conventions makes this possible: a maintainer familiar with standard idioms should not have to learn custom idiosyncratic patterns.
-
-    - **Convention in Structure, Novelty in Solution:** Novelty belongs in the domain solution, assembled from standard parts and recognizable conventions.
-    - **Surrounding Context:** Where no universal industry standard decides an issue, consistency with surrounding codebase patterns becomes the baseline rather than introducing an alternative style.
-    - **Demonstrable Standards:** Only a [[Demonstrable standard]] qualifies as a standard.
+    Code is maintained by people who did not write it, so its structure follows the conventions of the ecosystem and of the surrounding code; novelty belongs in the domain solution, assembled from parts a maintainer already recognises. Only a [[Demonstrable standard]] counts as a convention.
 - id: Shift Test Left
   parent: Descend only when the rung above cannot serve
   body: |
@@ -71,56 +24,47 @@ principles:
 - id: Durable Intent Over Comments
   parent: Intent lives where it is checked
   body: |
-    Comments in source code are often symptoms of missing abstraction, weak naming, or deferred work. Information conveyed in comments belongs in durable, verifiable mechanisms:
-
-    - **[[Clarification]]:** Introduce intent-revealing variable names, extract focused functions, or write negative tests demonstrating why a naive approach failed.
-    - **[[Procrastination]] ([[TODOs]]):** Add a [[Failing test]] pinning the weakness, split work into smaller production-ready changes, or write an explicit plan document.
-    - **Architectural Decisions:** Document in an [[Architectural decision]] Record ([[ADR]]) under `docs/[[ADRs]]/`.
-    - **[[Usage guidance]]:** Document in `README.md` or [[User]]-facing documentation.
-    - **Apologies or Confessions:** Fix the underlying design flaw or pin the limitation with a [[Failing test]].
-
-    The only justified comment is a [[Machine-read comment]].
+    What a comment would say belongs where it is checked: a name, a [[Failing test]], an [[Architectural decision]] record, or [[Usage guidance]]. Every [[Comment intent]] has such a home, and only a [[Machine-read comment]] stays in the code.
 - id: Loud Failures Over Silent Defaults
   parent: Crash, don't guess
   body: |
-    Systems must fail loudly and immediately upon encountering an unexpected state. None of the following defensive habits constitutes valid practice:
-
-    - Appending `|| true` or `2>/dev/null` to discard command failures or diagnostics.
-    - Catching exceptions only to log them and proceed with degraded or assumed state.
-    - Substituting a fallback default value when required input is missing or malformed.
-    - Branching speculatively on unsupported platforms or environments.
-
-    Each of these converts a loud, diagnosable failure into a silent wrong answer. Safeguards must be added only when concrete [[Evidence]] demonstrates the need, and failures must abort execution cleanly.
+    A system fails loudly and at once on an unexpected state; it never continues on a guess. A safeguard that swallows a failure turns a diagnosable error into a silent wrong answer, and is added only where concrete [[Evidence]] shows the need.
 - id: Fold at Perimeter
+  parent: Translate at the door
+  body: |
+    Whatever shape [[Code We Cannot Control]] hands us is folded into ours at the [[Perimeter]], and ours is folded back into theirs only there. Inward of that point nothing sees the foreign shape.
+- id: Make illegal states unrepresentable
   parent: Encapsulation
   body: |
-    Our code has internal standards: domain types, no [[Optionality]], loud failures. [[Code We Cannot Control]] has its own shapes, and we cannot change them. Wherever the two meet, our integrity has to expand into or collapse from the non-standard shape.
-
-    That fold belongs as close to the [[Perimeter]] as possible. The moment we hold a value from [[Code We Cannot Control]], it becomes ours; the moment we hand one over, it stops being ours. Everything inward of that point sees only our standards, and the foreign shape never travels.
+    Choose a type in which the [[Illegal state]] cannot be constructed rather than a check that rejects it at runtime, and model every business rule, lifecycle transition, and domain entity as a dedicated type rather than a generic data bag. A state that cannot be held needs no validator, no test, and no bug report.
+- id: Parse, don't validate
+  parent: Translate at the door
+  body: |
+    Parse raw input once, at the [[Perimeter]], into the constrained domain type and pass the type on; never check a primitive and pass the primitive on. Holding a value of the type is proof it was checked.
+- id: Immutable by default
+  parent: Encapsulation
+  body: |
+    A [[Domain object]] does not change after creation; a change is a new instance that passes the same [[Validating path of creation]]. A validly constructed object that cannot change cannot become invalid.
+- id: Primitives only at the perimeter
+  parent: Encapsulation
+  body: |
+    Every raw value is wrapped in a [[Domain primitive]] the moment we hold it, and unwrapped only at the [[Perimeter]] that hands it out. Inside our code a primitive has no meaning of its own.
 - id: Optionality Drives Complexity
   parent: Name the case, not the knob
   body: |
-    An optional argument, parameter, or variable makes code harder to read, because every reader carries the question of whether it is present. It also makes code harder to test, because the number of cases grows exponentially with each option.
-
-    Each allowed combination of options is a distinct operation and deserves its own name: an overload or an [[Explicitly named method]]. Where a [[Framework]] or third-party [[Library]] forces [[Optionality]] on us, the forced case is folded at the [[Perimeter]] and never reaches the interior.
+    An optional parameter doubles the paths through a function and burdens every reader with whether it is present. Each allowed combination of options is its own operation with its own name.
 - id: Nothing Is Complete Without Verification
   parent: Tests prove behaviour, not execution
   body: |
-    A change is not finished when the code is written. It is finished when a test shows the behaviour and fails when that behaviour breaks. Coverage that merely executes code paths proves nothing; a test earns its place by asserting the values that come back.
-
-    Verification is also the documentation of what the source code does. A reader who wants to know how a component behaves reads its tests, and finds there the cases the author considered, each executable on its own and asserting one subject. Prose and comments drift; a test that passes is true today.
+    A change is finished when a test shows the behaviour and fails when it breaks, not when the code is written. The tests are the documentation of what the code does.
 - id: Separation of Concerns
   parent: One concern, one owner
   body: |
-    Each concern is owned by one component in one layer, and changing a behaviour means touching only the component that owns it. Layers exist so that a concern is defined once and nothing else needs to know how it is done.
-
-    Collapsing layers, letting a primitive leak across a boundary, or merging two concerns to save lines all trade a small saving now for a second place that must change every time afterwards.
+    Each concern is owned by one component in one layer, so changing a behaviour touches only its owner. Layers exist so that a concern is defined once and nothing else knows how it is done.
 - id: The Toolchain Is the Guardrail
   parent: Make the wrong thing fail
   body: |
-    The [[Quality]] bar is defined once, in the build: compiler settings, linters, coverage thresholds, and generated-code checks. A rule document tells a reader what is expected; the toolchain makes the wrong thing fail.
-
-    Because the toolchain is that single definition, it is never weakened to let a change through, and a toolchain that stops measuring is a stop-the-line event, not a warning to note. Fixing the code is always the answer; relaxing the check never is.
+    The quality bar is defined once, in the build, and the build makes the wrong thing fail. The toolchain is never weakened to let a change through, and a toolchain that stops measuring stops the line.
 - id: Producer moves first
   parent: Robustness Principle
   body: |

@@ -9,3 +9,28 @@ standards:
   parent: Accept unknown properties
   body: |
     `unevaluatedProperties` is never `false`.
+- id: No || true
+  context: Bash
+  parent: No suppressed exit status
+  body: |
+    `|| true` and `|| :` after a command.
+- id: No 2>/dev/null
+  context: Bash
+  parent: No discarded diagnostics
+  body: |
+    `2>/dev/null` on a command whose failure matters.
+- id: set -euo pipefail
+  context: Bash
+  parent: Scripts abort on error
+  body: |
+    `set -euo pipefail` as the first statement after the [[Shebang]] of every script.
+- id: No any in domain signatures
+  context: TypeScript
+  parent: Strong typing
+  body: |
+    `any`, `unknown`, `object`, or `Record<string, unknown>` in the signature of a domain type or operation.
+- id: Layer dependencies as an ArchUnit test
+  context: ArchUnit
+  parent: Respect layering
+  body: |
+    A layered-architecture test that declares each layer and the layers it may depend on, failing the build on any other dependency.

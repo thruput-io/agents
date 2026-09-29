@@ -1,16 +1,17 @@
 levels:
 - id: Value
-  specification: Terminal human intent.
+  specification: Terminal human intent. What we care about, and the answer to why we hold these axioms rather than another set.
   criteria:
   - include: Asking 'Why?' exits this system and collapses into ethics, biology, or theology. The fractal ends here.
   - include: Speaks of people and what they care about.
   - include: A disposition or attitude we hold.
   - include: A weighing with nothing above it to decide it. A value is what decides the weighings below.
+  - include: Answers why we chose the axioms we hold and not others.
   - exclude: Is about software, a system, or a method. Mentioning one in passing does not make it so.
 - id: Axiom
-  specification: A universal meta-truth governing systems and entropy across all domains.
+  specification: A truth we hold. 'Why?' does not apply to a truth; what can be asked is why we hold this truth rather than another, and the value above it answers that.
   criteria:
-  - include: Expresses an irreducible truth, and asking 'Why?' leads straight to a value.
+  - include: Expresses an irreducible truth. Asking 'Why?' of it has no answer; asking why we hold it rather than another truth leads straight to a value.
   - include: 'Held beyond argument: a stone tablet. It cannot be moved down the ladder.'
   - include: Its body may state the mechanism that makes it true; stating a mechanism is not weighing.
   - include: Stays true when 'code' is replaced by any other artifact.
@@ -20,38 +21,43 @@ levels:
   - exclude: Addresses how people should act.
   parent: Value
 - id: Rationale
-  specification: How we apply axioms in our domain. This is the level where motivations, rationales, and explanations for decisions belong.
+  specification: The rationale by which an axiom is turned into a principle. Asking 'Why?' of a principle lands here. This is the level where motivations, weighings, and explanations for decisions belong.
   criteria:
   - include: Requires design docs, books, or RFCs to explain.
   - include: Weighs two goods against each other, either of which could be chosen, or explains a mechanism. Every 'X over Y' between two goods is a rationale.
   - include: 'A weighing is measured against the level above: the parent decides which side wins. A weighing the parent cannot decide points at a defect in the parent.'
-  - include: The losing side of its trade-off is a candidate candidate code smell.
+  - include: The losing side of its trade-off is a candidate code smell.
+  - include: Its solutions say how to apply it, opened by SHOULD or MAY. A preference, an 'X over Y' that a reviewer cannot answer with violation or not, is a solution here and never a rule.
   - exclude: Can be stated in two sentences without loss and weighs nothing.
   - exclude: Rejects a smell rather than weighing two goods. 'Do X, not Y' where Y is a smell is a principle or a rule.
   - exclude: Has no level above it to decide the weighing.
   parent: Axiom
 - id: Principle
-  specification: 'A memorable statement that breaks a rationale down so it is easy to adopt in daily problem-solving. Often behavioral, and not yet specific enough for a rule: there is room for interpretation and many side conditions.'
+  specification: 'A memorable statement of how we code and what we code, in the manner of DRY, SOLID, or Contract first. Asking ''Why?'' of it leads to its rationale; asking ''Why?'' of a rule lands here. Often behavioral, and not yet specific enough for a rule: there is room for interpretation and side conditions.'
   criteria:
   - include: Can be expressed in one or two sentences that you can act on or adhere to without having to reason about it, typically 'given this, do that' or 'we do it like this'.
+  - include: Its name alone is cited from memory in a review, and the name says what to do.
   - include: States a stance, applied by understanding the idea behind it. Its violation shows in code as a smell a rule can name.
   - include: May enumerate the cases it covers. Enumeration is not reasoning and does not make it a rationale.
-  - exclude: A name alone.
+  - exclude: A name alone, with no statement behind it.
   - exclude: Weighs one option against another.
   - exclude: Names a technology.
+  - exclude: Restates its rationale, or carries an enumeration the glossary already holds.
   parent: Rationale
 - id: Rule
-  specification: An unambiguous RFC 2119 MUST or MUST NOT boundary that breaks a principle down into an enforceable statement in applied context, specific enough to tell whether a piece of code is a violation without understanding more than a small context. Could probably be expressed as a standard given time.
+  specification: A MUST or MUST NOT that a reviewer applies to a pull request by answering one question, violation or not, without understanding more than the diff. Asking 'Why?' of it leads to its principle. Where a tool can answer the question, the rule is implemented as a standard.
   criteria:
-  - include: An explicit imperative directive in natural language meant for coding and pull request reviews, which an engineer or an LLM can evaluate in a ten-line diff without understanding the whole system.
-  - include: An instruction, or names a code smell, whose violation is seen in a small context without understanding more than the statement.
-  - include: Opens with an RFC 2119 marker other than .
-  - include: A Candidate Rule MUST explicitly name the [[Bad Code]] it forbids.
+  - include: An engineer or an LLM answers 'violation or not?' on a ten-line diff without understanding the whole system.
+  - include: Opens with MUST or MUST NOT.
+  - include: Names the [[Bad Code]] it forbids.
+  - include: Where a linter, an AST query, or a Semgrep rule can decide it, a standard implements it for each technology.
+  - exclude: Opens with PREFER, SHOULD, or MAY. A preference is a weighing and belongs in the solutions of a rationale.
   - exclude: Names a technology. A statement that names a technology and still holds an instruction without it is split into a rule and a standard.
   - exclude: Needs an idea explained to be applied.
+  - exclude: Restates its principle. A rule that only repeats the principle's statement adds no question a reviewer can answer.
   parent: Principle
 - id: Standard
-  specification: Implementation of a rule in code for one technology. Each standard is specific and context aware, including layering with enforced dependency arrows.
+  specification: A rule implemented in code for one technology, such as a Semgrep rule, a linter setting, or an ArchUnit test. Each standard is specific and context aware, including layering with enforced dependency arrows.
   criteria:
   - include: Names a language, framework, library, or tool.
   - include: Code, an ArchUnit test, an AST parser, or a linter evaluates it and rejects a violation deterministically in milliseconds.

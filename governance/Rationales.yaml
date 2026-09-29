@@ -28,6 +28,9 @@ rationales:
   - marker: SHOULD
     body: |
       Choose the technology the team already operates before adopting a new one.
+  - marker: SHOULD
+    body: |
+      Leave out code whose need has not yet been shown; [[No code]] is the highest rung.
 - id: Convention over invention
   parent: Single Source of Truth
   body: |
@@ -55,6 +58,9 @@ rationales:
   - marker: SHOULD
     body: |
       Keep configuration out of the code and read it from the environment ([The Twelve-Factor App, III. Config](https://12factor.net/config)).
+  - marker: SHOULD
+    body: |
+      Keep concerns separate where merging them would save lines; the lines saved are paid back on every later change.
 - id: Crash, don't guess
   parent: Shift Left
   body: |
@@ -95,6 +101,21 @@ rationales:
   - marker: MAY
     body: |
       Where the environment has no types, mint a naming prefix that marks a value validated by its factory, and enforce it with a linter.
+  - marker: SHOULD
+    body: |
+      Hide a type's representation outside its defining module, as a newtype or a branded type, rather than share it through an alias, so values that share a representation but not a meaning cannot be mixed.
+  - marker: SHOULD
+    body: |
+      Encode a state machine in the type, each transition consuming the old state's type and returning the new one, so an operation invalid in the current state does not typecheck.
+  - marker: SHOULD
+    body: |
+      Enforce a collection's invariants in its type: a non-empty list makes `head` and `max` total, and a first-class collection enforces uniqueness, bounds, and ordering in one place.
+  - marker: SHOULD
+    body: |
+      Attach predicates to types and have them verified at compile time where the ecosystem provides it: refinement types, units of measure, checked type qualifiers.
+  - marker: MAY
+    body: |
+      Implement the language's comparison interface on a domain type rather than compare its primitives.
 - id: Name the case, not the knob
   parent: Simplicity
   body: |
@@ -111,6 +132,9 @@ rationales:
   - marker: SHOULD
     body: |
       Run mutation testing to show that the tests fail when the code is wrong ([State of Mutation Testing at Google](https://research.google.com/pubs/archive/46584.pdf)).
+  - marker: SHOULD
+    body: |
+      Treat painful test setup as a design signal: split the subject into smaller domain models or focused interfaces before reaching for a mock.
 - id: Make the wrong thing fail
   parent: Single Source of Truth
   body: |
@@ -122,6 +146,12 @@ rationales:
   - marker: SHOULD
     body: |
       Let each tool write its report untouched, and compare the report against the thresholds in a separate step.
+  - marker: SHOULD
+    body: |
+      Resolve a static-analysis warning at its root cause, and where the code cannot satisfy a strict rule, seek architectural guidance before a workaround.
+  - marker: SHOULD
+    body: |
+      Enable the strictest static-analysis presets and compiler checks the ecosystem offers, so safeguards are enforced without review.
 - id: The practitioner decides the outcome
   parent: Leverage
   body: |
@@ -160,3 +190,13 @@ rationales:
   - marker: SHOULD
     body: |
       Alert on symptoms [[Users]] experience, and keep cause-level signals for diagnosis rather than paging.
+- id: What wins when values collide
+  parent: Quality Uncompromised
+  body: |
+    Each [[Software quality axis]] is commonly challenged by a competing good, and when they collide this is what wins: [[Correctness]], correct over extensive; [[Maintainability]], maintainable over performant; [[Readability]], readable over commented; [[Testability]], testable over clickable; [[Structural simplicity]], simple over popular; [[True Test Coverage]], competence over measurable; [[Ease of Doing the Right Thing]], open-closed over optimal; [[Guardrails Against Doing the Wrong Thing]], build checks over rule documents; [[Automation]], pipelines over platform documents; [[Currency of Tools and Libraries]], small and manageable over feature-rich.
+
+    The pairs read in both directions. Finding the right-hand value in code is a symptom that the left-hand value needs attention, and the repair belongs on the left side of the pair, not in more of the right. Quality is not measured by convenience, cleverness, compactness, raw speed, or feature count: performance and feature breadth are requirements like any other, and meeting one is part of [[Correctness]], but neither earns credit against the other axes.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Name the [[Software quality axis]] a review comment is about, so a disagreement is about which kind of worse.
