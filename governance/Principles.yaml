@@ -16,7 +16,7 @@ principles:
 - id: Convention Over Novelty
   parent: Convention over invention
   body: |
-    Code is maintained by people who did not write it, so its structure follows the conventions of the ecosystem and of the surrounding code; novelty belongs in the domain solution, assembled from parts a maintainer already recognises. Only a [[Demonstrable standard]] counts as a convention.
+    Code is maintained by [[Developer]]s who did not write it, so its structure follows the conventions of the ecosystem and of the surrounding code; novelty belongs in the domain solution, assembled from parts a maintainer already recognises. Only a [[Demonstrable standard]] counts as a convention.
 - id: Shift Test Left
   parent: Descend only when the rung above cannot serve
   body: |

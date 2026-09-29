@@ -138,7 +138,7 @@ rationales:
 - id: Make the wrong thing fail
   parent: Single Source of Truth
   body: |
-    Documents advise; the build decides. Compiler strictness, linters, and thresholds live in the self-testing build ([Continuous Integration](https://martinfowler.com/articles/continuousIntegration.html)), where every change, human or agent, meets the same bar. As in Toyota's jidoka, an abnormality stops the line instead of travelling downstream. A gate that is relaxed is a broken window: it tells everyone the standard is gone.
+    Documents advise; the build decides. Compiler strictness, linters, and thresholds live in the self-testing build ([Continuous Integration](https://martinfowler.com/articles/continuousIntegration.html)), where every change, by any [[Developer]], meets the same bar. As in Toyota's jidoka, an abnormality stops the line instead of travelling downstream. A gate that is relaxed is a broken window: it tells everyone the standard is gone.
   solutions:
   - marker: SHOULD
     body: |

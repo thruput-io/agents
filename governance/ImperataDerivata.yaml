@@ -47,7 +47,7 @@ levels:
 - id: Rule
   specification: A MUST or MUST NOT that a reviewer applies to a pull request by answering one question, violation or not, without understanding more than the diff. Asking 'Why?' of it leads to its principle. Where a tool can answer the question, the rule is implemented as a standard.
   criteria:
-  - include: An engineer or an LLM answers 'violation or not?' on a ten-line diff without understanding the whole system.
+  - include: A [[Developer]] answers 'violation or not?' on a ten-line diff without understanding the whole system.
   - include: Opens with MUST or MUST NOT.
   - include: Names the [[Bad Code]] it forbids.
   - include: Where a linter, an AST query, or a Semgrep rule can decide it, a standard implements it for each technology.
