@@ -28,7 +28,7 @@ standards:
   context: TypeScript
   parent: Strong typing
   body: |
-    `any`, `unknown`, `object`, or `Record<string, unknown>` in the signature of a domain type or operation.
+    `any`, `unknown`, `object`, or `Record<string, unknown>` in the signature of a [[Domain object]] or its operations.
 - id: Layer dependencies as an ArchUnit test
   context: ArchUnit
   parent: Respect layering

@@ -115,7 +115,7 @@ rationales:
       Attach predicates to types and have them verified at compile time where the ecosystem provides it: refinement types, units of measure, checked type qualifiers.
   - marker: MAY
     body: |
-      Implement the language's comparison interface on a domain type rather than compare its primitives.
+      Implement the language's comparison interface on a [[Domain object]] rather than compare its primitives.
 - id: Name the case, not the knob
   parent: Simplicity
   body: |
