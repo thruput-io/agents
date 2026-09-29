@@ -22,7 +22,7 @@ axioms:
 - id: Leverage
   parent: Excellence Through Transparency
   body: |
-    A tool multiplies the competence applied to it and supplies none of its own. What it produces is what its [[Practitioner]] already knew, arriving faster and in greater quantity; the tool decides how fast the outcome arrives, never what it is.
+    A tool multiplies the competence applied to it and supplies none of its own; it decides how fast the outcome arrives, never what it is.
 - id: Quality Uncompromised
   parent: Speed Through Discipline
   body: |

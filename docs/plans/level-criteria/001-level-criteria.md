@@ -211,3 +211,5 @@ The levels restated: a rule is a MUST or MUST NOT a reviewer answers on the diff
 Open: What wins when values collide has no principle beneath it. Each right-hand side of its pairs is a smell that wants a rule, and the principle that names them is not yet stated.
 
 WHY was an alias of Purpose and is retired; every entry says Purpose, and the ids that carried the term are renamed: Every line serves the users' Purpose, Code as a Subset of the Purpose, Every part solves the Purpose, Nothing beyond the Purpose.
+
+Repetition removed: each concept lives once, in the glossary, and the other levels cite it. Principle bodies are the statement; rule bodies are the check and the smell, without the benefit clause that restated the principle; the four rung rules that each restated a rung's definition are one rule, Highest rung that serves. Signal joins the glossary. Purpose no longer carries the subset statement, which is the principle's.

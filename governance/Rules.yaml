@@ -4,19 +4,19 @@ rules:
   group: Purpose & Accuracy
   parent: Code Only for User Value
   body: |
-    State the [[Purpose]] of a change as what good it does for the **[[Users]]** of the code.
+    State the [[Purpose]] of every change.
 - id: No code without purpose
   marker: MUST NOT
   group: Purpose & Accuracy
   parent: Code Only for User Value
   body: |
-    Write or merge code whose [[Purpose]] is not clear.
+    Write or merge code whose [[Purpose]] is not stated.
 - id: Every part solves the Purpose
   marker: MUST
   group: Purpose & Accuracy
   parent: Code as a Subset of the Purpose
   body: |
-    Trace every part of the code to the part of the stated [[Purpose]] that it accurately solves.
+    Trace every part of the change to the part of the stated [[Purpose]] it solves.
 - id: Nothing beyond the Purpose
   marker: MUST NOT
   group: Purpose & Accuracy
@@ -29,30 +29,12 @@ rules:
   parent: Loud Failures Over Silent Defaults
   body: |
     Add platform, shell, or environment compatibility branches for environments the task does not run in.
-- id: Reuse code in this codebase
+- id: Highest rung that serves
   marker: MUST
   group: Simplicity & Code Reuse
   parent: The Simplicity Ladder
   body: |
-    Use an existing reusable component in this codebase rather than write an equivalent, and where the code exists but is not yet reusable, refactor it into a reusable component.
-- id: Use the platform or framework
-  marker: MUST
-  group: Simplicity & Code Reuse
-  parent: The Simplicity Ladder
-  body: |
-    Use a component the current [[Platform or framework]] already provides rather than write an equivalent.
-- id: Use an external component
-  marker: MUST
-  group: Simplicity & Code Reuse
-  parent: The Simplicity Ladder
-  body: |
-    Add an existing external component as a dependency rather than write an equivalent.
-- id: Use an external tool or service
-  marker: MUST
-  group: Simplicity & Code Reuse
-  parent: The Simplicity Ladder
-  body: |
-    Integrate an existing external tool, or call an existing service, rather than build an equivalent.
+    Meet the need at the highest [[Simplicity rung]] that serves. [[New code]] where [[Codebase reuse]], a [[Platform or framework]], an [[External dependency]], or an [[External tool or service]] serves is the smell.
 - id: Available
   marker: MUST NOT
   group: Simplicity & Code Reuse
@@ -64,13 +46,13 @@ rules:
   group: Simplicity & Code Reuse
   parent: The Simplicity Ladder
   body: |
-    Adopt existing code only where it is stable (avoiding newly introduced bugs), well-documented (backed by comprehensive documentation or verified open-source references), and actively maintained by multiple contributors with an active community.
+    Adopt existing code only where it is stable, documented, and maintained by several active contributors.
 - id: Consistent with the codebase
   marker: MUST
   group: Maintainability & Standards
   parent: Convention Over Novelty
   body: |
-    Follow the conventions of the surrounding code where no industry standard decides the question, rather than introduce a second way of doing the same thing.
+    Follow the surrounding code where no [[Demonstrable standard]] decides the question; a second way of doing the same thing is the smell.
 - id: Demonstrable, not recalled
   marker: MUST
   group: Maintainability & Standards
@@ -82,55 +64,55 @@ rules:
   group: At Creation
   parent: Parse, don't validate
   body: |
-    Provide instances only through a named factory (smart constructor) that establishes every invariant before returning, so holding a value of the type is proof it was checked.
+    Provide instances only through a named factory that establishes every invariant before returning.
 - id: Private constructor
   marker: MUST
   group: At Creation
   parent: Parse, don't validate
   body: |
-    Keep the constructor private, or unexported from its module, so the [[Validating factory]] cannot be bypassed.
+    Keep the constructor private, or unexported from its module.
 - id: Creation failure in the signature
   marker: MUST
   group: At Creation
   parent: Parse, don't validate
   body: |
-    Return the invalid-input case from a factory in its type signature rather than throwing, so the compiler forces every caller to handle it.
+    Return the invalid-input case from a factory in its type signature rather than throw.
 - id: Sum types
   marker: MUST
   group: In Representation
   parent: Make illegal states unrepresentable
   body: |
-    Enumerate exactly the legal alternatives as a closed sum type (sealed hierarchy, discriminated union) rather than a product of optional fields, so illegal combinations have no representation.
+    Enumerate the legal alternatives as a closed sum type rather than a product of optional fields.
 - id: Enums for domain states
   marker: MUST
   group: In Representation
   parent: Make illegal states unrepresentable
   body: |
-    Name every legal state with a closed enum; a boolean or free-form string admits states the domain never defined.
+    Name every legal state with a closed enum; a boolean or free-form string for a state is the smell.
 - id: Compile-time optionality
   marker: MUST
   group: In Representation
   parent: Make illegal states unrepresentable
   body: |
-    Make absence an explicit case that the compiler forces every caller to handle, so the missing case is handled exactly where it can occur. [[Optionality]] is a compile-time property, never a runtime check.
+    Make absence an explicit case the compiler forces every caller to handle; a runtime check for absence is the smell.
 - id: Wrap primitives
   marker: MUST
   group: In Representation
   parent: Primitives only at the perimeter
   body: |
-    Wrap a raw value in its [[Domain primitive]] before it crosses any interface of ours. A raw string, number, or boolean in a domain signature is the smell.
+    Wrap a raw value in its [[Domain primitive]] before it crosses any interface of ours; a raw primitive in a domain signature is the smell.
 - id: Exhaustive matching
   marker: MUST
   group: Across State Changes
   parent: Make illegal states unrepresentable
   body: |
-    Match over the closed set of cases with no wildcard, so a new state that some transition does not handle is a compile error, not a silent fall-through.
+    Match over the closed set of cases with no wildcard.
 - id: Self-guarding aggregates
   marker: MUST
   group: Across State Changes
   parent: Make illegal states unrepresentable
   body: |
-    Route every state change through a domain method that re-establishes invariants, and expose no [[Setter]] or raw collection that could skip them.
+    Route every state change through a domain method that re-establishes invariants; an exposed [[Setter]] or raw collection is the smell.
 - id: No mutators
   marker: MUST NOT
   group: Across State Changes
@@ -148,13 +130,13 @@ rules:
   group: Domain Operations & Interfaces
   parent: Make illegal states unrepresentable
   body: |
-    Represent a domain concept, identifier, state, or measurement with a dynamic, untyped, or unstructured type, or with a raw primitive. Domain logic operates only on typed domain models and [[Domain primitive]]s.
+    Represent a domain concept, identifier, state, or measurement with a dynamic, untyped, or unstructured type.
 - id: Domain-only interfaces
   marker: MUST
   group: Domain Operations & Interfaces
   parent: Make illegal states unrepresentable
   body: |
-    Access [[Domain objects]] only via public methods that accept and return strictly other [[Domain objects]], with the sole exception of [[Perimeter]] validating factories ([[Validating factory]]) that parse raw input into domain types.
+    Access a [[Domain object]] only through methods that accept and return [[Domain object]]s, the [[Validating factory]] at the [[Perimeter]] excepted.
 - id: Domain operations
   marker: MUST
   group: Domain Operations & Interfaces
@@ -172,7 +154,7 @@ rules:
   group: Architecture & Layering
   parent: Primitives only at the perimeter
   body: |
-    Prevent primitive leakage across layers.
+    Keep raw primitives from crossing a layer boundary.
 - id: Delete unused
   marker: MUST
   group: Dead Code & Comments
@@ -274,7 +256,7 @@ rules:
   group: All Tests
   parent: Nothing Is Complete Without Verification
   body: |
-    Configure a test to run again until it passes, by a retry count, a retry annotation, or a flaky marker. A test that passes on its second run proves that the run agreed with us, not that the behaviour holds; fix the nondeterminism or the code.
+    Configure a test to run again until it passes, by a retry count, a retry annotation, or a flaky marker.
 - id: One subject under test
   marker: MUST NOT
   group: Unit Tests
@@ -352,40 +334,40 @@ rules:
   group: Optionality
   parent: Fold at Perimeter
   body: |
-    Handle [[Optionality]] forced by [[Code We Cannot Control]] at the [[Perimeter]], in the statement that invokes it or receives its return, so no optional value travels inward.
+    Handle [[Optionality]] forced by [[Code We Cannot Control]] in the statement that invokes it or receives its return.
 - id: Accept unknown properties
   marker: MUST
   group: Robustness
   parent: Producer moves first
   body: |
-    Accept input that carries properties you do not know and ignore them, so a producer can add a property before every consumer knows it.
+    Accept input that carries properties you do not know, and ignore them.
 - id: Generic parameters, specific returns
   marker: MUST
   group: Robustness
   parent: Producer moves first
   body: |
-    Declare the most generic parameter types and the most specific return type a method or function can honour, so callers may pass more and receive no less than they need.
+    Declare the most generic parameter types and the most specific return type a method can honour.
 - id: No unstated standard
   marker: MUST NOT
   group: Agents
   parent: Adoption is articulation
   body: |
-    Instruct an [[AI agent]], in a skill, prompt, or configuration, to follow a coding standard that has no entry in these documents; add the entry and cite it as [[Id]] instead. An instruction that carries its own standard is a second definition of it.
+    Instruct an [[AI agent]] to follow a coding standard that has no entry in these documents; add the entry and cite it.
 - id: One-command setup
   marker: MUST
   group: Reproducibility
   parent: The environment is code
   body: |
-    Keep clone, build, and test of the entire stack to one documented command; a change that needs a new setup step adds it to that command, never to a list of manual steps.
+    Keep clone, build, and test of the entire stack to one documented command; a new manual setup step is the smell.
 - id: Twice is automated
   marker: MUST
   group: Reproducibility
   parent: The environment is code
   body: |
-    Script a procedure the second time it is performed. A manual procedure written down to be repeated is the smell.
+    Script a procedure the second time it is performed; a manual procedure written down to be repeated is the smell.
 - id: Ship with telemetry
   marker: MUST
   group: Runtime
   parent: Own the Runtime
   body: |
-    Add, in the change that adds a runtime behaviour, the log line, metric, or alert that shows the behaviour working in production. A behaviour without a signal is unobservable.
+    Add the [[Signal]] in the change that adds the behaviour it shows.
