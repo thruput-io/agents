@@ -10,7 +10,7 @@ principles:
 - id: The Simplicity Ladder
   parent: Descend only when the rung above cannot serve
   body: |
-    Meet a need at the highest [[Simplicity rung]] that serves, and descend only when the rung above cannot.
+    The simplest code is [[No code]]; next is code we do not write. Climb the [[Simplicity ladder]].
 - id: Convention Over Novelty
   parent: Convention over invention
   body: |
@@ -18,7 +18,7 @@ principles:
 - id: Shift Test Left
   parent: Descend only when the rung above cannot serve
   body: |
-    Catch a defect on the leftmost [[Shift Left rung]] able to catch it, and descend only when the rung above cannot.
+    Catch a defect on the leftmost [[Shift Left rung]] that can.
 - id: Durable Intent Over Comments
   parent: Intent lives where it is checked
   body: |
