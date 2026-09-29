@@ -129,7 +129,7 @@ definitions:
     A combination of values that the domain never defined as valid. It is made unrepresentable by choosing a type in which the combination cannot be constructed, rather than by checking for it at runtime.
 - id: Simplicity ladder
   specification: |
-    The preference for meeting a need at the highest [[Simplicity rung]] that applies, descending only when the rung above offers nothing viable. The rungs rank from highest to lowest in the order [[Simplicity rung]] enumerates them. Every rung is gated by being available and maintained.
+    One aspect of [[Simplicity]], ranking how much code we own afterwards. The preference for meeting a need at the highest [[Simplicity rung]] that applies, descending only when the rung above offers nothing viable. The rungs rank from highest to lowest in the order [[Simplicity rung]] enumerates them. Every rung is gated by being available and maintained.
 - id: Simplicity rung
   specification: |
     A way to meet a need, ranked by how little code we own afterwards.
@@ -291,7 +291,7 @@ definitions:
   - Maintainability
   - Readability
   - Testability
-  - Simplicity
+  - Structural simplicity
   - True Test Coverage
   - Ease of Doing the Right Thing
   - Guardrails Against Doing the Wrong Thing
@@ -309,9 +309,9 @@ definitions:
 - id: Testability
   specification: |
     The property that behavior is exercised in isolation without standing up networks, clocks, or global state.
-- id: Simplicity
+- id: Structural simplicity
   specification: |
-    The property that the design carries no structure that a present requirement does not demand.
+    [[Simplicity]] as it shows in the design: the property that the design carries no structure that a present requirement does not demand.
 - id: True Test Coverage
   specification: |
     The property that tests fail when behavior breaks, rather than merely executing code paths.

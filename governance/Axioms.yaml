@@ -10,7 +10,7 @@ axioms:
 - id: Simplicity
   parent: Outcome Over Output
   body: |
-    Simple solutions are better than complex.
+    Simple solutions are better than complex. Simplicity is the fit between a job and the tools and strategies chosen to do it: a solution is simple when it carries nothing the job does not call for, and complex in proportion to what it carries beyond that.
 - id: Great software is easy to maintain and extend
   parent: Joy Through Craft
   body: |

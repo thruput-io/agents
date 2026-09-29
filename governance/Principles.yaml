@@ -12,7 +12,7 @@ principles:
     - **[[Maintainability]]:** Changing a behavior requires understanding and touching only the component that owns it.
     - **[[Readability]]:** A reader unfamiliar with the code understands what it does and why without asking the author.
     - **[[Testability]]:** Behavior is exercised in isolation without standing up networks, clocks, or global state.
-    - **[[Simplicity]]:** The design carries no structure that a present requirement does not demand.
+    - **[[Structural simplicity]]:** The design carries no structure that a present requirement does not demand.
     - **[[True Test Coverage]]:** Tests fail when behavior breaks, rather than merely executing code paths.
     - **[[Ease of Doing the Right Thing]]:** The correct approach is the [[Path of least resistance]] for the next contributor.
     - **[[Guardrails Against Doing the Wrong Thing]]:** Types, tests, and tooling cause incorrect approaches to fail early at compile time rather than relying on human vigilance.
@@ -27,7 +27,7 @@ principles:
     - **[[Maintainability]]:** Maintainable *over* Performant
     - **[[Readability]]:** Readable *over* Commented
     - **[[Testability]]:** Testable *over* Clickable
-    - **[[Simplicity]]:** Simple *over* Popular
+    - **[[Structural simplicity]]:** Simple *over* Popular
     - **[[True Test Coverage]]:** Competence *over* Measurable
     - **[[Ease of Doing the Right Thing]]:** Open/Closed *over* Optimal
     - **[[Guardrails Against Doing the Wrong Thing]]:** Build Checks *over* Rule Documents
@@ -38,7 +38,7 @@ principles:
 
     ### How [[Quality]] Is NOT Measured
 
-    [[Quality]] is not measured by convenience, cleverness, compactness, raw speed, or feature count. Performance and feature breadth are specific requirements like any other; they do not earn credit against [[Maintainability]], [[Correctness]], or [[Simplicity]].
+    [[Quality]] is not measured by convenience, cleverness, compactness, raw speed, or feature count. Performance and feature breadth are specific requirements like any other; they do not earn credit against [[Maintainability]], [[Correctness]], or [[Structural simplicity]].
 - id: Code Only for User Value
   parent: Every line serves the users' WHY
   body: |
@@ -67,7 +67,7 @@ principles:
 - id: Shift Test Left
   parent: Descend only when the rung above cannot serve
   body: |
-    The [[Shift Left]] axiom applied to verification. A defect is caught earliest, cheapest, and with the greatest certainty on the leftmost [[Shift Left rung]] able to catch it. Descend past [[Unrepresentable illegal state]] and [[Static code analysis]] only when neither can prevent the defect.
+    A defect is caught earliest, cheapest, and with the greatest certainty on the leftmost [[Shift Left rung]] able to catch it: choosing that rung is [[Simplicity]] applied to verification, and catching it there is [[Shift Left]]. Descend past [[Illegal states unrepresentable]] and [[Static code analysis]] only when neither can prevent the defect.
 - id: Durable Intent Over Comments
   parent: Intent lives where it is checked
   body: |
