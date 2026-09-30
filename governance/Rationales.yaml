@@ -193,10 +193,11 @@ rationales:
 - id: What wins when values collide
   parent: Quality Uncompromised
   body: |
-    Each [[Software quality axis]] is commonly challenged by a competing good, and when they collide this is what wins: [[Correctness]], correct over extensive; [[Maintainability]], maintainable over performant; [[Readability]], readable over commented; [[Testability]], testable over clickable; [[Structural simplicity]], simple over popular; [[True Test Coverage]], competence over measurable; [[Ease of Doing the Right Thing]], open-closed over optimal; [[Guardrails Against Doing the Wrong Thing]], build checks over rule documents; [[Automation]], pipelines over platform documents; [[Currency of Tools and Libraries]], small and manageable over feature-rich.
-
-    The pairs read in both directions. Finding the right-hand value in code is a symptom that the left-hand value needs attention, and the repair belongs on the left side of the pair, not in more of the right. Quality is not measured by convenience, cleverness, compactness, raw speed, or feature count: performance and feature breadth are requirements like any other, and meeting one is part of [[Correctness]], but neither earns credit against the other axes.
+    Each [[Software quality axis]] is challenged by a [[Competing good]], and when they collide the axis wins. The pairs read in both directions: finding the competing good in code is a symptom that its axis needs attention, and the repair belongs on the axis, not in more of the good. Quality is not measured by what a competing good offers: [[Performance]] and [[Feature Rich]] are requirements like any other, and meeting one is part of [[Correctness]], but neither earns credit against the other axes.
   solutions:
   - marker: SHOULD
     body: |
       Name the [[Software quality axis]] a review comment is about, so a disagreement is about which kind of worse.
+  - marker: SHOULD
+    body: |
+      Where [[Ease of Doing the Right Thing]] and [[Guardrails Against Doing the Wrong Thing]] compete, build the easy path first, and let the guardrail point at it.

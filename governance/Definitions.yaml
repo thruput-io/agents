@@ -387,3 +387,31 @@ definitions:
 - id: Surrounding code
   specification: |
     The code a change sits among. Its conventions decide what no [[Demonstrable standard]] decides.
+- id: Competing good
+  specification: |
+    A good commonly offered in exchange for a [[Software quality axis]], which loses to the axis when the two collide.
+  closedEnumerationOf:
+  - Feature Rich
+  - Performance
+  - Well documented
+  - User Friendly
+  - Industry Standard
+  - Measured Coverage
+- id: Feature Rich
+  specification: |
+    Many capabilities in one system or dependency. Challenges [[Correctness]] and [[Currency of Tools and Libraries]].
+- id: Performance
+  specification: |
+    A system that is perceived as fast by [[Users]]. Challenges [[Maintainability]].
+- id: Well documented
+  specification: |
+    Human-readable artifacts that quickly explain the system to [[Developer]]s. Challenges [[Readability]], [[Automation]], and [[Guardrails Against Doing the Wrong Thing]].
+- id: User Friendly
+  specification: |
+    A system a person operates through its interface with little effort. Challenges [[Testability]].
+- id: Industry Standard
+  specification: |
+    A [[Community pattern]] adopted for its popularity rather than for the need at hand. Challenges [[Structural simplicity]].
+- id: Measured Coverage
+  specification: |
+    The share of code executed by tests: a measure of execution, not of checking. Challenges [[True Test Coverage]].
