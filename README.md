@@ -11,13 +11,13 @@ The `CI Check` workflow in `.github/workflows/ci.yml` is the build. `build.sh` r
 ```
 
 - `validate` lints every schema, validates it against its metaschema, and validates every document in `governance/` against its schema, using the [Sourcemeta JSON Schema CLI](https://github.com/sourcemeta/jsonschema). Cross-schema references resolve from the `schemas/` directory.
-- `site` builds the site served at https://thruput.se/agents/ from `web/`, `governance/`, and `schemas/` with the image GitHub Pages uses, checks the HTML with the Nu HTML Checker, and checks every link and `[[Id]]` reference with lychee. It then proves those checks reject a broken reference and a broken parent. The pages, layout, and styling live in `web/`. How the site is generated is decided in [ADR 0004](docs/adrs/0004-governance-site-generated-with-jekyll.md).
+- `site` builds the site served at https://thruput.se/agents/ from `web/`, `governance/`, and `schemas/` with the image GitHub Pages uses, checks the HTML with the Nu HTML Checker, and checks every link and `[[Id]]` reference with lychee. `scripts/site-rejects-broken-documents.sh` then proves those checks fail the build on a reference to a missing entry and on a missing parent. The pages, layout, and styling live in `web/`. How the site is generated is decided in [ADR 0004](docs/adrs/0004-governance-site-generated-with-jekyll.md).
 - `audit` audits the plugin with the AgentPlugins CLI.
 
 The build writes nothing into the repository. Name a directory to get a copy of the rendered site, which is how the `Publish Site` workflow gets what it uploads on every push to `main`:
 
 ```
-scripts/site.sh /tmp/agents-site
+scripts/site.sh governance /tmp/agents-site
 ```
 
 ## Installation
