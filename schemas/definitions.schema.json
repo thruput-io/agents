@@ -75,7 +75,7 @@
       "minItems": 1,
       "uniqueItems": true,
       "items": {
-        "$ref": "#/$defs/DefinitionId"
+        "$dynamicRef": "id.schema.json#Id"
       }
     },
     "Specification": {
@@ -133,7 +133,12 @@
       "description": "Markdown text. A reference to an entry or a glossary term is its id in double square brackets, [[Id]]: every [[ opens a reference that closes with ]], holds no brackets, and is not blank. The reference must name an existing id",
       "type": "string",
       "minLength": 1,
+      "$dynamicRef": "#References",
       "pattern": "^[^\\[]*(?:(?:\\[\\[[^\\[\\]]*[^\\[\\]\\s][^\\[\\]]*\\]\\]|\\[[^\\[])[^\\[]*)*\\[?$"
+    },
+    "References": {
+      "description": "Prose whose every [[Id]] names a declared id. Accepts any prose on its own; the build binds the dynamic anchor to the pattern of every declared id",
+      "$dynamicAnchor": "References"
     }
   }
 }
