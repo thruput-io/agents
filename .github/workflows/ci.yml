@@ -13,16 +13,26 @@ on:
 permissions:
   contents: read
 
+# ./build.sh runs these jobs locally. Steps check out the code and run
+# commands, nothing else, so every step means the same thing on both.
+
 jobs:
+  workflows:
+    name: Lint the Workflows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Lint the workflows and hold the build to them
+        run: scripts/workflows.sh
+
   validate:
     name: Validate Documents Against Schemas
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Install the JSON Schema CLI
-        uses: sourcemeta/jsonschema@v17.0.0
 
       - name: Validate documents
         run: scripts/validate.sh
@@ -39,3 +49,13 @@ jobs:
 
       - name: Prove the checks reject a broken reference and a broken parent
         run: docs/plans/governance-site/tracer-bullets/broken-references/run.sh
+
+  audit:
+    name: Audit AgentPlugins
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run AgentPlugins Audit
+        run: scripts/audit.sh
