@@ -50,7 +50,7 @@ levels:
   - include: A [[Developer]] answers 'violation or not?' on a ten-line diff without understanding the whole system.
   - include: Opens with MUST or MUST NOT.
   - include: Names the [[Bad Code]] it forbids.
-  - include: Where a linter, an AST query, or a Semgrep rule can decide it, a standard implements it for each technology.
+  - include: Where [[Static code analysis]] can decide it, a standard implements it for each technology.
   - exclude: Names a technology. A statement that names a technology and still holds an instruction without it is split into a rule and a standard.
   - exclude: Needs an idea explained to be applied.
   - exclude: Restates its principle. A rule that only repeats the principle's statement adds no question a reviewer can answer.
@@ -59,6 +59,6 @@ levels:
   specification: A rule implemented in code for one technology.
   criteria:
   - include: Names a language, [[Framework]], [[Library]], or tool.
-  - include: Code, an ArchUnit test, an AST parser, or a linter evaluates it and rejects a violation deterministically in milliseconds.
+  - include: '[[Static code analysis]] evaluates it and rejects a violation deterministically in milliseconds.'
   - exclude: Can be evaluated without knowing the technology in use.
   parent: Rule
