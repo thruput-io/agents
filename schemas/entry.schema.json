@@ -52,7 +52,7 @@
           "$ref": "definitions.schema.json#/$defs/Prose"
         },
         "parent": {
-          "$ref": "id.schema.json"
+          "$dynamicRef": "id.schema.json#Id"
         }
       }
     }

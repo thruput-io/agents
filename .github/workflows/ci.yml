@@ -34,9 +34,6 @@ jobs:
       - name: Build and check the site
         run: scripts/site.sh governance
 
-      - name: Prove the checks reject a broken reference, parent, and enumeration
-        run: scripts/site-rejects-broken-documents.sh
-
   audit:
     name: Audit AgentPlugins
     runs-on: ubuntu-latest

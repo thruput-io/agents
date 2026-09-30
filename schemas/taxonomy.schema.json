@@ -59,7 +59,7 @@
     },
     "ParentLevel": {
       "description": "The id of the level directly above",
-      "$ref": "definitions.schema.json#/$defs/DefinitionId"
+      "$dynamicRef": "id.schema.json#Id"
     }
   }
 }
