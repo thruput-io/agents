@@ -1,0 +1,10 @@
+axioms:
+- id: A1
+  parent: A
+  body: Body of A1.
+- id: B1
+  parent: B
+  body: Body of B1.
+- id: A2
+  parent: A
+  body: Body of A2.

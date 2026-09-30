@@ -1,0 +1,10 @@
+{%- assign fragments = include.text | split: "[[" -%}
+{%- capture linked -%}
+{{- fragments[0] -}}
+{%- for fragment in fragments offset: 1 -%}
+{%- assign reference = fragment | split: "]]" | first -%}
+{%- assign rest = fragment | remove_first: reference | remove_first: "]]" -%}
+[{{ reference }}](#{% include anchor.html id=reference %}){{ rest }}
+{%- endfor -%}
+{%- endcapture -%}
+{{ linked | markdownify }}

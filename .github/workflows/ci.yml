@@ -1,0 +1,51 @@
+name: CI Check
+
+on:
+  push:
+    branches:
+      - main
+      - yaml-governance-documents
+  pull_request:
+    branches:
+      - main
+      - yaml-governance-documents
+
+permissions:
+  contents: read
+
+# ./build.sh runs these jobs locally, so keep steps to checking out the
+# code and running a plain command.
+
+jobs:
+  validate:
+    name: Validate Documents Against Schemas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate documents
+        run: scripts/validate.sh
+
+  site:
+    name: Build and Check the Site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build and check the site
+        run: scripts/site.sh
+
+      - name: Prove the checks reject a broken reference and a broken parent
+        run: docs/plans/governance-site/tracer-bullets/broken-references/run.sh
+
+  audit:
+    name: Audit AgentPlugins
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run AgentPlugins Audit
+        run: scripts/audit.sh

@@ -15,7 +15,7 @@ What each level is, and the criteria that decide what belongs to it, are in [Imp
 
 Every id inherits the abstract `Id` in [schemas/id.schema.json](../schemas/id.schema.json); each entity schema defines its own concrete id (`AxiomId`, `PrincipleId`, `RuleId`, `DefinitionId`). Whether a `parent` value names an existing entry is not a schema concern. [schemas/taxonomy.schema.json](../schemas/taxonomy.schema.json) describes what a taxonomy is, and `ImperataDerivata.yaml` is our instance of one: a list of levels where every level but the root names its parent by id. A level extends the definition from the definitions schema, so a level is a definition and carries an `id` like every definition.
 
-Every schema carries an `$id` under `https://thruput-io.github.io/agents/schemas/`, where the `Publish Schemas` workflow deploys the `schemas/` directory to GitHub Pages on every push to `main`. Local and CI validation load the schemas from the working tree into a registry keyed by `$id`, so no network access is needed and a pull request is validated against its own schemas.
+Every schema carries an `$id` under `https://thruput.se/agents/schemas/`, where the `Publish Site` workflow deploys the `schemas/` directory, with the HTML generated from the governance documents, to GitHub Pages on every push to `main`. Local and CI validation load the schemas from the working tree into a registry keyed by `$id`, so no network access is needed and a pull request is validated against its own schemas.
 
 
 ## Reading the rules

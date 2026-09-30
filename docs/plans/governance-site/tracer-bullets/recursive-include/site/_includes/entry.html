@@ -1,0 +1,16 @@
+{%- assign level = site.data.ImperataDerivata.levels[include.depth] -%}
+{%- assign document = level.id | append: "s" -%}
+{%- assign collection = document | downcase -%}
+{%- assign entries = site.data[document][collection] -%}
+{%- if include.parent -%}
+{%- assign entries = entries | where: "parent", include.parent -%}
+{%- endif -%}
+{%- for entry in entries %}
+{%- assign level = site.data.ImperataDerivata.levels[include.depth] -%}
+{%- assign deeper = include.depth | plus: 1 %}
+<details class="entry {{ level.id | downcase }}" id="{{ entry.id | slugify }}">
+<summary>{{ level.id | downcase }} {{ entry.id }}{% if entry.marker %} {{ entry.marker }}{% endif %}</summary>
+{{ entry.body }}
+{%- if site.data.ImperataDerivata.levels[deeper] %}{% include entry.html depth=deeper parent=entry.id %}{% endif %}
+</details>
+{%- endfor %}

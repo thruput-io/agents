@@ -2,22 +2,23 @@
 
 The talent of our people, demystified and put into writing: the values, reasoning, and rules behind how we build software. It is the foundation of a development rig of tools, runtimes, and agent instructions, onto which synthetic colleagues are onboarded.
 
-## Overview
+## Building locally
 
-This repository defines the foundational quality principles, rules, and autonomous skills for AI agents operating across the Thruput ecosystem.
-
-The governance architecture follows [ADR 0001](docs/adrs/0001-separating-principles-rules-and-standards.md). The YAML documents, their schemas, and how they change are governed by [ADR 0002](docs/adrs/0002-schema-validated-yaml-governance-documents.md).
-
-## Governance
-
-The governance documents, how to read them, and how to cite them are described in [governance/README.md](governance/README.md).
-
-## Validating locally
-
-The `CI Check` workflow runs the same script as a local run. It lints every schema, validates it against its metaschema, and validates every document in `governance/` against its schema, using the [Sourcemeta JSON Schema CLI](https://github.com/sourcemeta/jsonschema) installed as `jsonschema`. Cross-schema references resolve from the `schemas/` directory:
+The `CI Check` workflow in `.github/workflows/ci.yml` is the build. `build.sh` reads it and runs its jobs locally, step by step and with the shell GitHub uses, so a green local run is a green pull request. Keep its steps to checking out the code and running a plain command; nothing checks that, and `build.sh` skips any action and cannot expand a `${{ }}` expression. The commands run their tools pinned by version: the site in Docker images, everything else through `npx`. Docker and Node are all there is to install.
 
 ```
-scripts/validate.sh
+./build.sh              # every job
+./build.sh validate     # one job
+```
+
+- `validate` lints every schema, validates it against its metaschema, and validates every document in `governance/` against its schema, using the [Sourcemeta JSON Schema CLI](https://github.com/sourcemeta/jsonschema). Cross-schema references resolve from the `schemas/` directory.
+- `site` builds the site served at https://thruput.se/agents/ from `web/`, `governance/`, and `schemas/` with the image GitHub Pages uses, checks the HTML with the Nu HTML Checker, and checks every link and `[[Id]]` reference with lychee. It then proves those checks reject a broken reference and a broken parent. The pages, layout, and styling live in `web/`. How the site is generated is decided in [ADR 0004](docs/adrs/0004-governance-site-generated-with-jekyll.md).
+- `audit` audits the plugin with the AgentPlugins CLI.
+
+The build writes nothing into the repository. Name a directory to get a copy of the rendered site, which is how the `Publish Site` workflow gets what it uploads on every push to `main`:
+
+```
+scripts/site.sh /tmp/agents-site
 ```
 
 ## Installation

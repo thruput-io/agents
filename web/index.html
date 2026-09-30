@@ -1,0 +1,61 @@
+---
+layout: default
+---
+<header class="page-header">
+  <h1>{{ site.title }}</h1>
+  <p class="lead">{{ site.description }}</p>
+</header>
+
+<section id="taxonomy">
+  <h2>Taxonomy</h2>
+  <p>Six levels, each a definition with criteria for what belongs to it. Every entry below the root names its parent one level up, so every rule traces back to a value. Standards that a linter enforces live in <a href="{{ site.standards_repository }}">the semgrep repository</a>.</p>
+  <ol class="levels">
+  {%- for level in site.data.ImperataDerivata.levels %}
+    <li id="{% include anchor.html id=level.id %}">
+      <h3>{{ level.id }}</h3>
+      {% include prose.html text=level.specification %}
+      {% include criteria.html criteria=level.criteria %}
+    </li>
+  {%- endfor %}
+  </ol>
+</section>
+
+<section id="tree">
+  <h2>From values to standards</h2>
+  {% include entry.html depth=0 %}
+</section>
+
+
+<section id="index">
+  <h2>Index</h2>
+  <p>Every entry of every level, linking into the tree. An entry whose parent chain is broken has no place in the tree, and its link here fails the build.</p>
+  {%- for level in site.data.ImperataDerivata.levels %}
+  {% include level-index.html level=level %}
+  {%- endfor %}
+</section>
+
+<section id="glossary">
+  <h2>Glossary</h2>
+  <dl>
+  {%- for definition in site.data.Definitions.definitions %}
+    <dt id="{% include anchor.html id=definition.id %}">{{ definition.id }}</dt>
+    <dd>
+      {% include prose.html text=definition.specification %}
+      {% if definition.criteria %}{% include criteria.html criteria=definition.criteria %}{% endif %}
+      {% if definition.closedEnumerationOf %}<p class="enumeration">Exactly these kinds: {% include references.html ids=definition.closedEnumerationOf %}.</p>{% endif %}
+      {% if definition.openEnumerationOf %}<p class="enumeration">Kinds known so far: {% include references.html ids=definition.openEnumerationOf %}.</p>{% endif %}
+    </dd>
+  {%- endfor %}
+  </dl>
+</section>
+
+<section id="schemas">
+  <h2>Schemas</h2>
+  <p>Every governance document is validated against one of these JSON Schemas. Each schema is published at its own <code>$id</code>.</p>
+  <ul>
+  {%- assign schemas = site.static_files | where_exp: "file", "file.path contains '/schemas/'" -%}
+  {%- for file in schemas %}
+    <li><a href="schemas/{{ file.name }}">{{ file.name }}</a></li>
+  {%- endfor %}
+  </ul>
+</section>

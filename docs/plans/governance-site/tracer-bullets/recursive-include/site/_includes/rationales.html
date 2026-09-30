@@ -1,0 +1,7 @@
+{%- assign rationales = site.data.Rationales.rationales | where: "parent", include.parent -%}
+{%- for rationale in rationales %}
+<details class="entry rationale" id="{{ rationale.id | slugify }}">
+<summary>rationale {{ rationale.id }}{% if rationale.marker %} {{ rationale.marker }}{% endif %}</summary>
+{{ rationale.body }}
+</details>
+{%- endfor %}

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thruput-io.github.io/agents/schemas/rules.schema.json",
+  "$id": "https://thruput.se/agents/schemas/rules.schema.json",
   "title": "Rules",
   "description": "The rules: entries whose parent is a principle, each opened by a marker and placed in a group",
   "examples": [
