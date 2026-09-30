@@ -136,7 +136,7 @@ rules:
   group: Domain Operations & Interfaces
   parent: Make illegal states unrepresentable
   body: |
-    Represent a domain concept, identifier, state, or measurement with a dynamic, untyped, or unstructured type.
+    Represent a domain concept with a [[Loose type]].
 - id: Domain-only interfaces
   marker: MUST
   group: Domain Operations & Interfaces

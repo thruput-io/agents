@@ -23,7 +23,7 @@ levels:
 - id: Rationale
   specification: How an axiom is turned into a principle.
   criteria:
-  - include: Requires design docs, books, or RFCs to explain.
+  - include: Requires a [[Document reference]] to explain.
   - include: Weighs two goods against each other, either of which could be chosen, or explains a mechanism. Every 'X over Y' between two goods is a rationale.
   - include: 'A weighing is measured against the level above: the parent decides which side wins. A weighing the parent cannot decide points at a defect in the parent.'
   - include: The losing side of its trade-off is a candidate code smell.
