@@ -13,9 +13,6 @@ on:
 permissions:
   contents: read
 
-# ./build.sh runs these jobs locally, so keep steps to checking out the
-# code and running a plain command.
-
 jobs:
   validate:
     name: Validate Documents Against Schemas
