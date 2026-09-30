@@ -4,14 +4,13 @@ The talent of our people, demystified and put into writing: the values, reasonin
 
 ## Building locally
 
-The `CI Check` workflow in `.github/workflows/ci.yml` is the build. `build.sh` reads it and runs its jobs locally, step by step and with the shell GitHub uses, so a green local run is a green pull request. Its steps only check out the code or run a command, and the commands run their tools pinned by version: the site in Docker images, everything else through `npx`. Docker and Node are all there is to install.
+The `CI Check` workflow in `.github/workflows/ci.yml` is the build. `build.sh` reads it and runs its jobs locally, step by step and with the shell GitHub uses, so a green local run is a green pull request. Keep its steps to checking out the code and running a plain command; nothing checks that, and `build.sh` skips any action and cannot expand a `${{ }}` expression. The commands run their tools pinned by version: the site in Docker images, everything else through `npx`. Docker and Node are all there is to install.
 
 ```
 ./build.sh              # every job
 ./build.sh validate     # one job
 ```
 
-- `workflows` lints the workflows with actionlint (through `github-actionlint`, which runs the official binary) and fails on any `CI Check` step that `build.sh` could not run the same way: an action other than checkout, a step setting its own shell or environment, or a `${{ }}` expression.
 - `validate` lints every schema, validates it against its metaschema, and validates every document in `governance/` against its schema, using the [Sourcemeta JSON Schema CLI](https://github.com/sourcemeta/jsonschema). Cross-schema references resolve from the `schemas/` directory.
 - `site` builds the site served at https://thruput.se/agents/ from `web/`, `governance/`, and `schemas/` with the image GitHub Pages uses, checks the HTML with the Nu HTML Checker, and checks every link and `[[Id]]` reference with lychee. It then proves those checks reject a broken reference and a broken parent. The pages, layout, and styling live in `web/`. How the site is generated is decided in [ADR 0004](docs/adrs/0004-governance-site-generated-with-jekyll.md).
 - `audit` audits the plugin with the AgentPlugins CLI.

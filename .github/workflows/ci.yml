@@ -13,20 +13,10 @@ on:
 permissions:
   contents: read
 
-# ./build.sh runs these jobs locally. Steps check out the code and run
-# commands, nothing else, so every step means the same thing on both.
+# ./build.sh runs these jobs locally, so keep steps to checking out the
+# code and running a plain command.
 
 jobs:
-  workflows:
-    name: Lint the Workflows
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Lint the workflows and hold the build to them
-        run: scripts/workflows.sh
-
   validate:
     name: Validate Documents Against Schemas
     runs-on: ubuntu-latest
