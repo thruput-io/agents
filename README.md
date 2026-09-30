@@ -4,11 +4,10 @@ The talent of our people, demystified and put into writing: the values, reasonin
 
 ## Building locally
 
-The `CI Check` workflow in `.github/workflows/ci.yml` is the build. `build.sh` reads it and runs its jobs locally, step by step and with the shell GitHub uses, so a green local run is a green pull request. Keep its steps to checking out the code and running a plain command; nothing checks that, and `build.sh` skips any action and cannot expand a `${{ }}` expression. The commands run their tools pinned by version: the site in Docker images, everything else through `npx`. Docker and Node are all there is to install.
+The `CI Check` workflow in `.github/workflows/ci.yml` is the build. `build.sh` runs the same commands in the same order, so a green local run is a green pull request; the two are kept in step by hand, and a change to one is a change to the other. Every step is a script that can also be run on its own. The commands run their tools pinned by version: the site in Docker images, everything else through `npx`. Docker and Node are all there is to install.
 
 ```
-./build.sh              # every job
-./build.sh validate     # one job
+./build.sh
 ```
 
 - `validate` lints every schema, validates it against its metaschema, and validates every document in `governance/` against its schema, using the [Sourcemeta JSON Schema CLI](https://github.com/sourcemeta/jsonschema). Cross-schema references resolve from the `schemas/` directory.
