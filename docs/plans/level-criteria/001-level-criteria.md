@@ -24,10 +24,10 @@ The taxonomy in `framework.yaml` has six levels. Levels 1 to 5 each carry one in
 
 1. Write the criteria for levels 1 to 5 into `framework.yaml`. Test them on ten statements sampled from `RULES.md`; adjust until each sample lands on exactly one level.
 2. Classify every heading of `RULES.md` with the criteria into a table: statement, level, parent. No file changes yet.
-3. Apply the table: move, rewrite, or split entries; set parents; standards get a context. Run `scripts/validate.sh` after each level.
+3. Apply the table: move, rewrite, or split entries; set parents; standards get a context. Run `./build.sh validate` after each level.
 4. Check cohesiveness: no entry points at a missing parent, no principle without a rule under it, no rule without a principle above it, nothing left at level 5 that names a technology.
 
-Verification: `scripts/validate.sh` passes after every step.
+Verification: `./build.sh validate` passes after every step.
 
 ## Placements decided
 
