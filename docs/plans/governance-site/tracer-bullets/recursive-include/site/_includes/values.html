@@ -1,7 +1,0 @@
-{%- for value in site.data.Values.values %}
-<details class="entry value" id="{{ value.id | slugify }}">
-<summary>value {{ value.id }}</summary>
-{{ value.body }}
-{%- include axioms.html parent=value.id %}
-</details>
-{%- endfor %}

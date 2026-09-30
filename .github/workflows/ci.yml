@@ -35,7 +35,7 @@ jobs:
         run: scripts/site.sh
 
       - name: Prove the checks reject a broken reference and a broken parent
-        run: docs/plans/governance-site/tracer-bullets/broken-references/run.sh
+        run: scripts/broken-references.sh
 
   audit:
     name: Audit AgentPlugins
