@@ -33,7 +33,7 @@ levels:
   - exclude: Has no level above it to decide the weighing.
   parent: Axiom
 - id: Principle
-  specification: A memorable statement of how we code and what we code, in the manner of DRY, SOLID, or Contract first.
+  specification: A memorable statement of how we code and what we code, such as [[Don't Repeat Yourself]] or [[Contract First]].
   criteria:
   - include: Can be expressed in one or two sentences that you can act on or adhere to without having to reason about it, typically 'given this, do that' or 'we do it like this'.
   - include: Its name alone is cited from memory in a review, and the name says what to do.
