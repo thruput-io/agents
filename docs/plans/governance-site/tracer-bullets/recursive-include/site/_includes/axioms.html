@@ -1,0 +1,8 @@
+{%- assign axioms = site.data.Axioms.axioms | where: "parent", include.parent -%}
+{%- for axiom in axioms %}
+<details class="entry axiom" id="{{ axiom.id | slugify }}">
+<summary>axiom {{ axiom.id }}</summary>
+{{ axiom.body }}
+{%- include rationales.html parent=axiom.id %}
+</details>
+{%- endfor %}

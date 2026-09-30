@@ -390,9 +390,6 @@ definitions:
 - id: Explicitly named method
   specification: |
     A method whose name states the specific domain action or concept it performs rather than using generic control knobs or boolean flags.
-- id: Single creation path
-  specification: |
-    The requirement that a domain type provides exactly one factory or constructor that validates invariants, preventing second unvalidated paths of creation such as setters.
 - id: Mutator
   specification: |
     Alias for [[Setter]].

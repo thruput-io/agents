@@ -27,3 +27,15 @@ jobs:
       - name: Validate documents
         run: scripts/validate.sh
 
+  site:
+    name: Build and Check the Site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build and check the site
+        run: scripts/site.sh
+
+      - name: Prove the checks reject a broken reference and a broken parent
+        run: docs/plans/governance-site/tracer-bullets/broken-references/run.sh

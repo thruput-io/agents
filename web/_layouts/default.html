@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ site.title }}</title>
+<meta name="description" content="{{ site.description }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&amp;family=Inter:wght@400;500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/governance.css">
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="{{ site.url }}/">thruput<span>.</span></a>
+  <ul>
+    <li><a href="#taxonomy">taxonomy</a></li>
+    <li><a href="#tree">tree</a></li>
+    <li><a href="#glossary">glossary</a></li>
+    <li><a href="#schemas">schemas</a></li>
+    <li><a href="{{ site.repository_url }}">source</a></li>
+  </ul>
+</nav>
+<main>
+{{ content }}
+</main>
+<footer class="is-dark">
+  <div class="footer-wordmark">thruput<span>.</span></div>
+  <p>&copy; {{ site.time | date: "%Y" }} Thruput AB. Stockholm, SE</p>
+</footer>
+</body>
+</html>

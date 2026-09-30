@@ -1,0 +1,9 @@
+title: Thruput Agents
+description: The values, reasoning, and rules behind how we build software, from the values at the top down to the standards a linter enforces.
+url: https://thruput.se
+baseurl: /agents
+remote_theme: thruput-io/thruput-io.github.io@ce8777ca08fe2bdf5e76d2186805b94d17c71155
+plugins:
+  - jekyll-remote-theme
+repository_url: https://github.com/thruput-io/agents
+standards_repository: https://github.com/thruput-io/semgrep
