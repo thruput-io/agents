@@ -33,3 +33,13 @@ governance_with Axioms.yaml <<'YAML'
 YAML
 fails scripts/site.sh "$broken"
 echo "site.sh rejected an entry whose parent does not exist"
+
+governance_with Definitions.yaml <<'YAML'
+- id: Broken enumeration
+  specification: |
+    A term whose kinds include one that does not exist.
+  closedEnumerationOf:
+  - No such term
+YAML
+fails scripts/site.sh "$broken"
+echo "site.sh rejected an enumeration of a term that does not exist"
