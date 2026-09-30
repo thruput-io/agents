@@ -4,6 +4,6 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 scripts/validate.sh
-scripts/site.sh
-scripts/broken-references.sh
+scripts/site.sh governance
+scripts/site-rejects-broken-documents.sh
 scripts/audit.sh

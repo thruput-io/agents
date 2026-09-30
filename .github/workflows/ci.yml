@@ -32,10 +32,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build and check the site
-        run: scripts/site.sh
+        run: scripts/site.sh governance
 
       - name: Prove the checks reject a broken reference and a broken parent
-        run: scripts/broken-references.sh
+        run: scripts/site-rejects-broken-documents.sh
 
   audit:
     name: Audit AgentPlugins

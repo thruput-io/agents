@@ -3,6 +3,8 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+governance=$(cd "$1" && pwd)
+
 jekyll=ghcr.io/actions/jekyll-build-pages@sha256:6791ebfd912185ed59bfb5fb102664fa872496b79f87ff8b9cfba292a7345041
 rendered=$(docker volume create)
 
@@ -12,7 +14,7 @@ remove_rendered() {
 trap remove_rendered EXIT
 
 source=(
-  --volume "$PWD/governance:/github/source/_data:ro"
+  --volume "$governance:/github/source/_data:ro"
   --volume "$PWD/schemas:/github/source/schemas:ro"
 )
 for entry in web/*; do
@@ -33,13 +35,13 @@ docker run --rm \
   --env INPUT_BUILD_REVISION= \
   "$jekyll"
 
-if [[ $# -gt 0 ]]; then
-  mkdir -p "$1"
+if [[ $# -gt 1 ]]; then
+  mkdir -p "$2"
   docker run --rm \
     --volume "$rendered:/site:ro" \
     --entrypoint tar \
     "$jekyll" \
-    --create --directory /site . | tar --extract --directory "$1"
+    --create --directory /site . | tar --extract --directory "$2"
 fi
 
 docker run --rm \
