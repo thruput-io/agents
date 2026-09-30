@@ -1,11 +1,9 @@
-name: Publish Schemas
+name: Publish Site
 
 on:
   push:
     branches:
       - main
-    paths:
-      - schemas/**
 
 permissions:
   contents: read
@@ -18,7 +16,7 @@ concurrency:
 
 jobs:
   publish:
-    name: Publish schemas to GitHub Pages
+    name: Build the site and publish it to GitHub Pages
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -27,15 +25,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Stage schemas under their published path
-        run: |
-          mkdir -p site/schemas
-          cp schemas/*.schema.json site/schemas/
+      - name: Build and check the site
+        run: scripts/site.sh "$RUNNER_TEMP/site"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: ${{ runner.temp }}/site
 
       - name: Deploy to GitHub Pages
         id: deployment

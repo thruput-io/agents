@@ -2,22 +2,26 @@
 
 The talent of our people, demystified and put into writing: the values, reasoning, and rules behind how we build software. It is the foundation of a development rig of tools, runtimes, and agent instructions, onto which synthetic colleagues are onboarded.
 
-## Overview
-
-This repository defines the foundational quality principles, rules, and autonomous skills for AI agents operating across the Thruput ecosystem.
-
-The governance architecture follows [ADR 0001](docs/adrs/0001-separating-principles-rules-and-standards.md). The YAML documents, their schemas, and how they change are governed by [ADR 0002](docs/adrs/0002-schema-validated-yaml-governance-documents.md).
-
-## Governance
-
-The governance documents, how to read them, and how to cite them are described in [governance/README.md](governance/README.md).
-
 ## Validating locally
 
 The `CI Check` workflow runs the same script as a local run. It lints every schema, validates it against its metaschema, and validates every document in `governance/` against its schema, using the [Sourcemeta JSON Schema CLI](https://github.com/sourcemeta/jsonschema) installed as `jsonschema`. Cross-schema references resolve from the `schemas/` directory:
 
 ```
 scripts/validate.sh
+```
+
+## Building the site locally
+
+The pages, layout, and styling of the site live in `web/`. `scripts/site.sh` builds the site served at https://thruput.se/agents/ from `web/`, `governance/`, and `schemas/` with the image GitHub Pages uses, checks the HTML with the Nu HTML Checker, and checks every link and `[[Id]]` reference with lychee, each a Docker image pinned by digest. The `Publish Site` workflow runs the same script on every push to `main`, and the `CI Check` workflow on every pull request. How the site is generated is decided in [ADR 0004](docs/adrs/0004-governance-site-generated-with-jekyll.md).
+
+```
+scripts/site.sh
+```
+
+The build writes nothing into the repository. Name a directory to get a copy of the rendered site:
+
+```
+scripts/site.sh /tmp/agents-site
 ```
 
 ## Installation

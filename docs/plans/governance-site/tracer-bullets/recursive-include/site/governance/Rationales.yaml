@@ -1,0 +1,15 @@
+rationales:
+- id: A1x
+  parent: A1
+  marker: MUST
+  body: Body of A1x.
+- id: A2x
+  parent: A2
+  body: Body of A2x.
+- id: A1y
+  parent: A1
+  body: Body of A1y.
+- id: B1x
+  parent: B1
+  marker: SHOULD
+  body: Body of B1x.

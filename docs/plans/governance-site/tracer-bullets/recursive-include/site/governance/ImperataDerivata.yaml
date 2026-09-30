@@ -1,0 +1,9 @@
+levels:
+- id: Value
+  specification: The root level.
+- id: Axiom
+  specification: The middle level.
+  parent: Value
+- id: Rationale
+  specification: The leaf level.
+  parent: Axiom

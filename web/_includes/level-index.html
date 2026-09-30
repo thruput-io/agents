@@ -1,0 +1,8 @@
+{%- assign document = include.level.id | append: "s" -%}
+{%- assign collection = document | downcase -%}
+<h3>{{ document }}</h3>
+<ul class="index">
+{%- for entry in site.data[document][collection] %}
+  <li><a href="#{% include anchor.html id=entry.id %}">{{ entry.id }}</a></li>
+{%- endfor %}
+</ul>
