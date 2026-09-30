@@ -79,3 +79,11 @@ principles:
   parent: Telemetry over guesswork
   body: |
     A behaviour ships with its [[Signal]]; if we cannot see it, it is not shipped.
+- id: Don't Repeat Yourself
+  parent: One concern, one owner
+  body: |
+    Every piece of knowledge has one authoritative representation in the system; a second copy is the smell.
+- id: Contract First
+  parent: Agree at the boundary
+  body: |
+    The contract stands above both sides of a boundary: each side is derived from it and conforms to it, and where code and contract disagree, the code is wrong.

@@ -201,3 +201,17 @@ rationales:
   - marker: SHOULD
     body: |
       Where [[Ease of Doing the Right Thing]] and [[Guardrails Against Doing the Wrong Thing]] compete, build the easy path first, and let the guardrail point at it.
+- id: Agree at the boundary
+  parent: Single Source of Truth
+  body: |
+    Two sides of a boundary that each define the shape they expect hold two definitions of one thing, and the two drift until the day they disagree in production. One contract, written apart from either side, is the single definition: both sides are derived from it and checked against it, and a disagreement between code and contract is a defect in the code. Bertrand Meyer's [Design by Contract](https://www.eiffel.org/doc/eiffel/ET-_Design_by_Contract_%28tm%29,_Assertions_and_Exceptions) binds client and supplier to one specification, where each party's obligation is the other's benefit. The OpenAPI Initiative's [design-first guidance](https://learn.openapis.org/best-practices.html) makes the description the contract that the code is validated against in continuous integration, and [Protocol Buffers](https://protobuf.dev/overview/) define a structure once and generate every side from it.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Generate both sides of a boundary from the contract rather than write either by hand.
+  - marker: SHOULD
+    body: |
+      Check the running code against the contract in the build, so a drift fails before it ships.
+  - marker: MAY
+    body: |
+      Publish the contract on its own, versioned apart from any implementation, so every consumer reads the same definition.

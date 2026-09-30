@@ -47,6 +47,12 @@ rules:
   parent: The Simplicity Ladder
   body: |
     Adopt existing code only where it is stable, documented, and maintained by several active contributors.
+- id: No second representation
+  marker: MUST NOT
+  group: Simplicity & Code Reuse
+  parent: Don't Repeat Yourself
+  body: |
+    Add a second representation of knowledge the codebase already holds; a copy that must be kept in step with its original is the smell.
 - id: Consistent with the codebase
   marker: MUST
   group: Maintainability & Standards
@@ -353,6 +359,12 @@ rules:
   parent: Producer moves first
   body: |
     Declare the most generic parameter types and the most specific return type a method can honour.
+- id: Shapes live in the contract
+  marker: MUST
+  group: Robustness
+  parent: Contract First
+  body: |
+    Define a shape that crosses a boundary in the contract and derive the code on both sides from it; a shape defined only in code, or a change to a shape that leaves the contract unchanged, is the smell.
 - id: No unstated standard
   marker: MUST NOT
   group: Agents
