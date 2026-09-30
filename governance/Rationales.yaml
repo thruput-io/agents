@@ -148,7 +148,7 @@ rationales:
       Let each tool write its report untouched, and compare the report against the thresholds in a separate step.
   - marker: SHOULD
     body: |
-      Resolve a static-analysis warning at its root cause, and where the code cannot satisfy a strict rule, seek architectural guidance before a workaround.
+      Resolve a [[Static code analysis]] warning at its root cause; where the code cannot satisfy a strict rule, seek architectural guidance, never a workaround.
   - marker: SHOULD
     body: |
       Enable the strictest static-analysis presets and compiler checks the ecosystem offers, so safeguards are enforced without review.
