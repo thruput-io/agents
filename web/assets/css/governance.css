@@ -8,6 +8,10 @@ main {
   max-width: 48rem;
 }
 
+h1, h2, h3, h4, h5, h6, main h2 {
+  text-transform: none;
+}
+
 .levels {
   list-style: none;
   padding: 0;
