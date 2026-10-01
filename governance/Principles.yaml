@@ -58,7 +58,7 @@ principles:
 - id: Verification ends the chain
   parent: Tests prove behaviour, not execution
   body: |
-    Every [[Project]] has one corresponding verification. The verification is not a project and has no verification of its own.
+    All [[Production code]] is tested. [[Verification code]] is not production code and is not tested.
 - id: Separation of Concerns
   parent: One concern, one owner
   body: |
