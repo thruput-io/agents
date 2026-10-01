@@ -3,6 +3,4 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-scripts/validate.sh
-scripts/site.sh governance "$(mktemp -d)"
-scripts/audit.sh
+scripts/verify.sh
