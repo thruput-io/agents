@@ -6,13 +6,9 @@
 
 ## Context
 
-Instructions and prompts to agents suffered from academic word feuds. No nice overview existed.
+Json schemas have ids anchors and references that cannot resolve without having a published context. Then they will be usable by every consumer outside the agents repo.
 
 ## Decision
 
-Rules and Philosophy are replaced by a taxonomy declared as JSON Schema.
+We publish schemas as well as taxonomy to the web
 
-## Motivation
-
-This makes it easy to be exact in skills and instructions, and to generate diagrams for overviews and nice-looking HTML.
-We put as muc as possible into levels 1 to 5. Level 6 has no limit other than the time we have; its main home is in our tooling especially Semgrep repository, among others.
