@@ -4,7 +4,7 @@ The talent of our people, demystified and put into writing: the values, reasonin
 
 ## Building locally
 
-The `CI Check` workflow in `.github/workflows/ci.yml` is the build. `build.sh` runs the same commands in the same order, so a green local run is a green pull request; the two are kept in step by hand, and a change to one is a change to the other. Every step is a script that can also be run on its own. The commands run their tools pinned by version: the site in Docker images, everything else through `npx`. Docker and Node are all there is to install.
+The `CI Check` workflow in `.github/workflows/pr-check.yml` is the build. `build.sh` runs the same commands in the same order, so a green local run is a green pull request; the two are kept in step by hand, and a change to one is a change to the other. Every step is a script that can also be run on its own. The commands run their tools pinned by version: the site in Docker images, everything else through `npx`. Docker and Node are all there is to install.
 
 ```
 ./build.sh

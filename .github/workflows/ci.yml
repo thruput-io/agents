@@ -1,14 +1,7 @@
 name: CI Check
 
 on:
-  push:
-    branches:
-      - main
-      - yaml-governance-documents
   pull_request:
-    branches:
-      - main
-      - yaml-governance-documents
 
 permissions:
   contents: read
