@@ -14,7 +14,7 @@ The `CI Check` workflow in `.github/workflows/ci.yml` is the build. `build.sh` r
 - `site` builds the site served at https://thruput.se/agents/ from `web/`, `governance/`, and `schemas/` with the image GitHub Pages uses, checks the HTML with the Nu HTML Checker, and checks every link and `[[Id]]` reference with lychee. The pages, layout, and styling live in `web/`. Architecture decisions are recorded in [docs/adrs](docs/adrs/).
 - `audit` audits the plugin with the AgentPlugins CLI.
 
-Apart from that generated schema, the build writes nothing into the repository. Name a directory to get a copy of the rendered site, which is how the `Publish Site` workflow gets what it uploads on every push to `main`:
+Apart from that generated schema, the build writes nothing into the repository. `site` writes the rendered site to the directory it is given, which is how the `Publish Site` workflow gets what it uploads on every push to `main`:
 
 ```
 scripts/site.sh governance /tmp/agents-site
