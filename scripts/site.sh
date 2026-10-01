@@ -4,6 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 governance=$(cd "$1" && pwd)
+destination=$2
 
 jekyll=ghcr.io/actions/jekyll-build-pages@sha256:6791ebfd912185ed59bfb5fb102664fa872496b79f87ff8b9cfba292a7345041
 rendered=$(docker volume create)
@@ -35,14 +36,12 @@ docker run --rm \
   --env INPUT_BUILD_REVISION= \
   "$jekyll"
 
-if [[ $# -gt 1 ]]; then
-  mkdir -p "$2"
-  docker run --rm \
-    --volume "$rendered:/site:ro" \
-    --entrypoint tar \
-    "$jekyll" \
-    --create --directory /site . | tar --extract --directory "$2"
-fi
+mkdir -p "$destination"
+docker run --rm \
+  --volume "$rendered:/site:ro" \
+  --entrypoint tar \
+  "$jekyll" \
+  --create --directory /site . | tar --extract --directory "$destination"
 
 docker run --rm \
   --volume "$rendered:/site:ro" \
