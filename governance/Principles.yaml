@@ -1,10 +1,10 @@
 principles:
 - id: Code Only for User Value
-  parent: Every line serves the users' Purpose
+  parent: Code is a liability, not an asset
   body: |
     Code exists only for a stated [[Purpose]]. Without one it is not written.
 - id: Code as a Subset of the Purpose
-  parent: Every line serves the users' Purpose
+  parent: Code is a liability, not an asset
   body: |
     Every part of the code solves some part of its [[Purpose]], and no part reaches outside it. What it solves, it solves accurately and without harm the [[Users]] would not accept.
 - id: The Simplicity Ladder
