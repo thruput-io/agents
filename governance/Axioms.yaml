@@ -14,7 +14,7 @@ axioms:
 - id: Great software is easy to maintain and extend
   parent: Joy Through Craft
   body: |
-    Great software is easy to maintain and extend.
+    [[Great software]] is easy to maintain and extend.
 - id: Users Prove Correctness
   parent: Outcome Over Output
   body: |

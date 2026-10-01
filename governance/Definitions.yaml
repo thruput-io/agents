@@ -231,6 +231,9 @@ definitions:
 - id: Great Code
   specification: |
     Code that avoids becoming a [[System Failed State]].
+- id: Great software
+  specification: |
+    Alias for [[Great Code]].
 - id: Bad Code
   specification: |
     Code that drives the system toward a [[System Failed State]].
