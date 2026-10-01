@@ -9,7 +9,7 @@
 {%- assign level = site.data.ImperataDerivata.levels[include.depth] -%}
 {%- assign deeper = include.depth | plus: 1 %}
 <details class="entry {{ level.id | downcase }}" id="{% include anchor.html id=entry.id %}" open>
-  <summary><span class="level">{{ level.id | downcase }}</span><span class="name">{{ entry.id | escape }}</span>{% if entry.marker %}<span class="marker">{{ entry.marker | escape }}</span>{% endif %}{% if entry.group %}<span class="group">{{ entry.group | escape }}</span>{% endif %}{% if entry.context %}<span class="context">{{ entry.context | escape }}</span>{% endif %}</summary>
+  <summary><span class="level">{{ level.id | escape }}</span><span class="name">{{ entry.id | escape }}</span>{% if entry.marker %}<span class="marker">{{ entry.marker | escape }}</span>{% endif %}{% if entry.group %}<span class="group">{{ entry.group | escape }}</span>{% endif %}{% if entry.context %}<span class="context">{{ entry.context | escape }}</span>{% endif %}</summary>
   <div class="body">
     {% include prose.html text=entry.body %}
     {%- if entry.solutions %}

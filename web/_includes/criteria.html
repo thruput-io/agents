@@ -3,7 +3,7 @@
 {%- for pair in criterion -%}
 {%- assign kind = pair[0] -%}
 {%- assign statement = pair[1] %}
-  <li class="{{ kind }}">{% include prose.html text=statement %}</li>
+  <li class="{{ kind }}"><span class="kind">{{ kind | capitalize }}</span>{% include prose.html text=statement %}</li>
 {%- endfor -%}
 {%- endfor %}
 </ul>

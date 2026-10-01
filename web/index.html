@@ -21,12 +21,12 @@ layout: default
 </section>
 
 <section id="tree">
-  <h2>From values to standards</h2>
+  <h2>From Values to Standards</h2>
   {%- include entry.html depth=0 %}
 </section>
 
 <section id="chains">
-  <h2>From rules to values</h2>
+  <h2>From Rules to Values</h2>
   <p>Every rule, followed up its parent chain to the value it serves.</p>
   {%- include chain.html depth=4 %}
 </section>
@@ -48,8 +48,8 @@ layout: default
     <dd>
       {% include prose.html text=definition.specification %}
       {%- if definition.criteria %}{% include criteria.html criteria=definition.criteria %}{% endif %}
-      {%- if definition.closedEnumerationOf %}<p class="enumeration">Exactly these kinds: {% include references.html ids=definition.closedEnumerationOf %}.</p>{% endif %}
-      {%- if definition.openEnumerationOf %}<p class="enumeration">Kinds known so far: {% include references.html ids=definition.openEnumerationOf %}.</p>{% endif %}
+      {%- if definition.closedEnumerationOf %}<p class="enumeration">Closed enumeration: {% include references.html ids=definition.closedEnumerationOf %}.</p>{% endif %}
+      {%- if definition.openEnumerationOf %}<p class="enumeration">Open enumeration: {% include references.html ids=definition.openEnumerationOf %}.</p>{% endif %}
     </dd>
   {%- endfor %}
   </dl>

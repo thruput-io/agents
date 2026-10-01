@@ -47,7 +47,32 @@ h1, h2, h3, h4, h5, h6, main h2 {
 }
 
 .criteria li.include {
+  border-left-color: var(--thruput-fjord);
+}
+
+.criteria li.exclude {
+  border-left-style: dashed;
   border-left-color: var(--thruput-arctic);
+}
+
+.criteria .kind {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border-radius: 999px;
+  padding: 0.05rem 0.6rem;
+}
+
+.criteria .include .kind {
+  color: var(--thruput-snow);
+  background: var(--thruput-fjord);
+}
+
+.criteria .exclude .kind {
+  color: var(--thruput-arctic);
+  border: 1px solid var(--thruput-arctic);
 }
 
 .criteria li p,
@@ -98,7 +123,6 @@ h1, h2, h3, h4, h5, h6, main h2 {
   font-family: var(--font-body);
   font-size: 0.7rem;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
   border-radius: 999px;
   padding: 0.1rem 0.6rem;
 }
