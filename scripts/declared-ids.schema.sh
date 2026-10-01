@@ -19,7 +19,7 @@ cat <<JSON
         {
           "id": "Simplicity",
           "parent": "Outcome Over Output",
-          "body": "Simple solutions are better than complex.\\n"
+          "body": "Simple solutions are better than complex."
         }
       ]
     }

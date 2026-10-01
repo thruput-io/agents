@@ -8,7 +8,7 @@
       "definitions": [
         {
           "id": "API",
-          "specification": "Alias for [[Interface]].\n"
+          "specification": "Alias for [[Interface]]."
         }
       ]
     }
