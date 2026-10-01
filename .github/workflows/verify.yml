@@ -53,6 +53,12 @@ jobs:
       - name: Build Site
         run: jekyll build --source "$RUNNER_TEMP/source" --destination "$RUNNER_TEMP/public"
 
+      - name: Check Site Links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          workingDirectory: ${{ runner.temp }}/public
+          args: --offline --include-fragments --root-dir ${{ runner.temp }}/public '**/*.html'
+
       - name: Upload Site
         uses: actions/upload-pages-artifact@v3
         with:
