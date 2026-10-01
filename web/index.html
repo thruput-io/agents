@@ -12,7 +12,7 @@ layout: default
   <ol class="levels">
   {%- for level in site.data.ImperataDerivata.levels %}
     <li id="{% include anchor.html id=level.id %}">
-      <h3>{{ level.id }}</h3>
+      <h3>{{ level.id | escape }}</h3>
       {% include prose.html text=level.specification %}
       {% include criteria.html criteria=level.criteria %}
     </li>
@@ -22,7 +22,7 @@ layout: default
 
 <section id="tree">
   <h2>From values to standards</h2>
-  {% include entry.html depth=0 %}
+  {%- include entry.html depth=0 %}
 </section>
 
 
@@ -38,12 +38,12 @@ layout: default
   <h2>Glossary</h2>
   <dl>
   {%- for definition in site.data.Definitions.definitions %}
-    <dt id="{% include anchor.html id=definition.id %}">{{ definition.id }}</dt>
+    <dt id="{% include anchor.html id=definition.id %}">{{ definition.id | escape }}</dt>
     <dd>
       {% include prose.html text=definition.specification %}
-      {% if definition.criteria %}{% include criteria.html criteria=definition.criteria %}{% endif %}
-      {% if definition.closedEnumerationOf %}<p class="enumeration">Exactly these kinds: {% include references.html ids=definition.closedEnumerationOf %}.</p>{% endif %}
-      {% if definition.openEnumerationOf %}<p class="enumeration">Kinds known so far: {% include references.html ids=definition.openEnumerationOf %}.</p>{% endif %}
+      {%- if definition.criteria %}{% include criteria.html criteria=definition.criteria %}{% endif %}
+      {%- if definition.closedEnumerationOf %}<p class="enumeration">Exactly these kinds: {% include references.html ids=definition.closedEnumerationOf %}.</p>{% endif %}
+      {%- if definition.openEnumerationOf %}<p class="enumeration">Kinds known so far: {% include references.html ids=definition.openEnumerationOf %}.</p>{% endif %}
     </dd>
   {%- endfor %}
   </dl>
