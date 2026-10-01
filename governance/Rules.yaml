@@ -150,7 +150,7 @@ rules:
   body: |
     Perform comparison, addition, subtraction, or any other domain operation via domain methods.
 - id: Respect layering
-  marker: MUST
+  marker: MUST NOT
   group: Architecture & Layering
   parent: Separation of Concerns
   body: |
@@ -204,7 +204,7 @@ rules:
   body: |
     Send a command's error output nowhere, or use another tool to detect state instead of letting the failing tool report its error.
 - id: Scripts abort on error
-  marker: MUST
+  marker: MUST NOT
   group: Behavior & Failure Handling
   parent: Loud Failures Over Silent Defaults
   body: |
