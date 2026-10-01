@@ -1,7 +1,10 @@
 rationales:
 - id: Robustness Principle
   parent: Great software is easy to maintain and extend
-  body: "Be conservative in what you send and liberal in what you accept ([RFC 1122 \xA7 1.2.2](https://datatracker.ietf.org/doc/html/rfc1122#section-1.2.2), Postel's law). A producer emits exactly the shape it defines; a consumer takes what it needs from what it receives and is not disturbed by what it does not know.\n\nThis includes Martin Fowler's [Tolerant Reader](https://martinfowler.com/bliki/TolerantReader.html): with one producer and many consumers, the producer is the single source of the shape and moves first, its consumers catch up at their own pace, and nothing breaks in between. Gating the producer on the slowest consumer is the unmaintainable order.\n"
+  body: |
+    Be conservative in what you send and liberal in what you accept ([RFC 1122 § 1.2.2](https://datatracker.ietf.org/doc/html/rfc1122#section-1.2.2), Postel's law). A producer emits exactly the shape it defines; a consumer takes what it needs from what it receives and is not disturbed by what it does not know.
+
+    This includes Martin Fowler's [Tolerant Reader](https://martinfowler.com/bliki/TolerantReader.html): with one producer and many consumers, the producer is the single source of the shape and moves first, its consumers catch up at their own pace, and nothing breaks in between. Gating the producer on the slowest consumer is the unmaintainable order.
   solutions:
   - marker: SHOULD
     body: |

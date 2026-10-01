@@ -9,18 +9,18 @@
 {%- assign level = site.data.ImperataDerivata.levels[include.depth] -%}
 {%- assign deeper = include.depth | plus: 1 %}
 <details class="entry {{ level.id | downcase }}" id="{% include anchor.html id=entry.id %}" open>
-  <summary><span class="level">{{ level.id | downcase }}</span><span class="name">{{ entry.id }}</span>{% if entry.marker %}<span class="marker">{{ entry.marker }}</span>{% endif %}{% if entry.group %}<span class="group">{{ entry.group }}</span>{% endif %}{% if entry.context %}<span class="context">{{ entry.context }}</span>{% endif %}</summary>
+  <summary><span class="level">{{ level.id | downcase }}</span><span class="name">{{ entry.id | escape }}</span>{% if entry.marker %}<span class="marker">{{ entry.marker | escape }}</span>{% endif %}{% if entry.group %}<span class="group">{{ entry.group | escape }}</span>{% endif %}{% if entry.context %}<span class="context">{{ entry.context | escape }}</span>{% endif %}</summary>
   <div class="body">
     {% include prose.html text=entry.body %}
     {%- if entry.solutions %}
     <ul class="solutions">
     {%- for solution in entry.solutions %}
-      <li><span class="marker">{{ solution.marker }}</span>{% include prose.html text=solution.body %}</li>
+      <li><span class="marker">{{ solution.marker | escape }}</span>{% include prose.html text=solution.body %}</li>
     {%- endfor %}
     </ul>
     {%- endif %}
     {%- if site.data.ImperataDerivata.levels[deeper] %}
-    {% include entry.html depth=deeper parent=entry.id %}
+    {%- include entry.html depth=deeper parent=entry.id %}
     {%- endif %}
   </div>
 </details>

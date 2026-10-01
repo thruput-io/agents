@@ -3,6 +3,6 @@
 <h3>{{ document }}</h3>
 <ul class="index">
 {%- for entry in site.data[document][collection] %}
-  <li><a href="#{% include anchor.html id=entry.id %}">{{ entry.id }}</a></li>
+  <li><a href="#{% include anchor.html id=entry.id %}">{{ entry.id | escape }}</a></li>
 {%- endfor %}
 </ul>
