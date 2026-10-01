@@ -9,11 +9,13 @@ permissions:
   contents: write
   issues: write
   pull-requests: write
+  pages: write
+  id-token: write
 
 jobs:
   verify:
     name: Verify
-    uses: ./.github/workflows/verification.yml
+    uses: ./.github/workflows/verify.yml
 
   release:
     name: Auto Tag & Release
@@ -34,3 +36,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx --yes semantic-release
+
+  publish:
+    name: Publish Site
+    needs: verify
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
