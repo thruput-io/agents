@@ -11,8 +11,13 @@ permissions:
   pull-requests: write
 
 jobs:
+  verify:
+    name: Verify
+    uses: ./.github/workflows/verification.yml
+
   release:
     name: Auto Tag & Release
+    needs: verify
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
