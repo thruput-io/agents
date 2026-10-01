@@ -10,7 +10,7 @@
           "id": "additionalProperties never false",
           "context": "JSON Schema",
           "parent": "Accept unknown properties",
-          "body": "`additionalProperties` is never `false`.\n"
+          "body": "`additionalProperties` is never `false`."
         }
       ]
     }

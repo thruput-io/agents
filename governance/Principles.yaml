@@ -67,10 +67,10 @@ principles:
   parent: Make the wrong thing fail
   body: |
     The quality bar is defined once, in the build, and the build makes the wrong thing fail; it is never weakened to let a change through.
-- id: Producer moves first
+- id: Prepare reader for evolving producer
   parent: Robustness Principle
   body: |
-    The producer moves first; consumers accept what they do not know.
+    Every reader accepts changes it does not know, so the producer evolves without updating every reader first.
 - id: Adoption is articulation
   parent: The practitioner decides the outcome
   body: |

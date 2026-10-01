@@ -350,13 +350,13 @@ rules:
 - id: Accept unknown properties
   marker: MUST
   group: Robustness
-  parent: Producer moves first
+  parent: Prepare reader for evolving producer
   body: |
     Accept input that carries properties you do not know, and ignore them.
 - id: Generic parameters, specific returns
   marker: MUST
   group: Robustness
-  parent: Producer moves first
+  parent: Prepare reader for evolving producer
   body: |
     Declare the most generic parameter types and the most specific return type a method can honour.
 - id: Shapes live in the contract

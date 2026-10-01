@@ -7,9 +7,9 @@
     {
       "principles": [
         {
-          "id": "Producer moves first",
+          "id": "Prepare reader for evolving producer",
           "parent": "Robustness Principle",
-          "body": "The producer moves first; consumers accept what they do not know.\n"
+          "body": "Every reader accepts changes it does not know, so the producer evolves without updating every reader first."
         }
       ]
     }
