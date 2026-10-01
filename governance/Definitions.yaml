@@ -359,9 +359,12 @@ definitions:
 - id: Failing test
   specification: |
     A test that exercises a capability or defect and fails until the correct behavior is implemented.
-- id: Project
+- id: Production code
   specification: |
-    A unit of code that is built and shipped on its own.
+    Code that executes in a deployment runtime after the build and serves [[Users]].
+- id: Verification code
+  specification: |
+    Code that verifies [[Production code]].
 - id: Explicitly named method
   specification: |
     A method whose name states the specific domain action or concept it performs rather than using generic control knobs or boolean flags.

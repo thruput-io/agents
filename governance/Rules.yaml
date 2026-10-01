@@ -244,13 +244,13 @@ rules:
   group: All Tests
   parent: Nothing Is Complete Without Verification
   body: |
-    Add tests for [[New code]].
+    Add tests for new [[Production code]].
 - id: Add tests for updated code
   marker: MUST
   group: All Tests
   parent: Nothing Is Complete Without Verification
   body: |
-    Add tests for updated code.
+    Add tests for updated [[Production code]].
 - id: Troubleshooting unit test
   marker: MUST
   group: All Tests
