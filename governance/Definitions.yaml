@@ -359,6 +359,9 @@ definitions:
 - id: Failing test
   specification: |
     A test that exercises a capability or defect and fails until the correct behavior is implemented.
+- id: Project
+  specification: |
+    A unit of code that is built and shipped on its own.
 - id: Explicitly named method
   specification: |
     A method whose name states the specific domain action or concept it performs rather than using generic control knobs or boolean flags.

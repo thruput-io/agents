@@ -55,6 +55,10 @@ principles:
   parent: Tests prove behaviour, not execution
   body: |
     A change is finished when a test shows the behaviour and fails when it breaks, not when the code is written. The tests are the documentation of what the code does.
+- id: Verification ends the chain
+  parent: Tests prove behaviour, not execution
+  body: |
+    Every [[Project]] has one corresponding verification. The verification is not a project and has no verification of its own.
 - id: Separation of Concerns
   parent: One concern, one owner
   body: |
