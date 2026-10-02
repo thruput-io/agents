@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
-
 pages=ghcr.io/actions/jekyll-build-pages:latest
 vnu=ghcr.io/validator/validator:latest
 lychee=lycheeverse/lychee:latest
@@ -14,11 +12,11 @@ remove_site() {
 trap remove_site EXIT
 
 source=(
-  --volume "$PWD/governance:/github/workspace/site/_data:ro"
-  --volume "$PWD/schemas:/github/workspace/site/schemas:ro"
+  --volume "$PROJECT_ROOT/governance:/github/workspace/site/_data:ro"
+  --volume "$PROJECT_ROOT/schemas:/github/workspace/site/schemas:ro"
 )
-for entry in web/*; do
-  source+=(--volume "$PWD/$entry:/github/workspace/site/${entry#web/}:ro")
+for entry in "$PROJECT_ROOT"/web/*; do
+  source+=(--volume "$entry:/github/workspace/site/${entry#"$PROJECT_ROOT"/web/}:ro")
 done
 
 docker run --rm "${source[@]}" \
@@ -34,4 +32,4 @@ docker run --rm "${source[@]}" \
   --env INPUT_BUILD_REVISION= \
   "$pages"
 docker run --rm --volume "$site:/site:ro" "$vnu" vnu --skip-non-html /site
-docker run --rm --volume "$site:/site:ro" --workdir /site "$lychee" --offline --include-fragments --root-dir /site '**/*.html'
+docker run --rm --volume "$site:/site:ro" "$lychee" --offline --include-fragments --root-dir /site '/site/**/*.html'
