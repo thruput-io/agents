@@ -435,3 +435,168 @@ definitions:
 - id: Measured Coverage
   specification: |
     The share of code executed by tests: a measure of execution, not of checking. Challenges [[True Test Coverage]].
+- id: Change
+  specification: |
+    A set of edits to the code base proposed or merged as one unit, such as a commit or a pull request.
+- id: Compatibility branch
+  specification: |
+    A conditional path that runs only on a particular platform, shell, or environment.
+- id: Dependency
+  specification: |
+    Code outside the current code base that our code needs in order to build or run.
+- id: Representation
+  specification: |
+    One place where a piece of knowledge is written down: in code, configuration, schema, or documentation.
+- id: Instance
+  specification: |
+    One concrete value of a type, created from it.
+- id: Factory
+  specification: |
+    A named function that creates instances of a type and returns invalid input as a value in its signature. A constructor cannot: it can only throw.
+- id: Invariant
+  specification: |
+    A condition that holds for every instance of a type, from creation onward.
+- id: Constructor
+  specification: |
+    The operation a language runs to create and initialise a new instance of a type.
+- id: Module
+  specification: |
+    A unit of code with its own namespace that decides which of its parts are visible outside it.
+- id: Signature
+  specification: |
+    The declared parameter types and return type of a function or method.
+- id: Exception
+  specification: |
+    A signal that interrupts normal control flow to report a failure, unwinding the stack until something catches it.
+- id: Sum type
+  specification: |
+    A type whose value is exactly one of a fixed set of alternatives, each possibly carrying its own data.
+- id: Product type
+  specification: |
+    A type whose value holds one of each of its fields at once, such as a record, struct, or tuple.
+- id: Enum
+  specification: |
+    A type with a fixed, named set of values.
+- id: Compiler
+  specification: |
+    A program that translates source code into another form and rejects code that breaks the language's rules.
+- id: Pattern matching
+  specification: |
+    Selecting code to run by the shape of a value, with one branch per case.
+- id: Wildcard pattern
+  specification: |
+    A pattern that matches any value, used as a catch-all case.
+- id: Aggregate
+  specification: |
+    A cluster of domain objects treated as one unit for changes, entered only through its root, which keeps the cluster's invariants.
+- id: Domain method
+  specification: |
+    An operation defined on a domain type that expresses a business action in the domain's own terms.
+- id: Raw collection
+  specification: |
+    A plain list, set, or map exposed directly, so callers can change it without going through its owner.
+- id: Primitive
+  specification: |
+    A built-in general-purpose type of a language, such as an integer, string, or boolean.
+- id: Layer
+  specification: |
+    A horizontal slice of an architecture that groups code with the same responsibility and depends only in one declared direction.
+- id: Dependency direction
+  specification: |
+    The direction in which one layer or module may depend on another, as the architecture declares it.
+- id: Helper code
+  specification: |
+    Small supporting code that exists to serve other code rather than a user-facing behaviour.
+- id: Try/catch block
+  specification: |
+    A language construct that runs a block and, if it raises an exception, hands control to a handler.
+- id: Rethrow
+  specification: |
+    Raising an exception again from its handler, so it keeps travelling up instead of being swallowed.
+- id: Default value
+  specification: |
+    A value used when no other is given, or when obtaining the real one failed.
+- id: Fallback strategy
+  specification: |
+    A second way of doing the same work, tried when the first one fails.
+- id: Exit status
+  specification: |
+    The number a process returns when it ends; zero means success, anything else failure.
+- id: Error output
+  specification: |
+    The separate output stream a program writes its error messages and diagnostics to.
+- id: Abort-on-error mode
+  specification: |
+    A setting in which a script stops at the first command that fails, such as `set -e` in Bash.
+- id: Branching logic
+  specification: |
+    Code that chooses between paths at run time, such as if, switch, or a default in a lookup.
+- id: Test
+  specification: |
+    Code that runs a piece of the system and checks that it behaves as specified.
+- id: Test case
+  specification: |
+    One scenario within a test suite: a setup, an action, and the expected outcome.
+- id: Muted test
+  specification: |
+    A test that is present but switched off, so it no longer runs or no longer fails the build.
+- id: Code coverage
+  specification: |
+    The share of the code that is executed while the tests run.
+- id: Assertion
+  specification: |
+    A statement in a test that compares an actual result with the expected one and fails the test when they differ.
+- id: Flaky test
+  specification: |
+    A test that passes and fails on the same code without any change.
+- id: Subject under test
+  specification: |
+    The one component a test exercises and whose behaviour it checks.
+- id: Runtime artifact
+  specification: |
+    The built output that is deployed and run, such as a container image, package, or binary.
+- id: Black-box testing
+  specification: |
+    Testing through the public interface only, without depending on the internals.
+- id: Test setup
+  specification: |
+    The code that brings the system into the state a test needs before the action runs.
+- id: Lint rule
+  specification: |
+    One check a linter performs on the code, reporting each place that breaks it.
+- id: Pragma
+  specification: |
+    A directive to a compiler or tool, written in the code, that changes how it treats that code.
+- id: Generated code
+  specification: |
+    Code written by a tool from some other source, rather than by a person.
+- id: Preset
+  specification: |
+    A named set of lint rules and settings shared by many projects, used as a starting configuration.
+- id: Optional parameter
+  specification: |
+    A parameter a caller may leave out, in which case a default is used.
+- id: Overload
+  specification: |
+    One of several methods with the same name that differ in their parameter types.
+- id: API
+  specification: |
+    The set of operations one piece of software offers to another, and the rules for calling them.
+- id: Statement
+  specification: |
+    The smallest unit of code that performs an action, such as an assignment, a call, or a return.
+- id: Return type
+  specification: |
+    The declared type of what a function returns.
+- id: Parameter type
+  specification: |
+    The declared type of what a function accepts in one of its parameters.
+- id: Contract
+  specification: |
+    A specification, separate from the code, of what crosses a boundary and what each side must provide.
+- id: Coding standard
+  specification: |
+    A set of rules for how code is written in a team, so all of it reads as if one person wrote it.
+- id: Environment
+  specification: |
+    A place where the system runs with its own configuration and infrastructure, such as local, test, or production.
