@@ -12,7 +12,8 @@ levels:
   specification: A truth we hold.
   criteria:
   - include: Expresses an irreducible truth. Asking 'Why?' of it has no answer; asking why we hold it rather than another truth leads straight to a value.
-  - include: 'Held beyond argument: a stone tablet. It cannot be moved down the ladder.'
+  - include: |-
+      Held beyond argument: a stone tablet. It cannot be moved down the ladder.
   - include: Its body may state the mechanism that makes it true; stating a mechanism is not weighing.
   - include: Stays true when 'code' is replaced by any other artifact.
   - include: Carries no marker.
@@ -25,7 +26,8 @@ levels:
   criteria:
   - include: Requires a [[Document reference]] to explain.
   - include: Weighs two goods against each other, either of which could be chosen, or explains a mechanism. Every 'X over Y' between two goods is a rationale.
-  - include: 'A weighing is measured against the level above: the parent decides which side wins. A weighing the parent cannot decide points at a defect in the parent.'
+  - include: |-
+      A weighing is measured against the level above: the parent decides which side wins. A weighing the parent cannot decide points at a defect in the parent.
   - include: The losing side of its trade-off is a candidate code smell.
   - include: Its solutions say how to apply it, opened by SHOULD or MAY. A preference, an 'X over Y' that a reviewer cannot answer with violation or not, is a solution here and never a rule.
   - exclude: Can be stated in two sentences without loss and weighs nothing.
@@ -45,7 +47,8 @@ levels:
   - exclude: Restates its rationale, or carries an enumeration the glossary already holds.
   parent: Rationale
 - id: Rule
-  specification: 'A MUST or MUST NOT a reviewer answers on a diff: violation or not.'
+  specification: |-
+    A MUST or MUST NOT a reviewer answers on a diff: violation or not.
   criteria:
   - include: A [[Developer]] answers 'violation or not?' on a ten-line diff without understanding the whole system.
   - include: Opens with MUST or MUST NOT.
@@ -59,6 +62,7 @@ levels:
   specification: A rule implemented in code for one technology.
   criteria:
   - include: Names a language, [[Framework]], [[Library]], or tool.
-  - include: '[[Static code analysis]] evaluates it and rejects a violation deterministically in milliseconds.'
+  - include: |-
+      [[Static code analysis]] evaluates it and rejects a violation deterministically in milliseconds.
   - exclude: Can be evaluated without knowing the technology in use.
   parent: Rule
