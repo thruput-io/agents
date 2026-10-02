@@ -53,8 +53,14 @@ jobs:
       - name: Build Site
         run: jekyll build --source "$RUNNER_TEMP/source" --destination "$RUNNER_TEMP/public"
 
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
       - name: Validate Site HTML
-        run: npx --yes html-validate@11.16.1 "$RUNNER_TEMP/public/**/*.html"
+        run: npx --yes --package vnu-jar@26.9.30 vnu --skip-non-html "$RUNNER_TEMP/public"
 
       - name: Check Site Links
         uses: lycheeverse/lychee-action@v2
