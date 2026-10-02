@@ -26,7 +26,7 @@ rules:
 - id: No speculative portability
   marker: MUST NOT
   group: Purpose & Accuracy
-  parent: Loud Failures Over Silent Defaults
+  parent: Fail fast
   body: |
     Add platform, shell, or environment compatibility branches for environments the task does not run in.
 - id: Earlier rung that serves
@@ -176,49 +176,49 @@ rules:
 - id: No silent catch
   marker: MUST NOT
   group: Behavior & Failure Handling
-  parent: Loud Failures Over Silent Defaults
+  parent: Fail fast
   body: |
     Use try/catch blocks that do not rethrow (silencing failures).
 - id: No default on failure
   marker: MUST NOT
   group: Behavior & Failure Handling
-  parent: Loud Failures Over Silent Defaults
+  parent: Fail fast
   body: |
     Return or use a default value when failing.
 - id: No strategy fallback
   marker: MUST NOT
   group: Behavior & Failure Handling
-  parent: Loud Failures Over Silent Defaults
+  parent: Fail fast
   body: |
     Make code 'hardened' by trying another strategy when the first one fails.
 - id: No suppressed exit status
   marker: MUST NOT
   group: Behavior & Failure Handling
-  parent: Loud Failures Over Silent Defaults
+  parent: Fail fast
   body: |
     Discard a command's non-zero exit status so that a failure passes as success.
 - id: No discarded diagnostics
   marker: MUST NOT
   group: Behavior & Failure Handling
-  parent: Loud Failures Over Silent Defaults
+  parent: Fail fast
   body: |
     Send a command's error output nowhere, or use another tool to detect state instead of letting the failing tool report its error.
 - id: Scripts abort on error
   marker: MUST NOT
   group: Behavior & Failure Handling
-  parent: Loud Failures Over Silent Defaults
+  parent: Fail fast
   body: |
     Let a script continue past a failing step. Every script runs in the language's abort-on-error mode, and a failing step ends it at once.
 - id: No degraded continuation
   marker: MUST NOT
   group: Behavior & Failure Handling
-  parent: Loud Failures Over Silent Defaults
+  parent: Fail fast
   body: |
     Proceed with stale, partial, or assumed input after the step that produces it failed; report and stop.
 - id: Linear deterministic code
   marker: MUST NOT
   group: Behavior & Failure Handling
-  parent: Loud Failures Over Silent Defaults
+  parent: Fail fast
   body: |
     Write test, build, or configuration code that contains branching logic or default fallback values, such as, but not limited to, `if` statements, `switch`/`case` expressions, or defaulted values.
 - id: No muted tests

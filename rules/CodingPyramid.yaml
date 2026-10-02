@@ -14,11 +14,11 @@ levels:
   - include: Expresses an irreducible truth. Asking 'Why?' of it has no answer; asking why we hold it rather than another truth leads straight to a value.
   - include: |-
       Held beyond argument: a stone tablet. It cannot be moved down the ladder.
-  - include: Its body may state the mechanism that makes it true; stating a mechanism is not weighing.
   - include: Stays true when 'code' is replaced by any other artifact.
   - include: Carries no marker.
   - exclude: Names a software concept.
   - exclude: Follows from another axiom.
+  - exclude: Explains why it holds. The explanation belongs to a rationale below it.
   - exclude: Addresses how people should act.
   parent: Value
 - id: Rationale
