@@ -120,7 +120,7 @@ definitions:
 - id: Illegal state
   specification: |
     A combination of values that the domain never defined as valid.
-- id: Simplicity ladder
+- id: Development Stack
   specification: |
     The ways to meet a need, in order of how little code we own afterwards.
   closedEnumerationOf:
@@ -148,9 +148,9 @@ definitions:
 - id: New code
   specification: |
     Meeting the need by writing new code.
-- id: Shift Left ladder
+- id: Test Pyramid
   specification: |
-    The places a defect can be caught, in order from earliest to latest.
+    The places a defect can be caught, from the base, earliest and cheapest, to the top, latest and costliest.
   closedEnumerationOf:
   - Illegal states unrepresentable
   - Static code analysis
