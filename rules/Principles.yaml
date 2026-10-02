@@ -46,7 +46,7 @@ principles:
 - id: No Primitive Obsession
   parent: Encapsulation
   body: |
-    Any primitive in a method signature is the [[Primitive Obsession]] smell: the value it carries deserves a type of its own. The only exception is a method at the [[Perimeter]] that takes in or hands out a [[Foreign shape]].
+    Any primitive in a method signature is the [[Primitive Obsession]] smell: the value it carries deserves a type of its own. The only exception is a method at the [[Perimeter]].
 - id: Optionality Drives Complexity
   parent: Name the case, not the knob
   body: |
