@@ -23,6 +23,9 @@ definitions:
 - id: MAY
   specification: |
     An option.
+- id: Defined
+  specification: |
+    Exists as an entry in this glossary.
 - id: Id
   specification: |
     The name of an entry, and the only stable handle for citing it. Ids are unique across every document, compared case-insensitively with whitespace normalized. In prose an id is cited as [[Id]].

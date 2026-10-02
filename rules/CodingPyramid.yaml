@@ -51,8 +51,8 @@ levels:
     A MUST or MUST NOT a reviewer answers on a diff: violation or not.
   criteria:
   - include: A [[Developer]] answers 'violation or not?' on a ten-line diff without understanding the whole system.
-  - include: Opens with MUST or MUST NOT.
-  - include: Names the [[Bad Code]] it forbids.
+  - include: Opens with MUST NOT and names the [[Defined]] [[Bad Code]] it forbids.
+  - include: Opens with MUST and states the [[Defined]] code it requires.
   - include: Where [[Static code analysis]] can decide it, a standard implements it for each technology.
   - exclude: Names a technology. A statement that names a technology and still holds an instruction without it is split into a rule and a standard.
   - exclude: Needs an idea explained to be applied.
