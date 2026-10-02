@@ -2,13 +2,13 @@ rules:
 - id: Stated purpose
   marker: MUST
   group: Purpose & Accuracy
-  parent: Code Only for User Value
+  parent: You aren't gonna need it
   body: |
     State the [[Purpose]] of every change.
 - id: No code without purpose
   marker: MUST NOT
   group: Purpose & Accuracy
-  parent: Code Only for User Value
+  parent: You aren't gonna need it
   body: |
     Write or merge code whose [[Purpose]] is not stated.
 - id: Every part solves the Purpose
