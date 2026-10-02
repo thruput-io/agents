@@ -47,9 +47,9 @@ layout: default
     <dt id="{% include anchor.html id=definition.id %}">{{ definition.id | escape }}</dt>
     <dd>
       {% include prose.html text=definition.specification %}
-      {%- if definition.criteria %}{% include criteria.html criteria=definition.criteria %}{% endif %}
-      {%- if definition.closedEnumerationOf %}<p class="enumeration">Closed enumeration: {% include references.html ids=definition.closedEnumerationOf %}.</p>{% endif %}
-      {%- if definition.openEnumerationOf %}<p class="enumeration">Open enumeration: {% include references.html ids=definition.openEnumerationOf %}.</p>{% endif %}
+      {%- include criteria.html criteria=definition.criteria %}
+      <p class="enumeration">Exactly these kinds: <span class="ids">{% include references.html ids=definition.closedEnumerationOf %}</span>.</p>
+      <p class="enumeration">Kinds known so far: <span class="ids">{% include references.html ids=definition.openEnumerationOf %}</span>.</p>
     </dd>
   {%- endfor %}
   </dl>

@@ -1,0 +1,3 @@
+{%- assign level_document = include.level.id | append: "s" -%}
+{%- assign level_collection = level_document | downcase -%}
+{%- assign level_entries = site.data[level_document][level_collection] -%}
