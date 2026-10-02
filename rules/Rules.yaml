@@ -292,19 +292,19 @@ rules:
   group: Quality Tooling & Shift Left
   parent: The Toolchain Is the Guardrail
   body: |
-    Change global or project-wide linting rules.
+    Change global or project-wide linting rules, except in a pull request that contains only that change.
 - id: No global quality changes
   marker: MUST NOT
   group: Quality Tooling & Shift Left
   parent: The Toolchain Is the Guardrail
   body: |
-    Change global or project-wide [[Quality]] standards.
-- id: No disabling via pragma
+    Change global or project-wide [[Quality]] standards, except in a pull request that contains only that change.
+- id: No local disabling of lint rules
   marker: MUST NOT
   group: Quality Tooling & Shift Left
   parent: Push tests down the pyramid
   body: |
-    Disable linting rules via comments or pragmas.
+    Disable a lint rule locally, by a comment, a pragma, or alike. An exception the team accepts is expressed globally, by a file filter in the lint configuration or alike.
 - id: No check the type system makes
   marker: MUST NOT
   group: Test Pyramid
