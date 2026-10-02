@@ -80,7 +80,7 @@ definitions:
     The special case where a single [[Raw value]] is wrapped.
 - id: Loose type
   specification: |
-    The shape of a variable, defined so loosely that it admits [[Illegal state]]s by design, the opposite of [[Illegal states unrepresentable]]. Its looseness shows in the type's cardinality, which every field and every open choice multiplies while the legal states stay few.
+    The shape of a variable, defined so loosely that it admits [[Illegal state]]s by design, the opposite of [[Make illegal states unrepresentable]]. Its looseness shows in the type's cardinality, which every field and every open choice multiplies while the legal states stay few.
   openEnumerationOf:
   - Optionality
   - Primitive Obsession
@@ -152,26 +152,34 @@ definitions:
   specification: |
     The places a defect can be caught, from the base, earliest and cheapest, to the top, latest and costliest.
   closedEnumerationOf:
-  - Illegal states unrepresentable
+  - Type system
   - Static code analysis
   - Unit test
+  - Narrow integration test
   - Integration test
   - End-to-end test
-- id: Illegal states unrepresentable
+  - Manual test
+- id: Type system
   specification: |
     Preventing a defect by choosing a type in which the [[Illegal state]] cannot be constructed.
 - id: Static code analysis
   specification: |
-    Catching a defect by analysing the code before it runs.
+    Catching a defect by analysing the code before it runs, with a linter or another static tool.
 - id: Unit test
   specification: |
     Catching a defect by exercising one component in-process, without external dependencies.
+- id: Narrow integration test
+  specification: |
+    Catching a defect by exercising one component against a real instance of the dependency it talks to, such as a repository against a database in a container ([Martin Fowler, IntegrationTest](https://martinfowler.com/bliki/IntegrationTest.html)).
 - id: Integration test
   specification: |
     Catching a defect by exercising components together against real adapters in local containers.
 - id: End-to-end test
   specification: |
     Catching a defect by exercising fully deployed services in a running staging environment.
+- id: Manual test
+  specification: |
+    Catching a defect by a person exercising the running system.
 - id: Evidence
   specification: |
     A verifiable reference that grounds a change or an assumption. A practice recalled from experience is not evidence.

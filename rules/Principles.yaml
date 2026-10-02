@@ -34,7 +34,7 @@ principles:
 - id: Make illegal states unrepresentable
   parent: Encapsulation
   body: |
-    Choose [[Illegal states unrepresentable]] over a [[Runtime check]], and model every business rule, transition, and entity as a dedicated type rather than a data bag. A state that cannot be held needs no validator, no test, and no bug report.
+    Choose the [[Type system]] over a [[Runtime check]], and model every business rule, transition, and entity as a dedicated type rather than a data bag. A state that cannot be held needs no validator, no test, and no bug report.
 - id: Parse, don't validate
   parent: Translate at the door
   body: |
