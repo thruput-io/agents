@@ -63,6 +63,14 @@ principles:
   parent: Tests prove behaviour, not execution
   body: |
     A test is either a black-box test of the shipped artifact or a test of one subject in isolation; nothing in between.
+- id: Never trust a test you haven't seen fail
+  parent: Tests prove behaviour, not execution
+  body: |
+    A test counts only once it has failed for the behaviour it checks; a test that cannot fail checks nothing.
+- id: F.I.R.S.T.
+  parent: Tests prove behaviour, not execution
+  body: |
+    Tests are Fast, Independent, Repeatable, Self-validating, and Timely.
 - id: Verification ends the chain
   parent: Tests prove behaviour, not execution
   body: |
