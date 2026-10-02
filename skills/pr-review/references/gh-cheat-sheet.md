@@ -1,6 +1,6 @@
 # GH CHEAT SHEET
 
-Exact `gh` invocations and payload shapes. Referenced by [`CODE_REVIEW.md`](./CODE_REVIEW.md) and [`PROBE_SUBAGENT_TEMPLATE.md`](./PROBE_SUBAGENT_TEMPLATE.md), which own the *rules*; this file owns only the *syntax*. When a command here conflicts with a rule there, the rule wins.
+Exact `gh` invocations and payload shapes. Referenced by [`CODE_REVIEW.md`](../CODE_REVIEW.md) and [`PROBE_SUBAGENT_TEMPLATE.md`](../PROBE_SUBAGENT_TEMPLATE.md), which own the *rules*; this file owns only the *syntax*. When a command here conflicts with a rule there, the rule wins.
 
 Placeholders: `{owner}`, `{repo}`, `{n}` (PR number), `{path}`, `<URL>` (PR URL), `<headRefOid>` (PR head SHA).
 
@@ -49,14 +49,14 @@ One object per violation. These fields and **no others** — the API rejects unk
   "path": "src/foo.ts",
   "line": 42,
   "side": "RIGHT",
-  "body": "[No suppressed exit status](https://github.com/thruput-io/handbook/blob/main/RULES.md#no-suppressed-exit-status): what is wrong, briefly."
+  "body": "[No suppressed exit status](https://thruput.se/agents/#no-suppressed-exit-status): what is wrong, briefly."
 }
 ```
 
 - `path` — repo-relative.
 - `line` — bare integer, no quotes; the line in the file at the head commit, not a diff hunk offset.
 - `side` — `RIGHT` for added/modified lines, `LEFT` for removed. Default `RIGHT`.
-- `body` — see [`CODE_REVIEW.md` step 5](./CODE_REVIEW.md#5-draft-comments-locally) for what it must say.
+- `body` — see [`CODE_REVIEW.md` step 5](../CODE_REVIEW.md#5-draft-comments-locally) for what it must say.
 
 Multi-line variant adds `start_line` and `start_side`:
 
