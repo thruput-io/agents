@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/violation.schema.json",
+  "title": "Violation",
+  "description": "One finding of one rule: what is wrong, cited by the rule's id, and where it is reported. The anchor is a line inside the surface, the dead line where the surface made code dead, or the pull request as a whole where no single line is to blame. The body states what is wrong, not how to fix it",
+  "examples": [
+    {
+      "rule": "No suppressed exit status",
+      "body": "[No suppressed exit status](https://thruput.se/agents/#no-suppressed-exit-status): the pipeline's exit status is discarded, so a failing check passes as success.",
+      "anchor": {
+        "path": "scripts/verify.sh",
+        "line": 21,
+        "side": "RIGHT"
+      }
+    }
+  ],
+  "type": "object",
+  "required": [
+    "rule",
+    "body",
+    "anchor"
+  ],
+  "properties": {
+    "rule": {
+      "description": "The rule violated, by its id",
+      "$ref": "id.schema.json"
+    },
+    "body": {
+      "description": "What is wrong, briefly, citing the rule by id as a link to its anchor on the published rules",
+      "type": "string",
+      "minLength": 1
+    },
+    "anchor": {
+      "$ref": "#/$defs/Anchor"
+    }
+  },
+  "$defs": {
+    "Anchor": {
+      "description": "Where the violation is reported",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Line"
+        },
+        {
+          "$ref": "#/$defs/Lines"
+        },
+        {
+          "$ref": "#/$defs/PullRequest"
+        }
+      ]
+    },
+    "Side": {
+      "description": "RIGHT for a line of the file at the head commit, LEFT for a line removed from the base",
+      "enum": [
+        "RIGHT",
+        "LEFT"
+      ]
+    },
+    "Line": {
+      "description": "One line of one file, numbered in the file on the side named, never as a diff hunk offset",
+      "type": "object",
+      "required": [
+        "path",
+        "line",
+        "side"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "change-set.schema.json#/$defs/Path"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "side": {
+          "$ref": "#/$defs/Side"
+        }
+      }
+    },
+    "Lines": {
+      "description": "Consecutive lines of one file on one side",
+      "type": "object",
+      "required": [
+        "path",
+        "lines",
+        "side"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "change-set.schema.json#/$defs/Path"
+        },
+        "lines": {
+          "$ref": "change-set.schema.json#/$defs/LineRange"
+        },
+        "side": {
+          "$ref": "#/$defs/Side"
+        }
+      }
+    },
+    "PullRequest": {
+      "description": "The pull request as a whole: an existing component that replaces a whole module, or a standard the change set as a whole does not follow. Carried in the review body rather than on a line",
+      "type": "object",
+      "required": [
+        "pullRequest"
+      ],
+      "properties": {
+        "pullRequest": {
+          "const": true
+        }
+      }
+    }
+  }
+}

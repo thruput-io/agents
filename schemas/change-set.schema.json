@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/change-set.schema.json",
+  "title": "Change set",
+  "description": "The lines a pull request adds or removes, resolved once at its head commit by the reviewing context and handed to every probe. Added lines are numbered in the file at the head commit, removed lines in the file at the base",
+  "examples": [
+    {
+      "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
+      "files": [
+        {
+          "path": "scripts/verify.sh",
+          "added": [
+            {
+              "start": 21,
+              "end": 21
+            }
+          ],
+          "removed": []
+        }
+      ]
+    }
+  ],
+  "$ref": "#/$defs/Lines",
+  "$defs": {
+    "Commit": {
+      "description": "A commit, named by its full SHA-1",
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "Path": {
+      "description": "A file, by its path relative to the repository root, with no leading separator",
+      "type": "string",
+      "pattern": "^[^/]"
+    },
+    "LineRange": {
+      "description": "Consecutive lines of one file, by their 1-based numbers, both ends included",
+      "type": "object",
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "ChangedFile": {
+      "description": "One file the pull request touches: the ranges it adds, numbered at the head commit, and the ranges it removes, numbered at the base. A new file has no removed ranges, a deleted file no added ones",
+      "type": "object",
+      "required": [
+        "path",
+        "added",
+        "removed"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/Path"
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LineRange"
+          }
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LineRange"
+          }
+        }
+      }
+    },
+    "Lines": {
+      "description": "Lines of files, anchored to the head commit they are numbered against",
+      "type": "object",
+      "required": [
+        "headCommit",
+        "files"
+      ],
+      "properties": {
+        "headCommit": {
+          "$ref": "#/$defs/Commit"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ChangedFile"
+          }
+        }
+      }
+    }
+  }
+}

@@ -9,7 +9,7 @@ Read [`CODE_REVIEW.md`](CODE_REVIEW.md) and follow it. It is the source of truth
 
 The rules it serves are the entries of [`rules/Rules.yaml`](../../rules/Rules.yaml); the `[[term]]`s they name are defined in [`rules/Definitions.yaml`](../../rules/Definitions.yaml), and their parents in [`rules/Principles.yaml`](../../rules/Principles.yaml). Read them from the checkout of this repository when the review runs inside it, otherwise from the raw files on `main` at `https://raw.githubusercontent.com/thruput-io/agents/main/rules/`. Read the current version rather than a cached copy. A violation is cited by the rule's id, linked to its anchor on https://thruput.se/agents/ as [`CODE_REVIEW.md` § Definitions](CODE_REVIEW.md#definitions) derives it.
 
-It dispatches one subagent per rule group using [`PROBE_SUBAGENT_TEMPLATE.md`](PROBE_SUBAGENT_TEMPLATE.md); read that when you reach [`CODE_REVIEW.md` step 3](CODE_REVIEW.md#3-rule-evaluation).
+It dispatches one subagent per rule group using [`PROBE_SUBAGENT_TEMPLATE.md`](PROBE_SUBAGENT_TEMPLATE.md); read that when you reach [`CODE_REVIEW.md` step 3](CODE_REVIEW.md#3-rule-evaluation). What crosses between the reviewing context, a probe, and the review is shaped by the schemas published under `https://thruput.se/agents/schemas/`: the change set, the surface, the instructions a probe receives, the ledger it returns, and each violation in it. Validate against them rather than reading a shape off this prose.
 
 The escalation index named by [`CODE_REVIEW.md` step 4](CODE_REVIEW.md#4-context-probing) is bundled under `references/`. The step's own instructions for reading through it to the source repository still apply.
 
@@ -27,7 +27,8 @@ For Azure DevOps PR reviews, note that Azure DevOps does not support atomic batc
 ## Files
 
 - `CODE_REVIEW.md` — the review process.
-- `PROBE_SUBAGENT_TEMPLATE.md` — the prompt one probe subagent receives, filled in per rule group.
+- `PROBE_SUBAGENT_TEMPLATE.md` — the prompt one probe subagent receives, around one instructions document per rule group.
+- `https://thruput.se/agents/schemas/change-set.schema.json`, `surface.schema.json`, `agent-instructions.schema.json`, `ledger.schema.json`, `violation.schema.json` — the shapes the process passes around, from this repository's `schemas/`.
 - `references/agent-rules-books-INDEX.md`, `references/agent-rules-books-search-index.json` — escalation index, byte-for-byte mirrors of the handbook's `references/`. Refresh with:
 
       for f in agent-rules-books-INDEX.md agent-rules-books-search-index.json; do
