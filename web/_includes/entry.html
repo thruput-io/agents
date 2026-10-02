@@ -1,27 +1,19 @@
 {%- assign level = site.data.ImperataDerivata.levels[include.depth] -%}
-{%- assign document = level.id | append: "s" -%}
-{%- assign collection = document | downcase -%}
-{%- assign entries = site.data[document][collection] -%}
-{%- if include.parent -%}
-{%- assign entries = entries | where: "parent", include.parent -%}
-{%- endif -%}
+{%- include level-entries.html level=level -%}
+{%- assign entries = level_entries | where: "parent", include.parent -%}
 {%- for entry in entries %}
 {%- assign level = site.data.ImperataDerivata.levels[include.depth] -%}
 {%- assign deeper = include.depth | plus: 1 %}
 <details class="entry {{ level.id | downcase }}" id="{% include anchor.html id=entry.id %}" open>
-  <summary><span class="level">{{ level.id | escape }}</span><span class="name">{{ entry.id | escape }}</span>{% if entry.marker %}<span class="marker">{{ entry.marker | escape }}</span>{% endif %}{% if entry.group %}<span class="group">{{ entry.group | escape }}</span>{% endif %}{% if entry.context %}<span class="context">{{ entry.context | escape }}</span>{% endif %}</summary>
+  <summary><span class="level">{{ level.id | escape }}</span><span class="name">{{ entry.id | escape }}</span><span class="marker">{{ entry.marker | escape }}</span><span class="group">{{ entry.group | escape }}</span><span class="context">{{ entry.context | escape }}</span></summary>
   <div class="body">
     {% include prose.html text=entry.body %}
-    {%- if entry.solutions %}
     <ul class="solutions">
     {%- for solution in entry.solutions %}
       <li><span class="marker">{{ solution.marker | escape }}</span>{% include prose.html text=solution.body %}</li>
     {%- endfor %}
     </ul>
-    {%- endif %}
-    {%- if site.data.ImperataDerivata.levels[deeper] %}
     {%- include entry.html depth=deeper parent=entry.id %}
-    {%- endif %}
   </div>
 </details>
 {%- endfor %}

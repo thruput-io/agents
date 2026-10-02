@@ -199,3 +199,16 @@ dl dd {
   color: var(--thruput-arctic);
   margin: 0 0.25rem;
 }
+
+.entry .marker:empty,
+.entry .group:empty,
+.entry .context:empty,
+.solutions:not(:has(li)),
+.criteria:not(:has(li)),
+.enumeration:not(:has(a)) {
+  display: none;
+}
+
+.ids .id + .id::before {
+  content: ", ";
+}

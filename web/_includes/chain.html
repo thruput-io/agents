@@ -1,18 +1,17 @@
 {%- assign levels = site.data.ImperataDerivata.levels -%}
 {%- assign start = levels[include.depth] -%}
-{%- assign document = start.id | append: "s" -%}
-{%- assign collection = document | downcase -%}
+{%- include level-entries.html level=start -%}
+{%- assign chained = level_entries -%}
 <ul class="chains">
-{%- for entry in site.data[document][collection] %}
-  <li><a href="#{% include anchor.html id=entry.id %}">{{ entry.id | escape }}</a>
+{%- for entry in chained %}
+  <li>{% include link.html id=entry.id %}
   {%- assign parent = entry.parent -%}
   {%- assign above = include.depth | minus: 1 -%}
   {%- for depth in (0..above) reversed -%}
   {%- assign level = levels[depth] -%}
-  {%- assign document = level.id | append: "s" -%}
-  {%- assign collection = document | downcase -%}
-  {%- assign ancestor = site.data[document][collection] | where: "id", parent | first %}
-    <span class="arrow">→</span> <a class="{{ level.id | downcase }}" href="#{% include anchor.html id=ancestor.id %}">{{ ancestor.id | escape }}</a>
+  {%- include level-entries.html level=level -%}
+  {%- assign ancestor = level_entries | where: "id", parent | first %}
+    <span class="arrow">→</span> {% include link.html id=ancestor.id %}
   {%- assign parent = ancestor.parent -%}
   {%- endfor %}
   </li>
