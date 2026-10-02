@@ -7,13 +7,13 @@
     {
       "levels": [
         {
-          "id": "Value",
-          "specification": "Terminal human intent."
+          "id": "Example root level",
+          "specification": "The level with nothing above it."
         },
         {
-          "id": "Axiom",
-          "specification": "A universal meta-truth governing systems and entropy across all domains.",
-          "parent": "Value"
+          "id": "Example child level",
+          "specification": "A level one step below the root.",
+          "parent": "Example root level"
         }
       ]
     }

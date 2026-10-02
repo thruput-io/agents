@@ -7,10 +7,10 @@
     {
       "standards": [
         {
-          "id": "additionalProperties never false",
-          "context": "JSON Schema",
-          "parent": "Accept unknown properties",
-          "body": "`additionalProperties` is never `false`."
+          "id": "Example standard",
+          "context": "Example tool",
+          "parent": "Example rule",
+          "body": "`example` is never `false`."
         }
       ]
     }

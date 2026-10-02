@@ -7,9 +7,9 @@
     {
       "principles": [
         {
-          "id": "Prepare reader for evolving producer",
-          "parent": "Robustness Principle",
-          "body": "Every reader accepts changes it does not know, so the producer evolves without updating every reader first."
+          "id": "Example principle",
+          "parent": "Example rationale",
+          "body": "An example principle says how we code in one sentence."
         }
       ]
     }

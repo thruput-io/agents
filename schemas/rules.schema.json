@@ -7,11 +7,11 @@
     {
       "rules": [
         {
-          "id": "Stated purpose",
+          "id": "Example rule",
           "marker": "MUST",
-          "group": "Purpose & Accuracy",
-          "parent": "Code Only for User Value",
-          "body": "State the **WHY** of a change as what good it does for the **[[Users]]** of the code."
+          "group": "Example group",
+          "parent": "Example principle",
+          "body": "Name the bad code the example rule forbids."
         }
       ]
     }
