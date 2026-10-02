@@ -51,10 +51,14 @@ principles:
   parent: Optionality Drives Complexity
   body: |
     Each allowed combination of options is its own operation with its own name; [[Optionality]] is never a parameter.
-- id: Nothing Is Complete Without Verification
+- id: Test-Driven Development
   parent: Tests prove behaviour, not execution
   body: |
-    A change is finished when a test shows the behaviour and fails when it breaks, not when the code is written. The tests are the documentation of what the code does.
+    Write a test first.
+- id: Never fix a bug without a test pinning it
+  parent: Tests prove behaviour, not execution
+  body: |
+    A bug is pinned by a failing test before it is fixed, and the fix is done when that test passes.
 - id: Verification ends the chain
   parent: Tests prove behaviour, not execution
   body: |

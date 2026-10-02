@@ -19,6 +19,10 @@ axioms:
   parent: Outcome Over Output
   body: |
     Code proves execution; [[Users]] prove [[Correctness]].
+- id: Nothing Is Complete Without Verification
+  parent: Speed Through Discipline
+  body: |
+    Nothing is complete until it is verified.
 - id: Leverage
   parent: Excellence Through Transparency
   body: |
