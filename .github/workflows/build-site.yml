@@ -1,0 +1,26 @@
+name: Build Site
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build-site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          cp -R web site
+          cp -R governance site/_data
+          cp -R schemas site/schemas
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: site
+          destination: _site
+      - run: docker run --rm --volume "$PWD/_site:/site:ro" ghcr.io/validator/validator@sha256:c36cfc6b48442c174d511145df69502babec69cae467268c705fac88cff4dfed vnu --skip-non-html /site
+      - uses: lycheeverse/lychee-action@v2
+        with:
+          args: --offline --include-fragments --root-dir ${{ github.workspace }}/_site '_site/**/*.html'
+      - uses: actions/upload-pages-artifact@v3

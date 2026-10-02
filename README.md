@@ -6,7 +6,7 @@ The governance is published at https://thruput.se/agents/. Architecture decision
 
 ## Building locally
 
-The build runs the same steps as the pull request check. Node, Java, lychee, Ruby, and Jekyll (`gem install jekyll jekyll-remote-theme`) are all there is to install.
+The build runs the same steps as the pull request check. Install its tools with `brew bundle`.
 
 ```
 ./build.sh
