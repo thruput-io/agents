@@ -266,7 +266,7 @@ rules:
 - id: One subject under test
   marker: MUST NOT
   group: Unit and Narrow Integration Tests
-  parent: Test-Driven Development
+  parent: No grey tests
   body: |
     Include more than one subject under test or test the composition of objects within a [[Unit test]] or a [[Narrow integration test]].
 - id: No test case coupling
@@ -278,7 +278,7 @@ rules:
 - id: Integration Tests Are Black-Box
   marker: MUST
   group: Integration Tests
-  parent: Test-Driven Development
+  parent: No grey tests
   body: |
     Test the runtime artifact being shipped via its public APIs, black box.
 - id: Production Parity
