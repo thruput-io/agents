@@ -1,8 +1,8 @@
-{%- assign level = site.data.ImperataDerivata.levels[include.depth] -%}
+{%- assign level = site.data.CodingPyramid.levels[include.depth] -%}
 {%- include level-entries.html level=level -%}
 {%- assign entries = level_entries | where: "parent", include.parent -%}
 {%- for entry in entries %}
-{%- assign level = site.data.ImperataDerivata.levels[include.depth] -%}
+{%- assign level = site.data.CodingPyramid.levels[include.depth] -%}
 {%- assign deeper = include.depth | plus: 1 %}
 <details class="entry {{ level.id | downcase }}" id="{% include anchor.html id=entry.id %}" open>
   <summary><span class="level">{{ level.id | escape }}</span><span class="name">{{ entry.id | escape }}</span><span class="marker">{{ entry.marker | escape }}</span><span class="group">{{ entry.group | escape }}</span><span class="context">{{ entry.context | escape }}</span></summary>
