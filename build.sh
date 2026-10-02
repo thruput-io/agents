@@ -4,3 +4,4 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 scripts/verify.sh
+scripts/build_site.sh
