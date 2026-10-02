@@ -305,12 +305,42 @@ rules:
   parent: Push tests down the pyramid
   body: |
     Disable linting rules via comments or pragmas.
-- id: Earlier rung that can
+- id: No check the type system makes
   marker: MUST NOT
-  group: Quality Tooling & Shift Left
+  group: Test Pyramid
   parent: Push tests down the pyramid
   body: |
-    Catch a defect on a level of the [[Test Pyramid]] when a lower level can catch it. A [[Runtime check]], or a test, for what a type or a linter would reject is the smell.
+    Write a [[Runtime check]] or a test for what the [[Type system]] can reject.
+- id: No test a linter makes
+  marker: MUST NOT
+  group: Test Pyramid
+  parent: Push tests down the pyramid
+  body: |
+    Write a test for what [[Static code analysis]] can reject.
+- id: No narrow integration test for a unit
+  marker: MUST NOT
+  group: Test Pyramid
+  parent: Push tests down the pyramid
+  body: |
+    Write a [[Narrow integration test]] for what a [[Unit test]] can catch.
+- id: No integration test for one component
+  marker: MUST NOT
+  group: Test Pyramid
+  parent: Push tests down the pyramid
+  body: |
+    Write an [[Integration test]] for what a [[Narrow integration test]] can catch.
+- id: No end-to-end test for one service
+  marker: MUST NOT
+  group: Test Pyramid
+  parent: Push tests down the pyramid
+  body: |
+    Write an [[End-to-end test]] for what an [[Integration test]] can catch.
+- id: No manual test for an automated one
+  marker: MUST NOT
+  group: Test Pyramid
+  parent: Push tests down the pyramid
+  body: |
+    Leave to a [[Manual test]] what an [[End-to-end test]] can catch.
 - id: No committing generated code
   marker: MUST NOT
   group: Quality Tooling & Shift Left
