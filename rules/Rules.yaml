@@ -29,12 +29,6 @@ rules:
   parent: Fail fast
   body: |
     Add platform, shell, or environment [[Compatibility branch]]es for [[Environment]]s the task does not run in.
-- id: No reuse where no code serves
-  marker: MUST NOT
-  group: Development Stack
-  parent: Choose boring technology
-  body: |
-    Meet a need with [[Codebase reuse]] when [[No code]] meets it.
 - id: No platform feature where reuse serves
   marker: MUST NOT
   group: Development Stack
