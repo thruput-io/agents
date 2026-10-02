@@ -8,4 +8,4 @@ plugins:
 repository_url: https://github.com/thruput-io/agents
 standards_repository: https://github.com/thruput-io/semgrep
 exclude:
-  - schemas/declared-ids.schema.json
+  - "*.g.*"
