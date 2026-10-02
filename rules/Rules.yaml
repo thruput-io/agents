@@ -4,7 +4,7 @@ rules:
   group: Purpose & Accuracy
   parent: You aren't gonna need it
   body: |
-    State the [[Purpose]] of every change.
+    State the [[Purpose]] of every [[Change]].
 - id: No code without purpose
   marker: MUST NOT
   group: Purpose & Accuracy
@@ -28,13 +28,13 @@ rules:
   group: Purpose & Accuracy
   parent: Fail fast
   body: |
-    Add platform, shell, or environment compatibility branches for environments the task does not run in.
+    Add platform, shell, or environment [[Compatibility branch]]es for [[Environment]]s the task does not run in.
 - id: Earlier rung that serves
   marker: MUST NOT
   group: Simplicity & Code Reuse
   parent: Choose boring technology
   body: |
-    Meet a need on a level of the [[Development Stack]] when an earlier level serves it. [[New code]], or a new dependency, where an earlier rung serves is the smell.
+    Meet a need on a level of the [[Development Stack]] when an earlier level serves it. [[New code]], or a new [[Dependency]], where an earlier rung serves is the smell.
 - id: Available
   marker: MUST NOT
   group: Simplicity & Code Reuse
@@ -52,7 +52,7 @@ rules:
   group: Simplicity & Code Reuse
   parent: Don't Repeat Yourself
   body: |
-    Add a second representation of knowledge the codebase already holds; a copy that must be kept in step with its original is the smell.
+    Add a second [[Representation]] of knowledge the codebase already holds; a copy that must be kept in step with its original is the smell.
 - id: Consistent with the codebase
   marker: MUST
   group: Maintainability & Standards
@@ -70,67 +70,67 @@ rules:
   group: At Creation
   parent: Parse, don't validate
   body: |
-    Provide instances only through a named factory that establishes every invariant before returning.
+    Provide [[Instance]]s only through a named [[Factory]] that establishes every [[Invariant]] before returning.
 - id: Private constructor
   marker: MUST
   group: At Creation
   parent: Parse, don't validate
   body: |
-    Keep the constructor private, or unexported from its module.
+    Keep the [[Constructor]] private, or unexported from its [[Module]].
 - id: Creation failure in the signature
   marker: MUST
   group: At Creation
   parent: Parse, don't validate
   body: |
-    Return the invalid-input case from a factory in its type signature rather than throw.
+    Return the invalid-input case from a [[Factory]] in its type [[Signature]] rather than throw an [[Exception]].
 - id: Sum types
   marker: MUST
   group: In Representation
   parent: Make illegal states unrepresentable
   body: |
-    Enumerate the legal alternatives as a closed sum type rather than a product of optional fields.
+    Enumerate the legal alternatives as a closed [[Sum type]] rather than a [[Product type]] of optional fields.
 - id: Enums for domain states
   marker: MUST
   group: In Representation
   parent: Make illegal states unrepresentable
   body: |
-    Name every legal state with a closed enum; a boolean or free-form string for a state is the smell.
+    Name every legal state with a closed [[Enum]]; a boolean or free-form string for a state is the smell.
 - id: Compile-time optionality
   marker: MUST
   group: In Representation
   parent: Make illegal states unrepresentable
   body: |
-    Make absence an explicit case the compiler forces every caller to handle; a [[Runtime check]] for absence is the smell.
+    Make absence an explicit case the [[Compiler]] forces every caller to handle; a [[Runtime check]] for absence is the smell.
 - id: Wrap primitives
   marker: MUST
   group: In Representation
   parent: No Primitive Obsession
   body: |
-    Wrap a [[Raw value]] in its [[Domain primitive]] before it crosses any interface of ours; a raw value in a domain signature is the smell.
+    Wrap a [[Raw value]] in its [[Domain primitive]] before it crosses any interface of ours; a raw value in a domain [[Signature]] is the smell.
 - id: Exhaustive matching
   marker: MUST
   group: Across State Changes
   parent: Make illegal states unrepresentable
   body: |
-    Match over the closed set of cases with no wildcard.
+    Use [[Pattern matching]] over the closed set of cases, with no [[Wildcard pattern]].
 - id: Self-guarding aggregates
   marker: MUST
   group: Across State Changes
   parent: Make illegal states unrepresentable
   body: |
-    Route every state change through a domain method that re-establishes invariants; an exposed [[Setter]] or raw collection is the smell.
+    Route every state change of an [[Aggregate]] through a [[Domain method]] that re-establishes its [[Invariant]]s; an exposed [[Setter]] or [[Raw collection]] is the smell.
 - id: No mutators
   marker: MUST NOT
   group: Across State Changes
   parent: Immutable by default
   body: |
-    Expose a [[Setter]] or any operation that changes a [[Domain object]] in place. A change returns a new instance that passes the [[Validating path of creation]] again.
+    Expose a [[Setter]] or any operation that changes a [[Domain object]] in place. A change returns a new [[Instance]] that passes the [[Validating path of creation]] again.
 - id: No unwrapping
   marker: MUST NOT
   group: Domain Operations & Interfaces
   parent: Make illegal states unrepresentable
   body: |
-    Unwrap [[Domain objects]] into primitives for comparison.
+    Unwrap [[Domain objects]] into [[Primitive]]s for comparison.
 - id: Strong typing
   marker: MUST NOT
   group: Domain Operations & Interfaces
@@ -148,25 +148,25 @@ rules:
   group: Domain Operations & Interfaces
   parent: Make illegal states unrepresentable
   body: |
-    Perform comparison, addition, subtraction, or any other domain operation via domain methods.
+    Perform comparison, addition, subtraction, or any other domain operation via [[Domain method]]s.
 - id: Respect layering
   marker: MUST NOT
   group: Architecture & Layering
   parent: Separation of Concerns
   body: |
-    Import or call against the dependency direction the architecture declares: from a layer into the layer above it, or skipping a layer.
+    Import or call against the [[Dependency direction]] the architecture declares: from a [[Layer]] into the layer above it, or skipping a layer.
 - id: No primitive leakage
   marker: MUST
   group: Architecture & Layering
   parent: No Primitive Obsession
   body: |
-    Keep raw primitives from crossing a layer boundary.
+    Keep raw [[Primitive]]s from crossing a [[Layer]] boundary.
 - id: Delete unused
   marker: MUST
   group: Dead Code & Comments
   parent: You aren't gonna need it
   body: |
-    Delete tests, production code, and helper code that are no longer relevant or used.
+    Delete [[Test]]s, [[Production code]], and [[Helper code]] that are no longer relevant or used.
 - id: No comments in code
   marker: MUST NOT
   group: Dead Code & Comments
@@ -178,37 +178,37 @@ rules:
   group: Behavior & Failure Handling
   parent: Fail fast
   body: |
-    Use try/catch blocks that do not rethrow (silencing failures).
+    Use [[Try/catch block]]s that do not [[Rethrow]] (silencing failures).
 - id: No default on failure
   marker: MUST NOT
   group: Behavior & Failure Handling
   parent: Fail fast
   body: |
-    Return or use a default value when failing.
+    Return or use a [[Default value]] when failing.
 - id: No strategy fallback
   marker: MUST NOT
   group: Behavior & Failure Handling
   parent: Fail fast
   body: |
-    Make code 'hardened' by trying another strategy when the first one fails.
+    Make code 'hardened' with a [[Fallback strategy]] tried when the first one fails.
 - id: No suppressed exit status
   marker: MUST NOT
   group: Behavior & Failure Handling
   parent: Fail fast
   body: |
-    Discard a command's non-zero exit status so that a failure passes as success.
+    Discard a command's non-zero [[Exit status]] so that a failure passes as success.
 - id: No discarded diagnostics
   marker: MUST NOT
   group: Behavior & Failure Handling
   parent: Fail fast
   body: |
-    Send a command's error output nowhere, or use another tool to detect state instead of letting the failing tool report its error.
+    Send a command's [[Error output]] nowhere, or use another tool to detect state instead of letting the failing tool report its error.
 - id: Scripts abort on error
   marker: MUST NOT
   group: Behavior & Failure Handling
   parent: Fail fast
   body: |
-    Let a script continue past a failing step. Every script runs in the language's abort-on-error mode, and a failing step ends it at once.
+    Let a script continue past a failing step. Every script runs in the language's [[Abort-on-error mode]], and a failing step ends it at once.
 - id: No degraded continuation
   marker: MUST NOT
   group: Behavior & Failure Handling
@@ -220,37 +220,37 @@ rules:
   group: Behavior & Failure Handling
   parent: Fail fast
   body: |
-    Write test, build, or configuration code that contains branching logic or default fallback values, such as, but not limited to, `if` statements, `switch`/`case` expressions, or defaulted values.
+    Write test, build, or configuration code that contains [[Branching logic]] or fallback [[Default value]]s, such as, but not limited to, `if` statements, `switch`/`case` expressions, or defaulted values.
 - id: No muted tests
   marker: MUST NOT
   group: All Tests
   parent: Test-Driven Development
   body: |
-    Mute or skip tests.
+    Mute or skip [[Test]]s.
 - id: No coverage-only tests
   marker: MUST NOT
   group: All Tests
   parent: Never trust a test you haven't seen fail
   body: |
-    Write tests that discard return values just to increase coverage.
+    Write [[Test]]s that discard return values just to increase [[Code coverage]].
 - id: Assert values
   marker: MUST
   group: All Tests
   parent: F.I.R.S.T.
   body: |
-    Assert the actual returned values — not merely that no error occurred.
+    Make an [[Assertion]] on the actual returned values — not merely that no error occurred.
 - id: Add tests for new code
   marker: MUST
   group: All Tests
   parent: Test-Driven Development
   body: |
-    Add tests for new [[Production code]].
+    Add [[Test]]s for new [[Production code]].
 - id: Add tests for updated code
   marker: MUST
   group: All Tests
   parent: Test-Driven Development
   body: |
-    Add tests for updated [[Production code]].
+    Add [[Test]]s for updated [[Production code]].
 - id: Troubleshooting unit test
   marker: MUST
   group: All Tests
@@ -262,37 +262,37 @@ rules:
   group: All Tests
   parent: F.I.R.S.T.
   body: |
-    Configure a test to run again until it passes, by a retry count, a retry annotation, or a flaky marker.
+    Configure a [[Test]] to run again until it passes, by a retry count, a retry annotation, or a [[Flaky test]] marker.
 - id: One subject under test
   marker: MUST NOT
   group: Unit and Narrow Integration Tests
   parent: No grey tests
   body: |
-    Include more than one subject under test or test the composition of objects within a [[Unit test]] or a [[Narrow integration test]].
+    Include more than one [[Subject under test]] or test the composition of objects within a [[Unit test]] or a [[Narrow integration test]].
 - id: No test case coupling
   marker: MUST NOT
   group: Unit and Narrow Integration Tests
   parent: F.I.R.S.T.
   body: |
-    Allow one test case to depend on another; every test case is executable on its own, in any order.
+    Allow one [[Test case]] to depend on another; every test case is executable on its own, in any order.
 - id: Integration Tests Are Black-Box
   marker: MUST
   group: Integration Tests
   parent: No grey tests
   body: |
-    Test the runtime artifact being shipped via its public APIs, black box.
+    Test the shipped [[Runtime artifact]] through its public [[API]]s, as a black box.
 - id: Test setup leaves production code alone
   marker: MUST NOT
   group: Reproducibility
   parent: Production Parity
   body: |
-    Alter the behaviour of [[Production code]] in test setup.
+    Alter the behaviour of [[Production code]] in [[Test setup]].
 - id: No global lint changes
   marker: MUST NOT
   group: Quality Tooling & Shift Left
   parent: The Toolchain Is the Guardrail
   body: |
-    Change global or project-wide linting rules, except in a pull request that contains only that change.
+    Change global or project-wide [[Lint rule]]s, except in a pull request that contains only that change.
 - id: No global quality changes
   marker: MUST NOT
   group: Quality Tooling & Shift Left
@@ -304,7 +304,7 @@ rules:
   group: Quality Tooling & Shift Left
   parent: Push tests down the pyramid
   body: |
-    Disable a lint rule locally, by a comment, a pragma, or alike. An exception the team accepts is expressed globally, by a file filter in the lint configuration or alike.
+    Disable a [[Lint rule]] locally, by a comment, a [[Pragma]], or alike. An exception the team accepts is expressed globally, by a file filter in the lint configuration or alike.
 - id: No check the type system makes
   marker: MUST NOT
   group: Test Pyramid
@@ -346,37 +346,37 @@ rules:
   group: Quality Tooling & Shift Left
   parent: The Toolchain Is the Guardrail
   body: |
-    Commit generated code.
+    Commit [[Generated code]].
 - id: Strict presets
   marker: MUST
   group: Quality Tooling & Shift Left
   parent: Push tests down the pyramid
   body: |
-    Use the strictest possible presets on linting and style.
+    Use the strictest possible [[Preset]]s on linting and style.
 - id: No optionality
   marker: MUST NOT
   group: Optionality
   parent: Avoid optionality
   body: |
-    Use optional variables or parameters unless a [[Framework]] or third-party [[Library]] forces them.
+    Use optional variables or [[Optional parameter]]s unless a [[Framework]] or third-party [[Library]] forces them.
 - id: Prefer APIs without optionality
   marker: MUST
   group: Optionality
   parent: Fold at Perimeter
   body: |
-    Choose, among [[Code We Cannot Control]] that meets the need, an API without optional parameters over one with them.
+    Choose, among [[Code We Cannot Control]] that meets the need, an [[API]] without [[Optional parameter]]s over one with them.
 - id: Overload per option combination
   marker: MUST
   group: Optionality
   parent: Avoid optionality
   body: |
-    Provide an overload or an [[Explicitly named method]] for each allowed combination of options instead of optional parameters.
+    Provide an [[Overload]] or an [[Explicitly named method]] for each allowed combination of options instead of [[Optional parameter]]s.
 - id: Forced optionality at perimeter
   marker: MUST
   group: Optionality
   parent: Fold at Perimeter
   body: |
-    Handle [[Optionality]] forced by [[Code We Cannot Control]] in the statement that invokes it or receives its return.
+    Handle [[Optionality]] forced by [[Code We Cannot Control]] in the [[Statement]] that invokes it or receives its return.
 - id: Accept unknown properties
   marker: MUST
   group: Robustness
@@ -388,19 +388,19 @@ rules:
   group: Robustness
   parent: Prepare reader for evolving producer
   body: |
-    Declare the most generic parameter types and the most specific return type a method can honour.
+    Declare the most generic [[Parameter type]]s and the most specific [[Return type]] a method can honour.
 - id: Shapes live in the contract
   marker: MUST
   group: Robustness
   parent: Contract First
   body: |
-    Define a shape that crosses a boundary in the contract and derive the code on both sides from it; a shape defined only in code, or a change to a shape that leaves the contract unchanged, is the smell.
+    Define a shape that crosses a boundary in the [[Contract]] and derive the code on both sides from it; a shape defined only in code, or a change to a shape that leaves the contract unchanged, is the smell.
 - id: No unstated standard
   marker: MUST NOT
   group: Agents
   parent: Adoption is articulation
   body: |
-    Instruct an [[AI agent]] to follow a coding standard that has no entry in these documents; add the entry and cite it.
+    Instruct an [[AI agent]] to follow a [[Coding standard]] that has no entry in these documents; add the entry and cite it.
 - id: One-command setup
   marker: MUST
   group: Reproducibility
@@ -412,7 +412,7 @@ rules:
   group: Reproducibility
   parent: Infrastructure as Code
   body: |
-    Set up a test or production environment with a manual step.
+    Set up a test or production [[Environment]] with a manual step.
 - id: Twice is automated
   marker: MUST
   group: Reproducibility
