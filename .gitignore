@@ -3,4 +3,4 @@ _site/
 .DS_Store
 .idea/
 node_modules/
-schemas/declared-ids.schema.json
+*.g.*
