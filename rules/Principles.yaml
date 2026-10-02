@@ -43,10 +43,10 @@ principles:
   parent: Encapsulation
   body: |
     A [[Domain object]] is [[Immutable]]. A validly constructed object that cannot change cannot become invalid.
-- id: Primitives only at the perimeter
+- id: No Primitive Obsession
   parent: Encapsulation
   body: |
-    Every [[Raw value]] becomes a [[Domain primitive]] the moment we hold it, and a raw value again only at the [[Perimeter]] that hands it out.
+    Any primitive in a method signature is the [[Primitive Obsession]] smell: the value it carries deserves a type of its own.
 - id: Optionality Drives Complexity
   parent: Name the case, not the knob
   body: |
