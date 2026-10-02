@@ -47,8 +47,8 @@ principles:
   parent: Encapsulation
   body: |
     Any primitive in a method signature is the [[Primitive Obsession]] smell: the value it carries deserves a type of its own. The only exception is a method at the [[Perimeter]].
-- id: Optionality Drives Complexity
-  parent: Name the case, not the knob
+- id: Avoid optionality
+  parent: Optionality Drives Complexity
   body: |
     Each allowed combination of options is its own operation with its own name; [[Optionality]] is never a parameter.
 - id: Nothing Is Complete Without Verification

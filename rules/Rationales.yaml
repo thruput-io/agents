@@ -115,7 +115,7 @@ rationales:
   - marker: MAY
     body: |
       Implement the language's comparison interface on a [[Domain object]] rather than compare its primitives.
-- id: Name the case, not the knob
+- id: Optionality Drives Complexity
   parent: Simplicity
   body: |
     Each optional flag doubles the paths a function can take, and most of them are never tested (Pete Hodgson, [Feature Toggles](https://martinfowler.com/articles/feature-toggles.html)). Martin Fowler's [FlagArgument](https://martinfowler.com/bliki/FlagArgument.html): a named operation states intent where a bare boolean hides it. Robert Harper's [Boolean Blindness](https://existentialtype.wordpress.com/2011/03/15/boolean-blindness/): a flag carries no meaning of its own.
