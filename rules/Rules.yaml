@@ -281,12 +281,12 @@ rules:
   parent: No grey tests
   body: |
     Test the runtime artifact being shipped via its public APIs, black box.
-- id: Production Parity
-  marker: MUST
-  group: Integration Tests
-  parent: Test-Driven Development
+- id: Test setup leaves production code alone
+  marker: MUST NOT
+  group: Reproducibility
+  parent: Production Parity
   body: |
-    Simulate production instead of altering the behavior of the runtime artifact.
+    Alter the behaviour of [[Production code]] in test setup.
 - id: No global lint changes
   marker: MUST NOT
   group: Quality Tooling & Shift Left

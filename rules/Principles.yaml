@@ -91,6 +91,10 @@ principles:
   parent: The practitioner decides the outcome
   body: |
     Adopting a tool that applies our standard begins by writing the standard down: the rule an [[AI agent]] needs is the rule a new colleague needs, and the reason it was never written is that it lived as habit. An adoption that leaves our craft no more clearly stated than before has adopted nothing.
+- id: Production Parity
+  parent: Environment parity
+  body: |
+    Tests run the [[Production code]] as production runs it.
 - id: The environment is code
   parent: Environment parity
   body: |
