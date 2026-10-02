@@ -7,13 +7,13 @@
     {
       "rationales": [
         {
-          "id": "Robustness Principle",
-          "parent": "Great software is easy to maintain and extend",
-          "body": "Be conservative in what you send and liberal in what you accept.",
+          "id": "Example rationale",
+          "parent": "Example axiom",
+          "body": "An example rationale weighs two goods and cites its source.",
           "solutions": [
             {
               "marker": "SHOULD",
-              "body": "Ship the expanded contract, migrate its consumers, then remove what is left over."
+              "body": "Apply the example rationale where it serves."
             }
           ]
         }

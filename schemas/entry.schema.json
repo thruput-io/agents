@@ -5,9 +5,9 @@
   "description": "What every entry in the taxonomy carries: an id and a body, and below the root the id of its parent one level up. Each level schema extends an entry and narrows its id and its parent to its own level",
   "examples": [
     {
-      "id": "Shift Left",
-      "parent": "Speed Through Discipline",
-      "body": "Do every activity at the earliest point where it can be done."
+      "id": "Example entry",
+      "parent": "Example parent",
+      "body": "An example entry states its body once."
     }
   ],
   "oneOf": [

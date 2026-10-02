@@ -7,9 +7,9 @@
     {
       "axioms": [
         {
-          "id": "Simplicity",
-          "parent": "Outcome Over Output",
-          "body": "Simple solutions are better than complex."
+          "id": "Example axiom",
+          "parent": "Example value",
+          "body": "An example axiom states a truth we hold."
         }
       ]
     }
