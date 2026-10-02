@@ -29,12 +29,36 @@ rules:
   parent: Fail fast
   body: |
     Add platform, shell, or environment [[Compatibility branch]]es for [[Environment]]s the task does not run in.
-- id: Earlier level that serves
+- id: No reuse where no code serves
   marker: MUST NOT
-  group: Simplicity & Code Reuse
+  group: Development Stack
   parent: Choose boring technology
   body: |
-    Meet a need on a level of the [[Development Stack]] when an earlier level serves it. [[New code]], or a new [[Dependency]], where an earlier level serves is the smell.
+    Meet a need with [[Codebase reuse]] when [[No code]] meets it.
+- id: No platform feature where reuse serves
+  marker: MUST NOT
+  group: Development Stack
+  parent: Choose boring technology
+  body: |
+    Meet a need with the [[Platform or framework]] when [[Codebase reuse]] meets it.
+- id: No dependency where the platform serves
+  marker: MUST NOT
+  group: Development Stack
+  parent: Choose boring technology
+  body: |
+    Add an [[External dependency]] when the [[Platform or framework]] meets the need.
+- id: No external service where a dependency serves
+  marker: MUST NOT
+  group: Development Stack
+  parent: Choose boring technology
+  body: |
+    Integrate an [[External tool or service]] when an [[External dependency]] meets the need.
+- id: No new code where an external tool serves
+  marker: MUST NOT
+  group: Development Stack
+  parent: Choose boring technology
+  body: |
+    Write [[New code]] when an [[External tool or service]] meets the need.
 - id: Available
   marker: MUST NOT
   group: Simplicity & Code Reuse
