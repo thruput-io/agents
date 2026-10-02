@@ -170,7 +170,7 @@ rules:
 - id: No comments in code
   marker: MUST NOT
   group: Dead Code & Comments
-  parent: Durable Intent Over Comments
+  parent: No Comments
   body: |
     Comment any version-controlled artifact. Only a [[Machine-read comment]] is exempt.
 - id: No silent catch

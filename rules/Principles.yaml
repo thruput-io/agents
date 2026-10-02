@@ -19,7 +19,7 @@ principles:
   parent: The Practical Test Pyramid
   body: |
     Catch a defect on the lowest level of the [[Test Pyramid]] that can catch it.
-- id: Durable Intent Over Comments
+- id: No Comments
   parent: Intent lives where it is checked
   body: |
     What a comment would say lives where it is checked. Every [[Comment intent]] has such a home, and only a [[Machine-read comment]] stays in the code.
