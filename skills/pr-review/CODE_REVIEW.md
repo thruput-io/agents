@@ -1,6 +1,6 @@
 # CODE REVIEW
 
-Procedural instructions for reviewing a pull request against the rules in [`rules/Rules.yaml`](../../rules/Rules.yaml), published at https://thruput.se/agents/.
+Procedural instructions for reviewing a pull request against the rules in [`rules/Rules.yaml`](rules/Rules.yaml), published at https://thruput.se/agents/.
 
 Deviating from this process is a critical failure. Do not improvise, summarize, or skip any part of it.
 
@@ -10,7 +10,7 @@ The shapes this process passes between the reviewing context, the probes, and th
 
 - **Rule** — one entry in `rules/Rules.yaml`, shaped by [`rules.schema.json`](https://thruput.se/agents/schemas/rules.schema.json): an `id`, a `marker` (`MUST` or `MUST NOT`), a `group`, a `parent` principle, and a `body`. A `[[term]]` in a body is defined in `rules/Definitions.yaml`, and the rule is applied as the glossary defines the term. When a rule's application is in doubt, its `parent` in `rules/Principles.yaml` answers, one level up at a time.
 - **Group** — the `group` field of a rule. Rules sharing a group are probed by one subagent. Groups partition the work; they are not the unit of coverage.
-- **Rule source** — where rule text is read: the checkout of this repository when the review runs inside it, otherwise the raw files on `main`: `https://raw.githubusercontent.com/thruput-io/agents/main/rules/Rules.yaml`, `.../rules/Definitions.yaml`, and `.../rules/Principles.yaml`. Read the current version rather than a cached copy.
+- **Rule source** — where rule text is read: `${CLAUDE_SKILL_DIR}/rules/`, the rules this skill was installed with: `Rules.yaml`, `Definitions.yaml`, and `Principles.yaml`.
 - **Rule URL** — the rule's anchor on the published site: `https://thruput.se/agents/#` followed by the id lowercased, with apostrophes removed and every run of other non-alphanumeric characters replaced by one hyphen. `Demonstrable, not recalled` becomes `https://thruput.se/agents/#demonstrable-not-recalled`. The same derivation gives the URL of a principle or a glossary term.
 - **Review probe** — a focused attempt to find issues from exactly one rule. Its result is one ledger row.
 - **git-tool** — the CLI for the host the PR lives on: `gh` for GitHub, or `az` with the `azure-devops` extension for Azure DevOps (`dev.azure.com`). Pick it from the PR URL. Every command and payload this workflow needs is in the matching [`references/gh-cheat-sheet.md`](references/gh-cheat-sheet.md) or [`references/az-cheat-sheet.md`](references/az-cheat-sheet.md), referred to below as `{git-tool}-cheat-sheet.md`.

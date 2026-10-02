@@ -7,7 +7,7 @@ description: Reviews a GitHub or Azure DevOps Pull Request against the thruput-i
 
 Read [`CODE_REVIEW.md`](CODE_REVIEW.md) and follow it. It is the source of truth for both what to review and how to execute the review with the host's CLI.
 
-The rules it serves are the entries of [`rules/Rules.yaml`](../../rules/Rules.yaml); the `[[term]]`s they name are defined in [`rules/Definitions.yaml`](../../rules/Definitions.yaml), and their parents in [`rules/Principles.yaml`](../../rules/Principles.yaml). Read them from the checkout of this repository when the review runs inside it, otherwise from the raw files on `main` at `https://raw.githubusercontent.com/thruput-io/agents/main/rules/`. Read the current version rather than a cached copy. A violation is cited by the rule's id, linked to its anchor on https://thruput.se/agents/ as [`CODE_REVIEW.md` § Definitions](CODE_REVIEW.md#definitions) derives it.
+The rules it serves are the entries of [`rules/Rules.yaml`](rules/Rules.yaml); the `[[term]]`s they name are defined in [`rules/Definitions.yaml`](rules/Definitions.yaml), and their parents in [`rules/Principles.yaml`](rules/Principles.yaml). Read them from `${CLAUDE_SKILL_DIR}/rules/`: the rules this skill was installed with, linked into the skill from this repository's `rules/`. A violation is cited by the rule's id, linked to its anchor on https://thruput.se/agents/ as [`CODE_REVIEW.md` § Definitions](CODE_REVIEW.md#definitions) derives it.
 
 It dispatches one subagent per rule group using [`PROBE_SUBAGENT_TEMPLATE.md`](PROBE_SUBAGENT_TEMPLATE.md); read that when you reach [`CODE_REVIEW.md` step 3](CODE_REVIEW.md#3-rule-evaluation). What crosses between the reviewing context, a probe, and the review is shaped by the schemas published under `https://thruput.se/agents/schemas/`: the change set, the surface, the instructions a probe receives, the ledger it returns, and each violation in it. Validate against them rather than reading a shape off this prose.
 
@@ -21,7 +21,7 @@ For Azure DevOps PR reviews, note that Azure DevOps does not support atomic batc
 
 - For a GitHub PR: `gh` CLI available.
 - For an Azure DevOps PR: `az` CLI with the `azure-devops` extension available.
-- The rules: a checkout of `github.com/thruput-io/agents`, or network access to its raw files on `main`.
+- The rules: `rules/` in the skill, a link to this repository's `rules/`, which resolves on macOS and Linux.
 - Network access to `github.com/ciembor/agent-rules-books` for the step 4 escalation pass.
 
 ## Files
