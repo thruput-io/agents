@@ -404,13 +404,19 @@ rules:
 - id: One-command setup
   marker: MUST
   group: Reproducibility
-  parent: The environment is code
+  parent: Infrastructure as Code
   body: |
-    Keep clone, build, and test of the entire stack to one documented command; a new manual setup step is the smell.
+    Keep clone, build, and test of the entire stack to one documented command.
+- id: No manual environment setup
+  marker: MUST NOT
+  group: Reproducibility
+  parent: Infrastructure as Code
+  body: |
+    Set up a test or production environment with a manual step.
 - id: Twice is automated
   marker: MUST
   group: Reproducibility
-  parent: The environment is code
+  parent: Infrastructure as Code
   body: |
     Script a procedure the second time it is performed; a manual procedure written down to be repeated is the smell.
 - id: Ship with telemetry

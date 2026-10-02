@@ -95,7 +95,7 @@ principles:
   parent: Environment parity
   body: |
     Tests run the [[Production code]] as production runs it.
-- id: The environment is code
+- id: Infrastructure as Code
   parent: Environment parity
   body: |
     Every environment is provisioned from one definition in version control; none is assembled by hand.
