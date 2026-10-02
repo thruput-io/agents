@@ -12,7 +12,7 @@ remove_site() {
 trap remove_site EXIT
 
 source=(
-  --volume "$PROJECT_ROOT/governance:/github/workspace/site/_data:ro"
+  --volume "$PROJECT_ROOT/rules:/github/workspace/site/_data:ro"
   --volume "$PROJECT_ROOT/schemas:/github/workspace/site/schemas:ro"
 )
 for entry in "$PROJECT_ROOT"/web/*; do

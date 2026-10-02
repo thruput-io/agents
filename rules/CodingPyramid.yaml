@@ -1,8 +1,8 @@
 levels:
 - id: Value
-  specification: Terminal human intent.
+  specification: Terminal human intent
   criteria:
-  - include: Asking 'Why?' exits this system and collapses into ethics, biology, or theology. The fractal ends here.
+  - include: Asking 'Why?' exits this taxonomy and collapses into ethics, biology, or theology. The fractal ends here.
   - include: Speaks of people and what they care about.
   - include: A disposition or attitude we hold.
   - include: A weighing with nothing above it to decide it. A value is what decides the weighings below.

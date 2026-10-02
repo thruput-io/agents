@@ -10,7 +10,7 @@ layout: default
   <h2>Taxonomy</h2>
   <p>Six levels, each a definition with criteria for what belongs to it. Every entry below the root names its parent one level up, so every rule traces back to a value. Standards that a linter enforces live in <a href="{{ site.standards_repository }}">the semgrep repository</a>.</p>
   <ol class="levels">
-  {%- for level in site.data.ImperataDerivata.levels %}
+  {%- for level in site.data.CodingPyramid.levels %}
     <li id="{% include anchor.html id=level.id %}">
       <h3>{{ level.id | escape }}</h3>
       {% include prose.html text=level.specification %}
@@ -35,7 +35,7 @@ layout: default
 <section id="index">
   <h2>Index</h2>
   <p>Every entry of every level, linking into the tree. An entry whose parent chain is broken has no place in the tree, and its link here fails the build.</p>
-  {%- for level in site.data.ImperataDerivata.levels %}
+  {%- for level in site.data.CodingPyramid.levels %}
   {% include level-index.html level=level %}
   {%- endfor %}
 </section>

@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           cp -R "$PROJECT_ROOT/web" "$PROJECT_ROOT/site"
-          cp -R "$PROJECT_ROOT/governance" "$PROJECT_ROOT/site/_data"
+          cp -R "$PROJECT_ROOT/rules" "$PROJECT_ROOT/site/_data"
           cp -R "$PROJECT_ROOT/schemas" "$PROJECT_ROOT/site/schemas"
       - uses: actions/jekyll-build-pages@v1
         with:
