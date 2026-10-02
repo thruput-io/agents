@@ -59,6 +59,10 @@ principles:
   parent: Tests prove behaviour, not execution
   body: |
     A bug is pinned by a failing test before it is fixed, and the fix is done when that test passes.
+- id: No grey tests
+  parent: Tests prove behaviour, not execution
+  body: |
+    A test is either a black-box test of the shipped artifact or a test of one subject in isolation; nothing in between.
 - id: Verification ends the chain
   parent: Tests prove behaviour, not execution
   body: |
