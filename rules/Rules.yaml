@@ -356,7 +356,7 @@ rules:
 - id: No optionality
   marker: MUST NOT
   group: Optionality
-  parent: Optionality Drives Complexity
+  parent: Avoid optionality
   body: |
     Use optional variables or parameters unless a [[Framework]] or third-party [[Library]] forces them.
 - id: Prefer APIs without optionality
@@ -368,7 +368,7 @@ rules:
 - id: Overload per option combination
   marker: MUST
   group: Optionality
-  parent: Optionality Drives Complexity
+  parent: Avoid optionality
   body: |
     Provide an overload or an [[Explicitly named method]] for each allowed combination of options instead of optional parameters.
 - id: Forced optionality at perimeter
