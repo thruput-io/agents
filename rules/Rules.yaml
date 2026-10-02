@@ -230,13 +230,13 @@ rules:
 - id: No coverage-only tests
   marker: MUST NOT
   group: All Tests
-  parent: Test-Driven Development
+  parent: Never trust a test you haven't seen fail
   body: |
     Write tests that discard return values just to increase coverage.
 - id: Assert values
   marker: MUST
   group: All Tests
-  parent: Test-Driven Development
+  parent: F.I.R.S.T.
   body: |
     Assert the actual returned values — not merely that no error occurred.
 - id: Add tests for new code
@@ -260,7 +260,7 @@ rules:
 - id: No retry on failure
   marker: MUST NOT
   group: All Tests
-  parent: Test-Driven Development
+  parent: F.I.R.S.T.
   body: |
     Configure a test to run again until it passes, by a retry count, a retry annotation, or a flaky marker.
 - id: One subject under test
@@ -272,7 +272,7 @@ rules:
 - id: No test case coupling
   marker: MUST NOT
   group: Unit and Narrow Integration Tests
-  parent: Test-Driven Development
+  parent: F.I.R.S.T.
   body: |
     Allow one test case to depend on another; every test case is executable on its own, in any order.
 - id: Integration Tests Are Black-Box
