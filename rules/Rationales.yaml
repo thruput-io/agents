@@ -124,7 +124,7 @@ rationales:
     body: |
       Retire a feature toggle as soon as its case is decided.
 - id: Tests prove behaviour, not execution
-  parent: Shift Left
+  parent: Nothing Is Complete Without Verification
   body: |
     A line that runs under test is not a line that is checked. Martin Fowler's [AssertionFreeTesting](https://martinfowler.com/bliki/AssertionFreeTesting.html) describes suites with full coverage that verified nothing; Inozemtseva and Holmes found coverage predicts little about fault detection once suite size is controlled for. A test that asserts outcomes is an executable specification that documents and guards behaviour on every commit.
   solutions:

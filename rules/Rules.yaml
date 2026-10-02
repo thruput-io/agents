@@ -224,67 +224,67 @@ rules:
 - id: No muted tests
   marker: MUST NOT
   group: All Tests
-  parent: Nothing Is Complete Without Verification
+  parent: Test-Driven Development
   body: |
     Mute or skip tests.
 - id: No coverage-only tests
   marker: MUST NOT
   group: All Tests
-  parent: Nothing Is Complete Without Verification
+  parent: Test-Driven Development
   body: |
     Write tests that discard return values just to increase coverage.
 - id: Assert values
   marker: MUST
   group: All Tests
-  parent: Nothing Is Complete Without Verification
+  parent: Test-Driven Development
   body: |
     Assert the actual returned values — not merely that no error occurred.
 - id: Add tests for new code
   marker: MUST
   group: All Tests
-  parent: Nothing Is Complete Without Verification
+  parent: Test-Driven Development
   body: |
     Add tests for new [[Production code]].
 - id: Add tests for updated code
   marker: MUST
   group: All Tests
-  parent: Nothing Is Complete Without Verification
+  parent: Test-Driven Development
   body: |
     Add tests for updated [[Production code]].
 - id: Troubleshooting unit test
   marker: MUST
   group: All Tests
-  parent: Nothing Is Complete Without Verification
+  parent: Never fix a bug without a test pinning it
   body: |
     Add a [[Unit test]] for any exploratory troubleshooting, even when a natural home for it does not exist.
 - id: No retry on failure
   marker: MUST NOT
   group: All Tests
-  parent: Nothing Is Complete Without Verification
+  parent: Test-Driven Development
   body: |
     Configure a test to run again until it passes, by a retry count, a retry annotation, or a flaky marker.
 - id: One subject under test
   marker: MUST NOT
   group: Unit and Narrow Integration Tests
-  parent: Nothing Is Complete Without Verification
+  parent: Test-Driven Development
   body: |
     Include more than one subject under test or test the composition of objects within a [[Unit test]] or a [[Narrow integration test]].
 - id: No test case coupling
   marker: MUST NOT
   group: Unit and Narrow Integration Tests
-  parent: Nothing Is Complete Without Verification
+  parent: Test-Driven Development
   body: |
     Allow one test case to depend on another; every test case is executable on its own, in any order.
 - id: Integration Tests Are Black-Box
   marker: MUST
   group: Integration Tests
-  parent: Nothing Is Complete Without Verification
+  parent: Test-Driven Development
   body: |
     Test the runtime artifact being shipped via its public APIs, black box.
 - id: Production Parity
   marker: MUST
   group: Integration Tests
-  parent: Nothing Is Complete Without Verification
+  parent: Test-Driven Development
   body: |
     Simulate production instead of altering the behavior of the runtime artifact.
 - id: No global lint changes
