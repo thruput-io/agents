@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
-
-ids=$(grep -h '^- id: ' governance/*.yaml | sed 's/^- id: //')
+ids=$(grep -h '^- id: ' "$PROJECT_ROOT"/governance/*.yaml | sed 's/^- id: //')
 enumeration=$(printf '%s\n' "$ids" | sed 's/["\\]/\\&/g; s/.*/"&"/' | paste -sd, -)
 alternation=$(printf '%s\n' "$ids" | sed 's/[][\\.^$*+?(){}|]/\\&/g; s/\\/\\\\/g' | paste -sd'|' -)
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")"
+PROJECT_ROOT=$(dirname "$(realpath "$0")")
+export PROJECT_ROOT
 
-scripts/verify.sh
-scripts/build_site.sh
+"$PROJECT_ROOT/scripts/verify.sh"
+"$PROJECT_ROOT/scripts/build_site.sh"
