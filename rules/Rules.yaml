@@ -29,12 +29,12 @@ rules:
   parent: Fail fast
   body: |
     Add platform, shell, or environment [[Compatibility branch]]es for [[Environment]]s the task does not run in.
-- id: Earlier rung that serves
+- id: Earlier level that serves
   marker: MUST NOT
   group: Simplicity & Code Reuse
   parent: Choose boring technology
   body: |
-    Meet a need on a level of the [[Development Stack]] when an earlier level serves it. [[New code]], or a new [[Dependency]], where an earlier rung serves is the smell.
+    Meet a need on a level of the [[Development Stack]] when an earlier level serves it. [[New code]], or a new [[Dependency]], where an earlier level serves is the smell.
 - id: Available
   marker: MUST NOT
   group: Simplicity & Code Reuse
