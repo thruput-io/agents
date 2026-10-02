@@ -23,7 +23,7 @@ principles:
   parent: Intent lives where it is checked
   body: |
     What a comment would say lives where it is checked. Every [[Comment intent]] has such a home, and only a [[Machine-read comment]] stays in the code.
-- id: Loud Failures Over Silent Defaults
+- id: Fail fast
   parent: Crash, don't guess
   body: |
     A system fails loudly and at once on an unexpected state; it never continues on a guess. A safeguard that swallows a failure is added only where [[Evidence]] shows the need.
