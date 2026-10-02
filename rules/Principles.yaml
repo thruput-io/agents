@@ -1,8 +1,8 @@
 principles:
-- id: Code Only for User Value
+- id: You aren't gonna need it
   parent: Code is a liability, not an asset
   body: |
-    Code exists only for a stated [[Purpose]]. Without one it is not written.
+    Always implement things when you actually need them, never when you just foresee that you need them ([Ron Jeffries](https://ronjeffries.com/xprog/articles/practices/pracnotneed/)).
 - id: Code as a Subset of the Purpose
   parent: Code is a liability, not an asset
   body: |
