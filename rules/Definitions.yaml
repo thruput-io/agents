@@ -170,7 +170,7 @@ definitions:
     Catching a defect by exercising one component in-process, without external dependencies.
 - id: Narrow integration test
   specification: |
-    Catching a defect by exercising one component against a real instance of the dependency it talks to, such as a repository against a database in a container ([Martin Fowler, IntegrationTest](https://martinfowler.com/bliki/IntegrationTest.html)).
+    A [[Unit test]] without the in-process requirement: one component exercised against a real instance of the dependency it talks to, such as a repository against a database in a container ([Martin Fowler, IntegrationTest](https://martinfowler.com/bliki/IntegrationTest.html)).
 - id: Integration test
   specification: |
     Catching a defect by exercising components together against real adapters in local containers, such as a whole microservice.

@@ -265,13 +265,13 @@ rules:
     Configure a test to run again until it passes, by a retry count, a retry annotation, or a flaky marker.
 - id: One subject under test
   marker: MUST NOT
-  group: Unit Tests
+  group: Unit and Narrow Integration Tests
   parent: Nothing Is Complete Without Verification
   body: |
-    Include more than one subject under test or test the composition of objects within a [[Unit test]].
+    Include more than one subject under test or test the composition of objects within a [[Unit test]] or a [[Narrow integration test]].
 - id: No test case coupling
   marker: MUST NOT
-  group: Unit Tests
+  group: Unit and Narrow Integration Tests
   parent: Nothing Is Complete Without Verification
   body: |
     Allow one test case to depend on another; every test case is executable on its own, in any order.
