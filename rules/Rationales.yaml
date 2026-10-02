@@ -15,25 +15,17 @@ rationales:
 - id: Code is a liability, not an asset
   parent: Simplicity
   body: |
-    Every line carries the ongoing cost of being read, supported, and updated as the ecosystem around it evolves, and is worth that cost only where it meets a user need ([Software Engineering at Google, Why Deprecate?](https://abseil.io/resources/swe-book/html/ch15.html#why_deprecatequestion_mark)). Edsger Dijkstra: if we count lines of code, "we should not regard them as 'lines produced' but as 'lines spent'" ([EWD1036](https://www.cs.utexas.edu/~EWD/transcriptions/EWD10xx/EWD1036.html)), and Jeff Atwood: "Every new line of code you willingly bring into the world is code that has to be debugged, code that has to be read and understood, code that has to be supported" ([The Best Code is No Code At All](https://blog.codinghorror.com/the-best-code-is-no-code-at-all/)). Code outside the stated [[Purpose]] is not free. Martin Fowler's [Yagni](https://martinfowler.com/bliki/Yagni.html) names four costs: building it, delaying real features, carrying its complexity, and repairing it when the guess proves wrong. Ron Jeffries: "the best way to have fewer bugs is to implement less code." Keeping every part inside the [[Purpose]] keeps the codebase small enough to understand and change quickly, and every test and review aimed at what [[Users]] need.
+    Simplicity is the fit between a job and the tools and strategies chosen to do it: a solution is simple when it carries nothing the job does not call for, and complex in proportion to what it carries beyond that. Every line carries the ongoing cost of being read, supported, and updated as the ecosystem around it evolves, and is worth that cost only where it meets a user need ([Software Engineering at Google, Why Deprecate?](https://abseil.io/resources/swe-book/html/ch15.html#why_deprecatequestion_mark)). Edsger Dijkstra: if we count lines of code, "we should not regard them as 'lines produced' but as 'lines spent'" ([EWD1036](https://www.cs.utexas.edu/~EWD/transcriptions/EWD10xx/EWD1036.html)), and Jeff Atwood: "Every new line of code you willingly bring into the world is code that has to be debugged, code that has to be read and understood, code that has to be supported" ([The Best Code is No Code At All](https://blog.codinghorror.com/the-best-code-is-no-code-at-all/)). Code outside the stated [[Purpose]] is not free. Martin Fowler's [Yagni](https://martinfowler.com/bliki/Yagni.html) names four costs: building it, delaying real features, carrying its complexity, and repairing it when the guess proves wrong. Ron Jeffries: "the best way to have fewer bugs is to implement less code." Keeping every part inside the [[Purpose]] keeps the codebase small enough to understand and change quickly, and every test and review aimed at what [[Users]] need.
   solutions:
   - marker: SHOULD
     body: |
       State the [[User]] need before the change is reviewed, so every part of the change can be traced to it.
-- id: Descend only when the rung above cannot serve
-  parent: Simplicity
-  body: |
-    Simplicity is the fit between a job and the tools and strategies chosen to do it: a solution is simple when it carries nothing the job does not call for, and complex in proportion to what it carries beyond that. Every rung down a ladder adds ownership cost and failure modes. Dan McKinley's [Choose Boring Technology](https://mcfunley.com/choose-boring-technology): each new component spends a scarce innovation token and brings failures nobody knows yet. On the [[Shift Left ladder]], Yaron Minsky's "make [[Illegal states unrepresentable]]" and Alexis King's [Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) remove whole classes of bugs before a test exists. Higher rungs give faster, more precise feedback and leave less to maintain.
-  solutions:
   - marker: SHOULD
     body: |
-      Record, for every rung above the one chosen, the search performed and what it found.
+      Record, for every level of the [[Development Stack]] above the one chosen, the search performed and what it found.
   - marker: SHOULD
     body: |
       Choose the technology the team already operates before adopting a new one.
-  - marker: SHOULD
-    body: |
-      Leave out code whose need has not yet been shown; [[No code]] is the highest rung.
 - id: Convention over invention
   parent: Single Source of Truth
   body: |
@@ -64,6 +56,10 @@ rationales:
   - marker: SHOULD
     body: |
       Keep concerns separate where merging them would save lines; the lines saved are paid back on every later change.
+- id: The Practical Test Pyramid
+  parent: Shift Left
+  body: |
+    Write tests of different granularity, and the higher the level, the fewer the tests: "Write lots of small and fast unit tests. Write some more coarse-grained tests and very few high-level tests that test your application from end to end" ([Ham Vocke, The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)). Below the unit tests, Yaron Minsky's "make [[Illegal states unrepresentable]]" and Alexis King's [Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) remove whole classes of bugs before a test exists. Lower levels give faster, more precise feedback and leave less to maintain.
 - id: Crash, don't guess
   parent: Shift Left
   body: |
@@ -167,7 +163,7 @@ rationales:
       State a standard in these documents before handing it to a tool to apply, so the tool multiplies a definition and not a habit.
   - marker: SHOULD
     body: |
-      Keep the rules, prompts, harnesses, and pipelines that carry our standard under our own control; a vendor's default encodes the vendor's standard, an average of everyone's practice rather than ours. Everything below that layer is consumed by the [[Simplicity ladder]] like any other component.
+      Keep the rules, prompts, harnesses, and pipelines that carry our standard under our own control; a vendor's default encodes the vendor's standard, an average of everyone's practice rather than ours. Everything below that layer is consumed through the [[Development Stack]] like any other component.
   - marker: SHOULD
     body: |
       Verify generated output by the same means as any other change; fluency and confidence are properties of its form and say nothing about its [[Correctness]].

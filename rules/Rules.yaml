@@ -32,19 +32,19 @@ rules:
 - id: Earlier rung that serves
   marker: MUST NOT
   group: Simplicity & Code Reuse
-  parent: The Simplicity Ladder
+  parent: Choose boring technology
   body: |
-    Meet a need on a rung of the [[Simplicity ladder]] when an earlier rung serves it. [[New code]], or a new dependency, where an earlier rung serves is the smell.
+    Meet a need on a level of the [[Development Stack]] when an earlier level serves it. [[New code]], or a new dependency, where an earlier rung serves is the smell.
 - id: Available
   marker: MUST NOT
   group: Simplicity & Code Reuse
-  parent: The Simplicity Ladder
+  parent: Choose boring technology
   body: |
     Adopt existing code that requires payments or license models, or an extra [[Platform or framework]], that would increase the maintenance burden.
 - id: Maintained
   marker: MUST
   group: Simplicity & Code Reuse
-  parent: The Simplicity Ladder
+  parent: Choose boring technology
   body: |
     Adopt existing code only where it is stable, documented, and maintained by several active contributors.
 - id: No second representation
@@ -164,7 +164,7 @@ rules:
 - id: Delete unused
   marker: MUST
   group: Dead Code & Comments
-  parent: The Simplicity Ladder
+  parent: You aren't gonna need it
   body: |
     Delete tests, production code, and helper code that are no longer relevant or used.
 - id: No comments in code
@@ -302,15 +302,15 @@ rules:
 - id: No disabling via pragma
   marker: MUST NOT
   group: Quality Tooling & Shift Left
-  parent: Shift Test Left
+  parent: Push tests down the pyramid
   body: |
     Disable linting rules via comments or pragmas.
 - id: Earlier rung that can
   marker: MUST NOT
   group: Quality Tooling & Shift Left
-  parent: Shift Test Left
+  parent: Push tests down the pyramid
   body: |
-    Catch a defect on a rung of the [[Shift Left ladder]] when an earlier rung can catch it. A [[Runtime check]], or a test, for what a type or a linter would reject is the smell.
+    Catch a defect on a level of the [[Test Pyramid]] when a lower level can catch it. A [[Runtime check]], or a test, for what a type or a linter would reject is the smell.
 - id: No committing generated code
   marker: MUST NOT
   group: Quality Tooling & Shift Left
@@ -320,7 +320,7 @@ rules:
 - id: Strict presets
   marker: MUST
   group: Quality Tooling & Shift Left
-  parent: Shift Test Left
+  parent: Push tests down the pyramid
   body: |
     Use the strictest possible presets on linting and style.
 - id: No optionality

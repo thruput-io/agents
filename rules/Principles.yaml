@@ -7,18 +7,18 @@ principles:
   parent: Code is a liability, not an asset
   body: |
     Every part of the code solves some part of its [[Purpose]], and no part reaches outside it. What it solves, it solves accurately and without harm the [[Users]] would not accept.
-- id: The Simplicity Ladder
-  parent: Descend only when the rung above cannot serve
+- id: Choose boring technology
+  parent: Code is a liability, not an asset
   body: |
-    The simplest code is [[No code]]; next is code we do not write. Climb the [[Simplicity ladder]].
+    Keep the [[Development Stack]] small and well known: "every company gets about three innovation tokens" ([Dan McKinley](https://mcfunley.com/choose-boring-technology)).
 - id: Convention Over Novelty
   parent: Convention over invention
   body: |
     Structure follows the conventions of the ecosystem and of the [[Surrounding code]]; novelty belongs in the domain solution. Only a [[Demonstrable standard]] is a convention.
-- id: Shift Test Left
-  parent: Descend only when the rung above cannot serve
+- id: Push tests down the pyramid
+  parent: The Practical Test Pyramid
   body: |
-    Catch a defect on the leftmost rung of the [[Shift Left ladder]] that can.
+    Catch a defect on the lowest level of the [[Test Pyramid]] that can catch it.
 - id: Durable Intent Over Comments
   parent: Intent lives where it is checked
   body: |
@@ -84,9 +84,9 @@ principles:
   body: |
     A behaviour ships with its [[Signal]]; if we cannot see it, it is not shipped.
 - id: Don't Repeat Yourself
-  parent: One concern, one owner
+  parent: Code is a liability, not an asset
   body: |
-    Every piece of knowledge has one authoritative representation in the system; a second copy is the smell.
+    Every piece of knowledge must have a single, unambiguous, authoritative representation within a system ([The Pragmatic Programmer, Tip 15](https://pragprog.com/tips/)).
 - id: Contract First
   parent: Agree at the boundary
   body: |
