@@ -171,7 +171,7 @@ az repos pr set-vote --id {id} --vote approve --org {org} --detect false
 
 ## No atomic review
 
-This is the one place the Azure DevOps model does not fit [`CODE_REVIEW.md` step 7](../CODE_REVIEW.md#7-submit). GitHub accepts one payload carrying every inline comment plus the verdict, producing one review and one notification. Azure DevOps has no such endpoint: each thread is its own POST and the vote is a separate call. N comments therefore mean N requests and N notifications, and there is no way to make them atomic.
+This is the one place the Azure DevOps model does not fit [`CODE_REVIEW.md` step 5](../CODE_REVIEW.md#5-submit). GitHub accepts one payload carrying every inline comment plus the verdict, producing one review and one notification. Azure DevOps has no such endpoint: each thread is its own POST and the vote is a separate call. N comments therefore mean N requests and N notifications, and there is no way to make them atomic.
 
 Consequences for a review run against Azure DevOps:
 

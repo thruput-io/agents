@@ -40,37 +40,6 @@ List the changed paths:
 gh api repos/{owner}/{repo}/pulls/{n}/files --paginate --jq '.[].filename'
 ```
 
-## Review comment object
-
-One object per violation. These fields and **no others** — the API rejects unknown keys.
-
-```json
-{
-  "path": "src/foo.ts",
-  "line": 42,
-  "side": "RIGHT",
-  "body": "[No suppressed exit status](https://thruput.se/agents/#no-suppressed-exit-status): what is wrong, briefly."
-}
-```
-
-- `path` — repo-relative.
-- `line` — bare integer, no quotes; the line in the file at the head commit, not a diff hunk offset.
-- `side` — `RIGHT` for added/modified lines, `LEFT` for removed. Default `RIGHT`.
-- `body` — see [`CODE_REVIEW.md` step 5](../CODE_REVIEW.md#5-draft-comments-locally) for what it must say.
-
-Multi-line variant adds `start_line` and `start_side`:
-
-```json
-{
-  "path": "src/foo.ts",
-  "start_line": 40,
-  "start_side": "RIGHT",
-  "line": 42,
-  "side": "RIGHT",
-  "body": "..."
-}
-```
-
 ## Review threads
 
 List threads and their state:
@@ -102,39 +71,10 @@ gh api graphql -f query='mutation($t:ID!){ unresolveReviewThread(input:{threadId
 
 ## Submit one atomic review
 
-Payload — `review.json`:
+`scripts/review.mjs` does this: it builds `review.json` from the probes' ledgers and posts it with one call, `gh api -X POST repos/{owner}/{repo}/pulls/{n}/reviews --input review.json`, with the ledger table appended to the body as a collapsed block. One review, one notification, comments grouped. Do **not** post comments one at a time, and do not post the ledger as a separate comment.
 
-```json
-{
-  "commit_id": "<headRefOid>",
-  "body": "<overall review body>",
-  "event": "APPROVE | REQUEST_CHANGES | COMMENT",
-  "comments": [ /* the comment objects above */ ]
-}
-```
+The only review posted by hand is the changes-requested verdict of [`CODE_REVIEW.md` step 2](../CODE_REVIEW.md#2-pre-review-content-checks), which has no inline comments:
 
 ```bash
-gh api -X POST repos/{owner}/{repo}/pulls/{n}/reviews --input review.json
+gh api -X POST repos/{owner}/{repo}/pulls/{n}/reviews -f commit_id=<headRefOid> -f event=REQUEST_CHANGES -f body='<which check failed>'
 ```
-
-One review, one notification, comments grouped. Do **not** loop `POST /pulls/{n}/comments` — that is N standalone comments, N notifications, and not atomic.
-
-General (non-inline) PR comment:
-
-```bash
-gh pr comment <URL> --body '...'
-```
-
-## Attach the ledger
-
-GitHub has no API for file attachments on pull requests or reviews — the REST API accepts only Markdown text bodies, and the web UI's drag-and-drop upload runs through a browser-session pipeline that rejects token auth. The ledger therefore travels **in the review body**, as a collapsed block appended to `review.json` before the single POST in [§ Submit one atomic review](#submit-one-atomic-review):
-
-```bash
-jq --rawfile ledger ledger.md \
-  '.body += "\n\n<details>\n<summary>Review ledger</summary>\n\n" + $ledger + "\n\n</details>"' \
-  review.json > review-with-ledger.json
-```
-
-- The blank lines around the ledger inside `<details>` are required — without them GitHub renders the table as literal text.
-- The verdict stays on top; the ledger unfolds on demand.
-- Do **not** post the ledger as a separate PR comment — it belongs to the review submission, and a separate comment is a second notification.

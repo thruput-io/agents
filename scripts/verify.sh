@@ -2,6 +2,7 @@
 set -euo pipefail
 
 npx --yes @agentplugins/cli@0.6.1 audit "$PROJECT_ROOT"
+node --test "$PROJECT_ROOT/skills/pr-review/scripts/*.test.mjs"
 
 "$PROJECT_ROOT/scripts/declared-ids.schema.sh" > "$PROJECT_ROOT/schemas/declared-ids.g.schema.json"
 

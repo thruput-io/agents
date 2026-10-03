@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/agent-instructions.schema.json",
   "title": "Agent instructions",
-  "description": "What the reviewing context hands one probe subagent: the rules of one group to probe, where their terms and parents are read, the pull request resolved once, the change set, and the surface a violation may be reported against. The subagent returns a ledger with one row per rule listed",
+  "description": "What the reviewing context hands one probe subagent, resolved once by prepare.mjs: the pull request, the change set, the surface a violation may be reported against, the checkout to read, and the file the probe writes its ledger to. A rule probe also carries the rules of one group and where their terms and parents are read; the escalation probe instead carries the index it selects a ruleset from. The subagent returns a ledger with one row per rule",
   "examples": [
     {
       "group": "Behavior & Failure Handling",
@@ -57,60 +57,157 @@
           }
         ]
       },
-      "reading": {
-        "checkout": "/home/user/agents"
-      }
+      "checkout": "/home/user/agents",
+      "ledger": "/home/user/review/ledger/11-behavior-failure-handling.json"
+    },
+    {
+      "escalation": {
+        "index": "/home/user/agents/skills/pr-review/references/agent-rules-books-INDEX.md"
+      },
+      "pullRequest": {
+        "url": "https://github.com/thruput-io/agents/pull/12",
+        "host": {
+          "kind": "github",
+          "owner": "thruput-io",
+          "repository": "agents",
+          "number": 12
+        },
+        "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
+      },
+      "changeSet": {
+        "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
+        "files": [
+          {
+            "path": "scripts/verify.sh",
+            "added": [
+              {
+                "start": 21,
+                "end": 21
+              }
+            ],
+            "removed": []
+          }
+        ]
+      },
+      "surface": {
+        "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
+        "files": [
+          {
+            "path": "scripts/verify.sh",
+            "added": [
+              {
+                "start": 21,
+                "end": 21
+              }
+            ],
+            "removed": []
+          }
+        ]
+      },
+      "checkout": "/home/user/agents",
+      "ledger": "/home/user/review/ledger/24-escalation.json"
     }
   ],
-  "type": "object",
-  "required": [
-    "group",
-    "rules",
-    "ruleSource",
-    "site",
-    "pullRequest",
-    "changeSet",
-    "surface",
-    "reading"
-  ],
-  "properties": {
-    "group": {
-      "description": "The group every listed rule belongs to; one subagent per group",
-      "type": "string",
-      "minLength": 1
+  "oneOf": [
+    {
+      "$ref": "#/$defs/RuleProbe"
     },
-    "rules": {
-      "description": "The rules to probe, as they stand in rules/Rules.yaml; one probe and one ledger row per rule, in this order",
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "$ref": "rules.schema.json#/$defs/Rule"
-      }
-    },
-    "ruleSource": {
-      "description": "Where the glossary defining every [[term]] a rule names, and the principles the rules name as parents, are read: a directory holding Definitions.yaml and Principles.yaml, on disk or by URL",
-      "type": "string",
-      "minLength": 1
-    },
-    "site": {
-      "description": "The published rules. The URL of a rule, a principle, or a term is this followed by # and the id lowercased, with apostrophes removed and every run of other non-alphanumeric characters replaced by one hyphen",
-      "type": "string",
-      "format": "uri"
-    },
-    "pullRequest": {
-      "$ref": "#/$defs/PullRequest"
-    },
-    "changeSet": {
-      "$ref": "change-set.schema.json"
-    },
-    "surface": {
-      "$ref": "surface.schema.json"
-    },
-    "reading": {
-      "$ref": "#/$defs/Reading"
+    {
+      "$ref": "#/$defs/EscalationProbe"
     }
-  },
+  ],
   "$defs": {
+    "Context": {
+      "description": "What every probe is handed about this review",
+      "type": "object",
+      "required": [
+        "pullRequest",
+        "changeSet",
+        "surface",
+        "checkout",
+        "ledger"
+      ],
+      "properties": {
+        "pullRequest": {
+          "$ref": "#/$defs/PullRequest"
+        },
+        "changeSet": {
+          "$ref": "change-set.schema.json"
+        },
+        "surface": {
+          "$ref": "surface.schema.json"
+        },
+        "checkout": {
+          "description": "A checkout of the head commit with a clean tree, verified by the reviewing context; the probe reads it and trusts it",
+          "type": "string",
+          "minLength": 1
+        },
+        "ledger": {
+          "description": "The file the probe writes its ledger to, validating against ledger.schema.json; the reviewing context reads the file, never the hand-back text",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "RuleProbe": {
+      "description": "A probe of the rules of one group: one probe and one ledger row per rule, in order",
+      "$ref": "#/$defs/Context",
+      "type": "object",
+      "required": [
+        "group",
+        "rules",
+        "ruleSource",
+        "site"
+      ],
+      "properties": {
+        "group": {
+          "description": "The group every listed rule belongs to; one subagent per group",
+          "type": "string",
+          "minLength": 1
+        },
+        "rules": {
+          "description": "The rules to probe, as they stand in rules/Rules.yaml",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "rules.schema.json#/$defs/Rule"
+          }
+        },
+        "ruleSource": {
+          "description": "Where the glossary defining every [[term]] a rule names, and the principles the rules name as parents, are read: a directory holding Definitions.yaml and Principles.yaml",
+          "type": "string",
+          "minLength": 1
+        },
+        "site": {
+          "description": "The published rules. The URL of a rule, a principle, or a term is this followed by # and the id lowercased, with apostrophes removed and every run of other non-alphanumeric characters replaced by one hyphen",
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "EscalationProbe": {
+      "description": "The escalation probe: it selects the ruleset whose focus matches the change from the index, reads the ruleset at its canonical URL, picks three rules relevant to the change, and probes those three",
+      "$ref": "#/$defs/Context",
+      "type": "object",
+      "required": [
+        "escalation"
+      ],
+      "properties": {
+        "escalation": {
+          "type": "object",
+          "required": [
+            "index"
+          ],
+          "properties": {
+            "index": {
+              "description": "The index of rulesets to select from",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
     "PullRequest": {
       "description": "The pull request under review, resolved once by the reviewing context; the probe never fetches its metadata",
       "type": "object",
@@ -200,42 +297,6 @@
         "id": {
           "type": "integer",
           "minimum": 1
-        }
-      }
-    },
-    "Reading": {
-      "description": "How the probe reads files at the head commit",
-      "oneOf": [
-        {
-          "$ref": "#/$defs/Checkout"
-        },
-        {
-          "$ref": "#/$defs/FetchPerFile"
-        }
-      ]
-    },
-    "Checkout": {
-      "description": "A checkout of the head commit with a clean tree, verified by the reviewing context; the probe reads it and trusts it",
-      "type": "object",
-      "required": [
-        "checkout"
-      ],
-      "properties": {
-        "checkout": {
-          "type": "string",
-          "minLength": 1
-        }
-      }
-    },
-    "FetchPerFile": {
-      "description": "No checkout: the probe fetches each file at the head commit with the host's git-tool",
-      "type": "object",
-      "required": [
-        "fetchPerFile"
-      ],
-      "properties": {
-        "fetchPerFile": {
-          "const": true
         }
       }
     }

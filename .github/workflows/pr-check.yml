@@ -24,6 +24,7 @@ jobs:
       - run: npx --yes @sourcemeta/jsonschema@17.0.0 metaschema "$PROJECT_ROOT/schemas" --resolve "$PROJECT_ROOT/schemas"
       - run: npx --yes @sourcemeta/jsonschema@17.0.0 validate "$PROJECT_ROOT/schemas/declared-ids.g.schema.json" "$PROJECT_ROOT/rules" --resolve "$PROJECT_ROOT/schemas"
       - run: npx --yes @agentplugins/cli@0.6.1 audit "$PROJECT_ROOT"
+      - run: node --test "$PROJECT_ROOT/skills/pr-review/scripts/*.test.mjs"
 
   build-site:
     uses: ./.github/workflows/build-site.yml

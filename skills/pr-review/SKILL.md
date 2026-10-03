@@ -5,7 +5,7 @@ description: Reviews a GitHub or Azure DevOps Pull Request against the thruput-i
 
 # PR Review Skill
 
-Read [`CODE_REVIEW.md`](CODE_REVIEW.md) and follow it. It is the source of truth for both what to review and how to execute the review with the host's CLI.
+Read [`CODE_REVIEW.md`](CODE_REVIEW.md) and follow it. It is the source of truth for both what to review and how to execute the review. Two scripts do the parts a model must not be trusted with: `scripts/prepare.mjs` resolves the pull request, the change set, and the surface once and writes one instructions file per probe; `scripts/review.mjs` refuses any probe's ledger that does not answer its instructions row for row, then builds and posts the review from the ledgers alone.
 
 The rules it serves are the entries of [`rules/Rules.yaml`](rules/Rules.yaml); the `[[term]]`s they name are defined in [`rules/Definitions.yaml`](rules/Definitions.yaml), and their parents in [`rules/Principles.yaml`](rules/Principles.yaml). Read them from `${CLAUDE_SKILL_DIR}/rules/`: the rules this skill was installed with, linked into the skill from this repository's `rules/`. A violation is cited by the rule's id, linked to its anchor on https://thruput.se/agents/ as [`CODE_REVIEW.md` § Definitions](CODE_REVIEW.md#definitions) derives it.
 
@@ -19,15 +19,17 @@ For Azure DevOps PR reviews, note that Azure DevOps does not support atomic batc
 
 ## Requirements
 
-- For a GitHub PR: `gh` CLI available.
-- For an Azure DevOps PR: `az` CLI with the `azure-devops` extension available.
+- For a GitHub PR: `gh` CLI and `node` available; the scripts fetch their other tools with `npx`.
+- For an Azure DevOps PR: `az` CLI with the `azure-devops` extension available; the scripts do not apply there.
 - The rules: `rules/` in the skill, a link to this repository's `rules/`, which resolves on macOS and Linux.
 - Network access to `github.com/ciembor/agent-rules-books` for the step 4 escalation pass.
 
 ## Files
 
 - `CODE_REVIEW.md` — the review process.
-- `PROBE_SUBAGENT_TEMPLATE.md` — the prompt one probe subagent receives, around one instructions document per rule group.
+- `PROBE_SUBAGENT_TEMPLATE.md` — the prompt one probe subagent receives, around one instructions file.
+- `scripts/prepare.mjs`, `scripts/review.mjs` — the two commands the process runs; `scripts/lib.mjs` holds their logic, tested by `scripts/lib.test.mjs`.
+- `rules/`, `schemas/` — this repository's rules and schemas, linked into the skill.
 - `https://thruput.se/agents/schemas/change-set.schema.json`, `surface.schema.json`, `agent-instructions.schema.json`, `ledger.schema.json`, `violation.schema.json` — the shapes the process passes around, from this repository's `schemas/`.
 - `references/agent-rules-books-INDEX.md`, `references/agent-rules-books-search-index.json` — escalation index, byte-for-byte mirrors of the handbook's `references/`. Refresh with:
 
