@@ -64,7 +64,7 @@ Apply the same standards and the same minimum bar. Do not reduce the number of p
 - carry a thread the **author** has resolved since the prior review;
 - changed since the commit the prior review was anchored to.
 
-The prior review is the latest review on the pull request by the account running the scripts. Every probe is rebuilt against that surface. A rule that was `clean` last time is probed again if the surface touches it.
+The prior review is the latest review on the pull request by the account running the scripts. When that leaves no line, `prepare.mjs` stops and says so: there is nothing to review until the pull request changes. Every probe is rebuilt against that surface. A rule that was `clean` last time is probed again if the surface touches it.
 
 As commented changes are reviewed, resolve or unresolve the threads directly in the PR — see [step 4](#4-settle-existing-threads).
 

@@ -86,6 +86,9 @@ function narrowed() {
   return narrowSurface(changeSet, changedSince, threadRanges(threads, pr.user.login));
 }
 const lines = prior === undefined ? changeSet : narrowed();
+if (lines.files.length === 0) {
+  throw new Error(`nothing to review: no line of the change set changed since the prior review at ${prior.commit_id}, and no thread of ours is open or was resolved by the author`);
+}
 
 const snapshot = join(workdir, 'snapshot');
 mkdirSync(snapshot, { recursive: true });
