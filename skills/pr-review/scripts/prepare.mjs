@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseDiff, parseHunks, threadRanges, narrowSurface, definitions, callSites, partition, instructions } from './lib.mjs';
+import { parseDiff, parseHunks, threadRanges, narrowSurface, definitions, callSites, deadCode, partition, instructions } from './lib.mjs';
 
 const skill = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const site = 'https://thruput.se/agents/';
@@ -74,14 +74,24 @@ writeFileSync(tarball, run('gh', ['api', `repos/${owner}/${repository}/tarball/$
 run('tar', ['-xzf', tarball, '-C', snapshot, '--strip-components=1']);
 const paths = readdirSync(snapshot, { recursive: true }).map(String)
   .filter((path) => statSync(join(snapshot, path)).isFile()).sort();
-const read = (path) => readFileSync(join(snapshot, path), 'latin1');
+const texts = new Map();
+const read = (path) => {
+  if (!texts.has(path)) texts.set(path, readFileSync(join(snapshot, path), 'latin1'));
+  return texts.get(path);
+};
 const changed = changeSet.files.map((file) => file.path);
-const surface = { ...lines, callSites: callSites(changed, definitions(diff), paths, read) };
+const defined = definitions(diff);
+const surface = {
+  ...lines,
+  callSites: callSites(changed, [...defined.added, ...defined.removed], paths, read),
+  deadCode: deadCode(diff, paths, read),
+};
+const dead = Object.values(surface.deadCode).flat().flatMap((entry) => entry.definedIn ?? entry.usedIn);
 
 const reading = { files: join(workdir, 'files'), diff: join(workdir, 'changes.diff'), tree: join(workdir, 'tree.txt') };
 writeFileSync(reading.diff, diff);
 writeFileSync(reading.tree, `${paths.join('\n')}\n`);
-for (const path of [...changed, ...surface.callSites.into, ...surface.callSites.outOf].filter((file) => paths.includes(file))) {
+for (const path of new Set([...changed, ...surface.callSites.into, ...surface.callSites.outOf, ...dead].filter((file) => paths.includes(file)))) {
   cpSync(join(snapshot, path), join(reading.files, path));
 }
 rmSync(snapshot, { recursive: true });
@@ -112,7 +122,13 @@ const summary = {
   descriptionLength: pullRequest.description.length,
   since: prior === undefined ? pr.base.sha : prior.commit_id,
   changeSet: { files: changeSet.files.length, added: count(changeSet.files, 'added'), removed: count(changeSet.files, 'removed') },
-  surface: { files: surface.files.length, added: count(surface.files, 'added'), removed: count(surface.files, 'removed'), callSites: { into: surface.callSites.into.length, outOf: surface.callSites.outOf.length } },
+  surface: {
+    files: surface.files.length,
+    added: count(surface.files, 'added'),
+    removed: count(surface.files, 'removed'),
+    callSites: { into: surface.callSites.into.length, outOf: surface.callSites.outOf.length },
+    deadCode: Object.fromEntries(Object.entries(surface.deadCode).map(([kind, entries]) => [kind, entries.length])),
+  },
   repository: paths.length,
   probes: probes.map((probe) => probe.name),
   rules: rules.length,

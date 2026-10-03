@@ -63,6 +63,11 @@
           "outOf": [
             "schemas/rules.schema.json"
           ]
+        },
+        "deadCode": {
+          "unusedDefinitions": [],
+          "danglingReferences": [],
+          "orphanedDefinitions": []
         }
       },
       "reading": {
@@ -122,6 +127,11 @@
           "outOf": [
             "schemas/rules.schema.json"
           ]
+        },
+        "deadCode": {
+          "unusedDefinitions": [],
+          "danglingReferences": [],
+          "orphanedDefinitions": []
         }
       },
       "reading": {

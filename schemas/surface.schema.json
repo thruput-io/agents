@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/surface.schema.json",
   "title": "Surface",
-  "description": "What is under review, as data: the lines a violation may be reported against, and the call sites into and out of them. The lines are a selection of the change set: on a first-time review the whole change set, on a subsequent review the changes carrying an unresolved comment, carrying a comment the author resolved since the prior review, or new since the prior review. The call sites are the files that mention a changed file or something its changed lines define, and the files a changed file mentions. Every file named here travels to the probes; a probe reads nothing else",
+  "description": "What is under review, as data: the lines a violation may be reported against, the call sites into and out of them, and what the change leaves unused, dangling, or orphaned across the whole repository. The lines are a selection of the change set: on a first-time review the whole change set, on a subsequent review the changes carrying an unresolved comment, carrying a comment the author resolved since the prior review, or new since the prior review. The call sites are the files that mention a changed file or something its changed lines define, and the files a changed file mentions. The dead-code facts are computed over a snapshot of the head commit, so a probe judges them rather than searches for them. Every file named here travels to the probes; a probe reads nothing else",
   "examples": [
     {
       "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
@@ -25,6 +25,25 @@
         "outOf": [
           "schemas/rules.schema.json"
         ]
+      },
+      "deadCode": {
+        "unusedDefinitions": [
+          {
+            "name": "remove_site",
+            "definedIn": [
+              "scripts/build_site.sh"
+            ]
+          }
+        ],
+        "danglingReferences": [],
+        "orphanedDefinitions": [
+          {
+            "name": "Earlier rung that serves",
+            "definedIn": [
+              "rules/Rules.yaml"
+            ]
+          }
+        ]
       }
     }
   ],
@@ -32,7 +51,8 @@
   "required": [
     "headCommit",
     "files",
-    "callSites"
+    "callSites",
+    "deadCode"
   ],
   "properties": {
     "headCommit": {
@@ -47,6 +67,9 @@
     },
     "callSites": {
       "$ref": "#/$defs/CallSites"
+    },
+    "deadCode": {
+      "$ref": "#/$defs/DeadCode"
     }
   },
   "$defs": {
@@ -68,6 +91,77 @@
         "outOf": {
           "description": "Files outside the change set that a changed file mentions: the callees",
           "type": "array",
+          "items": {
+            "$ref": "change-set.schema.json#/$defs/Path"
+          }
+        }
+      }
+    },
+    "DeadCode": {
+      "description": "What the change leaves behind across the whole repository at the head commit, by name: a name is anything the definition patterns recognise, a function, class, type, variable, shell function, or id, and a mention is the name as a whole word in any text file",
+      "type": "object",
+      "required": [
+        "unusedDefinitions",
+        "danglingReferences",
+        "orphanedDefinitions"
+      ],
+      "properties": {
+        "unusedDefinitions": {
+          "description": "Names the change defines that no file beyond the defining ones mentions",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Defined"
+          }
+        },
+        "danglingReferences": {
+          "description": "Names whose definition the change removes while files still mention them",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Used"
+          }
+        },
+        "orphanedDefinitions": {
+          "description": "Names the change stops mentioning that are now mentioned nowhere beyond the files defining them: definitions the change made dead",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Defined"
+          }
+        }
+      }
+    },
+    "Defined": {
+      "type": "object",
+      "required": [
+        "name",
+        "definedIn"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "definedIn": {
+          "type": "array",
+          "items": {
+            "$ref": "change-set.schema.json#/$defs/Path"
+          }
+        }
+      }
+    },
+    "Used": {
+      "type": "object",
+      "required": [
+        "name",
+        "usedIn"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "usedIn": {
+          "type": "array",
+          "minItems": 1,
           "items": {
             "$ref": "change-set.schema.json#/$defs/Path"
           }

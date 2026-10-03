@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  parseDiff, parseHunks, intersect, union, threadRanges, narrowSurface, slug, partition, definitions, callSites, instructions,
+  parseDiff, parseHunks, intersect, union, threadRanges, narrowSurface, slug, partition, definitions, callSites, deadCode, instructions,
   checkLedger, merge, verdict, table, comment, review,
 } from './lib.mjs';
 
@@ -111,7 +111,7 @@ test('definitions names what the changed lines define: functions, classes, shell
     '+- id: Delete unused',
     ' def untouched():',
   ].join('\n');
-  assert.deepEqual(definitions(text), ['parseDiff', 'Old', 'inner', 'remove_site', 'Delete unused']);
+  assert.deepEqual(definitions(text), { added: ['parseDiff', 'inner', 'remove_site', 'Delete unused'], removed: ['Old'] });
 });
 
 test('callSites finds the files that mention a changed file or its definitions, and the files a changed file mentions', () => {
@@ -130,6 +130,30 @@ test('callSites finds the files that mention a changed file or its definitions, 
   const sites = callSites(['scripts/lib.mjs', 'web/_includes/chain.html', 'rules/Rules.yaml', 'gone.txt'], ['parseDiff', 'Delete unused'], Object.keys(files), read);
   assert.deepEqual(sites.into, ['scripts/prepare.mjs', 'web/index.html', 'rules/Principles.yaml']);
   assert.deepEqual(sites.outOf, ['web/_includes/anchor.html']);
+});
+
+test('deadCode reports definitions nothing uses, references whose definition is gone, and definitions the change orphaned', () => {
+  const diff = [
+    '--- a/scripts/lib.mjs', '+++ b/scripts/lib.mjs',
+    '+export function fresh() {}',
+    '+export function wired() {}',
+    '-export function gone() {}',
+    '-  return helper(count);',
+    '-  cites [[Delete unused]]',
+  ].join('\n');
+  const files = {
+    'scripts/lib.mjs': 'export function fresh() {}\nexport function wired() {}\nexport function helper() {}\nexport function count() {}',
+    'scripts/prepare.mjs': "import { wired, count } from './lib.mjs'; gone();",
+    'rules/Rules.yaml': '- id: Delete unused',
+    'rules/Principles.yaml': 'nothing here',
+    'logo.png': 'PNG\0 fresh gone helper',
+  };
+  const read = (path) => files[path];
+  assert.deepEqual(deadCode(diff, Object.keys(files), read), {
+    unusedDefinitions: [{ name: 'fresh', definedIn: ['scripts/lib.mjs'] }],
+    danglingReferences: [{ name: 'gone', usedIn: ['scripts/prepare.mjs'] }],
+    orphanedDefinitions: [{ name: 'helper', definedIn: ['scripts/lib.mjs'] }, { name: 'Delete unused', definedIn: ['rules/Rules.yaml'] }],
+  });
 });
 
 test('instructions writes one probe per group and one escalation, each with its ledger path', () => {

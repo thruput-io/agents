@@ -112,33 +112,43 @@ export function partition(rules) {
 const DEFINITION = /\b(?:function|def|class|interface|type|enum|struct|fn|func|module|namespace|trait|record|const|let|var|val|protocol|extension)\s+([A-Za-z_$][\w$]*)/g;
 const SHELL_FUNCTION = /^\s*([A-Za-z_]\w*)\s*\(\)\s*\{/;
 const ID = /^\s*-?\s*id:\s*(\S.*?)\s*$/;
+const IDENTIFIER = /[A-Za-z_$][\w$]{2,}/g;
+const CITATION = /\[\[([^\]]+)\]\]/g;
+
+export function definedOn(line) {
+  const names = [];
+  for (const match of line.matchAll(DEFINITION)) names.push(match[1]);
+  const shell = SHELL_FUNCTION.exec(line);
+  if (shell) names.push(shell[1]);
+  const id = ID.exec(line);
+  if (id) names.push(id[1].replace(/^["']|["']$/g, ''));
+  return names;
+}
+
+const changedLines = (diff, sign) => diff.split('\n').filter((raw) => raw.startsWith(sign) && !/^[+-]{3} /.test(raw)).map((raw) => raw.slice(1));
+const unique = (items) => [...new Set(items)];
 
 export function definitions(diff) {
-  const names = new Set();
-  for (const raw of diff.split('\n')) {
-    if (!/^[+-](?![+-]{2})/.test(raw)) continue;
-    const line = raw.slice(1);
-    for (const match of line.matchAll(DEFINITION)) names.add(match[1]);
-    const shell = SHELL_FUNCTION.exec(line);
-    if (shell) names.add(shell[1]);
-    const id = ID.exec(line);
-    if (id) names.add(id[1].replace(/^["']|["']$/g, ''));
-  }
-  return [...names];
+  return { added: unique(changedLines(diff, '+').flatMap(definedOn)), removed: unique(changedLines(diff, '-').flatMap(definedOn)) };
+}
+
+export function referencedOn(diff, sign) {
+  return unique(changedLines(diff, sign).flatMap((line) => [...line.matchAll(IDENTIFIER)].map((m) => m[0]).concat([...line.matchAll(CITATION)].map((m) => m[1]))));
 }
 
 const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const basename = (path) => path.slice(path.lastIndexOf('/') + 1);
 const mentions = (text, path) => text.includes(path) || new RegExp(`(^|[^\\w/.-])${escape(basename(path))}(?![\\w.-])`).test(text);
+const word = (name) => new RegExp(`(^|[^\\w$])${escape(name)}(?![\\w$])`);
 export const isText = (text) => !text.includes('\0');
 
 export function callSites(changed, names, paths, read) {
   const changedSet = new Set(changed);
   const others = paths.filter((path) => !changedSet.has(path));
-  const words = names.map((name) => new RegExp(`(^|[^\\w$])${escape(name)}(?![\\w$])`));
+  const words = names.map(word);
   const into = others.filter((path) => {
     const text = read(path);
-    return isText(text) && (words.some((word) => word.test(text)) || changed.some((file) => mentions(text, file)));
+    return isText(text) && (words.some((w) => w.test(text)) || changed.some((file) => mentions(text, file)));
   });
   const outOf = new Set();
   for (const file of changed.filter((path) => paths.includes(path))) {
@@ -147,6 +157,34 @@ export function callSites(changed, names, paths, read) {
     for (const path of others) if (mentions(text, path)) outOf.add(path);
   }
   return { into, outOf: [...outOf] };
+}
+
+export function definitionIndex(paths, read) {
+  const index = new Map();
+  for (const path of paths) {
+    const text = read(path);
+    if (!isText(text)) continue;
+    for (const name of unique(text.split('\n').flatMap(definedOn))) {
+      if (!index.has(name)) index.set(name, []);
+      index.get(name).push(path);
+    }
+  }
+  return index;
+}
+
+export function deadCode(diff, paths, read) {
+  const texts = paths.filter((path) => isText(read(path)));
+  const index = definitionIndex(texts, read);
+  const mentioned = (name) => texts.filter((path) => word(name).test(read(path)));
+  const defined = (name) => index.get(name) ?? [];
+  const outside = (name) => mentioned(name).filter((path) => !defined(name).includes(path));
+  const { added, removed } = definitions(diff);
+  return {
+    unusedDefinitions: added.filter((name) => outside(name).length === 0).map((name) => ({ name, definedIn: defined(name) })),
+    danglingReferences: removed.filter((name) => !index.has(name)).map((name) => ({ name, usedIn: mentioned(name) })).filter((entry) => entry.usedIn.length > 0),
+    orphanedDefinitions: referencedOn(diff, '-').filter((name) => index.has(name) && !removed.includes(name) && outside(name).length === 0)
+      .map((name) => ({ name, definedIn: defined(name) })),
+  };
 }
 
 export function instructions(context, probes, index) {
