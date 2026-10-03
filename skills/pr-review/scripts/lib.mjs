@@ -109,10 +109,16 @@ export function partition(rules) {
   return [...groups].map(([group, members]) => ({ name: slug(group), group, rules: members }));
 }
 
+export const REPOSITORY_REACH = new Set(['Development Stack', 'Dead Code & Comments']);
+
+export function reach(group) {
+  return REPOSITORY_REACH.has(group) ? 'repository' : 'surface';
+}
+
 export function instructions(context, probes, index) {
   const named = [
-    ...probes.map((probe) => ({ name: probe.name, document: { group: probe.group, rules: probe.rules, ...context.probe } })),
-    { name: 'escalation', document: { escalation: { index } } },
+    ...probes.map((probe) => ({ name: probe.name, document: { group: probe.group, rules: probe.rules, reach: reach(probe.group), ...context.probe } })),
+    { name: 'escalation', document: { escalation: { index }, reach: 'surface' } },
   ];
   return named.map((file, i) => {
     const name = `${String(i + 1).padStart(2, '0')}-${file.name}`;

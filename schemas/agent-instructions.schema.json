@@ -61,6 +61,7 @@
         "files": "/home/user/review/files",
         "diff": "/home/user/review/changes.diff"
       },
+      "reach": "surface",
       "ledger": "/home/user/review/ledger/11-behavior-failure-handling.json"
     },
     {
@@ -111,6 +112,7 @@
         "files": "/home/user/review/files",
         "diff": "/home/user/review/changes.diff"
       },
+      "reach": "surface",
       "ledger": "/home/user/review/ledger/24-escalation.json"
     }
   ],
@@ -131,6 +133,7 @@
         "changeSet",
         "surface",
         "reading",
+        "reach",
         "ledger"
       ],
       "properties": {
@@ -145,6 +148,9 @@
         },
         "reading": {
           "$ref": "#/$defs/Reading"
+        },
+        "reach": {
+          "$ref": "#/$defs/Reach"
         },
         "ledger": {
           "description": "The file the probe writes its ledger to, validating against ledger.schema.json; the reviewing context reads the file, never the hand-back text",
@@ -172,6 +178,13 @@
           "minLength": 1
         }
       }
+    },
+    "Reach": {
+      "description": "How far a probe reads. surface: only the changed files and the diff in reading; the probe fetches nothing else. repository: the probe may also fetch any file at the head commit, list the tree, and search beyond it. Only the reuse ladder, which asks whether the code needed to be written, and dead code, which asks whether a change left a last caller behind, have a reason to read outside the surface",
+      "enum": [
+        "surface",
+        "repository"
+      ]
     },
     "RuleProbe": {
       "description": "A probe of the rules of one group: one probe and one ledger row per rule, in order",
