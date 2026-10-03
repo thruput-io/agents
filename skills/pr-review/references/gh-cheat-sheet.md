@@ -22,19 +22,21 @@ Placeholders: `{owner}`, `{repo}`, `{n}` (PR number), `{path}`, `<URL>` (PR URL)
 
 ## Read files at the head commit
 
-Whole checkout:
+Nothing is checked out. `scripts/prepare.mjs` saves the changed files and the diff into the workdir; everything else is fetched at the head commit.
+
+One file:
 
 ```bash
-gh pr checkout <URL>
+gh api "repos/{owner}/{repo}/contents/{path}?ref=<headRefOid>" -H "Accept: application/vnd.github.raw"
 ```
 
-Single file, without a checkout:
+Every path in the repository at the head commit, to find call sites and covering tests:
 
 ```bash
-gh api "repos/{owner}/{repo}/contents/{path}?ref=<headRefOid>" --jq '.content' | base64 -d
+gh api "repos/{owner}/{repo}/git/trees/<headRefOid>?recursive=1" --jq '.tree[] | select(.type == "blob") | .path'
 ```
 
-List the changed paths:
+The changed paths, as `prepare.mjs` reads them:
 
 ```bash
 gh api repos/{owner}/{repo}/pulls/{n}/files --paginate --jq '.[].filename'

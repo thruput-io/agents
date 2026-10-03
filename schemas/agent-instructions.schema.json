@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/agent-instructions.schema.json",
   "title": "Agent instructions",
-  "description": "What the reviewing context hands one probe subagent, resolved once by prepare.mjs: the pull request, the change set, the surface a violation may be reported against, the checkout to read, and the file the probe writes its ledger to. A rule probe also carries the rules of one group and where their terms and parents are read; the escalation probe instead carries the index it selects a ruleset from. The subagent returns a ledger with one row per rule",
+  "description": "What the reviewing context hands one probe subagent, resolved once by prepare.mjs: the pull request, the change set, the surface a violation may be reported against, the changed files and diff fetched at the head commit so that no checkout is made, and the file the probe writes its ledger to. A rule probe also carries the rules of one group and where their terms and parents are read; the escalation probe instead carries the index it selects a ruleset from. The subagent returns a ledger with one row per rule",
   "examples": [
     {
       "group": "Behavior & Failure Handling",
@@ -57,7 +57,10 @@
           }
         ]
       },
-      "checkout": "/home/user/agents",
+      "reading": {
+        "files": "/home/user/review/files",
+        "diff": "/home/user/review/changes.diff"
+      },
       "ledger": "/home/user/review/ledger/11-behavior-failure-handling.json"
     },
     {
@@ -104,7 +107,10 @@
           }
         ]
       },
-      "checkout": "/home/user/agents",
+      "reading": {
+        "files": "/home/user/review/files",
+        "diff": "/home/user/review/changes.diff"
+      },
       "ledger": "/home/user/review/ledger/24-escalation.json"
     }
   ],
@@ -124,7 +130,7 @@
         "pullRequest",
         "changeSet",
         "surface",
-        "checkout",
+        "reading",
         "ledger"
       ],
       "properties": {
@@ -137,13 +143,31 @@
         "surface": {
           "$ref": "surface.schema.json"
         },
-        "checkout": {
-          "description": "A checkout of the head commit with a clean tree, verified by the reviewing context; the probe reads it and trusts it",
-          "type": "string",
-          "minLength": 1
+        "reading": {
+          "$ref": "#/$defs/Reading"
         },
         "ledger": {
           "description": "The file the probe writes its ledger to, validating against ledger.schema.json; the reviewing context reads the file, never the hand-back text",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "Reading": {
+      "description": "What the reviewing context fetched at the head commit so that no checkout is made: every changed file that exists at the head commit, under files at its repository path, and the unified diff of the pull request. Anything else a probe reads, a call site or a covering test, it fetches at the head commit through the host API",
+      "type": "object",
+      "required": [
+        "files",
+        "diff"
+      ],
+      "properties": {
+        "files": {
+          "description": "A directory holding the changed files as they are at the head commit",
+          "type": "string",
+          "minLength": 1
+        },
+        "diff": {
+          "description": "The unified diff of the pull request, added and removed lines included",
           "type": "string",
           "minLength": 1
         }

@@ -102,11 +102,11 @@ test('partition groups rules in first-seen order and keeps rule order inside a g
 });
 
 test('instructions writes one probe per group and one escalation, each with its ledger path', () => {
-  const context = { probe: { ruleSource: 'r/', site: 's/' }, shared: { checkout: '/c', changeSet: { headCommit: 'h', files: [] } }, ledger: (name) => `/w/ledger/${name}.json` };
+  const context = { probe: { ruleSource: 'r/', site: 's/' }, shared: { reading: { files: '/w/files', diff: '/w/changes.diff' }, changeSet: { headCommit: 'h', files: [] } }, ledger: (name) => `/w/ledger/${name}.json` };
   const files = instructions(context, partition(rules), '/i.md');
   assert.deepEqual(files.map((file) => file.name), ['01-g1', '02-g2', '03-escalation']);
-  assert.deepEqual(files[0].document, { group: 'G1', rules: [rules[0], rules[2]], ruleSource: 'r/', site: 's/', checkout: '/c', changeSet: { headCommit: 'h', files: [] }, ledger: '/w/ledger/01-g1.json' });
-  assert.deepEqual(files[2].document, { escalation: { index: '/i.md' }, checkout: '/c', changeSet: { headCommit: 'h', files: [] }, ledger: '/w/ledger/03-escalation.json' });
+  assert.deepEqual(files[0].document, { group: 'G1', rules: [rules[0], rules[2]], ruleSource: 'r/', site: 's/', reading: { files: '/w/files', diff: '/w/changes.diff' }, changeSet: { headCommit: 'h', files: [] }, ledger: '/w/ledger/01-g1.json' });
+  assert.deepEqual(files[2].document, { escalation: { index: '/i.md' }, reading: { files: '/w/files', diff: '/w/changes.diff' }, changeSet: { headCommit: 'h', files: [] }, ledger: '/w/ledger/03-escalation.json' });
 });
 
 const probe = { rules: [{ id: 'A' }, { id: 'B' }], changeSet: { headCommit: 'h' } };

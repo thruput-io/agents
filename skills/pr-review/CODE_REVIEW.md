@@ -4,7 +4,7 @@ Procedural instructions for reviewing a pull request against the rules in [`rule
 
 Deviating from this process is a critical failure. Do not improvise, summarize, or skip any part of it.
 
-Two scripts carry the parts of the review that a model must not be trusted with: what is under review, and what gets posted. [`scripts/prepare.mjs`](scripts/prepare.mjs) resolves the pull request once and writes the instructions every probe receives; [`scripts/review.mjs`](scripts/review.mjs) refuses any ledger that does not answer its instructions row for row, then builds and posts the review from the ledgers alone. The reviewing context dispatches probes and runs the two scripts. It never writes a ledger row, never edits one, and never authors the review payload: a merge done by hand is where findings go missing.
+Two scripts carry the parts of the review that a model must not be trusted with: what is under review, and what gets posted. [`scripts/prepare.mjs`](scripts/prepare.mjs) resolves the pull request once, fetches what is under review at the head commit so that nothing is checked out, and writes the instructions every probe receives; [`scripts/review.mjs`](scripts/review.mjs) refuses any ledger that does not answer its instructions row for row, then builds and posts the review from the ledgers alone. The reviewing context dispatches probes and runs the two scripts. It never writes a ledger row, never edits one, and never authors the review payload: a merge done by hand is where findings go missing.
 
 The shapes the scripts pass around are defined once, in the schemas under [`schemas/`](schemas/), published at `https://thruput.se/agents/schemas/`, and this document derives from them: what a term below *is* lives in its schema's `description`; this document says only what is done with it.
 
@@ -19,13 +19,13 @@ The shapes the scripts pass around are defined once, in the schemas under [`sche
 - **git-tool** — `gh` for a GitHub pull request. For Azure DevOps (`dev.azure.com`) the scripts do not apply; follow [`references/az-cheat-sheet.md`](references/az-cheat-sheet.md) by hand, keeping to every standard below.
 - **head commit** — the commit the review is anchored to: the pull request's head SHA. Every file read and every inline comment resolves against it.
 - **change set** — [`change-set.schema.json`](schemas/change-set.schema.json): the lines this PR adds or removes at the head commit.
-- **checkout** — the head commit checked out with a clean working tree. `prepare.mjs` verifies it and refuses any other state.
+- **reading** — what `prepare.mjs` fetched at the head commit: every changed file that exists there, under `<workdir>/files/` at its repository path, and the unified diff as `<workdir>/changes.diff`. No checkout is made, by the reviewing context or by a probe; anything else a probe needs, a call site or a covering test, it fetches at the head commit through the host API.
 - **surface** — [`surface.schema.json`](schemas/surface.schema.json): the lines a violation may be reported against. On a first-time review it is the change set. On a subsequent review `prepare.mjs` narrows it as [Subsequent Reviews](#subsequent-reviews) sets out.
 - **full context** — the surface plus what a probe reads to reach a verdict: every changed file in full, the call sites of changed public symbols, and the covering test files. Context is what a verdict is *reached from*, never what a verdict is reported *against*.
 - **instructions** — [`agent-instructions.schema.json`](schemas/agent-instructions.schema.json): everything one probe is handed, as one file under `<workdir>/instructions/`, including the file it writes its ledger to.
 - **ledger** — [`ledger.schema.json`](schemas/ledger.schema.json): one row per probe, carrying the verdict and, for a violation row, its violations. Each probe writes its own ledger file; `review.mjs` merges them into the completeness record of the review.
 - **violation** — [`violation.schema.json`](schemas/violation.schema.json): one finding of one rule, with its anchor inside the surface or at the pull request as a whole.
-- **workdir** — a directory outside the checkout where one review's files live: `change-set.json`, `surface.json`, `pull-request.json`, `summary.json`, `instructions/`, `ledger/`, and after submission `ledger.json`, `ledger.md`, `review.json`, `response.json`.
+- **workdir** — the directory where one review's files live: `change-set.json`, `surface.json`, `pull-request.json`, `summary.json`, `changes.diff`, `files/`, `instructions/`, `ledger/`, and after submission `ledger.json`, `ledger.md`, `review.json`, `response.json`.
 
 ## Review Standards
 
@@ -72,15 +72,13 @@ As commented changes are reviewed, resolve or unresolve the threads directly in 
 
 ### 1. Setup
 
-`gh` and `node` must be available.
-
-Make a checkout of the head commit with a clean tree, outside any other work: `gh pr checkout <URL>` in the repository, or a worktree at the head SHA — see [`references/gh-cheat-sheet.md` § Read files at the head commit](references/gh-cheat-sheet.md#read-files-at-the-head-commit). Then run:
+`gh` and `node` must be available. Nothing is checked out: the review reads the pull request at its head commit through the host, so it runs the same from any machine, inside the repository or not.
 
 ```
-node <skill>/scripts/prepare.mjs <pull-request-url> <checkout> <workdir>
+node <skill>/scripts/prepare.mjs <pull-request-url> <workdir>
 ```
 
-It verifies the checkout is at the head commit and clean, and stops if not. It fetches the pull request once, computes the change set from the diff, computes the surface, reads `rules/Rules.yaml`, and writes one instructions file per probe under `<workdir>/instructions/`: one per rule group, in the order of `Rules.yaml`, and one escalation probe last. Every file it writes is validated against its schema before the script returns. It prints `summary.json`: the head commit, mergeable state, check-run counts, description length, the size of the change set and of the surface, and the probe names.
+It fetches the pull request once, computes the change set from the diff, computes the surface, saves the diff and every changed file as it is at the head commit under the workdir, reads `rules/Rules.yaml`, and writes one instructions file per probe under `<workdir>/instructions/`: one per rule group, in the order of `Rules.yaml`, and one escalation probe last. Every file it writes is validated against its schema before the script returns. It prints `summary.json`: the head commit, mergeable state, check-run counts, description length, the size of the change set and of the surface, and the probe names.
 
 Do **not** guess the head commit; do **not** read the pull request's metadata again later. `prepare.mjs` resolved it once, and every probe reads it from its instructions.
 
@@ -114,7 +112,7 @@ A probe on one of these that examined only the change set has not run. Its `exam
 
 Only the reviewing context talks to the PR host. Subagents read; they never post, resolve threads, or submit — and they never fetch PR metadata: everything about the pull request is in their instructions.
 
-**A probe reads the checkout and its own instructions — nothing else on the host filesystem.** The instructions are a closed set: the instructions file, the glossary and the principles at the rule source it names, the schemas, the index for the escalation probe, and `references/gh-cheat-sheet.md`. Other checkouts, agent configuration, and the rest of the reviewer's home directory are out of scope; a probe that needed something there records that in `examined` rather than reading it. The reuse ladder's searches and the escalation probe's fetch of its ruleset are not host-filesystem reads: they query the package registry, callable services, published documentation, and the ruleset's canonical URL on the web.
+**A probe reads the files in its instructions, what it fetches at the head commit, and its own instructions — nothing else on the host filesystem.** The instructions are a closed set: the instructions file, the glossary and the principles at the rule source it names, the schemas, the index for the escalation probe, and `references/gh-cheat-sheet.md`. Other checkouts, agent configuration, and the rest of the reviewer's home directory are out of scope; a probe that needed something there records that in `examined` rather than reading it. The reuse ladder's searches and the escalation probe's fetch of its ruleset are not host-filesystem reads: they query the package registry, callable services, published documentation, and the ruleset's canonical URL on the web.
 
 **Wait for every probe before moving on.** `review.mjs` in [step 5](#5-submit) will refuse to run while a ledger file is missing, and a probe that returns without writing its file has not finished — re-run it. A `violation` returned early does not end the pass and does not license an early submission; neither does a run of `clean` verdicts. The only path that submits without a complete ledger is [step 2](#2-pre-review-content-checks).
 

@@ -6,8 +6,8 @@ import { parseDiff, parseHunks, threadRanges, narrowSurface, partition, instruct
 
 const skill = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const site = 'https://thruput.se/agents/';
-const [url, checkoutArg, workdirArg] = process.argv.slice(2);
-if (workdirArg === undefined) throw new Error('usage: node prepare.mjs <pull-request-url> <checkout> <workdir>');
+const [url, workdirArg] = process.argv.slice(2);
+if (workdirArg === undefined) throw new Error('usage: node prepare.mjs <pull-request-url> <workdir>');
 
 function run(command, args) {
   const result = spawnSync(command, args, { encoding: 'utf8', maxBuffer: 1 << 28 });
@@ -34,13 +34,8 @@ const pulls = `repos/${owner}/${repository}/pulls/${number}`;
 const pr = gh(pulls);
 const headCommit = pr.head.sha;
 
-const checkout = resolve(checkoutArg);
-const head = run('git', ['-C', checkout, 'rev-parse', 'HEAD']).trim();
-if (head !== headCommit) throw new Error(`${checkout} is at ${head}, the pull request head is ${headCommit}`);
-const dirty = run('git', ['-C', checkout, 'status', '--porcelain']);
-if (dirty !== '') throw new Error(`${checkout} is not clean:\n${dirty}`);
-
-const changeSet = { headCommit, files: parseDiff(run('gh', ['api', pulls, '-H', 'Accept: application/vnd.github.diff'])) };
+const diff = run('gh', ['api', pulls, '-H', 'Accept: application/vnd.github.diff']);
+const changeSet = { headCommit, files: parseDiff(diff) };
 
 const me = gh('user').login;
 const reviews = paginate(`${pulls}/reviews`);
@@ -72,6 +67,15 @@ const write = (name, document) => {
   return file;
 };
 
+const reading = { files: join(workdir, 'files'), diff: join(workdir, 'changes.diff') };
+writeFileSync(reading.diff, diff);
+const encode = (path) => path.split('/').map(encodeURIComponent).join('/');
+for (const file of changeSet.files.filter((changed) => changed.added.length > 0)) {
+  const target = join(reading.files, file.path);
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, run('gh', ['api', `repos/${owner}/${repository}/contents/${encode(file.path)}?ref=${headCommit}`, '-H', 'Accept: application/vnd.github.raw']));
+}
+
 validate('change-set.schema.json', write('change-set.json', changeSet));
 validate('surface.schema.json', write('surface.json', surface));
 
@@ -81,7 +85,7 @@ write('pull-request.json', pullRequest);
 const { rules } = JSON.parse(run('npx', ['--yes', 'js-yaml@4.1.0', join(skill, 'rules', 'Rules.yaml')]));
 const context = {
   probe: { ruleSource: `${join(skill, 'rules')}/`, site },
-  shared: { pullRequest, changeSet, surface, checkout },
+  shared: { pullRequest, changeSet, surface, reading },
   ledger: (name) => join(workdir, 'ledger', `${name}.json`),
 };
 const probes = instructions(context, partition(rules), join(skill, 'references', 'agent-rules-books-INDEX.md'));
@@ -97,6 +101,7 @@ const summary = {
   descriptionLength: pullRequest.description.length,
   since: prior === undefined ? pr.base.sha : prior.commit_id,
   changeSet: { files: changeSet.files.length, added: lines(changeSet.files, 'added'), removed: lines(changeSet.files, 'removed') },
+  files: reading.files,
   surface: { files: surface.files.length, added: lines(surface.files, 'added'), removed: lines(surface.files, 'removed') },
   probes: probes.map((probe) => probe.name),
   rules: rules.length,
