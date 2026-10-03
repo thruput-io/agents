@@ -22,25 +22,7 @@ Placeholders: `{owner}`, `{repo}`, `{n}` (PR number), `{path}`, `<URL>` (PR URL)
 
 ## Read files at the head commit
 
-Nothing is checked out. `scripts/prepare.mjs` saves the changed files and the diff into the workdir; everything else is fetched at the head commit.
-
-One file:
-
-```bash
-gh api "repos/{owner}/{repo}/contents/{path}?ref=<headRefOid>" -H "Accept: application/vnd.github.raw"
-```
-
-Every path in the repository at the head commit, to find call sites and covering tests:
-
-```bash
-gh api "repos/{owner}/{repo}/git/trees/<headRefOid>?recursive=1" --jq '.tree[] | select(.type == "blob") | .path'
-```
-
-The changed paths, as `prepare.mjs` reads them:
-
-```bash
-gh api repos/{owner}/{repo}/pulls/{n}/files --paginate --jq '.[].filename'
-```
+Nothing is checked out and no probe fetches. `scripts/prepare.mjs` downloads one snapshot of the head commit, `gh api repos/{owner}/{repo}/tarball/<headRefOid>`, takes the changed files, their call sites, the diff, and the tree listing out of it into the workdir, and discards it. Everything a probe reads is under the workdir.
 
 ## Review threads
 

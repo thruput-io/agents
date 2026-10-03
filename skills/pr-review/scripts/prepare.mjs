@@ -1,16 +1,16 @@
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseDiff, parseHunks, threadRanges, narrowSurface, partition, instructions } from './lib.mjs';
+import { parseDiff, parseHunks, threadRanges, narrowSurface, definitions, callSites, partition, instructions } from './lib.mjs';
 
 const skill = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const site = 'https://thruput.se/agents/';
 const [url, workdirArg] = process.argv.slice(2);
 if (workdirArg === undefined) throw new Error('usage: node prepare.mjs <pull-request-url> <workdir>');
 
-function run(command, args) {
-  const result = spawnSync(command, args, { encoding: 'utf8', maxBuffer: 1 << 28 });
+function run(command, args, encoding = 'utf8') {
+  const result = spawnSync(command, args, { encoding, maxBuffer: 1 << 28 });
   if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} failed: ${result.stderr}${result.stdout}`);
   return result.stdout;
 }
@@ -56,7 +56,7 @@ function narrowed() {
   } while (after !== null);
   return narrowSurface(changeSet, changedSince, threadRanges(threads, pr.user.login));
 }
-const surface = prior === undefined ? changeSet : narrowed();
+const lines = prior === undefined ? changeSet : narrowed();
 
 const workdir = resolve(workdirArg);
 mkdirSync(join(workdir, 'instructions'), { recursive: true });
@@ -67,14 +67,25 @@ const write = (name, document) => {
   return file;
 };
 
-const reading = { files: join(workdir, 'files'), diff: join(workdir, 'changes.diff') };
+const snapshot = join(workdir, 'snapshot');
+mkdirSync(snapshot, { recursive: true });
+const tarball = join(workdir, 'snapshot.tgz');
+writeFileSync(tarball, run('gh', ['api', `repos/${owner}/${repository}/tarball/${headCommit}`], 'buffer'));
+run('tar', ['-xzf', tarball, '-C', snapshot, '--strip-components=1']);
+const paths = readdirSync(snapshot, { recursive: true }).map(String)
+  .filter((path) => statSync(join(snapshot, path)).isFile()).sort();
+const read = (path) => readFileSync(join(snapshot, path), 'latin1');
+const changed = changeSet.files.map((file) => file.path);
+const surface = { ...lines, callSites: callSites(changed, definitions(diff), paths, read) };
+
+const reading = { files: join(workdir, 'files'), diff: join(workdir, 'changes.diff'), tree: join(workdir, 'tree.txt') };
 writeFileSync(reading.diff, diff);
-const encode = (path) => path.split('/').map(encodeURIComponent).join('/');
-for (const file of changeSet.files.filter((changed) => changed.added.length > 0)) {
-  const target = join(reading.files, file.path);
-  mkdirSync(dirname(target), { recursive: true });
-  writeFileSync(target, run('gh', ['api', `repos/${owner}/${repository}/contents/${encode(file.path)}?ref=${headCommit}`, '-H', 'Accept: application/vnd.github.raw']));
+writeFileSync(reading.tree, `${paths.join('\n')}\n`);
+for (const path of [...changed, ...surface.callSites.into, ...surface.callSites.outOf].filter((file) => paths.includes(file))) {
+  cpSync(join(snapshot, path), join(reading.files, path));
 }
+rmSync(snapshot, { recursive: true });
+rmSync(tarball);
 
 validate('change-set.schema.json', write('change-set.json', changeSet));
 validate('surface.schema.json', write('surface.json', surface));
@@ -92,7 +103,7 @@ const probes = instructions(context, partition(rules), join(skill, 'references',
 for (const probe of probes) validate('agent-instructions.schema.json', write(join('instructions', `${probe.name}.json`), probe.document));
 
 const checks = gh(`repos/${owner}/${repository}/commits/${headCommit}/check-runs`);
-const lines = (files, side) => files.reduce((sum, file) => sum + file[side].reduce((n, range) => n + range.end - range.start + 1, 0), 0);
+const count = (files, side) => files.reduce((sum, file) => sum + file[side].reduce((n, range) => n + range.end - range.start + 1, 0), 0);
 const summary = {
   pullRequest: url,
   headCommit,
@@ -100,9 +111,9 @@ const summary = {
   checks: { total: checks.total_count, failed: checks.check_runs.filter((check) => !['success', 'skipped', 'neutral'].includes(check.conclusion)).length },
   descriptionLength: pullRequest.description.length,
   since: prior === undefined ? pr.base.sha : prior.commit_id,
-  changeSet: { files: changeSet.files.length, added: lines(changeSet.files, 'added'), removed: lines(changeSet.files, 'removed') },
-  files: reading.files,
-  surface: { files: surface.files.length, added: lines(surface.files, 'added'), removed: lines(surface.files, 'removed') },
+  changeSet: { files: changeSet.files.length, added: count(changeSet.files, 'added'), removed: count(changeSet.files, 'removed') },
+  surface: { files: surface.files.length, added: count(surface.files, 'added'), removed: count(surface.files, 'removed'), callSites: { into: surface.callSites.into.length, outOf: surface.callSites.outOf.length } },
+  repository: paths.length,
   probes: probes.map((probe) => probe.name),
   rules: rules.length,
 };

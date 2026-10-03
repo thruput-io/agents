@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  parseDiff, parseHunks, intersect, union, threadRanges, narrowSurface, slug, partition, reach, instructions,
+  parseDiff, parseHunks, intersect, union, threadRanges, narrowSurface, slug, partition, definitions, callSites, instructions,
   checkLedger, merge, verdict, table, comment, review,
 } from './lib.mjs';
 
@@ -101,18 +101,43 @@ test('partition groups rules in first-seen order and keeps rule order inside a g
   ]);
 });
 
-test('reach is the repository only for the reuse ladder and dead code', () => {
-  assert.equal(reach('Development Stack'), 'repository');
-  assert.equal(reach('Dead Code & Comments'), 'repository');
-  assert.equal(reach('All Tests'), 'surface');
+test('definitions names what the changed lines define: functions, classes, shell functions, ids', () => {
+  const text = [
+    '--- a/x', '+++ b/x',
+    '+export function parseDiff(text) {',
+    '-class Old {',
+    '+  const inner = 1;',
+    '+remove_site() {',
+    '+- id: Delete unused',
+    ' def untouched():',
+  ].join('\n');
+  assert.deepEqual(definitions(text), ['parseDiff', 'Old', 'inner', 'remove_site', 'Delete unused']);
 });
 
-test('instructions writes one probe per group and one escalation, each with its reach and ledger path', () => {
-  const context = { probe: { ruleSource: 'r/', site: 's/' }, shared: { reading: { files: '/w/files', diff: '/w/changes.diff' }, changeSet: { headCommit: 'h', files: [] } }, ledger: (name) => `/w/ledger/${name}.json` };
+test('callSites finds the files that mention a changed file or its definitions, and the files a changed file mentions', () => {
+  const files = {
+    'scripts/lib.mjs': 'export function parseDiff() {}',
+    'scripts/prepare.mjs': "import { parseDiff } from './lib.mjs';",
+    'docs/notes.md': 'parseDiffer is not a call, nor is lib.mjs.bak',
+    'web/index.html': '{% include chain.html %}',
+    'web/_includes/chain.html': '{% include anchor.html id=x %}',
+    'web/_includes/anchor.html': 'slug',
+    'logo.png': 'PNG\0binary parseDiff',
+    'rules/Rules.yaml': '- id: Delete unused',
+    'rules/Principles.yaml': 'cites [[Delete unused]]',
+  };
+  const read = (path) => files[path];
+  const sites = callSites(['scripts/lib.mjs', 'web/_includes/chain.html', 'rules/Rules.yaml', 'gone.txt'], ['parseDiff', 'Delete unused'], Object.keys(files), read);
+  assert.deepEqual(sites.into, ['scripts/prepare.mjs', 'web/index.html', 'rules/Principles.yaml']);
+  assert.deepEqual(sites.outOf, ['web/_includes/anchor.html']);
+});
+
+test('instructions writes one probe per group and one escalation, each with its ledger path', () => {
+  const context = { probe: { ruleSource: 'r/', site: 's/' }, shared: { reading: { files: '/w/files', diff: '/w/changes.diff', tree: '/w/tree.txt' }, changeSet: { headCommit: 'h', files: [] } }, ledger: (name) => `/w/ledger/${name}.json` };
   const files = instructions(context, partition(rules), '/i.md');
   assert.deepEqual(files.map((file) => file.name), ['01-g1', '02-g2', '03-escalation']);
-  assert.deepEqual(files[0].document, { group: 'G1', rules: [rules[0], rules[2]], reach: 'surface', ruleSource: 'r/', site: 's/', reading: { files: '/w/files', diff: '/w/changes.diff' }, changeSet: { headCommit: 'h', files: [] }, ledger: '/w/ledger/01-g1.json' });
-  assert.deepEqual(files[2].document, { escalation: { index: '/i.md' }, reach: 'surface', reading: { files: '/w/files', diff: '/w/changes.diff' }, changeSet: { headCommit: 'h', files: [] }, ledger: '/w/ledger/03-escalation.json' });
+  assert.deepEqual(files[0].document, { group: 'G1', rules: [rules[0], rules[2]], ruleSource: 'r/', site: 's/', reading: { files: '/w/files', diff: '/w/changes.diff', tree: '/w/tree.txt' }, changeSet: { headCommit: 'h', files: [] }, ledger: '/w/ledger/01-g1.json' });
+  assert.deepEqual(files[2].document, { escalation: { index: '/i.md' }, reading: { files: '/w/files', diff: '/w/changes.diff', tree: '/w/tree.txt' }, changeSet: { headCommit: 'h', files: [] }, ledger: '/w/ledger/03-escalation.json' });
 });
 
 const probe = { rules: [{ id: 'A' }, { id: 'B' }], changeSet: { headCommit: 'h' } };

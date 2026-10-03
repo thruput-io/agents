@@ -5,7 +5,7 @@ description: Reviews a GitHub or Azure DevOps Pull Request against the thruput-i
 
 # PR Review Skill
 
-Read [`CODE_REVIEW.md`](CODE_REVIEW.md) and follow it. It is the source of truth for both what to review and how to execute the review. Two scripts do the parts a model must not be trusted with: `scripts/prepare.mjs` resolves the pull request, the change set, and the surface once, fetches the changed files at the head commit so that nothing is checked out, and writes one instructions file per probe; `scripts/review.mjs` refuses any probe's ledger that does not answer its instructions row for row, then builds and posts the review from the ledgers alone.
+Read [`CODE_REVIEW.md`](CODE_REVIEW.md) and follow it. It is the source of truth for both what to review and how to execute the review. Two scripts do the parts a model must not be trusted with: `scripts/prepare.mjs` resolves the pull request once, computes the change set and the surface with its call sites, gathers every file a probe will read so that nothing is checked out and no probe fetches, and writes one instructions file per probe; `scripts/review.mjs` refuses any probe's ledger that does not answer its instructions row for row, then builds and posts the review from the ledgers alone.
 
 The rules it serves are the entries of [`rules/Rules.yaml`](rules/Rules.yaml); the `[[term]]`s they name are defined in [`rules/Definitions.yaml`](rules/Definitions.yaml), and their parents in [`rules/Principles.yaml`](rules/Principles.yaml). Read them from `${CLAUDE_SKILL_DIR}/rules/`: the rules this skill was installed with, linked into the skill from this repository's `rules/`. A violation is cited by the rule's id, linked to its anchor on https://thruput.se/agents/ as [`CODE_REVIEW.md` § Definitions](CODE_REVIEW.md#definitions) derives it.
 
@@ -19,7 +19,7 @@ For Azure DevOps PR reviews, note that Azure DevOps does not support atomic batc
 
 ## Requirements
 
-- For a GitHub PR: `gh` CLI and `node` available; the scripts fetch their other tools with `npx`.
+- For a GitHub PR: `gh` CLI, `node`, and `tar` available; the scripts fetch their other tools with `npx`.
 - For an Azure DevOps PR: `az` CLI with the `azure-devops` extension available; the scripts do not apply there.
 - The rules: `rules/` in the skill, a link to this repository's `rules/`, which resolves on macOS and Linux.
 - Network access to `github.com/ciembor/agent-rules-books` for the step 4 escalation pass.

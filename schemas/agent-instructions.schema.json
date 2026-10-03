@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/agent-instructions.schema.json",
   "title": "Agent instructions",
-  "description": "What the reviewing context hands one probe subagent, resolved once by prepare.mjs: the pull request, the change set, the surface a violation may be reported against, the changed files and diff fetched at the head commit so that no checkout is made, and the file the probe writes its ledger to. A rule probe also carries the rules of one group and where their terms and parents are read; the escalation probe instead carries the index it selects a ruleset from. The subagent returns a ledger with one row per rule",
+  "description": "What the reviewing context hands one probe subagent, resolved once by prepare.mjs: the pull request, the change set, the surface a violation may be reported against, the changed files, their call sites, the diff and the tree gathered at the head commit so that a probe fetches nothing, and the file the probe writes its ledger to. A rule probe also carries the rules of one group and where their terms and parents are read; the escalation probe instead carries the index it selects a ruleset from. The subagent returns a ledger with one row per rule",
   "examples": [
     {
       "group": "Behavior & Failure Handling",
@@ -55,13 +55,21 @@
             ],
             "removed": []
           }
-        ]
+        ],
+        "callSites": {
+          "into": [
+            "scripts/build.sh"
+          ],
+          "outOf": [
+            "schemas/rules.schema.json"
+          ]
+        }
       },
       "reading": {
         "files": "/home/user/review/files",
-        "diff": "/home/user/review/changes.diff"
+        "diff": "/home/user/review/changes.diff",
+        "tree": "/home/user/review/tree.txt"
       },
-      "reach": "surface",
       "ledger": "/home/user/review/ledger/11-behavior-failure-handling.json"
     },
     {
@@ -106,13 +114,21 @@
             ],
             "removed": []
           }
-        ]
+        ],
+        "callSites": {
+          "into": [
+            "scripts/build.sh"
+          ],
+          "outOf": [
+            "schemas/rules.schema.json"
+          ]
+        }
       },
       "reading": {
         "files": "/home/user/review/files",
-        "diff": "/home/user/review/changes.diff"
+        "diff": "/home/user/review/changes.diff",
+        "tree": "/home/user/review/tree.txt"
       },
-      "reach": "surface",
       "ledger": "/home/user/review/ledger/24-escalation.json"
     }
   ],
@@ -133,7 +149,6 @@
         "changeSet",
         "surface",
         "reading",
-        "reach",
         "ledger"
       ],
       "properties": {
@@ -149,9 +164,6 @@
         "reading": {
           "$ref": "#/$defs/Reading"
         },
-        "reach": {
-          "$ref": "#/$defs/Reach"
-        },
         "ledger": {
           "description": "The file the probe writes its ledger to, validating against ledger.schema.json; the reviewing context reads the file, never the hand-back text",
           "type": "string",
@@ -160,15 +172,16 @@
       }
     },
     "Reading": {
-      "description": "What the reviewing context fetched at the head commit so that no checkout is made: every changed file that exists at the head commit, under files at its repository path, and the unified diff of the pull request. Anything else a probe reads, a call site or a covering test, it fetches at the head commit through the host API",
+      "description": "What the reviewing context gathered at the head commit, so that a probe fetches nothing and checks nothing out: the changed files and every call site the surface names, each at its repository path under files; the unified diff of the pull request; and the list of every file path in the repository",
       "type": "object",
       "required": [
         "files",
-        "diff"
+        "diff",
+        "tree"
       ],
       "properties": {
         "files": {
-          "description": "A directory holding the changed files as they are at the head commit",
+          "description": "A directory holding, at its repository path, every changed file that exists at the head commit and every file the surface names as a call site",
           "type": "string",
           "minLength": 1
         },
@@ -176,15 +189,13 @@
           "description": "The unified diff of the pull request, added and removed lines included",
           "type": "string",
           "minLength": 1
+        },
+        "tree": {
+          "description": "A file listing every path in the repository at the head commit, one per line, for what exists without its content",
+          "type": "string",
+          "minLength": 1
         }
       }
-    },
-    "Reach": {
-      "description": "How far a probe reads. surface: only the changed files and the diff in reading; the probe fetches nothing else. repository: the probe may also fetch any file at the head commit, list the tree, and search beyond it. Only the reuse ladder, which asks whether the code needed to be written, and dead code, which asks whether a change left a last caller behind, have a reason to read outside the surface",
-      "enum": [
-        "surface",
-        "repository"
-      ]
     },
     "RuleProbe": {
       "description": "A probe of the rules of one group: one probe and one ledger row per rule, in order",

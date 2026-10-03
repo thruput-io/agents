@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/surface.schema.json",
   "title": "Surface",
-  "description": "The lines a violation may be reported against: a selection of the change set. On a first-time review it is the whole change set. On a subsequent review the reviewing context narrows it to the changes carrying an unresolved comment, the changes carrying a comment the author resolved since the prior review, and the changes new since the prior review. Context read beyond it decides a verdict but never carries one",
+  "description": "What is under review, as data: the lines a violation may be reported against, and the call sites into and out of them. The lines are a selection of the change set: on a first-time review the whole change set, on a subsequent review the changes carrying an unresolved comment, carrying a comment the author resolved since the prior review, or new since the prior review. The call sites are the files that mention a changed file or something its changed lines define, and the files a changed file mentions. Every file named here travels to the probes; a probe reads nothing else",
   "examples": [
     {
       "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
@@ -17,8 +17,62 @@
           ],
           "removed": []
         }
-      ]
+      ],
+      "callSites": {
+        "into": [
+          "scripts/build.sh"
+        ],
+        "outOf": [
+          "schemas/rules.schema.json"
+        ]
+      }
     }
   ],
-  "$ref": "change-set.schema.json#/$defs/Lines"
+  "type": "object",
+  "required": [
+    "headCommit",
+    "files",
+    "callSites"
+  ],
+  "properties": {
+    "headCommit": {
+      "$ref": "change-set.schema.json#/$defs/Commit"
+    },
+    "files": {
+      "description": "The lines a violation may be reported against",
+      "type": "array",
+      "items": {
+        "$ref": "change-set.schema.json#/$defs/ChangedFile"
+      }
+    },
+    "callSites": {
+      "$ref": "#/$defs/CallSites"
+    }
+  },
+  "$defs": {
+    "CallSites": {
+      "description": "The files around the change that a verdict may need: context a verdict is reached from, never what it is reported against",
+      "type": "object",
+      "required": [
+        "into",
+        "outOf"
+      ],
+      "properties": {
+        "into": {
+          "description": "Files outside the change set that mention a changed file or a name its changed lines define: the callers",
+          "type": "array",
+          "items": {
+            "$ref": "change-set.schema.json#/$defs/Path"
+          }
+        },
+        "outOf": {
+          "description": "Files outside the change set that a changed file mentions: the callees",
+          "type": "array",
+          "items": {
+            "$ref": "change-set.schema.json#/$defs/Path"
+          }
+        }
+      }
+    }
+  }
 }

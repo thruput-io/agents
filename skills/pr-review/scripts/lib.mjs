@@ -109,16 +109,50 @@ export function partition(rules) {
   return [...groups].map(([group, members]) => ({ name: slug(group), group, rules: members }));
 }
 
-export const REPOSITORY_REACH = new Set(['Development Stack', 'Dead Code & Comments']);
+const DEFINITION = /\b(?:function|def|class|interface|type|enum|struct|fn|func|module|namespace|trait|record|const|let|var|val|protocol|extension)\s+([A-Za-z_$][\w$]*)/g;
+const SHELL_FUNCTION = /^\s*([A-Za-z_]\w*)\s*\(\)\s*\{/;
+const ID = /^\s*-?\s*id:\s*(\S.*?)\s*$/;
 
-export function reach(group) {
-  return REPOSITORY_REACH.has(group) ? 'repository' : 'surface';
+export function definitions(diff) {
+  const names = new Set();
+  for (const raw of diff.split('\n')) {
+    if (!/^[+-](?![+-]{2})/.test(raw)) continue;
+    const line = raw.slice(1);
+    for (const match of line.matchAll(DEFINITION)) names.add(match[1]);
+    const shell = SHELL_FUNCTION.exec(line);
+    if (shell) names.add(shell[1]);
+    const id = ID.exec(line);
+    if (id) names.add(id[1].replace(/^["']|["']$/g, ''));
+  }
+  return [...names];
+}
+
+const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const basename = (path) => path.slice(path.lastIndexOf('/') + 1);
+const mentions = (text, path) => text.includes(path) || new RegExp(`(^|[^\\w/.-])${escape(basename(path))}(?![\\w.-])`).test(text);
+export const isText = (text) => !text.includes('\0');
+
+export function callSites(changed, names, paths, read) {
+  const changedSet = new Set(changed);
+  const others = paths.filter((path) => !changedSet.has(path));
+  const words = names.map((name) => new RegExp(`(^|[^\\w$])${escape(name)}(?![\\w$])`));
+  const into = others.filter((path) => {
+    const text = read(path);
+    return isText(text) && (words.some((word) => word.test(text)) || changed.some((file) => mentions(text, file)));
+  });
+  const outOf = new Set();
+  for (const file of changed.filter((path) => paths.includes(path))) {
+    const text = read(file);
+    if (!isText(text)) continue;
+    for (const path of others) if (mentions(text, path)) outOf.add(path);
+  }
+  return { into, outOf: [...outOf] };
 }
 
 export function instructions(context, probes, index) {
   const named = [
-    ...probes.map((probe) => ({ name: probe.name, document: { group: probe.group, rules: probe.rules, reach: reach(probe.group), ...context.probe } })),
-    { name: 'escalation', document: { escalation: { index }, reach: 'surface' } },
+    ...probes.map((probe) => ({ name: probe.name, document: { group: probe.group, rules: probe.rules, ...context.probe } })),
+    { name: 'escalation', document: { escalation: { index } } },
   ];
   return named.map((file, i) => {
     const name = `${String(i + 1).padStart(2, '0')}-${file.name}`;
