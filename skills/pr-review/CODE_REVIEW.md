@@ -51,7 +51,7 @@ Do not approve after a shallow pass. A first-time review is complete only when a
 
 - Every probe's ledger file exists and `review.mjs` accepted it.
 - Every row's `evidence` field refers to something in this full context.
-- Every violation is in the posted review, which `review.mjs` guarantees by building the review from the ledgers.
+- Every violation is in the posted review, which `review.mjs` guarantees by building the review from the ledgers; a violation an open thread of ours already carries, on the same line citing the same rule, is counted in the body rather than posted twice.
 - Any shortage of findings is explained by completed rows, not by absent ones.
 
 If a previous review was rejected solely by the [Pre-Review Content Checks](#2-pre-review-content-checks), treat the next review as a first-time review.
@@ -78,18 +78,13 @@ As commented changes are reviewed, resolve or unresolve the threads directly in 
 node <skill>/scripts/prepare.mjs <pull-request-url> <workdir>
 ```
 
-It fetches the pull request once, computes the change set from the diff, downloads a snapshot of the head commit, computes the surface, its lines, its call sites, and its dead-code facts, copies every file the surface names out of the snapshot into the workdir with the diff and the tree listing, discards the snapshot, reads `rules/Rules.yaml`, and writes one instructions file per probe under `<workdir>/instructions/`: one per rule group, in the order of `Rules.yaml`, and one escalation probe last. Every file it writes is validated against its schema before the script returns. It prints `summary.json`: the head commit, mergeable state, check-run counts, description length, the size of the change set and of the surface including its call-site and dead-code counts, the repository's file count, and the probe names.
+It fetches the pull request once, computes the change set from the diff, downloads a snapshot of the head commit, computes the surface, its lines, its call sites, and its dead-code facts, copies every file the surface names out of the snapshot into the workdir with the diff and the tree listing, discards the snapshot, reads `rules/Rules.yaml`, and writes one instructions file per probe under `<workdir>/instructions/`: one per rule group, in the order of `Rules.yaml`, and one escalation probe last. Every file it writes is validated against its schema before the script returns. It prints `summary.json`: the head commit, mergeable state, check-run count, description length, the size of the change set and of the surface including its call-site and dead-code counts, the repository's file count, and the probe names.
 
 Do **not** guess the head commit; do **not** read the pull request's metadata again later. `prepare.mjs` resolved it once, and every probe reads it from its instructions.
 
 ### 2. Pre-Review Content Checks
 
-Read `summary.json` and the pull request description in `pull-request.json`. If any of the following is true, stop and submit a changes-requested verdict by hand whose body names the failing check, with no inline comments:
-
-- `checks.failed` is not zero.
-- `mergeableState` is `dirty`.
-- The description restates the change set without stating its [[Purpose]]: the benefit the change delivers to its users.
-- The description does not match what the change set actually does.
+`prepare.mjs` makes them, before anything else is read: when a check run on the head commit did not succeed, or the pull request has merge conflicts, it posts a changes-requested verdict naming what blocked the review, with no inline comments, and stops without writing instructions. Nothing is left to judge here. Whether the description states the change's [[Purpose]] is a rule, [Stated purpose](https://thruput.se/agents/#stated-purpose), and its probe answers it like any other.
 
 This is the only path that skips the ledger.
 
@@ -129,6 +124,6 @@ Subsequent reviews only. List the threads and their state, then act per thread �
 node <skill>/scripts/review.mjs <workdir>
 ```
 
-It reads every instructions file and its ledger file, and stops with the names of any probe whose ledger is missing. It validates every ledger against the schema, and checks that each answers its instructions: the same head commit, and for a rule probe the rows name the instructions' rules, every one, in order, nothing else; for the escalation probe, three rows. It merges the ledgers into `ledger.json`, renders `ledger.md`, builds `review.json` from the ledgers — every violation anchored at a line becomes an inline comment, every violation anchored at the pull request goes in the body, the verdict is `REQUEST_CHANGES` if any row is a violation and `APPROVE` otherwise, and the ledger table travels in the body as a collapsed block — and posts it as one review, anchored to the head commit, in the same run. One review, one notification, comments grouped.
+It reads every instructions file and its ledger file, and stops with the names of any probe whose ledger is missing. It validates every ledger against the schema, and checks that each answers its instructions: the same head commit; for a rule probe the rows name the instructions' rules, every one, in order, nothing else, and for the escalation probe three rows; every violation carries the rule of its row; and every line anchor lies inside the surface. It merges the ledgers into `ledger.json`, renders `ledger.md`, builds `review.json` from the ledgers — every violation gets its rule's citation prefixed from the rule id, every violation anchored at a line becomes an inline comment, every violation anchored at the pull request goes in the body, one already carried by an open thread of ours is counted and not repeated, the verdict is `REQUEST_CHANGES` if any row is a violation and `APPROVE` otherwise, posted as a comment carrying the verdict when the reviewer is the author, and the ledger table travels in the body as a collapsed block — and posts it as one review, anchored to the head commit, in the same run. One review, one notification, comments grouped.
 
 When it stops, read why, fix the cause by re-running the probe it names, and run it again. Do not edit a ledger, do not edit `review.json`, and do not post the review any other way.

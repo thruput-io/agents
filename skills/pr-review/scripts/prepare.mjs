@@ -37,27 +37,6 @@ const headCommit = pr.head.sha;
 const diff = run('gh', ['api', pulls, '-H', 'Accept: application/vnd.github.diff']);
 const changeSet = { headCommit, files: parseDiff(diff) };
 
-const me = gh('user').login;
-const reviews = paginate(`${pulls}/reviews`);
-const prior = reviews.filter((review) => review.user.login === me && review.state !== 'PENDING').at(-1);
-
-function narrowed() {
-  const compare = gh(`repos/${owner}/${repository}/compare/${prior.commit_id}...${headCommit}`);
-  const changedSince = new Map(compare.files.filter((file) => file.patch !== undefined)
-    .map((file) => [file.filename, parseHunks(file.patch.split('\n')).added]));
-  const threads = [];
-  let after = null;
-  do {
-    const query = 'query($owner:String!,$repository:String!,$number:Int!,$after:String){repository(owner:$owner,name:$repository){pullRequest(number:$number){reviewThreads(first:100,after:$after){pageInfo{hasNextPage endCursor}nodes{path line startLine diffSide isResolved resolvedBy{login}}}}}}';
-    const page = gh('graphql', '-f', `query=${query}`, '-F', `owner=${owner}`, '-F', `repository=${repository}`, '-F', `number=${number}`, ...(after === null ? [] : ['-F', `after=${after}`]))
-      .data.repository.pullRequest.reviewThreads;
-    threads.push(...page.nodes);
-    after = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
-  } while (after !== null);
-  return narrowSurface(changeSet, changedSince, threadRanges(threads, pr.user.login));
-}
-const lines = prior === undefined ? changeSet : narrowed();
-
 const workdir = resolve(workdirArg);
 mkdirSync(join(workdir, 'instructions'), { recursive: true });
 mkdirSync(join(workdir, 'ledger'), { recursive: true });
@@ -66,6 +45,47 @@ const write = (name, document) => {
   writeFileSync(file, `${JSON.stringify(document, null, 2)}\n`);
   return file;
 };
+
+const me = gh('user').login;
+const pullRequest = { url, host: { kind: 'github', owner, repository, number }, author: pr.user.login, reviewer: me, description: pr.body ?? '' };
+write('pull-request.json', pullRequest);
+
+const checks = gh(`repos/${owner}/${repository}/commits/${headCommit}/check-runs`);
+const failed = checks.check_runs.filter((check) => !['success', 'skipped', 'neutral'].includes(check.conclusion)).map((check) => check.name);
+const blocked = [...failed.map((name) => `check ${name} did not succeed`), ...(pr.mergeable_state === 'dirty' ? ['the pull request has merge conflicts'] : [])];
+if (blocked.length > 0) {
+  const body = `**Verdict: REQUEST_CHANGES**\n\nNot reviewed at ${headCommit}: ${blocked.join('; ')}.`;
+  const rejection = write('review.json', { commit_id: headCommit, event: pullRequest.author === me ? 'COMMENT' : 'REQUEST_CHANGES', body });
+  run('gh', ['api', '-X', 'POST', `${pulls}/reviews`, '--input', rejection]);
+  throw new Error(`${blocked.join('; ')}. A changes-requested verdict was posted; no review was prepared.`);
+}
+
+const reviews = paginate(`${pulls}/reviews`);
+const prior = reviews.filter((review) => review.user.login === me && review.state !== 'PENDING').at(-1);
+
+function allThreads() {
+  const threads = [];
+  let after = null;
+  do {
+    const query = 'query($owner:String!,$repository:String!,$number:Int!,$after:String){repository(owner:$owner,name:$repository){pullRequest(number:$number){reviewThreads(first:100,after:$after){pageInfo{hasNextPage endCursor}nodes{path line startLine diffSide isResolved resolvedBy{login}comments(first:1){nodes{author{login}body}}}}}}}';
+    const page = gh('graphql', '-f', `query=${query}`, '-F', `owner=${owner}`, '-F', `repository=${repository}`, '-F', `number=${number}`, ...(after === null ? [] : ['-F', `after=${after}`]))
+      .data.repository.pullRequest.reviewThreads;
+    threads.push(...page.nodes);
+    after = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
+  } while (after !== null);
+  return threads;
+}
+const threads = prior === undefined ? [] : allThreads();
+write('threads.json', threads.filter((thread) => !thread.isResolved && thread.line !== null && thread.comments.nodes[0]?.author.login === me)
+  .map((thread) => ({ path: thread.path, line: thread.line, body: thread.comments.nodes[0].body })));
+
+function narrowed() {
+  const compare = gh(`repos/${owner}/${repository}/compare/${prior.commit_id}...${headCommit}`);
+  const changedSince = new Map(compare.files.filter((file) => file.patch !== undefined)
+    .map((file) => [file.filename, parseHunks(file.patch.split('\n')).added]));
+  return narrowSurface(changeSet, changedSince, threadRanges(threads, pr.user.login));
+}
+const lines = prior === undefined ? changeSet : narrowed();
 
 const snapshot = join(workdir, 'snapshot');
 mkdirSync(snapshot, { recursive: true });
@@ -100,9 +120,6 @@ rmSync(tarball);
 validate('change-set.schema.json', write('change-set.json', changeSet));
 validate('surface.schema.json', write('surface.json', surface));
 
-const pullRequest = { url, host: { kind: 'github', owner, repository, number }, description: pr.body ?? '' };
-write('pull-request.json', pullRequest);
-
 const { rules } = JSON.parse(run('npx', ['--yes', 'js-yaml@4.1.0', join(skill, 'rules', 'Rules.yaml')]));
 const context = {
   probe: { ruleSource: `${join(skill, 'rules')}/`, site },
@@ -112,13 +129,12 @@ const context = {
 const probes = instructions(context, partition(rules), join(skill, 'references', 'agent-rules-books-INDEX.md'));
 for (const probe of probes) validate('agent-instructions.schema.json', write(join('instructions', `${probe.name}.json`), probe.document));
 
-const checks = gh(`repos/${owner}/${repository}/commits/${headCommit}/check-runs`);
 const count = (files, side) => files.reduce((sum, file) => sum + file[side].reduce((n, range) => n + range.end - range.start + 1, 0), 0);
 const summary = {
   pullRequest: url,
   headCommit,
   mergeableState: pr.mergeable_state,
-  checks: { total: checks.total_count, failed: checks.check_runs.filter((check) => !['success', 'skipped', 'neutral'].includes(check.conclusion)).length },
+  checks: checks.total_count,
   descriptionLength: pullRequest.description.length,
   since: prior === undefined ? pr.base.sha : prior.commit_id,
   changeSet: { files: changeSet.files.length, added: count(changeSet.files, 'added'), removed: count(changeSet.files, 'removed') },

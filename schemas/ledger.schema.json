@@ -15,6 +15,25 @@
           ],
           "verdict": "clean",
           "evidence": "Both scripts run under set -euo pipefail, and no step is wrapped in a construct that would let the script continue."
+        },
+        {
+          "rule": "No suppressed exit status",
+          "examined": [
+            "scripts/verify.sh"
+          ],
+          "verdict": "violation",
+          "evidence": "scripts/verify.sh:21 pipes the check into tail, so its status is lost.",
+          "violations": [
+            {
+              "rule": "No suppressed exit status",
+              "body": "the pipeline's exit status is discarded, so a failing check passes as success.",
+              "anchor": {
+                "path": "scripts/verify.sh",
+                "line": 21,
+                "side": "RIGHT"
+              }
+            }
+          ]
         }
       ]
     }

@@ -200,6 +200,17 @@ export function instructions(context, probes, index) {
 
 export const ESCALATION_ROWS = 3;
 
+const within = (ranges, start, end) => ranges.some((range) => range.start <= start && end <= range.end);
+
+export function anchorInside(anchor, surface) {
+  if (anchor.pullRequest) return true;
+  const file = surface.files.find((candidate) => candidate.path === anchor.path);
+  if (file === undefined) return false;
+  const start = anchor.lines ? anchor.lines.start : anchor.line;
+  const end = anchor.lines ? anchor.lines.end : anchor.line;
+  return within(anchor.side === 'LEFT' ? file.removed : file.added, start, end);
+}
+
 export function checkLedger(name, document, ledger) {
   if (ledger.headCommit !== document.changeSet.headCommit) {
     throw new Error(`${name}: ledger is for ${ledger.headCommit}, the review is of ${document.changeSet.headCommit}`);
@@ -207,13 +218,21 @@ export function checkLedger(name, document, ledger) {
   const found = ledger.rows.map((row) => row.rule);
   if (document.escalation) {
     if (found.length !== ESCALATION_ROWS) throw new Error(`${name}: ${found.length} rows, ${ESCALATION_ROWS} expected`);
-    return;
+  } else {
+    const expected = document.rules.map((rule) => rule.id);
+    if (JSON.stringify(found) !== JSON.stringify(expected)) {
+      const missing = expected.filter((id) => !found.includes(id));
+      const extra = found.filter((id) => !expected.includes(id));
+      throw new Error(`${name}: rows do not match the rules, in order. missing: ${JSON.stringify(missing)} extra: ${JSON.stringify(extra)} found: ${JSON.stringify(found)}`);
+    }
   }
-  const expected = document.rules.map((rule) => rule.id);
-  if (JSON.stringify(found) !== JSON.stringify(expected)) {
-    const missing = expected.filter((id) => !found.includes(id));
-    const extra = found.filter((id) => !expected.includes(id));
-    throw new Error(`${name}: rows do not match the rules, in order. missing: ${JSON.stringify(missing)} extra: ${JSON.stringify(extra)} found: ${JSON.stringify(found)}`);
+  for (const row of ledger.rows.filter((candidate) => candidate.verdict === 'violation')) {
+    for (const violation of row.violations) {
+      if (violation.rule !== row.rule) throw new Error(`${name}: a violation of ${violation.rule} sits in the row of ${row.rule}`);
+      if (!anchorInside(violation.anchor, document.surface)) {
+        throw new Error(`${name}: a violation of ${row.rule} is anchored outside the surface at ${JSON.stringify(violation.anchor)}; a finding with no surface line to blame is anchored at the pull request`);
+      }
+    }
   }
 }
 
@@ -225,13 +244,20 @@ export function verdict(ledger) {
   return ledger.rows.some((row) => row.verdict === 'violation') ? 'REQUEST_CHANGES' : 'APPROVE';
 }
 
+export const CELL = 400;
+
 function cell(text) {
-  return String(text).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+  const flat = String(text).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+  return flat.length > CELL ? `${flat.slice(0, CELL - 1)}…` : flat;
 }
 
 export function table(ledger) {
   const rows = ledger.rows.map((row) => `| ${cell(row.rule)} | ${cell(row.examined.join('; '))} | ${row.verdict} | ${cell(row.evidence)} |`);
   return ['| rule | examined | verdict | evidence |', '|---|---|---|---|', ...rows].join('\n');
+}
+
+export function citation(document, rule) {
+  return document.escalation ? rule : `[${rule}](${document.site}#${slug(rule)})`;
 }
 
 export function comment(violation) {
@@ -243,16 +269,31 @@ export function comment(violation) {
   return { path: anchor.path, line: anchor.line, side: anchor.side, body: violation.body };
 }
 
-export function review(ledger, probes) {
-  const violations = ledger.rows.filter((row) => row.verdict === 'violation').flatMap((row) => row.violations);
-  const comments = violations.map(comment).filter((item) => item !== undefined);
-  const atPullRequest = violations.filter((violation) => violation.anchor.pullRequest);
-  const event = verdict(ledger);
+const endLine = (anchor) => (anchor.lines ? anchor.lines.end : anchor.line);
+
+export function alreadyOpen(violation, cite, threads) {
+  const { anchor } = violation;
+  if (anchor.pullRequest) return false;
+  return threads.some((thread) => thread.path === anchor.path && thread.line === endLine(anchor) && thread.body.includes(cite));
+}
+
+export function review(entries, { self, threads }) {
+  const ledger = merge(entries.map((entry) => entry.ledger));
+  const findings = entries.flatMap(({ document, ledger: own }) => own.rows.filter((row) => row.verdict === 'violation')
+    .flatMap((row) => row.violations.map((violation) => {
+      const cite = citation(document, violation.rule);
+      return { ...violation, body: `${cite}: ${violation.body}`, open: alreadyOpen(violation, cite, threads) };
+    })));
+  const fresh = findings.filter((finding) => !finding.open);
+  const comments = fresh.map(comment).filter((item) => item !== undefined);
+  const atPullRequest = fresh.filter((finding) => finding.anchor.pullRequest);
+  const decided = verdict(ledger);
+  const event = self ? 'COMMENT' : decided;
   const body = [
-    `**Verdict: ${event}**`,
-    `${ledger.rows.length} rules probed by ${probes} probes at ${ledger.headCommit}: ${violations.length} violations, ${comments.length} inline, ${atPullRequest.length} at the pull request.`,
-    ...atPullRequest.map((violation) => violation.body),
-    '<details>\n<summary>Review ledger</summary>\n\n' + table(ledger) + '\n\n</details>',
+    `**Verdict: ${decided}**${self ? ' (posted as a comment: the reviewer is the author)' : ''}`,
+    `${ledger.rows.length} rules probed by ${entries.length} probes at ${ledger.headCommit}: ${findings.length} violations, ${comments.length} inline, ${atPullRequest.length} at the pull request, ${findings.length - fresh.length} already carried by an open thread.`,
+    ...atPullRequest.map((finding) => finding.body),
+    `<details>\n<summary>Review ledger</summary>\n\n${table(ledger)}\n\n</details>`,
   ].join('\n\n');
   return { commit_id: ledger.headCommit, event, body, comments };
 }

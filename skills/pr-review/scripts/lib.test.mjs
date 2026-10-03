@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parseDiff, parseHunks, intersect, union, threadRanges, narrowSurface, slug, partition, definitions, callSites, deadCode, instructions,
-  checkLedger, merge, verdict, table, comment, review,
+  anchorInside, checkLedger, merge, verdict, table, comment, citation, alreadyOpen, review, CELL,
 } from './lib.mjs';
 
 const diff = [
@@ -164,8 +164,20 @@ test('instructions writes one probe per group and one escalation, each with its 
   assert.deepEqual(files[2].document, { escalation: { index: '/i.md' }, reading: { files: '/w/files', diff: '/w/changes.diff', tree: '/w/tree.txt' }, changeSet: { headCommit: 'h', files: [] }, ledger: '/w/ledger/03-escalation.json' });
 });
 
-const probe = { rules: [{ id: 'A' }, { id: 'B' }], changeSet: { headCommit: 'h' } };
+const surface = { headCommit: 'h', files: [{ path: 'p', added: [{ start: 1, end: 5 }], removed: [{ start: 9, end: 9 }] }] };
+const probe = { rules: [{ id: 'A' }, { id: 'B' }], changeSet: { headCommit: 'h' }, surface, site: 's/' };
 const row = (rule, extra = {}) => ({ rule, examined: ['x'], verdict: 'clean', evidence: 'e', ...extra });
+const violation = (anchor, rule = 'A') => ({ rule, body: 'what is wrong', anchor });
+
+test('anchorInside accepts lines in the surface on their side, and the pull request', () => {
+  assert.equal(anchorInside({ path: 'p', line: 3, side: 'RIGHT' }, surface), true);
+  assert.equal(anchorInside({ path: 'p', lines: { start: 1, end: 5 }, side: 'RIGHT' }, surface), true);
+  assert.equal(anchorInside({ path: 'p', line: 9, side: 'LEFT' }, surface), true);
+  assert.equal(anchorInside({ pullRequest: true }, surface), true);
+  assert.equal(anchorInside({ path: 'p', line: 6, side: 'RIGHT' }, surface), false);
+  assert.equal(anchorInside({ path: 'p', line: 3, side: 'LEFT' }, surface), false);
+  assert.equal(anchorInside({ path: 'q', line: 1, side: 'RIGHT' }, surface), false);
+});
 
 test('checkLedger accepts rows matching the rules in order', () => {
   checkLedger('g', probe, { headCommit: 'h', rows: [row('A'), row('B')] });
@@ -178,21 +190,30 @@ test('checkLedger rejects a missing, extra, reordered, or foreign-commit ledger'
   assert.throws(() => checkLedger('g', probe, { headCommit: 'other', rows: [row('A'), row('B')] }), /ledger is for other/);
 });
 
+test('checkLedger rejects a violation filed under another rule or anchored outside the surface', () => {
+  const rows = (anchor, rule) => [row('A', { verdict: 'violation', evidence: 'f', violations: [violation(anchor, rule)] }), row('B')];
+  checkLedger('g', probe, { headCommit: 'h', rows: rows({ path: 'p', line: 2, side: 'RIGHT' }) });
+  checkLedger('g', probe, { headCommit: 'h', rows: rows({ pullRequest: true }) });
+  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: rows({ path: 'p', line: 2, side: 'RIGHT' }, 'B') }), /violation of B sits in the row of A/);
+  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: rows({ path: 'p', line: 7, side: 'RIGHT' }) }), /outside the surface/);
+});
+
 test('checkLedger requires exactly three escalation rows', () => {
-  const escalation = { escalation: { index: 'i' }, changeSet: { headCommit: 'h' } };
+  const escalation = { escalation: { index: 'i' }, changeSet: { headCommit: 'h' }, surface };
   checkLedger('e', escalation, { headCommit: 'h', rows: [row('x'), row('y'), row('z')] });
   assert.throws(() => checkLedger('e', escalation, { headCommit: 'h', rows: [row('x')] }), /1 rows, 3 expected/);
 });
 
-const violation = (anchor) => ({ rule: 'A', body: 'what is wrong', anchor });
 const ledger = {
   headCommit: 'h',
   rows: [
     row('A', { verdict: 'violation', violations: [violation({ path: 'p', line: 3, side: 'RIGHT' }), violation({ pullRequest: true })] }),
-    row('B', { evidence: 'has | pipe\nand newline' }),
-    row('C', { verdict: 'violation', violations: [violation({ path: 'q', lines: { start: 1, end: 4 }, side: 'LEFT' })] }),
+    row('B', { evidence: `has | pipe\nand newline ${'x'.repeat(CELL)}` }),
   ],
 };
+const escalationLedger = { headCommit: 'h', rows: [row('Book rule', { verdict: 'violation', violations: [violation({ path: 'p', lines: { start: 1, end: 4 }, side: 'LEFT' }, 'Book rule')] })] };
+const escalation = { escalation: { index: 'i' }, changeSet: { headCommit: 'h' }, surface };
+const entries = [{ document: probe, ledger }, { document: escalation, ledger: escalationLedger }];
 
 test('merge concatenates rows and verdict follows any violation', () => {
   assert.deepEqual(merge([{ headCommit: 'h', rows: [row('A')] }, { headCommit: 'h', rows: [row('B')] }]), { headCommit: 'h', rows: [row('A'), row('B')] });
@@ -200,8 +221,16 @@ test('merge concatenates rows and verdict follows any violation', () => {
   assert.equal(verdict({ headCommit: 'h', rows: [row('A')] }), 'APPROVE');
 });
 
-test('table escapes pipes and newlines', () => {
-  assert.match(table(ledger), /has \\\| pipe and newline/);
+test('table escapes pipes and newlines and caps a cell', () => {
+  const rendered = table(ledger);
+  assert.match(rendered, /has \\\| pipe and newline/);
+  assert.ok(rendered.split('\n')[3].length < CELL + 100);
+  assert.match(rendered, /…/);
+});
+
+test('citation links a rule of ours to the site and leaves a book rule as the probe wrote it', () => {
+  assert.equal(citation(probe, "You aren't gonna need it"), "[You aren't gonna need it](s/#you-arent-gonna-need-it)");
+  assert.equal(citation(escalation, 'Book rule'), 'Book rule');
 });
 
 test('comment maps a line, a range, and the pull request', () => {
@@ -210,11 +239,28 @@ test('comment maps a line, a range, and the pull request', () => {
   assert.equal(comment(violation({ pullRequest: true })), undefined);
 });
 
-test('review carries every violation: inline ones as comments, the rest in the body', () => {
-  const payload = review(ledger, 2);
+test('alreadyOpen matches an open thread on the same line citing the same rule', () => {
+  const threads = [{ path: 'p', line: 3, body: '[A](s/#a): earlier' }];
+  assert.equal(alreadyOpen(violation({ path: 'p', line: 3, side: 'RIGHT' }), '[A](s/#a)', threads), true);
+  assert.equal(alreadyOpen(violation({ path: 'p', line: 4, side: 'RIGHT' }), '[A](s/#a)', threads), false);
+  assert.equal(alreadyOpen(violation({ path: 'p', line: 3, side: 'RIGHT' }), '[B](s/#b)', threads), false);
+  assert.equal(alreadyOpen(violation({ pullRequest: true }), '[A](s/#a)', threads), false);
+});
+
+test('review carries every violation with its citation: inline ones as comments, the rest in the body', () => {
+  const payload = review(entries, { self: false, threads: [] });
   assert.equal(payload.commit_id, 'h');
   assert.equal(payload.event, 'REQUEST_CHANGES');
-  assert.equal(payload.comments.length, 2);
-  assert.match(payload.body, /3 rules probed by 2 probes at h: 3 violations, 2 inline, 1 at the pull request/);
-  assert.match(payload.body, /<details>\n<summary>Review ledger<\/summary>\n\n\| rule \|/);
+  assert.deepEqual(payload.comments.map((item) => item.body), ['[A](s/#a): what is wrong', 'Book rule: what is wrong']);
+  assert.match(payload.body, /^\*\*Verdict: REQUEST_CHANGES\*\*\n/);
+  assert.match(payload.body, /3 rules probed by 2 probes at h: 3 violations, 2 inline, 1 at the pull request, 0 already carried by an open thread/);
+  assert.match(payload.body, /\n\n\[A\]\(s\/#a\): what is wrong\n\n<details>/);
+});
+
+test('review posts a comment with the verdict when the reviewer is the author, and skips what an open thread carries', () => {
+  const payload = review(entries, { self: true, threads: [{ path: 'p', line: 3, body: '[A](s/#a): earlier' }] });
+  assert.equal(payload.event, 'COMMENT');
+  assert.match(payload.body, /^\*\*Verdict: REQUEST_CHANGES\*\* \(posted as a comment: the reviewer is the author\)/);
+  assert.deepEqual(payload.comments.map((item) => item.body), ['Book rule: what is wrong']);
+  assert.match(payload.body, /1 already carried by an open thread/);
 });

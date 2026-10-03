@@ -2,11 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/violation.schema.json",
   "title": "Violation",
-  "description": "One finding of one rule: what is wrong, cited by the rule's id, and where it is reported. The anchor is a line inside the surface, the dead line where the surface made code dead, or the pull request as a whole where no single line is to blame. The body states what is wrong, not how to fix it",
+  "description": "One finding of one rule: what is wrong, and where it is reported. The anchor is a line or a range inside the surface, or the pull request as a whole where no surface line is to blame, including code the change made dead elsewhere, which the body names by file and line. The body states what is wrong, not how to fix it; the citation of the rule is added by the reviewing context, never written by the probe",
   "examples": [
     {
       "rule": "No suppressed exit status",
-      "body": "[No suppressed exit status](https://thruput.se/agents/#no-suppressed-exit-status): the pipeline's exit status is discarded, so a failing check passes as success.",
+      "body": "the pipeline's exit status is discarded, so a failing check passes as success.",
       "anchor": {
         "path": "scripts/verify.sh",
         "line": 21,
@@ -22,11 +22,11 @@
   ],
   "properties": {
     "rule": {
-      "description": "The rule violated, by its id",
+      "description": "The rule violated, by its id; the same id as the ledger row carrying this violation",
       "$ref": "id.schema.json"
     },
     "body": {
-      "description": "What is wrong, briefly, citing the rule by id as a link to its anchor on the published rules",
+      "description": "What is wrong, briefly. Without the rule's name or link: the reviewing context prefixes the citation from the rule id",
       "type": "string",
       "minLength": 1
     },
@@ -98,7 +98,7 @@
       }
     },
     "PullRequest": {
-      "description": "The pull request as a whole: an existing component that replaces a whole module, or a standard the change set as a whole does not follow. Carried in the review body rather than on a line",
+      "description": "The pull request as a whole: an existing component that replaces a whole module, a standard the change set as a whole does not follow, or code outside the surface that the change made dead, named by file and line in the body. Carried in the review body rather than on a line",
       "type": "object",
       "required": [
         "pullRequest"

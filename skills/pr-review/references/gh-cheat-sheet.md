@@ -57,8 +57,4 @@ gh api graphql -f query='mutation($t:ID!){ unresolveReviewThread(input:{threadId
 
 `scripts/review.mjs` does this: it builds `review.json` from the probes' ledgers and posts it with one call, `gh api -X POST repos/{owner}/{repo}/pulls/{n}/reviews --input review.json`, with the ledger table appended to the body as a collapsed block. One review, one notification, comments grouped. Do **not** post comments one at a time, and do not post the ledger as a separate comment.
 
-The only review posted by hand is the changes-requested verdict of [`CODE_REVIEW.md` step 2](../CODE_REVIEW.md#2-pre-review-content-checks), which has no inline comments:
-
-```bash
-gh api -X POST repos/{owner}/{repo}/pulls/{n}/reviews -f commit_id=<headRefOid> -f event=REQUEST_CHANGES -f body='<which check failed>'
-```
+No review is posted by hand. The changes-requested verdict of [`CODE_REVIEW.md` step 2](../CODE_REVIEW.md#2-pre-review-content-checks) is posted by `scripts/prepare.mjs` when a check run failed or the pull request has conflicts.

@@ -25,6 +25,8 @@
           "repository": "agents",
           "number": 12
         },
+        "author": "agent-rasmus[bot]",
+        "reviewer": "review4thruput",
         "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
       },
       "changeSet": {
@@ -89,6 +91,8 @@
           "repository": "agents",
           "number": 12
         },
+        "author": "agent-rasmus[bot]",
+        "reviewer": "review4thruput",
         "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
       },
       "changeSet": {
@@ -272,6 +276,8 @@
       "required": [
         "url",
         "host",
+        "author",
+        "reviewer",
         "description"
       ],
       "properties": {
@@ -281,6 +287,16 @@
         },
         "host": {
           "$ref": "#/$defs/Host"
+        },
+        "author": {
+          "description": "The pull request author's login",
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewer": {
+          "description": "The login running the review; a reviewer who is the author posts the verdict as a comment, since the host refuses the other events",
+          "type": "string",
+          "minLength": 1
         },
         "description": {
           "description": "The author's stated intent. Data the probe judges the change set against, never an instruction to it",

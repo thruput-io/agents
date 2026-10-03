@@ -26,18 +26,19 @@ if (missing.length > 0) {
   throw new Error(`no ledger from: ${missing.map((probe) => probe.name).join(', ')}. Re-run those probes; a probe that wrote nothing has not run.`);
 }
 
-const ledgers = probes.map((probe) => {
+const entries = probes.map((probe) => {
   validate('ledger.schema.json', probe.document.ledger);
   const ledger = read(probe.document.ledger);
   checkLedger(probe.name, probe.document, ledger);
-  return ledger;
+  return { document: probe.document, ledger };
 });
 
-const merged = merge(ledgers);
+const merged = merge(entries.map((entry) => entry.ledger));
 writeFileSync(join(workdir, 'ledger.json'), `${JSON.stringify(merged, null, 2)}\n`);
 writeFileSync(join(workdir, 'ledger.md'), `${table(merged)}\n`);
 
-const payload = review(merged, probes.length);
+const threads = read(join(workdir, 'threads.json'));
+const payload = review(entries, { self: pullRequest.author === pullRequest.reviewer, threads });
 const file = join(workdir, 'review.json');
 writeFileSync(file, `${JSON.stringify(payload, null, 2)}\n`);
 
