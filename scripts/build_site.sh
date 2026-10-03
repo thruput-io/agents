@@ -5,14 +5,21 @@ pages=ghcr.io/actions/jekyll-build-pages:latest
 vnu=ghcr.io/validator/validator:latest
 lychee=lycheeverse/lychee:latest
 site=$(docker volume create)
+release=$(mktemp -d)
 
 remove_site() {
   docker volume rm "$site"
+  rm -r "$release"
 }
 trap remove_site EXIT
 
+version=$(git -C "$PROJECT_ROOT" describe --tags | sed 's/^v//')
+printf 'version: %s\n' "$version" > "$release/release.yml"
+npx --yes @sourcemeta/jsonschema@17.0.0 validate "$PROJECT_ROOT/schemas/release.schema.json" "$release/release.yml" --resolve "$PROJECT_ROOT/schemas"
+
 source=(
   --volume "$PROJECT_ROOT/rules:/github/workspace/site/_data:ro"
+  --volume "$release/release.yml:/github/workspace/site/_data/release.yml:ro"
   --volume "$PROJECT_ROOT/schemas:/github/workspace/site/schemas:ro"
 )
 for entry in "$PROJECT_ROOT"/web/*; do

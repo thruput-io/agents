@@ -30,8 +30,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  pages:
+  site:
     needs: release
+    uses: ./.github/workflows/build-site.yml
+    with:
+      artifact: github-pages
+
+  pages:
+    needs: site
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -39,3 +45,8 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+      - shell: bash
+        run: curl -fsS "$PAGE_URL" | grep -F "<meta name=\"version\" content=\"$VERSION\">"
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          VERSION: ${{ needs.site.outputs.version }}
