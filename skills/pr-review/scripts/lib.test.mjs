@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  parseDiff, parseHunks, intersect, union, threadRanges, narrowSurface, slug, partition, definitions, callSites, deadCode, instructions,
-  anchorInside, checkLedger, merge, verdict, table, comment, citation, message, alreadyOpen, review, CELL,
+  parseDiff, parseHunks, intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, ladderGates, rulebook, rawUrl, rulesets,
+  definitions, callSites, deadCode, instructions, anchorInside, checkLedger, merge, verdict, table, comment, citation, message, alreadyOpen,
+  review, CELL, SITE,
 } from './lib.mjs';
 
 const diff = [
@@ -34,11 +35,11 @@ const diff = [
   '',
 ].join('\n');
 
-test('parseDiff numbers added lines at head and removed lines at base, per file', () => {
+test('parseDiff numbers added lines at head and removed lines at base with their text, per file', () => {
   assert.deepEqual(parseDiff(diff), [
-    { path: 'scripts/verify.sh', added: [{ start: 19, end: 20 }], removed: [{ start: 19, end: 19 }] },
+    { path: 'scripts/verify.sh', added: [{ start: 19, end: 20 }], removed: [{ start: 19, end: 19, content: 'old' }] },
     { path: 'web/_includes/chain.html', added: [{ start: 1, end: 2 }], removed: [] },
-    { path: 'gone.txt', added: [], removed: [{ start: 1, end: 3 }] },
+    { path: 'gone.txt', added: [], removed: [{ start: 1, end: 3, content: 'a\nb\n-- not a header' }] },
   ]);
 });
 
@@ -59,24 +60,34 @@ const threads = [
   { path: 'c.sh', diffSide: 'RIGHT', startLine: null, line: null, isResolved: false, resolvedBy: null },
 ];
 
-test('threadRanges keeps unresolved threads and threads the author resolved, per side', () => {
+test('threadRanges keeps unresolved threads and threads the author resolved, folding the host side into head and base', () => {
   const sides = threadRanges(threads, 'author');
-  assert.deepEqual([...sides.RIGHT], [['a.sh', [{ start: 5, end: 5 }, { start: 8, end: 9 }]]]);
-  assert.deepEqual([...sides.LEFT], [['b.sh', [{ start: 2, end: 2 }]]]);
+  assert.deepEqual([...sides.head], [['a.sh', [{ start: 5, end: 5 }, { start: 8, end: 9 }]]]);
+  assert.deepEqual([...sides.base], [['b.sh', [{ start: 2, end: 2 }]]]);
 });
 
-test('narrowSurface keeps change-set lines that changed since the prior review or carry a thread', () => {
-  const changeSet = {
-    headCommit: 'h',
+const changeSet = {
+  headCommit: 'h',
+  files: [
+    { path: 'a.sh', added: [{ start: 1, end: 20 }], removed: [] },
+    { path: 'b.sh', added: [{ start: 1, end: 1 }], removed: [{ start: 1, end: 4, content: 'one\ntwo\nthree\nfour' }] },
+    { path: 'd.sh', added: [{ start: 1, end: 9 }], removed: [] },
+  ],
+};
+
+test('wholeSurface is every line of the change set, by number only', () => {
+  assert.deepEqual(wholeSurface(changeSet), {
     files: [
       { path: 'a.sh', added: [{ start: 1, end: 20 }], removed: [] },
       { path: 'b.sh', added: [{ start: 1, end: 1 }], removed: [{ start: 1, end: 4 }] },
       { path: 'd.sh', added: [{ start: 1, end: 9 }], removed: [] },
     ],
-  };
+  });
+});
+
+test('narrowSurface keeps change-set lines that changed since the prior review or carry a thread', () => {
   const changedSince = new Map([['a.sh', [{ start: 15, end: 30 }]]]);
   assert.deepEqual(narrowSurface(changeSet, changedSince, threadRanges(threads, 'author')), {
-    headCommit: 'h',
     files: [
       { path: 'a.sh', added: [{ start: 5, end: 5 }, { start: 8, end: 9 }, { start: 15, end: 20 }], removed: [] },
       { path: 'b.sh', added: [], removed: [{ start: 2, end: 2 }] },
@@ -99,6 +110,54 @@ test('partition groups rules in first-seen order and keeps rule order inside a g
     { name: 'g1', group: 'G1', rules: [rules[0], rules[2]] },
     { name: 'g2', group: 'G2', rules: [rules[1]] },
   ]);
+});
+
+test('kindOf names the probe a group gets: the reuse ladder, dead code, or a probe of rules', () => {
+  assert.equal(kindOf('Development Stack'), 'reuse-ladder');
+  assert.equal(kindOf('Dead Code & Comments'), 'dead-code');
+  assert.equal(kindOf('Behavior & Failure Handling'), 'rules');
+});
+
+test('checkKinds refuses rules that lack a group a kind of probe is tied to', () => {
+  checkKinds(['Development Stack', 'Dead Code & Comments', 'Behavior & Failure Handling']);
+  assert.throws(() => checkKinds(['Development Stack', 'Behavior & Failure Handling']), /Dead Code & Comments/);
+});
+
+test('ladderGates picks the rules a candidate of the reuse ladder is gated through, and refuses rules that lack one', () => {
+  const available = { id: 'Available' };
+  const maintained = { id: 'Maintained' };
+  assert.deepEqual(ladderGates([{ id: 'A' }, maintained, available]), [available, maintained]);
+  assert.throws(() => ladderGates([available]), /Maintained/);
+});
+
+const governance = {
+  principles: [{ id: 'P', parent: 'R', body: 'Uses [[Term]].' }, { id: 'Unused principle', parent: 'R', body: 'Unused.' }],
+  rationales: [
+    { id: 'R', parent: 'Axiom', body: 'Why.', solutions: [{ marker: 'SHOULD', body: 'Apply [[Solution term]].' }] },
+    { id: 'Unused rationale', parent: 'Axiom', body: 'Unused.' },
+  ],
+  definitions: [
+    { id: 'Term', specification: 'Means [[Nested]].' },
+    { id: 'Nested', specification: 'A kind.', closedEnumerationOf: ['Listed'] },
+    { id: 'Listed', specification: 'Listed by an enumeration.' },
+    { id: 'Solution term', specification: 'Cited by a solution; cites [[P]], which is a principle and no glossary term.' },
+    { id: 'Rule term', specification: 'Cited by a rule.' },
+    { id: 'Unused term', specification: 'Nothing cites it.' },
+  ],
+};
+
+test('rulebook hands a probe its rules with their principles, their rationales, and every glossary term those cite', () => {
+  const own = [{ id: 'A', parent: 'P', body: 'Do [[Rule term]].' }, { id: 'B', parent: 'P', body: 'Do.' }];
+  assert.deepEqual(rulebook(own, governance), {
+    rules: own,
+    principles: [governance.principles[0]],
+    rationales: [governance.rationales[0]],
+    definitions: governance.definitions.slice(0, 5),
+  });
+});
+
+test('rulebook refuses a parent that is not declared', () => {
+  assert.throws(() => rulebook([{ id: 'A', parent: 'Missing', body: 'Do.' }], governance), /principle Missing/);
 });
 
 test('definitions names what the changed lines define: functions, classes, shell functions, ids', () => {
@@ -133,7 +192,7 @@ test('callSites finds the files that mention a changed file or its definitions, 
 });
 
 test('deadCode reports definitions nothing uses, references whose definition is gone, and definitions the change orphaned', () => {
-  const diff = [
+  const removal = [
     '--- a/scripts/lib.mjs', '+++ b/scripts/lib.mjs',
     '+export function fresh() {}',
     '+export function wired() {}',
@@ -149,124 +208,160 @@ test('deadCode reports definitions nothing uses, references whose definition is 
     'logo.png': 'PNG\0 fresh gone helper',
   };
   const read = (path) => files[path];
-  assert.deepEqual(deadCode(diff, Object.keys(files), read), {
+  assert.deepEqual(deadCode(removal, Object.keys(files), read), {
     unusedDefinitions: [{ name: 'fresh', definedIn: ['scripts/lib.mjs'] }],
     danglingReferences: [{ name: 'gone', usedIn: ['scripts/prepare.mjs'] }],
     orphanedDefinitions: [{ name: 'helper', definedIn: ['scripts/lib.mjs'] }, { name: 'Delete unused', definedIn: ['rules/Rules.yaml'] }],
   });
 });
 
-test('instructions writes one probe per group and one escalation, each with its ledger path', () => {
-  const context = { probe: { ruleSource: 'r/', site: 's/' }, shared: { reading: { files: '/w/files', diff: '/w/changes.diff', tree: '/w/tree.txt' }, changeSet: { headCommit: 'h', files: [] } }, ledger: (name) => `/w/ledger/${name}.json` };
-  const files = instructions(context, partition(rules), '/i.md');
-  assert.deepEqual(files.map((file) => file.name), ['01-g1', '02-g2', '03-escalation']);
-  assert.deepEqual(files[0].document, { group: 'G1', rules: [rules[0], rules[2]], ruleSource: 'r/', site: 's/', reading: { files: '/w/files', diff: '/w/changes.diff', tree: '/w/tree.txt' }, changeSet: { headCommit: 'h', files: [] }, ledger: '/w/ledger/01-g1.json' });
-  assert.deepEqual(files[2].document, { escalation: { index: '/i.md' }, reading: { files: '/w/files', diff: '/w/changes.diff', tree: '/w/tree.txt' }, changeSet: { headCommit: 'h', files: [] }, ledger: '/w/ledger/03-escalation.json' });
+test('rawUrl is where the text of a file is read, from its canonical URL on the host', () => {
+  assert.equal(rawUrl('https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md'), 'https://raw.githubusercontent.com/ciembor/agent-rules-books/main/ddd/ddd.md');
+  assert.throws(() => rawUrl('https://books.example/ddd.md'), /is not a file on github.com/);
 });
 
-const surface = { headCommit: 'h', files: [{ path: 'p', added: [{ start: 1, end: 5 }], removed: [{ start: 9, end: 9 }] }] };
-const probe = { rules: [{ id: 'A', parent: 'P' }, { id: 'B', parent: 'Q' }], changeSet: { headCommit: 'h' }, surface, site: 's/' };
-const row = (rule, extra = {}) => ({ rule, examined: ['x'], verdict: 'clean', evidence: 'e', ...extra });
-const violation = (anchor, rule = 'A') => ({ rule, observation: 'what is wrong', anchor });
+test('rulesets folds the index and the text read for each entry into what the escalation probe is handed', () => {
+  const index = [{ id: 'ddd', title: 'Domain-Driven Design', author: 'Eric Evans', focus: 'Domain Modeling', when_to_use: 'Strategic modeling.', review_checklist: 'Guard aggregates.', tree_url: 'https://books.example/ddd', canonical_url: 'https://books.example/ddd.md' }];
+  assert.deepEqual(rulesets(index, new Map([['https://books.example/ddd.md', '# Rules']])), [
+    { url: 'https://books.example/ddd.md', title: 'Domain-Driven Design', focus: 'Domain Modeling', whenToUse: 'Strategic modeling.', text: '# Rules' },
+  ]);
+  assert.throws(() => rulesets(index, new Map()), /ddd\.md was not read/);
+});
+
+test('instructions hands every probe the review with its ledger file, and each kind what it needs beyond', () => {
+  const context = {
+    review: { changeSet: { headCommit: 'h', files: [] } },
+    ledger: (name) => `/w/ledger/${name}.json`,
+    beyond: { rules: {}, 'reuse-ladder': { surroundings: 'around the ladder', tree: ['a'] }, 'dead-code': { surroundings: 'around the dead', deadCode: 'facts' } },
+  };
+  const probes = [{ name: 'g1', kind: 'rules', rulebook: 'r1' }, { name: 'g2', kind: 'reuse-ladder', rulebook: 'r2' }, { name: 'g3', kind: 'dead-code', rulebook: 'r3' }];
+  const files = instructions(context, probes, ['a ruleset']);
+  const handed = (name) => ({ changeSet: { headCommit: 'h', files: [] }, ledger: `/w/ledger/${name}.json` });
+  assert.deepEqual(files.map((file) => file.name), ['01-g1', '02-g2', '03-g3', '04-escalation']);
+  assert.deepEqual(files[0].document, { kind: 'rules', review: handed('01-g1'), rulebook: 'r1' });
+  assert.deepEqual(files[1].document, { kind: 'reuse-ladder', review: handed('02-g2'), rulebook: 'r2', surroundings: 'around the ladder', tree: ['a'] });
+  assert.deepEqual(files[2].document, { kind: 'dead-code', review: handed('03-g3'), rulebook: 'r3', surroundings: 'around the dead', deadCode: 'facts' });
+  assert.deepEqual(files[3].document, { kind: 'escalation', review: handed('04-escalation'), rulesets: ['a ruleset'] });
+});
+
+const surface = { files: [{ path: 'p', added: [{ start: 1, end: 5 }], removed: [{ start: 9, end: 9 }] }] };
+const probe = { kind: 'rules', review: { changeSet: { headCommit: 'h' }, surface }, rulebook: { rules: [{ id: 'A', parent: 'P' }, { id: 'B', parent: 'Q' }] } };
+const escalation = { kind: 'escalation', review: { changeSet: { headCommit: 'h' }, surface }, rulesets: [{ url: 'https://books.example/ddd.md' }, { url: 'https://books.example/clean-code.md' }] };
+const lines = (path, start, end, side) => ({ kind: 'lines', path, side, lines: { start, end } });
+const atPullRequest = { kind: 'pull-request' };
+const violation = (anchor) => ({ observation: 'what is wrong', anchor });
 const finding = (anchor) => ({ ...violation(anchor), body: 'rendered' });
+const cleanRow = (rule) => ({ rule, examined: ['x'], verdict: 'clean', evidence: 'e' });
+const violatedRow = (rule, violations) => ({ rule, examined: ['x'], verdict: 'violation', evidence: 'e', violations });
+const bookRule = (heading) => ({ ruleset: 'https://books.example/ddd.md', heading });
+const cleanBookRow = (heading) => ({ bookRule: bookRule(heading), examined: ['x'], verdict: 'clean', evidence: 'e' });
+const violatedBookRow = (heading, violations) => ({ bookRule: bookRule(heading), examined: ['x'], verdict: 'violation', evidence: 'e', violations });
+const citeP = `[P](${SITE}#p)`;
 
 test('anchorInside accepts lines in the surface on their side, and the pull request', () => {
-  assert.equal(anchorInside({ path: 'p', line: 3, side: 'RIGHT' }, surface), true);
-  assert.equal(anchorInside({ path: 'p', lines: { start: 1, end: 5 }, side: 'RIGHT' }, surface), true);
-  assert.equal(anchorInside({ path: 'p', line: 9, side: 'LEFT' }, surface), true);
-  assert.equal(anchorInside({ pullRequest: true }, surface), true);
-  assert.equal(anchorInside({ path: 'p', line: 6, side: 'RIGHT' }, surface), false);
-  assert.equal(anchorInside({ path: 'p', line: 3, side: 'LEFT' }, surface), false);
-  assert.equal(anchorInside({ path: 'q', line: 1, side: 'RIGHT' }, surface), false);
+  assert.equal(anchorInside(lines('p', 3, 3, 'head'), surface), true);
+  assert.equal(anchorInside(lines('p', 1, 5, 'head'), surface), true);
+  assert.equal(anchorInside(lines('p', 9, 9, 'base'), surface), true);
+  assert.equal(anchorInside(atPullRequest, surface), true);
+  assert.equal(anchorInside(lines('p', 6, 6, 'head'), surface), false);
+  assert.equal(anchorInside(lines('p', 3, 3, 'base'), surface), false);
+  assert.equal(anchorInside(lines('q', 1, 1, 'head'), surface), false);
+});
+
+test('anchorInside refuses a range that ends before it starts', () => {
+  assert.equal(anchorInside(lines('p', 4, 2, 'head'), surface), false);
 });
 
 test('checkLedger accepts rows matching the rules in order', () => {
-  checkLedger('g', probe, { headCommit: 'h', rows: [row('A'), row('B')] });
+  checkLedger('g', probe, { headCommit: 'h', rows: [cleanRow('A'), cleanRow('B')] });
 });
 
-test('checkLedger rejects a missing, extra, reordered, or foreign-commit ledger', () => {
-  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: [row('A')] }), /missing: \["B"\]/);
-  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: [row('A'), row('B'), row('Z')] }), /extra: \["Z"\]/);
-  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: [row('B'), row('A')] }), /in order/);
-  assert.throws(() => checkLedger('g', probe, { headCommit: 'other', rows: [row('A'), row('B')] }), /ledger is for other/);
+test('checkLedger rejects a missing, extra, reordered, book-rule, or foreign-commit ledger', () => {
+  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: [cleanRow('A')] }), /missing: \["B"\]/);
+  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: [cleanRow('A'), cleanRow('B'), cleanRow('Z')] }), /extra: \["Z"\]/);
+  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: [cleanRow('B'), cleanRow('A')] }), /in order/);
+  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: [cleanRow('A'), cleanBookRow('x')] }), /missing: \["B"\]/);
+  assert.throws(() => checkLedger('g', probe, { headCommit: 'other', rows: [cleanRow('A'), cleanRow('B')] }), /ledger is for other/);
 });
 
-test('checkLedger rejects a violation filed under another rule or anchored outside the surface', () => {
-  const rows = (anchor, rule) => [row('A', { verdict: 'violation', evidence: 'f', violations: [violation(anchor, rule)] }), row('B')];
-  checkLedger('g', probe, { headCommit: 'h', rows: rows({ path: 'p', line: 2, side: 'RIGHT' }) });
-  checkLedger('g', probe, { headCommit: 'h', rows: rows({ pullRequest: true }) });
-  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: rows({ path: 'p', line: 2, side: 'RIGHT' }, 'B') }), /violation of B sits in the row of A/);
-  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: rows({ path: 'p', line: 7, side: 'RIGHT' }) }), /outside the surface/);
+test('checkLedger rejects a violation anchored outside the surface', () => {
+  const rows = (anchor) => [violatedRow('A', [violation(anchor)]), cleanRow('B')];
+  checkLedger('g', probe, { headCommit: 'h', rows: rows(lines('p', 2, 2, 'head')) });
+  checkLedger('g', probe, { headCommit: 'h', rows: rows(atPullRequest) });
+  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: rows(lines('p', 7, 7, 'head')) }), /violation of A is anchored outside the surface/);
 });
 
-test('checkLedger requires exactly three escalation rows', () => {
-  const escalation = { escalation: { index: 'i' }, changeSet: { headCommit: 'h' }, surface };
-  checkLedger('e', escalation, { headCommit: 'h', rows: [row('x'), row('y'), row('z')] });
-  assert.throws(() => checkLedger('e', escalation, { headCommit: 'h', rows: [row('x')] }), /1 rows, 3 expected/);
+test('checkLedger requires exactly three rows on rules of one ruleset the escalation probe was handed', () => {
+  const rowOn = (ruleset) => ({ bookRule: { ruleset, heading: 'x' }, examined: ['x'], verdict: 'clean', evidence: 'e' });
+  checkLedger('e', escalation, { headCommit: 'h', rows: [cleanBookRow('x'), cleanBookRow('y'), cleanBookRow('z')] });
+  assert.throws(() => checkLedger('e', escalation, { headCommit: 'h', rows: [cleanBookRow('x')] }), /1 rows, 3 expected/);
+  assert.throws(() => checkLedger('e', escalation, { headCommit: 'h', rows: [cleanBookRow('x'), cleanBookRow('y'), cleanRow('A')] }), /\["A"\] is not a rule of the ruleset/);
+  assert.throws(() => checkLedger('e', escalation, { headCommit: 'h', rows: [rowOn('https://books.example/other.md'), rowOn('https://books.example/other.md'), rowOn('https://books.example/other.md')] }), /other\.md"\] is not a ruleset the probe was handed/);
+  assert.throws(() => checkLedger('e', escalation, { headCommit: 'h', rows: [cleanBookRow('x'), cleanBookRow('y'), rowOn('https://books.example/clean-code.md')] }), /selects one ruleset/);
 });
 
 const ledger = {
   headCommit: 'h',
   rows: [
-    row('A', { verdict: 'violation', violations: [violation({ path: 'p', line: 3, side: 'RIGHT' }), violation({ pullRequest: true })] }),
-    row('B', { evidence: `has | pipe\nand newline ${'x'.repeat(CELL)}` }),
+    violatedRow('A', [violation(lines('p', 3, 3, 'head')), violation(atPullRequest)]),
+    { rule: 'B', examined: ['x'], verdict: 'clean', evidence: `has | pipe\nand newline ${'x'.repeat(CELL)}` },
   ],
 };
-const escalationLedger = { headCommit: 'h', rows: [row('Book rule', { verdict: 'violation', violations: [violation({ path: 'p', lines: { start: 1, end: 4 }, side: 'LEFT' }, 'Book rule')] })] };
-const escalation = { escalation: { index: 'i' }, changeSet: { headCommit: 'h' }, surface };
+const escalationLedger = { headCommit: 'h', rows: [violatedBookRow('Book rule', [violation(lines('p', 1, 4, 'base'))])] };
 const entries = [{ document: probe, ledger }, { document: escalation, ledger: escalationLedger }];
 
-test('merge concatenates rows and verdict follows any violation', () => {
-  assert.deepEqual(merge([{ headCommit: 'h', rows: [row('A')] }, { headCommit: 'h', rows: [row('B')] }]), { headCommit: 'h', rows: [row('A'), row('B')] });
+test('merge concatenates rows into the one ledger and verdict follows any violation', () => {
+  assert.deepEqual(merge([{ headCommit: 'h', rows: [cleanRow('A')] }, { headCommit: 'h', rows: [cleanBookRow('x')] }]), { headCommit: 'h', rows: [cleanRow('A'), cleanBookRow('x')] });
   assert.equal(verdict(ledger), 'REQUEST_CHANGES');
-  assert.equal(verdict({ headCommit: 'h', rows: [row('A')] }), 'APPROVE');
+  assert.equal(verdict({ headCommit: 'h', rows: [cleanRow('A')] }), 'APPROVE');
 });
 
-test('table escapes pipes and newlines and caps a cell', () => {
+test('table escapes pipes and newlines, caps a cell, and names a book rule by its heading', () => {
   const rendered = table(ledger);
   assert.match(rendered, /has \\\| pipe and newline/);
   assert.ok(rendered.split('\n')[3].length < CELL + 100);
   assert.match(rendered, /…/);
+  assert.match(table(escalationLedger), /\n\| Book rule \| x \| violation \| e \|$/);
 });
 
-test('citation links the parent principle of a rule of ours to the site and leaves a book rule as the probe wrote it', () => {
-  assert.equal(citation({ rules: [{ id: 'R', parent: "You aren't gonna need it" }], site: 's/' }, 'R'), "[You aren't gonna need it](s/#you-arent-gonna-need-it)");
-  assert.equal(citation(escalation, 'Book rule'), 'Book rule');
+test('citation links the parent principle of a rule of ours on the site, and a book rule in its ruleset', () => {
+  const document = { kind: 'rules', rulebook: { rules: [{ id: 'R', parent: "You aren't gonna need it" }] } };
+  assert.equal(citation(document, cleanRow('R')), `[You aren't gonna need it](${SITE}#you-arent-gonna-need-it)`);
+  assert.equal(citation(escalation, cleanBookRow('Book rule')), '[Book rule](https://books.example/ddd.md)');
 });
 
-test('message renders the observation as breaking the cited principle, and keeps a book rule in front of its observation', () => {
-  assert.equal(message(probe, violation({ pullRequest: true }), '[P](s/#p)'), 'what is wrong breaks [P](s/#p)');
-  assert.equal(message(escalation, violation({ pullRequest: true }, 'Book rule'), 'Book rule'), 'Book rule: what is wrong');
+test('message renders the observation as breaking what is cited', () => {
+  assert.equal(message(violation(atPullRequest), citeP), `what is wrong breaks ${citeP}`);
 });
 
-test('comment maps a line, a range, and the pull request', () => {
-  assert.deepEqual(comment(finding({ path: 'p', line: 3, side: 'RIGHT' })), { path: 'p', line: 3, side: 'RIGHT', body: 'rendered' });
-  assert.deepEqual(comment(finding({ path: 'q', lines: { start: 1, end: 4 }, side: 'LEFT' })), { path: 'q', start_line: 1, start_side: 'LEFT', line: 4, side: 'LEFT', body: 'rendered' });
-  assert.equal(comment(finding({ pullRequest: true })), undefined);
+test('comment maps one line, a range, and the pull request onto what the host accepts', () => {
+  assert.deepEqual(comment(finding(lines('p', 3, 3, 'head'))), { path: 'p', line: 3, side: 'RIGHT', body: 'rendered' });
+  assert.deepEqual(comment(finding(lines('q', 1, 4, 'base'))), { path: 'q', start_line: 1, start_side: 'LEFT', line: 4, side: 'LEFT', body: 'rendered' });
+  assert.equal(comment(finding(atPullRequest)), undefined);
 });
 
 test('alreadyOpen matches an open thread on the same line citing the same principle', () => {
-  const threads = [{ path: 'p', line: 3, body: 'earlier breaks [P](s/#p)' }];
-  assert.equal(alreadyOpen(violation({ path: 'p', line: 3, side: 'RIGHT' }), '[P](s/#p)', threads), true);
-  assert.equal(alreadyOpen(violation({ path: 'p', line: 4, side: 'RIGHT' }), '[P](s/#p)', threads), false);
-  assert.equal(alreadyOpen(violation({ path: 'p', line: 3, side: 'RIGHT' }), '[Q](s/#q)', threads), false);
-  assert.equal(alreadyOpen(violation({ pullRequest: true }), '[P](s/#p)', threads), false);
+  const open = [{ path: 'p', line: 3, body: `earlier breaks ${citeP}` }];
+  assert.equal(alreadyOpen(violation(lines('p', 3, 3, 'head')), citeP, open), true);
+  assert.equal(alreadyOpen(violation(lines('p', 4, 4, 'head')), citeP, open), false);
+  assert.equal(alreadyOpen(violation(lines('p', 3, 3, 'head')), `[Q](${SITE}#q)`, open), false);
+  assert.equal(alreadyOpen(violation(atPullRequest), citeP, open), false);
 });
 
-test('review carries every violation as breaking its principle: inline ones as comments, the rest in the body', () => {
+test('review carries every violation as breaking what its rule protects: inline ones as comments, the rest in the body', () => {
   const payload = review(entries, { self: false, threads: [] });
   assert.equal(payload.commit_id, 'h');
   assert.equal(payload.event, 'REQUEST_CHANGES');
-  assert.deepEqual(payload.comments.map((item) => item.body), ['what is wrong breaks [P](s/#p)', 'Book rule: what is wrong']);
+  assert.deepEqual(payload.comments.map((item) => item.body), [`what is wrong breaks ${citeP}`, 'what is wrong breaks [Book rule](https://books.example/ddd.md)']);
   assert.match(payload.body, /^\*\*Verdict: REQUEST_CHANGES\*\*\n/);
   assert.match(payload.body, /3 rules probed by 2 probes at h: 3 violations, 2 inline, 1 at the pull request, 0 already carried by an open thread/);
-  assert.match(payload.body, /\n\nwhat is wrong breaks \[P\]\(s\/#p\)\n\n<details>/);
+  assert.equal(payload.body.includes(`\n\nwhat is wrong breaks ${citeP}\n\n<details>`), true);
 });
 
 test('review posts a comment with the verdict when the reviewer is the author, and skips what an open thread carries', () => {
-  const payload = review(entries, { self: true, threads: [{ path: 'p', line: 3, body: 'earlier breaks [P](s/#p)' }] });
+  const payload = review(entries, { self: true, threads: [{ path: 'p', line: 3, body: `earlier breaks ${citeP}` }] });
   assert.equal(payload.event, 'COMMENT');
   assert.match(payload.body, /^\*\*Verdict: REQUEST_CHANGES\*\* \(posted as a comment: the reviewer is the author\)/);
-  assert.deepEqual(payload.comments.map((item) => item.body), ['Book rule: what is wrong']);
+  assert.deepEqual(payload.comments.map((item) => item.body), ['what is wrong breaks [Book rule](https://books.example/ddd.md)']);
   assert.match(payload.body, /1 already carried by an open thread/);
 });

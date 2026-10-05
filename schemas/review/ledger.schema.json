@@ -124,7 +124,7 @@
       }
     },
     "RulesetUrl": {
-      "description": "Where the selected ruleset was read: its canonical URL from the index",
+      "description": "A ruleset from outside our rules, by its canonical URL",
       "type": "string",
       "format": "uri"
     },

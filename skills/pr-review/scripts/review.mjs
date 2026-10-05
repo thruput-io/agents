@@ -21,20 +21,22 @@ const pullRequest = read(join(workdir, 'pull-request.json'));
 const names = readdirSync(join(workdir, 'instructions')).filter((name) => name.endsWith('.json')).sort();
 const probes = names.map((name) => ({ name: name.replace(/\.json$/, ''), document: read(join(workdir, 'instructions', name)) }));
 
-const missing = probes.filter((probe) => !existsSync(probe.document.ledger));
+const missing = probes.filter((probe) => !existsSync(probe.document.review.ledger));
 if (missing.length > 0) {
   throw new Error(`no ledger from: ${missing.map((probe) => probe.name).join(', ')}. Re-run those probes; a probe that wrote nothing has not run.`);
 }
 
 const entries = probes.map((probe) => {
-  validate('review/ledger.schema.json', probe.document.ledger);
-  const ledger = read(probe.document.ledger);
+  validate('review/ledger.schema.json', probe.document.review.ledger);
+  const ledger = read(probe.document.review.ledger);
   checkLedger(probe.name, probe.document, ledger);
   return { document: probe.document, ledger };
 });
 
 const merged = merge(entries.map((entry) => entry.ledger));
-writeFileSync(join(workdir, 'ledger.json'), `${JSON.stringify(merged, null, 2)}\n`);
+const ledgerFile = join(workdir, 'ledger.json');
+writeFileSync(ledgerFile, `${JSON.stringify(merged, null, 2)}\n`);
+validate('review/ledger.schema.json', ledgerFile);
 writeFileSync(join(workdir, 'ledger.md'), `${table(merged)}\n`);
 
 const threads = read(join(workdir, 'threads.json'));

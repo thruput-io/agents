@@ -55,14 +55,22 @@
         ],
         "ledger": "/home/user/review/ledger/24-escalation.json"
       },
-      "index": "# Agent Rules & Skills Index\n\n* [Domain-Driven Design (Eric Evans)](https://github.com/ciembor/agent-rules-books/blob/main/domain-driven-design/domain-driven-design.md)\n"
+      "rulesets": [
+        {
+          "url": "https://github.com/ciembor/agent-rules-books/blob/main/domain-driven-design/domain-driven-design.md",
+          "title": "Domain-Driven Design",
+          "focus": "Domain Modeling & Strategic Architecture",
+          "whenToUse": "Strategic & Tactical modeling. Solves database/controller leakage into business rules.",
+          "text": "# Domain-Driven Design\n\n## Make implicit concepts explicit\n"
+        }
+      ]
     }
   ],
   "type": "object",
   "required": [
     "kind",
     "review",
-    "index"
+    "rulesets"
   ],
   "properties": {
     "kind": {
@@ -71,13 +79,61 @@
     "review": {
       "$ref": "../review.schema.json"
     },
-    "index": {
-      "$ref": "#/$defs/RulesetIndex"
+    "rulesets": {
+      "description": "The rulesets from outside our rules, each read once by the reviewing context and handed over whole. The probe selects the one whose focus matches the change",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Ruleset"
+      }
     }
   },
   "$defs": {
-    "RulesetIndex": {
-      "description": "The index of rulesets to select from, in full: for each ruleset its focus and its canonical URL",
+    "Ruleset": {
+      "description": "One ruleset from outside our rules: what it is for, and its rules in full",
+      "type": "object",
+      "required": [
+        "url",
+        "title",
+        "focus",
+        "whenToUse",
+        "text"
+      ],
+      "properties": {
+        "url": {
+          "$ref": "../ledger.schema.json#/$defs/RulesetUrl"
+        },
+        "title": {
+          "$ref": "#/$defs/RulesetTitle"
+        },
+        "focus": {
+          "$ref": "#/$defs/RulesetFocus"
+        },
+        "whenToUse": {
+          "$ref": "#/$defs/RulesetUse"
+        },
+        "text": {
+          "$ref": "#/$defs/RulesetText"
+        }
+      }
+    },
+    "RulesetTitle": {
+      "description": "What a ruleset is called",
+      "type": "string",
+      "minLength": 1
+    },
+    "RulesetFocus": {
+      "description": "The kind of change a ruleset is about",
+      "type": "string",
+      "minLength": 1
+    },
+    "RulesetUse": {
+      "description": "When a ruleset is the one to apply, and what it solves",
+      "type": "string",
+      "minLength": 1
+    },
+    "RulesetText": {
+      "description": "The rules of a ruleset in full, each under its heading",
       "type": "string",
       "minLength": 1
     }

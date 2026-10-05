@@ -29,7 +29,7 @@
       "$ref": "#/$defs/CallSites"
     },
     "files": {
-      "description": "Every file a call site or a dead-code fact names, in full",
+      "description": "Every file outside the change set that a call site or a dead-code fact names, in full",
       "type": "array",
       "items": {
         "$ref": "review.schema.json#/$defs/FileAtHead"

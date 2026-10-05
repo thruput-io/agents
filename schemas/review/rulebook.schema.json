@@ -45,7 +45,7 @@
   ],
   "properties": {
     "rules": {
-      "description": "The rules to probe: one probe and one ledger row per rule, in this order",
+      "description": "The rules handed over, in order. A probe writes one ledger row for each rule of the rulebook it probes",
       "type": "array",
       "minItems": 1,
       "items": {

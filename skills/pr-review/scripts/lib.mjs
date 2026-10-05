@@ -1,12 +1,22 @@
 const HUNK = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/;
 
-function push(ranges, line) {
+function pushAdded(ranges, line) {
   const last = ranges[ranges.length - 1];
   if (last && last.end === line - 1) {
     last.end = line;
     return;
   }
   ranges.push({ start: line, end: line });
+}
+
+function pushRemoved(ranges, line, text) {
+  const last = ranges[ranges.length - 1];
+  if (last && last.end === line - 1) {
+    last.end = line;
+    last.content = `${last.content}\n${text}`;
+    return;
+  }
+  ranges.push({ start: line, end: line, content: text });
 }
 
 export function parseHunks(lines) {
@@ -19,10 +29,10 @@ export function parseHunks(lines) {
       oldLine = Number(hunk[1]);
       newLine = Number(hunk[2]);
     } else if (line.startsWith('+')) {
-      push(file.added, newLine);
+      pushAdded(file.added, newLine);
       newLine += 1;
     } else if (line.startsWith('-')) {
-      push(file.removed, oldLine);
+      pushRemoved(file.removed, oldLine, line.slice(1));
       oldLine += 1;
     } else if (line.startsWith(' ')) {
       oldLine += 1;
@@ -75,25 +85,34 @@ export function union(a, b) {
   return result;
 }
 
+const SIDE_OF_HOST_SIDE = { RIGHT: 'head', LEFT: 'base' };
+const HOST_SIDE_OF_SIDE = { head: 'RIGHT', base: 'LEFT' };
+
 export function threadRanges(threads, author) {
   const relevant = threads.filter((thread) => thread.line !== null
     && (!thread.isResolved || thread.resolvedBy?.login === author));
-  const sides = { RIGHT: new Map(), LEFT: new Map() };
+  const sides = { head: new Map(), base: new Map() };
   for (const thread of relevant) {
-    const side = sides[thread.diffSide];
+    const side = sides[SIDE_OF_HOST_SIDE[thread.diffSide]];
     const ranges = side.get(thread.path) ?? [];
     side.set(thread.path, union(ranges, [{ start: thread.startLine ?? thread.line, end: thread.line }]));
   }
   return sides;
 }
 
+const numbersOnly = (ranges) => ranges.map(({ start, end }) => ({ start, end }));
+
+export function wholeSurface(changeSet) {
+  return { files: changeSet.files.map((file) => ({ path: file.path, added: file.added, removed: numbersOnly(file.removed) })) };
+}
+
 export function narrowSurface(changeSet, changedSince, threads) {
   const files = changeSet.files.map((file) => ({
     path: file.path,
-    added: intersect(file.added, union(changedSince.get(file.path) ?? [], threads.RIGHT.get(file.path) ?? [])),
-    removed: intersect(file.removed, threads.LEFT.get(file.path) ?? []),
+    added: intersect(file.added, union(changedSince.get(file.path) ?? [], threads.head.get(file.path) ?? [])),
+    removed: intersect(file.removed, threads.base.get(file.path) ?? []),
   })).filter((file) => file.added.length + file.removed.length > 0);
-  return { headCommit: changeSet.headCommit, files };
+  return { files };
 }
 
 export function slug(id) {
@@ -109,11 +128,67 @@ export function partition(rules) {
   return [...groups].map(([group, members]) => ({ name: slug(group), group, rules: members }));
 }
 
+const KIND_OF_GROUP = new Map([['Development Stack', 'reuse-ladder'], ['Dead Code & Comments', 'dead-code']]);
+
+export function kindOf(group) {
+  return KIND_OF_GROUP.has(group) ? KIND_OF_GROUP.get(group) : 'rules';
+}
+
+export function checkKinds(groups) {
+  const absent = [...KIND_OF_GROUP.keys()].filter((group) => !groups.includes(group));
+  if (absent.length > 0) throw new Error(`no rule is in the group ${absent.join(', ')}, which a kind of probe is tied to: the group was renamed or removed`);
+}
+
+const GATES_OF_THE_LADDER = ['Available', 'Maintained'];
+
+export function ladderGates(rules) {
+  return GATES_OF_THE_LADDER.map((id) => {
+    const gate = rules.find((rule) => rule.id === id);
+    if (gate === undefined) throw new Error(`no rule is named ${id}, which every candidate of the reuse ladder is gated through: the rule was renamed or removed`);
+    return gate;
+  });
+}
+
 const DEFINITION = /\b(?:function|def|class|interface|type|enum|struct|fn|func|module|namespace|trait|record|const|let|var|val|protocol|extension)\s+([A-Za-z_$][\w$]*)/g;
 const SHELL_FUNCTION = /^\s*([A-Za-z_]\w*)\s*\(\)\s*\{/;
 const ID = /^\s*-?\s*id:\s*(\S.*?)\s*$/;
 const IDENTIFIER = /[A-Za-z_$][\w$]{2,}/g;
 const CITATION = /\[\[([^\]]+)\]\]/g;
+
+const unique = (items) => [...new Set(items)];
+const texts = (value) => {
+  if (typeof value === 'string') return [value];
+  if (value !== null && typeof value === 'object') return Object.values(value).flatMap(texts);
+  return [];
+};
+const named = (entry) => unique([
+  ...texts(entry).flatMap((text) => [...text.matchAll(CITATION)].map((match) => match[1])),
+  ...(entry.closedEnumerationOf ?? []),
+  ...(entry.openEnumerationOf ?? []),
+]);
+
+function parents(children, entries, level) {
+  return unique(children.map((child) => child.parent)).map((id) => {
+    const parent = entries.find((entry) => entry.id === id);
+    if (parent === undefined) throw new Error(`the ${level} ${id} is named as a parent and is not declared`);
+    return parent;
+  });
+}
+
+export function rulebook(rules, governance) {
+  const principles = parents(rules, governance.principles, 'principle');
+  const rationales = parents(principles, governance.rationales, 'rationale');
+  const glossary = new Map(governance.definitions.map((definition) => [definition.id, definition]));
+  const cited = new Set();
+  const unread = [...rules, ...principles, ...rationales];
+  while (unread.length > 0) {
+    for (const id of named(unread.shift()).filter((candidate) => glossary.has(candidate) && !cited.has(candidate))) {
+      cited.add(id);
+      unread.push(glossary.get(id));
+    }
+  }
+  return { rules, principles, rationales, definitions: governance.definitions.filter((definition) => cited.has(definition.id)) };
+}
 
 export function definedOn(line) {
   const names = [];
@@ -126,7 +201,6 @@ export function definedOn(line) {
 }
 
 const changedLines = (diff, sign) => diff.split('\n').filter((raw) => raw.startsWith(sign) && !/^[+-]{3} /.test(raw)).map((raw) => raw.slice(1));
-const unique = (items) => [...new Set(items)];
 
 export function definitions(diff) {
   return { added: unique(changedLines(diff, '+').flatMap(definedOn)), removed: unique(changedLines(diff, '-').flatMap(definedOn)) };
@@ -173,9 +247,9 @@ export function definitionIndex(paths, read) {
 }
 
 export function deadCode(diff, paths, read) {
-  const texts = paths.filter((path) => isText(read(path)));
-  const index = definitionIndex(texts, read);
-  const mentioned = (name) => texts.filter((path) => word(name).test(read(path)));
+  const textFiles = paths.filter((path) => isText(read(path)));
+  const index = definitionIndex(textFiles, read);
+  const mentioned = (name) => textFiles.filter((path) => word(name).test(read(path)));
   const defined = (name) => index.get(name) ?? [];
   const outside = (name) => mentioned(name).filter((path) => !defined(name).includes(path));
   const { added, removed } = definitions(diff);
@@ -187,39 +261,61 @@ export function deadCode(diff, paths, read) {
   };
 }
 
-export function instructions(context, probes, index) {
-  const named = [
-    ...probes.map((probe) => ({ name: probe.name, document: { group: probe.group, rules: probe.rules, ...context.probe } })),
-    { name: 'escalation', document: { escalation: { index } } },
+export function rawUrl(canonicalUrl) {
+  const file = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/.exec(canonicalUrl);
+  if (file === null) throw new Error(`${canonicalUrl} is not a file on github.com`);
+  return `https://raw.githubusercontent.com/${file[1]}/${file[2]}/${file[3]}`;
+}
+
+export function rulesets(index, texts) {
+  return index.map((entry) => {
+    if (!texts.has(entry.canonical_url)) throw new Error(`the ruleset ${entry.canonical_url} was not read`);
+    return { url: entry.canonical_url, title: entry.title, focus: entry.focus, whenToUse: entry.when_to_use, text: texts.get(entry.canonical_url) };
+  });
+}
+
+export function instructions(context, probes, handedRulesets) {
+  const handed = [
+    ...probes.map((probe) => ({ name: probe.name, kind: probe.kind, beyond: { rulebook: probe.rulebook, ...context.beyond[probe.kind] } })),
+    { name: 'escalation', kind: 'escalation', beyond: { rulesets: handedRulesets } },
   ];
-  return named.map((file, i) => {
-    const name = `${String(i + 1).padStart(2, '0')}-${file.name}`;
-    return { name, document: { ...file.document, ...context.shared, ledger: context.ledger(name) } };
+  return handed.map((probe, i) => {
+    const name = `${String(i + 1).padStart(2, '0')}-${probe.name}`;
+    return { name, document: { kind: probe.kind, review: { ...context.review, ledger: context.ledger(name) }, ...probe.beyond } };
   });
 }
 
 export const ESCALATION_ROWS = 3;
 
-const within = (ranges, start, end) => ranges.some((range) => range.start <= start && end <= range.end);
+const within = (ranges, start, end) => start <= end && ranges.some((range) => range.start <= start && end <= range.end);
 
 export function anchorInside(anchor, surface) {
-  if (anchor.pullRequest) return true;
+  if (anchor.kind === 'pull-request') return true;
   const file = surface.files.find((candidate) => candidate.path === anchor.path);
   if (file === undefined) return false;
-  const start = anchor.lines ? anchor.lines.start : anchor.line;
-  const end = anchor.lines ? anchor.lines.end : anchor.line;
-  return within(anchor.side === 'LEFT' ? file.removed : file.added, start, end);
+  const ranges = { head: file.added, base: file.removed };
+  return within(ranges[anchor.side], anchor.lines.start, anchor.lines.end);
 }
 
+const ruleName = (row) => (row.bookRule === undefined ? row.rule : row.bookRule.heading);
+
 export function checkLedger(name, document, ledger) {
-  if (ledger.headCommit !== document.changeSet.headCommit) {
-    throw new Error(`${name}: ledger is for ${ledger.headCommit}, the review is of ${document.changeSet.headCommit}`);
+  const { changeSet, surface } = document.review;
+  if (ledger.headCommit !== changeSet.headCommit) {
+    throw new Error(`${name}: ledger is for ${ledger.headCommit}, the review is of ${changeSet.headCommit}`);
   }
-  const found = ledger.rows.map((row) => row.rule);
-  if (document.escalation) {
-    if (found.length !== ESCALATION_ROWS) throw new Error(`${name}: ${found.length} rows, ${ESCALATION_ROWS} expected`);
+  if (document.kind === 'escalation') {
+    if (ledger.rows.length !== ESCALATION_ROWS) throw new Error(`${name}: ${ledger.rows.length} rows, ${ESCALATION_ROWS} expected`);
+    const ours = ledger.rows.filter((row) => row.bookRule === undefined).map((row) => row.rule);
+    if (ours.length > 0) throw new Error(`${name}: ${JSON.stringify(ours)} is not a rule of the ruleset; the escalation probe writes its rows on book rules`);
+    const handed = document.rulesets.map((ruleset) => ruleset.url);
+    const selected = [...new Set(ledger.rows.map((row) => row.bookRule.ruleset))];
+    const foreign = selected.filter((url) => !handed.includes(url));
+    if (foreign.length > 0) throw new Error(`${name}: ${JSON.stringify(foreign)} is not a ruleset the probe was handed`);
+    if (selected.length !== 1) throw new Error(`${name}: rows name ${selected.length} rulesets; the escalation probe selects one ruleset`);
   } else {
-    const expected = document.rules.map((rule) => rule.id);
+    const found = ledger.rows.map((row) => row.rule);
+    const expected = document.rulebook.rules.map((rule) => rule.id);
     if (JSON.stringify(found) !== JSON.stringify(expected)) {
       const missing = expected.filter((id) => !found.includes(id));
       const extra = found.filter((id) => !expected.includes(id));
@@ -228,9 +324,8 @@ export function checkLedger(name, document, ledger) {
   }
   for (const row of ledger.rows.filter((candidate) => candidate.verdict === 'violation')) {
     for (const violation of row.violations) {
-      if (violation.rule !== row.rule) throw new Error(`${name}: a violation of ${violation.rule} sits in the row of ${row.rule}`);
-      if (!anchorInside(violation.anchor, document.surface)) {
-        throw new Error(`${name}: a violation of ${row.rule} is anchored outside the surface at ${JSON.stringify(violation.anchor)}; a finding with no surface line to blame is anchored at the pull request`);
+      if (!anchorInside(violation.anchor, surface)) {
+        throw new Error(`${name}: a violation of ${ruleName(row)} is anchored outside the surface at ${JSON.stringify(violation.anchor)}; a finding with no surface line to blame is anchored at the pull request`);
       }
     }
   }
@@ -252,47 +347,47 @@ function cell(text) {
 }
 
 export function table(ledger) {
-  const rows = ledger.rows.map((row) => `| ${cell(row.rule)} | ${cell(row.examined.join('; '))} | ${row.verdict} | ${cell(row.evidence)} |`);
+  const rows = ledger.rows.map((row) => `| ${cell(ruleName(row))} | ${cell(row.examined.join('; '))} | ${row.verdict} | ${cell(row.evidence)} |`);
   return ['| rule | examined | verdict | evidence |', '|---|---|---|---|', ...rows].join('\n');
 }
 
-export function citation(document, rule) {
-  if (document.escalation) return rule;
-  const principle = document.rules.find((candidate) => candidate.id === rule).parent;
-  return `[${principle}](${document.site}#${slug(principle)})`;
+export const SITE = 'https://thruput.se/agents/';
+
+export function citation(document, row) {
+  if (row.bookRule !== undefined) return `[${row.bookRule.heading}](${row.bookRule.ruleset})`;
+  const principle = document.rulebook.rules.find((rule) => rule.id === row.rule).parent;
+  return `[${principle}](${SITE}#${slug(principle)})`;
 }
 
-export function message(document, violation, cite) {
-  return document.escalation ? `${cite}: ${violation.observation}` : `${violation.observation} breaks ${cite}`;
+export function message(violation, cite) {
+  return `${violation.observation} breaks ${cite}`;
 }
 
-export function comment(violation) {
-  const { anchor } = violation;
-  if (anchor.pullRequest) return undefined;
-  if (anchor.lines) {
-    return { path: anchor.path, start_line: anchor.lines.start, start_side: anchor.side, line: anchor.lines.end, side: anchor.side, body: violation.body };
-  }
-  return { path: anchor.path, line: anchor.line, side: anchor.side, body: violation.body };
+export function comment(finding) {
+  const { anchor } = finding;
+  if (anchor.kind === 'pull-request') return undefined;
+  const side = HOST_SIDE_OF_SIDE[anchor.side];
+  const { start, end } = anchor.lines;
+  if (start === end) return { path: anchor.path, line: end, side, body: finding.body };
+  return { path: anchor.path, start_line: start, start_side: side, line: end, side, body: finding.body };
 }
-
-const endLine = (anchor) => (anchor.lines ? anchor.lines.end : anchor.line);
 
 export function alreadyOpen(violation, cite, threads) {
   const { anchor } = violation;
-  if (anchor.pullRequest) return false;
-  return threads.some((thread) => thread.path === anchor.path && thread.line === endLine(anchor) && thread.body.includes(cite));
+  if (anchor.kind === 'pull-request') return false;
+  return threads.some((thread) => thread.path === anchor.path && thread.line === anchor.lines.end && thread.body.includes(cite));
 }
 
 export function review(entries, { self, threads }) {
   const ledger = merge(entries.map((entry) => entry.ledger));
   const findings = entries.flatMap(({ document, ledger: own }) => own.rows.filter((row) => row.verdict === 'violation')
-    .flatMap((row) => row.violations.map((violation) => {
-      const cite = citation(document, violation.rule);
-      return { ...violation, body: message(document, violation, cite), open: alreadyOpen(violation, cite, threads) };
-    })));
+    .flatMap((row) => {
+      const cite = citation(document, row);
+      return row.violations.map((violation) => ({ ...violation, body: message(violation, cite), open: alreadyOpen(violation, cite, threads) }));
+    }));
   const fresh = findings.filter((finding) => !finding.open);
   const comments = fresh.map(comment).filter((item) => item !== undefined);
-  const atPullRequest = fresh.filter((finding) => finding.anchor.pullRequest);
+  const atPullRequest = fresh.filter((finding) => finding.anchor.kind === 'pull-request');
   const decided = verdict(ledger);
   const event = self ? 'COMMENT' : decided;
   const body = [

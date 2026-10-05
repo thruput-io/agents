@@ -1,11 +1,13 @@
 import { spawnSync } from 'node:child_process';
-import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseDiff, parseHunks, threadRanges, narrowSurface, definitions, callSites, deadCode, partition, instructions } from './lib.mjs';
+import {
+  parseDiff, parseHunks, threadRanges, wholeSurface, narrowSurface, definitions, callSites, deadCode, isText, partition, kindOf, checkKinds,
+  ladderGates, rulebook, rawUrl, rulesets, instructions,
+} from './lib.mjs';
 
 const skill = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const site = 'https://thruput.se/agents/';
 const [url, workdirArg] = process.argv.slice(2);
 if (workdirArg === undefined) throw new Error('usage: node prepare.mjs <pull-request-url> <workdir>');
 
@@ -24,6 +26,7 @@ function paginate(path) {
   }
 }
 const validate = (schema, file) => run('npx', ['--yes', '@sourcemeta/jsonschema@17.0.0', 'validate', join(skill, 'schemas', schema), file, '--resolve', join(skill, 'schemas')]);
+const yaml = (name) => JSON.parse(run('npx', ['--yes', 'js-yaml@4.1.0', join(skill, 'rules', name)]));
 
 const match = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)$/.exec(url);
 if (match === null) throw new Error(`${url} is not a GitHub pull request URL; for Azure DevOps follow references/az-cheat-sheet.md`);
@@ -46,8 +49,8 @@ const write = (name, document) => {
   return file;
 };
 
-const me = gh('user').login;
-const pullRequest = { url, host: { kind: 'github', owner, repository, number }, author: pr.user.login, reviewer: me, description: pr.body ?? '' };
+const me = gh('graphql', '-f', 'query={viewer{login}}').data.viewer.login;
+const pullRequest = { host: { kind: 'github', owner, repository, number }, author: pr.user.login, reviewer: me, description: pr.body ?? '' };
 write('pull-request.json', pullRequest);
 
 const checks = gh(`repos/${owner}/${repository}/commits/${headCommit}/check-runs`);
@@ -85,8 +88,8 @@ function narrowed() {
     .map((file) => [file.filename, parseHunks(file.patch.split('\n')).added]));
   return narrowSurface(changeSet, changedSince, threadRanges(threads, pr.user.login));
 }
-const lines = prior === undefined ? changeSet : narrowed();
-if (lines.files.length === 0) {
+const surface = prior === undefined ? wholeSurface(changeSet) : narrowed();
+if (surface.files.length === 0) {
   throw new Error(`nothing to review: no line of the change set changed since the prior review at ${prior.commit_id}, and no thread of ours is open or was resolved by the author`);
 }
 
@@ -97,39 +100,53 @@ writeFileSync(tarball, run('gh', ['api', `repos/${owner}/${repository}/tarball/$
 run('tar', ['-xzf', tarball, '-C', snapshot, '--strip-components=1']);
 const paths = readdirSync(snapshot, { recursive: true }).map(String)
   .filter((path) => statSync(join(snapshot, path)).isFile()).sort();
-const texts = new Map();
+const scanned = new Map();
 const read = (path) => {
-  if (!texts.has(path)) texts.set(path, readFileSync(join(snapshot, path), 'latin1'));
-  return texts.get(path);
+  if (!scanned.has(path)) scanned.set(path, readFileSync(join(snapshot, path), 'latin1'));
+  return scanned.get(path);
 };
 const changed = changeSet.files.map((file) => file.path);
 const defined = definitions(diff);
-const surface = {
-  ...lines,
-  callSites: callSites(changed, [...defined.added, ...defined.removed], paths, read),
-  deadCode: deadCode(diff, paths, read),
-};
-const dead = Object.values(surface.deadCode).flat().flatMap((entry) => entry.definedIn ?? entry.usedIn);
+const sites = callSites(changed, [...defined.added, ...defined.removed], paths, read);
+const dead = deadCode(diff, paths, read);
+const deadPaths = Object.values(dead).flat().flatMap((entry) => entry.definedIn ?? entry.usedIn);
 
-const reading = { files: join(workdir, 'files'), diff: join(workdir, 'changes.diff'), tree: join(workdir, 'tree.txt') };
-writeFileSync(reading.diff, diff);
-writeFileSync(reading.tree, `${paths.join('\n')}\n`);
-for (const path of new Set([...changed, ...surface.callSites.into, ...surface.callSites.outOf, ...dead].filter((file) => paths.includes(file)))) {
-  cpSync(join(snapshot, path), join(reading.files, path));
-}
+const { rules } = yaml('Rules.yaml');
+const governance = { principles: yaml('Principles.yaml').principles, rationales: yaml('Rationales.yaml').rationales, definitions: yaml('Definitions.yaml').definitions };
+
+const atHead = (candidates) => [...new Set(candidates)].filter((path) => paths.includes(path) && isText(read(path)))
+  .map((path) => ({ path, content: readFileSync(join(snapshot, path), 'utf8') }));
+const around = (candidates) => ({ callSites: sites, files: atHead(candidates.filter((path) => !changed.includes(path))) });
+const context = {
+  review: { pullRequest, changeSet, surface, files: atHead(changed) },
+  beyond: {
+    rules: {},
+    'reuse-ladder': { surroundings: around([...sites.into, ...sites.outOf]), tree: paths, gates: rulebook(ladderGates(rules), governance) },
+    'dead-code': { surroundings: around([...sites.into, ...sites.outOf, ...deadPaths]), deadCode: dead },
+  },
+  ledger: (name) => join(workdir, 'ledger', `${name}.json`),
+};
 rmSync(snapshot, { recursive: true });
 rmSync(tarball);
 
 validate('review/change-set.schema.json', write('change-set.json', changeSet));
 validate('review/surface.schema.json', write('surface.json', surface));
 
-const { rules } = JSON.parse(run('npx', ['--yes', 'js-yaml@4.1.0', join(skill, 'rules', 'Rules.yaml')]));
-const context = {
-  probe: { ruleSource: `${join(skill, 'rules')}/`, site },
-  shared: { pullRequest, changeSet, surface, reading },
-  ledger: (name) => join(workdir, 'ledger', `${name}.json`),
-};
-const probes = instructions(context, partition(rules), join(skill, 'references', 'agent-rules-books-INDEX.md'));
+const index = JSON.parse(readFileSync(join(skill, 'references', 'agent-rules-books-search-index.json'), 'utf8'));
+const texts = new Map();
+for (const entry of index) {
+  const response = await fetch(rawUrl(entry.canonical_url));
+  if (!response.ok) throw new Error(`the ruleset ${entry.canonical_url} could not be read: HTTP ${response.status}`);
+  texts.set(entry.canonical_url, await response.text());
+}
+
+const groups = partition(rules);
+checkKinds(groups.map((group) => group.group));
+const probes = instructions(
+  context,
+  groups.map((group) => ({ name: group.name, kind: kindOf(group.group), rulebook: rulebook(group.rules, governance) })),
+  rulesets(index, texts),
+);
 for (const probe of probes) validate('review/agent-instructions.schema.json', write(join('instructions', `${probe.name}.json`), probe.document));
 
 const count = (files, side) => files.reduce((sum, file) => sum + file[side].reduce((n, range) => n + range.end - range.start + 1, 0), 0);
@@ -141,13 +158,9 @@ const summary = {
   descriptionLength: pullRequest.description.length,
   since: prior === undefined ? pr.base.sha : prior.commit_id,
   changeSet: { files: changeSet.files.length, added: count(changeSet.files, 'added'), removed: count(changeSet.files, 'removed') },
-  surface: {
-    files: surface.files.length,
-    added: count(surface.files, 'added'),
-    removed: count(surface.files, 'removed'),
-    callSites: { into: surface.callSites.into.length, outOf: surface.callSites.outOf.length },
-    deadCode: Object.fromEntries(Object.entries(surface.deadCode).map(([kind, entries]) => [kind, entries.length])),
-  },
+  surface: { files: surface.files.length, added: count(surface.files, 'added'), removed: count(surface.files, 'removed') },
+  callSites: { into: sites.into.length, outOf: sites.outOf.length },
+  deadCode: Object.fromEntries(Object.entries(dead).map(([kind, entries]) => [kind, entries.length])),
   repository: paths.length,
   probes: probes.map((probe) => probe.name),
   rules: rules.length,

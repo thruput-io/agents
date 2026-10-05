@@ -112,7 +112,49 @@
         "build.sh",
         "scripts/build_site.sh",
         "scripts/verify.sh"
-      ]
+      ],
+      "gates": {
+        "rules": [
+          {
+            "id": "Available",
+            "marker": "MUST NOT",
+            "group": "Simplicity & Code Reuse",
+            "parent": "Choose boring technology",
+            "body": "Adopt existing code that requires payments or license models, or an extra [[Platform or framework]], that would increase the maintenance burden."
+          },
+          {
+            "id": "Maintained",
+            "marker": "MUST",
+            "group": "Simplicity & Code Reuse",
+            "parent": "Choose boring technology",
+            "body": "Adopt existing code only where it is stable, documented, and maintained by several active contributors."
+          }
+        ],
+        "principles": [
+          {
+            "id": "Choose boring technology",
+            "parent": "Code is a liability, not an asset",
+            "body": "Keep the [[Development Stack]] small and well known."
+          }
+        ],
+        "rationales": [
+          {
+            "id": "Code is a liability, not an asset",
+            "parent": "Simplicity",
+            "body": "Every line carries the ongoing cost of being read, supported, and updated, and is worth that cost only where it meets a user need."
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Platform or framework",
+            "specification": "Meeting the need with what the platform or [[Framework]] in use already provides."
+          },
+          {
+            "id": "Framework",
+            "specification": "Code outside the current code base that calls our code and owns the flow of control."
+          }
+        ]
+      }
     }
   ],
   "type": "object",
@@ -121,7 +163,8 @@
     "review",
     "rulebook",
     "surroundings",
-    "tree"
+    "tree",
+    "gates"
   ],
   "properties": {
     "kind": {
@@ -138,6 +181,10 @@
     },
     "tree": {
       "$ref": "#/$defs/Tree"
+    },
+    "gates": {
+      "description": "The rules every candidate a search finds is gated through, with what explains them. A candidate that fails a gate does not serve. Their own group probes them; here they only decide, and get no ledger row",
+      "$ref": "../rulebook.schema.json"
     }
   },
   "$defs": {
