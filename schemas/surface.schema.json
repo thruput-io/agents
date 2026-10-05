@@ -137,8 +137,7 @@
       ],
       "properties": {
         "name": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/Name"
         },
         "definedIn": {
           "type": "array",
@@ -156,8 +155,7 @@
       ],
       "properties": {
         "name": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/Name"
         },
         "usedIn": {
           "type": "array",
@@ -167,6 +165,11 @@
           }
         }
       }
+    },
+    "Name": {
+      "description": "A name the definition patterns recognise: a function, class, type, variable, shell function, or id",
+      "type": "string",
+      "minLength": 1
     }
   }
 }

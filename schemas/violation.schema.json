@@ -2,11 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/violation.schema.json",
   "title": "Violation",
-  "description": "One finding of one rule: what is wrong, and where it is reported. The anchor is a line or a range inside the surface, or the pull request as a whole where no surface line is to blame, including code the change made dead elsewhere, which the body names by file and line. The body states what is wrong, not how to fix it; the citation of the rule is added by the reviewing context, never written by the probe",
+  "description": "One finding of one rule: a reference to the rule, the observation of what is wrong, and where it is reported. The reporting script renders the comment as '{observation} breaks {principle name}', the principle being the parent of the rule referenced; the observation itself names no rule and no principle. The anchor is a line or a range inside the surface, or the pull request as a whole where no surface line is to blame, including code the change made dead elsewhere, which the observation names by file and line. The observation states what is wrong, not how to fix it",
   "examples": [
     {
       "rule": "No suppressed exit status",
-      "body": "the pipeline's exit status is discarded, so a failing check passes as success.",
+      "observation": "Losing the check's exit status in a pipe into tail",
       "anchor": {
         "path": "scripts/verify.sh",
         "line": 21,
@@ -17,24 +17,27 @@
   "type": "object",
   "required": [
     "rule",
-    "body",
+    "observation",
     "anchor"
   ],
   "properties": {
     "rule": {
-      "description": "The rule violated, by its id; the same id as the ledger row carrying this violation",
-      "$ref": "id.schema.json"
+      "description": "A reference to the rule violated, by its id: the rule of the ledger row carrying this violation. The reporting script reads the rule's parent principle through it",
+      "$ref": "rules.schema.json#/$defs/RuleId"
     },
-    "body": {
-      "description": "What is wrong, briefly. Without the rule's name or link: the reviewing context prefixes the citation from the rule id",
-      "type": "string",
-      "minLength": 1
+    "observation": {
+      "$ref": "#/$defs/Observation"
     },
     "anchor": {
       "$ref": "#/$defs/Anchor"
     }
   },
   "$defs": {
+    "Observation": {
+      "description": "What the code does wrong, briefly, worded as the subject of the sentence the reporting script completes: '{observation} breaks {principle name}'. It names no rule and no principle, by name, id, link, or wording",
+      "type": "string",
+      "minLength": 1
+    },
     "Anchor": {
       "description": "Where the violation is reported",
       "oneOf": [
@@ -98,7 +101,7 @@
       }
     },
     "PullRequest": {
-      "description": "The pull request as a whole: an existing component that replaces a whole module, a standard the change set as a whole does not follow, or code outside the surface that the change made dead, named by file and line in the body. Carried in the review body rather than on a line",
+      "description": "The pull request as a whole: an existing component that replaces a whole module, a standard the change set as a whole does not follow, or code outside the surface that the change made dead, named by file and line in the observation. Carried in the review body rather than on a line",
       "type": "object",
       "required": [
         "pullRequest"

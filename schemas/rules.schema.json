@@ -50,13 +50,17 @@
           ]
         },
         "group": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/Group"
         }
       }
     },
     "RuleId": {
       "$ref": "id.schema.json"
+    },
+    "Group": {
+      "description": "The group a rule is placed in, by its name",
+      "type": "string",
+      "minLength": 1
     }
   }
 }

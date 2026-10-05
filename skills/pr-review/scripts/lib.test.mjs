@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parseDiff, parseHunks, intersect, union, threadRanges, narrowSurface, slug, partition, definitions, callSites, deadCode, instructions,
-  anchorInside, checkLedger, merge, verdict, table, comment, citation, alreadyOpen, review, CELL,
+  anchorInside, checkLedger, merge, verdict, table, comment, citation, message, alreadyOpen, review, CELL,
 } from './lib.mjs';
 
 const diff = [
@@ -165,9 +165,10 @@ test('instructions writes one probe per group and one escalation, each with its 
 });
 
 const surface = { headCommit: 'h', files: [{ path: 'p', added: [{ start: 1, end: 5 }], removed: [{ start: 9, end: 9 }] }] };
-const probe = { rules: [{ id: 'A' }, { id: 'B' }], changeSet: { headCommit: 'h' }, surface, site: 's/' };
+const probe = { rules: [{ id: 'A', parent: 'P' }, { id: 'B', parent: 'Q' }], changeSet: { headCommit: 'h' }, surface, site: 's/' };
 const row = (rule, extra = {}) => ({ rule, examined: ['x'], verdict: 'clean', evidence: 'e', ...extra });
-const violation = (anchor, rule = 'A') => ({ rule, body: 'what is wrong', anchor });
+const violation = (anchor, rule = 'A') => ({ rule, observation: 'what is wrong', anchor });
+const finding = (anchor) => ({ ...violation(anchor), body: 'rendered' });
 
 test('anchorInside accepts lines in the surface on their side, and the pull request', () => {
   assert.equal(anchorInside({ path: 'p', line: 3, side: 'RIGHT' }, surface), true);
@@ -228,37 +229,42 @@ test('table escapes pipes and newlines and caps a cell', () => {
   assert.match(rendered, /…/);
 });
 
-test('citation links a rule of ours to the site and leaves a book rule as the probe wrote it', () => {
-  assert.equal(citation(probe, "You aren't gonna need it"), "[You aren't gonna need it](s/#you-arent-gonna-need-it)");
+test('citation links the parent principle of a rule of ours to the site and leaves a book rule as the probe wrote it', () => {
+  assert.equal(citation({ rules: [{ id: 'R', parent: "You aren't gonna need it" }], site: 's/' }, 'R'), "[You aren't gonna need it](s/#you-arent-gonna-need-it)");
   assert.equal(citation(escalation, 'Book rule'), 'Book rule');
 });
 
+test('message renders the observation as breaking the cited principle, and keeps a book rule in front of its observation', () => {
+  assert.equal(message(probe, violation({ pullRequest: true }), '[P](s/#p)'), 'what is wrong breaks [P](s/#p)');
+  assert.equal(message(escalation, violation({ pullRequest: true }, 'Book rule'), 'Book rule'), 'Book rule: what is wrong');
+});
+
 test('comment maps a line, a range, and the pull request', () => {
-  assert.deepEqual(comment(violation({ path: 'p', line: 3, side: 'RIGHT' })), { path: 'p', line: 3, side: 'RIGHT', body: 'what is wrong' });
-  assert.deepEqual(comment(violation({ path: 'q', lines: { start: 1, end: 4 }, side: 'LEFT' })), { path: 'q', start_line: 1, start_side: 'LEFT', line: 4, side: 'LEFT', body: 'what is wrong' });
-  assert.equal(comment(violation({ pullRequest: true })), undefined);
+  assert.deepEqual(comment(finding({ path: 'p', line: 3, side: 'RIGHT' })), { path: 'p', line: 3, side: 'RIGHT', body: 'rendered' });
+  assert.deepEqual(comment(finding({ path: 'q', lines: { start: 1, end: 4 }, side: 'LEFT' })), { path: 'q', start_line: 1, start_side: 'LEFT', line: 4, side: 'LEFT', body: 'rendered' });
+  assert.equal(comment(finding({ pullRequest: true })), undefined);
 });
 
-test('alreadyOpen matches an open thread on the same line citing the same rule', () => {
-  const threads = [{ path: 'p', line: 3, body: '[A](s/#a): earlier' }];
-  assert.equal(alreadyOpen(violation({ path: 'p', line: 3, side: 'RIGHT' }), '[A](s/#a)', threads), true);
-  assert.equal(alreadyOpen(violation({ path: 'p', line: 4, side: 'RIGHT' }), '[A](s/#a)', threads), false);
-  assert.equal(alreadyOpen(violation({ path: 'p', line: 3, side: 'RIGHT' }), '[B](s/#b)', threads), false);
-  assert.equal(alreadyOpen(violation({ pullRequest: true }), '[A](s/#a)', threads), false);
+test('alreadyOpen matches an open thread on the same line citing the same principle', () => {
+  const threads = [{ path: 'p', line: 3, body: 'earlier breaks [P](s/#p)' }];
+  assert.equal(alreadyOpen(violation({ path: 'p', line: 3, side: 'RIGHT' }), '[P](s/#p)', threads), true);
+  assert.equal(alreadyOpen(violation({ path: 'p', line: 4, side: 'RIGHT' }), '[P](s/#p)', threads), false);
+  assert.equal(alreadyOpen(violation({ path: 'p', line: 3, side: 'RIGHT' }), '[Q](s/#q)', threads), false);
+  assert.equal(alreadyOpen(violation({ pullRequest: true }), '[P](s/#p)', threads), false);
 });
 
-test('review carries every violation with its citation: inline ones as comments, the rest in the body', () => {
+test('review carries every violation as breaking its principle: inline ones as comments, the rest in the body', () => {
   const payload = review(entries, { self: false, threads: [] });
   assert.equal(payload.commit_id, 'h');
   assert.equal(payload.event, 'REQUEST_CHANGES');
-  assert.deepEqual(payload.comments.map((item) => item.body), ['[A](s/#a): what is wrong', 'Book rule: what is wrong']);
+  assert.deepEqual(payload.comments.map((item) => item.body), ['what is wrong breaks [P](s/#p)', 'Book rule: what is wrong']);
   assert.match(payload.body, /^\*\*Verdict: REQUEST_CHANGES\*\*\n/);
   assert.match(payload.body, /3 rules probed by 2 probes at h: 3 violations, 2 inline, 1 at the pull request, 0 already carried by an open thread/);
-  assert.match(payload.body, /\n\n\[A\]\(s\/#a\): what is wrong\n\n<details>/);
+  assert.match(payload.body, /\n\nwhat is wrong breaks \[P\]\(s\/#p\)\n\n<details>/);
 });
 
 test('review posts a comment with the verdict when the reviewer is the author, and skips what an open thread carries', () => {
-  const payload = review(entries, { self: true, threads: [{ path: 'p', line: 3, body: '[A](s/#a): earlier' }] });
+  const payload = review(entries, { self: true, threads: [{ path: 'p', line: 3, body: 'earlier breaks [P](s/#p)' }] });
   assert.equal(payload.event, 'COMMENT');
   assert.match(payload.body, /^\*\*Verdict: REQUEST_CHANGES\*\* \(posted as a comment: the reviewer is the author\)/);
   assert.deepEqual(payload.comments.map((item) => item.body), ['Book rule: what is wrong']);

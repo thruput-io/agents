@@ -26,7 +26,7 @@
           "violations": [
             {
               "rule": "No suppressed exit status",
-              "body": "the pipeline's exit status is discarded, so a failing check passes as success.",
+              "observation": "Losing the check's exit status in a pipe into tail",
               "anchor": {
                 "path": "scripts/verify.sh",
                 "line": 21,
@@ -61,8 +61,7 @@
       "type": "array",
       "minItems": 1,
       "items": {
-        "type": "string",
-        "minLength": 1
+        "$ref": "#/$defs/ExaminedItem"
       }
     },
     "Row": {
@@ -91,7 +90,7 @@
       ],
       "properties": {
         "rule": {
-          "$ref": "id.schema.json"
+          "$ref": "rules.schema.json#/$defs/RuleId"
         },
         "examined": {
           "$ref": "#/$defs/Examined"
@@ -100,8 +99,7 @@
           "const": "violation"
         },
         "evidence": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/Evidence"
         },
         "violations": {
           "type": "array",
@@ -123,7 +121,7 @@
       ],
       "properties": {
         "rule": {
-          "$ref": "id.schema.json"
+          "$ref": "rules.schema.json#/$defs/RuleId"
         },
         "examined": {
           "$ref": "#/$defs/Examined"
@@ -132,8 +130,7 @@
           "const": "clean"
         },
         "evidence": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/Evidence"
         },
         "violations": false
       }
@@ -149,7 +146,7 @@
       ],
       "properties": {
         "rule": {
-          "$ref": "id.schema.json"
+          "$ref": "rules.schema.json#/$defs/RuleId"
         },
         "examined": {
           "$ref": "#/$defs/Examined"
@@ -158,11 +155,20 @@
           "const": "not-applicable"
         },
         "evidence": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/Evidence"
         },
         "violations": false
       }
+    },
+    "ExaminedItem": {
+      "description": "One thing opened to reach the verdict: a file, a symbol, a call site, a test file, or a search query",
+      "type": "string",
+      "minLength": 1
+    },
+    "Evidence": {
+      "description": "What the verdict rests on; the row it sits in says what it has to name",
+      "type": "string",
+      "minLength": 1
     }
   }
 }

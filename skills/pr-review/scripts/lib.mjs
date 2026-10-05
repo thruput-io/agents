@@ -257,7 +257,13 @@ export function table(ledger) {
 }
 
 export function citation(document, rule) {
-  return document.escalation ? rule : `[${rule}](${document.site}#${slug(rule)})`;
+  if (document.escalation) return rule;
+  const principle = document.rules.find((candidate) => candidate.id === rule).parent;
+  return `[${principle}](${document.site}#${slug(principle)})`;
+}
+
+export function message(document, violation, cite) {
+  return document.escalation ? `${cite}: ${violation.observation}` : `${violation.observation} breaks ${cite}`;
 }
 
 export function comment(violation) {
@@ -282,7 +288,7 @@ export function review(entries, { self, threads }) {
   const findings = entries.flatMap(({ document, ledger: own }) => own.rows.filter((row) => row.verdict === 'violation')
     .flatMap((row) => row.violations.map((violation) => {
       const cite = citation(document, violation.rule);
-      return { ...violation, body: `${cite}: ${violation.body}`, open: alreadyOpen(violation, cite, threads) };
+      return { ...violation, body: message(document, violation, cite), open: alreadyOpen(violation, cite, threads) };
     })));
   const fresh = findings.filter((finding) => !finding.open);
   const comments = fresh.map(comment).filter((item) => item !== undefined);
