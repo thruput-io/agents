@@ -4,7 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   parseDiff, parseHunks, threadRanges, wholeSurface, narrowSurface, definitions, callSites, deadCode, isText, partition, kindOf, checkKinds,
-  ladderGates, rulebook, rawUrl, rulesets, instructions,
+  rulebook, rawUrl, rulesets, instructions,
 } from './lib.mjs';
 
 const skill = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -112,7 +112,7 @@ const dead = deadCode(diff, paths, read);
 const deadPaths = Object.values(dead).flat().flatMap((entry) => entry.definedIn ?? entry.usedIn);
 
 const { rules } = yaml('Rules.yaml');
-const governance = { principles: yaml('Principles.yaml').principles, rationales: yaml('Rationales.yaml').rationales, definitions: yaml('Definitions.yaml').definitions };
+const governance = { principles: yaml('Principles.yaml').principles, definitions: yaml('Definitions.yaml').definitions };
 
 const atHead = (candidates) => [...new Set(candidates)].filter((path) => paths.includes(path) && isText(read(path)))
   .map((path) => ({ path, content: readFileSync(join(snapshot, path), 'utf8') }));
@@ -121,7 +121,7 @@ const context = {
   review: { pullRequest, changeSet, surface, files: atHead(changed) },
   beyond: {
     rules: {},
-    'reuse-ladder': { surroundings: around([...sites.into, ...sites.outOf]), tree: paths, gates: rulebook(ladderGates(rules), governance) },
+    'reuse-ladder': {},
     'dead-code': { surroundings: around([...sites.into, ...sites.outOf, ...deadPaths]), deadCode: dead },
   },
   ledger: (name) => join(workdir, 'ledger', `${name}.json`),

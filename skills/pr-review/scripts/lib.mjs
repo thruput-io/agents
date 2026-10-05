@@ -139,16 +139,6 @@ export function checkKinds(groups) {
   if (absent.length > 0) throw new Error(`no rule is in the group ${absent.join(', ')}, which a kind of probe is tied to: the group was renamed or removed`);
 }
 
-const GATES_OF_THE_LADDER = ['Available', 'Maintained'];
-
-export function ladderGates(rules) {
-  return GATES_OF_THE_LADDER.map((id) => {
-    const gate = rules.find((rule) => rule.id === id);
-    if (gate === undefined) throw new Error(`no rule is named ${id}, which every candidate of the reuse ladder is gated through: the rule was renamed or removed`);
-    return gate;
-  });
-}
-
 const DEFINITION = /\b(?:function|def|class|interface|type|enum|struct|fn|func|module|namespace|trait|record|const|let|var|val|protocol|extension)\s+([A-Za-z_$][\w$]*)/g;
 const SHELL_FUNCTION = /^\s*([A-Za-z_]\w*)\s*\(\)\s*\{/;
 const ID = /^\s*-?\s*id:\s*(\S.*?)\s*$/;
@@ -177,17 +167,16 @@ function parents(children, entries, level) {
 
 export function rulebook(rules, governance) {
   const principles = parents(rules, governance.principles, 'principle');
-  const rationales = parents(principles, governance.rationales, 'rationale');
   const glossary = new Map(governance.definitions.map((definition) => [definition.id, definition]));
   const cited = new Set();
-  const unread = [...rules, ...principles, ...rationales];
+  const unread = [...rules, ...principles];
   while (unread.length > 0) {
     for (const id of named(unread.shift()).filter((candidate) => glossary.has(candidate) && !cited.has(candidate))) {
       cited.add(id);
       unread.push(glossary.get(id));
     }
   }
-  return { rules, principles, rationales, definitions: governance.definitions.filter((definition) => cited.has(definition.id)) };
+  return { rules, principles, definitions: governance.definitions.filter((definition) => cited.has(definition.id)) };
 }
 
 export function definedOn(line) {

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  parseDiff, parseHunks, intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, ladderGates, rulebook, rawUrl, rulesets,
+  parseDiff, parseHunks, intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
   definitions, callSites, deadCode, instructions, anchorInside, checkLedger, merge, verdict, table, comment, citation, message, alreadyOpen,
   review, CELL, SITE,
 } from './lib.mjs';
@@ -123,36 +123,23 @@ test('checkKinds refuses rules that lack a group a kind of probe is tied to', ()
   assert.throws(() => checkKinds(['Development Stack', 'Behavior & Failure Handling']), /Dead Code & Comments/);
 });
 
-test('ladderGates picks the rules a candidate of the reuse ladder is gated through, and refuses rules that lack one', () => {
-  const available = { id: 'Available' };
-  const maintained = { id: 'Maintained' };
-  assert.deepEqual(ladderGates([{ id: 'A' }, maintained, available]), [available, maintained]);
-  assert.throws(() => ladderGates([available]), /Maintained/);
-});
-
 const governance = {
   principles: [{ id: 'P', parent: 'R', body: 'Uses [[Term]].' }, { id: 'Unused principle', parent: 'R', body: 'Unused.' }],
-  rationales: [
-    { id: 'R', parent: 'Axiom', body: 'Why.', solutions: [{ marker: 'SHOULD', body: 'Apply [[Solution term]].' }] },
-    { id: 'Unused rationale', parent: 'Axiom', body: 'Unused.' },
-  ],
   definitions: [
-    { id: 'Term', specification: 'Means [[Nested]].' },
+    { id: 'Term', specification: 'Means [[Nested]], and cites [[P]], which is a principle and no glossary term.' },
     { id: 'Nested', specification: 'A kind.', closedEnumerationOf: ['Listed'] },
     { id: 'Listed', specification: 'Listed by an enumeration.' },
-    { id: 'Solution term', specification: 'Cited by a solution; cites [[P]], which is a principle and no glossary term.' },
     { id: 'Rule term', specification: 'Cited by a rule.' },
     { id: 'Unused term', specification: 'Nothing cites it.' },
   ],
 };
 
-test('rulebook hands a probe its rules with their principles, their rationales, and every glossary term those cite', () => {
+test('rulebook hands a probe its rules with their principles and every glossary term those cite', () => {
   const own = [{ id: 'A', parent: 'P', body: 'Do [[Rule term]].' }, { id: 'B', parent: 'P', body: 'Do.' }];
   assert.deepEqual(rulebook(own, governance), {
     rules: own,
     principles: [governance.principles[0]],
-    rationales: [governance.rationales[0]],
-    definitions: governance.definitions.slice(0, 5),
+    definitions: governance.definitions.slice(0, 4),
   });
 });
 
@@ -232,14 +219,14 @@ test('instructions hands every probe the review with its ledger file, and each k
   const context = {
     review: { changeSet: { headCommit: 'h', files: [] } },
     ledger: (name) => `/w/ledger/${name}.json`,
-    beyond: { rules: {}, 'reuse-ladder': { surroundings: 'around the ladder', tree: ['a'] }, 'dead-code': { surroundings: 'around the dead', deadCode: 'facts' } },
+    beyond: { rules: {}, 'reuse-ladder': {}, 'dead-code': { surroundings: 'around the dead', deadCode: 'facts' } },
   };
   const probes = [{ name: 'g1', kind: 'rules', rulebook: 'r1' }, { name: 'g2', kind: 'reuse-ladder', rulebook: 'r2' }, { name: 'g3', kind: 'dead-code', rulebook: 'r3' }];
   const files = instructions(context, probes, ['a ruleset']);
   const handed = (name) => ({ changeSet: { headCommit: 'h', files: [] }, ledger: `/w/ledger/${name}.json` });
   assert.deepEqual(files.map((file) => file.name), ['01-g1', '02-g2', '03-g3', '04-escalation']);
   assert.deepEqual(files[0].document, { kind: 'rules', review: handed('01-g1'), rulebook: 'r1' });
-  assert.deepEqual(files[1].document, { kind: 'reuse-ladder', review: handed('02-g2'), rulebook: 'r2', surroundings: 'around the ladder', tree: ['a'] });
+  assert.deepEqual(files[1].document, { kind: 'reuse-ladder', review: handed('02-g2'), rulebook: 'r2' });
   assert.deepEqual(files[2].document, { kind: 'dead-code', review: handed('03-g3'), rulebook: 'r3', surroundings: 'around the dead', deadCode: 'facts' });
   assert.deepEqual(files[3].document, { kind: 'escalation', review: handed('04-escalation'), rulesets: ['a ruleset'] });
 });

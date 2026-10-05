@@ -4,9 +4,9 @@
   "title": "Id",
   "description": "Abstract stable handle for citing an entity: readable text with no leading or trailing whitespace. Each entity schema defines its concrete id by inheriting this. Where an id names another entry it is reached through the dynamic anchor, which the build binds to the enumeration of every declared id",
   "$dynamicAnchor": "Id",
+  "type": "string",
+  "pattern": "^\\S(.*\\S)?$",
   "examples": [
     "Demonstrable standard"
-  ],
-  "type": "string",
-  "pattern": "^\\S(.*\\S)?$"
+  ]
 }

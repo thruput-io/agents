@@ -72,7 +72,7 @@ Paths are repository-absolute and begin with `/`.
 
 ## Read files at the head commit
 
-There is no `az` command that returns a textual diff. Fetch whole files and compare, which is what [`CODE_REVIEW.md` § Read beyond the diff](../CODE_REVIEW.md#1-setup) requires anyway:
+There is no `az` command that returns a textual diff. Fetch whole files and compare, which is what the review requires anyway:
 
 ```bash
 az devops invoke --area git --resource items \
@@ -171,7 +171,7 @@ az repos pr set-vote --id {id} --vote approve --org {org} --detect false
 
 ## No atomic review
 
-This is the one place the Azure DevOps model does not fit [`CODE_REVIEW.md` step 5](../CODE_REVIEW.md#5-submit). GitHub accepts one payload carrying every inline comment plus the verdict, producing one review and one notification. Azure DevOps has no such endpoint: each thread is its own POST and the vote is a separate call. N comments therefore mean N requests and N notifications, and there is no way to make them atomic.
+This is the one place the Azure DevOps model does not fit [`CODE_REVIEW.md` step 4](../CODE_REVIEW.md#4-submit). GitHub accepts one payload carrying every inline comment plus the verdict, producing one review and one notification. Azure DevOps has no such endpoint: each thread is its own POST and the vote is a separate call. N comments therefore mean N requests and N notifications, and there is no way to make them atomic.
 
 Consequences for a review run against Azure DevOps:
 

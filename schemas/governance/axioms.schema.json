@@ -3,17 +3,6 @@
   "$id": "https://thruput.se/agents/schemas/governance/axioms.schema.json",
   "title": "Axioms",
   "description": "The axioms: entries whose parent is a value",
-  "examples": [
-    {
-      "axioms": [
-        {
-          "id": "Example axiom",
-          "parent": "Example value",
-          "body": "An example axiom states a truth we hold."
-        }
-      ]
-    }
-  ],
   "type": "object",
   "required": [
     "axioms"
@@ -42,5 +31,16 @@
     "AxiomId": {
       "$ref": "id.schema.json"
     }
-  }
+  },
+  "examples": [
+    {
+      "axioms": [
+        {
+          "id": "Example axiom",
+          "parent": "Example value",
+          "body": "An example axiom states a truth we hold."
+        }
+      ]
+    }
+  ]
 }

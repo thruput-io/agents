@@ -3,17 +3,6 @@
   "$id": "https://thruput.se/agents/schemas/governance/governance.schema.json",
   "title": "Governance",
   "description": "Any one governance document: exactly one of the document schemas it lists applies, told apart by the document's top-level key",
-  "examples": [
-    {
-      "axioms": [
-        {
-          "id": "Example axiom",
-          "parent": "Example value",
-          "body": "An example axiom states a truth we hold."
-        }
-      ]
-    }
-  ],
   "oneOf": [
     {
       "$ref": "values.schema.json"
@@ -38,6 +27,17 @@
     },
     {
       "$ref": "taxonomy.schema.json"
+    }
+  ],
+  "examples": [
+    {
+      "axioms": [
+        {
+          "id": "Example axiom",
+          "parent": "Example value",
+          "body": "An example axiom states a truth we hold."
+        }
+      ]
     }
   ]
 }

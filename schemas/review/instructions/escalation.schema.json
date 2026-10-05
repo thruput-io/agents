@@ -2,70 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/instructions/escalation.schema.json",
   "title": "Escalation instructions",
-  "description": "The instructions of the escalation probe",
-  "examples": [
-    {
-      "kind": "escalation",
-      "review": {
-        "pullRequest": {
-          "host": {
-            "kind": "github",
-            "owner": "thruput-io",
-            "repository": "agents",
-            "number": 12
-          },
-          "author": "agent-rasmus[bot]",
-          "reviewer": "review4thruput",
-          "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
-        },
-        "changeSet": {
-          "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
-          "files": [
-            {
-              "path": "scripts/verify.sh",
-              "added": [
-                {
-                  "start": 21,
-                  "end": 21
-                }
-              ],
-              "removed": []
-            }
-          ]
-        },
-        "surface": {
-          "files": [
-            {
-              "path": "scripts/verify.sh",
-              "added": [
-                {
-                  "start": 21,
-                  "end": 21
-                }
-              ],
-              "removed": []
-            }
-          ]
-        },
-        "files": [
-          {
-            "path": "scripts/verify.sh",
-            "content": "#!/usr/bin/env bash\nset -euo pipefail\n"
-          }
-        ],
-        "ledger": "/home/user/review/ledger/24-escalation.json"
-      },
-      "rulesets": [
-        {
-          "url": "https://github.com/ciembor/agent-rules-books/blob/main/domain-driven-design/domain-driven-design.md",
-          "title": "Domain-Driven Design",
-          "focus": "Domain Modeling & Strategic Architecture",
-          "whenToUse": "Strategic & Tactical modeling. Solves database/controller leakage into business rules.",
-          "text": "# Domain-Driven Design\n\n## Make implicit concepts explicit\n"
-        }
-      ]
-    }
-  ],
+  "description": "The instructions of the escalation probe, whose rules come from outside our rules: it is handed rulesets in the place of a rulebook. It selects the ruleset whose focus and whenToUse match what the pull request changes, reads its text, never a one-line summary or its memory of the book, picks the three rules most relevant to the change set, and probes those three, the selected ruleset standing in the place of the rulebook. It writes three rows, each on a bookRule: the url of the ruleset it selected and the heading of the rule in its text",
   "type": "object",
   "required": [
     "kind",
@@ -137,5 +74,68 @@
       "type": "string",
       "minLength": 1
     }
-  }
+  },
+  "examples": [
+    {
+      "kind": "escalation",
+      "review": {
+        "pullRequest": {
+          "host": {
+            "kind": "github",
+            "owner": "thruput-io",
+            "repository": "agents",
+            "number": 12
+          },
+          "author": "agent-rasmus[bot]",
+          "reviewer": "review4thruput",
+          "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
+        },
+        "changeSet": {
+          "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
+          "files": [
+            {
+              "path": "scripts/verify.sh",
+              "added": [
+                {
+                  "start": 21,
+                  "end": 21
+                }
+              ],
+              "removed": []
+            }
+          ]
+        },
+        "surface": {
+          "files": [
+            {
+              "path": "scripts/verify.sh",
+              "added": [
+                {
+                  "start": 21,
+                  "end": 21
+                }
+              ],
+              "removed": []
+            }
+          ]
+        },
+        "files": [
+          {
+            "path": "scripts/verify.sh",
+            "content": "#!/usr/bin/env bash\nset -euo pipefail\n"
+          }
+        ],
+        "ledger": "/home/user/review/ledger/24-escalation.json"
+      },
+      "rulesets": [
+        {
+          "url": "https://github.com/ciembor/agent-rules-books/blob/main/domain-driven-design/domain-driven-design.md",
+          "title": "Domain-Driven Design",
+          "focus": "Domain Modeling & Strategic Architecture",
+          "whenToUse": "Strategic & Tactical modeling. Solves database/controller leakage into business rules.",
+          "text": "# Domain-Driven Design\n\n## Make implicit concepts explicit\n"
+        }
+      ]
+    }
+  ]
 }

@@ -3,29 +3,6 @@
   "$id": "https://thruput.se/agents/schemas/review/change-set.schema.json",
   "title": "Change set",
   "description": "The lines a pull request adds or removes, resolved once at its head commit by the reviewing context and handed to every probe. Added lines are numbered in the file at the head commit, where their text is read; removed lines are numbered in the file at the base and carry their text, which no file at the head commit holds",
-  "examples": [
-    {
-      "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
-      "files": [
-        {
-          "path": "scripts/verify.sh",
-          "added": [
-            {
-              "start": 21,
-              "end": 21
-            }
-          ],
-          "removed": [
-            {
-              "start": 21,
-              "end": 21,
-              "content": "lychee --offline \"$site\""
-            }
-          ]
-        }
-      ]
-    }
-  ],
   "$ref": "#/$defs/Lines",
   "$defs": {
     "Commit": {
@@ -120,5 +97,28 @@
         }
       }
     }
-  }
+  },
+  "examples": [
+    {
+      "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
+      "files": [
+        {
+          "path": "scripts/verify.sh",
+          "added": [
+            {
+              "start": 21,
+              "end": 21
+            }
+          ],
+          "removed": [
+            {
+              "start": 21,
+              "end": 21,
+              "content": "lychee --offline \"$site\""
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

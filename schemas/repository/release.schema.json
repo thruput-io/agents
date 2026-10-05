@@ -3,11 +3,6 @@
   "$id": "https://thruput.se/agents/schemas/repository/release.schema.json",
   "title": "Release",
   "description": "The release a build of the site carries in its meta header, written into the site's data by the build from the nearest tag. A published site states which release it serves, and the deployment verifies that it does",
-  "examples": [
-    {
-      "version": "0.3.6"
-    }
-  ],
   "type": "object",
   "required": [
     "version"
@@ -23,5 +18,10 @@
       "type": "string",
       "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
     }
-  }
+  },
+  "examples": [
+    {
+      "version": "0.3.6"
+    }
+  ]
 }

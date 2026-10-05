@@ -3,23 +3,6 @@
   "$id": "https://thruput.se/agents/schemas/governance/rationales.schema.json",
   "title": "Rationales",
   "description": "The rationales: entries whose parent is an axiom, with any solutions that apply them",
-  "examples": [
-    {
-      "rationales": [
-        {
-          "id": "Example rationale",
-          "parent": "Example axiom",
-          "body": "An example rationale weighs two goods and cites its source.",
-          "solutions": [
-            {
-              "marker": "SHOULD",
-              "body": "Apply the example rationale where it serves."
-            }
-          ]
-        }
-      ]
-    }
-  ],
   "type": "object",
   "required": [
     "rationales"
@@ -77,5 +60,22 @@
     "RationaleId": {
       "$ref": "id.schema.json"
     }
-  }
+  },
+  "examples": [
+    {
+      "rationales": [
+        {
+          "id": "Example rationale",
+          "parent": "Example axiom",
+          "body": "An example rationale weighs two goods and cites its source.",
+          "solutions": [
+            {
+              "marker": "SHOULD",
+              "body": "Apply the example rationale where it serves."
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

@@ -2,45 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/rulebook.schema.json",
   "title": "Rulebook",
-  "description": "The part of our rules one probe applies, read once by the reviewing context and handed over whole: the rules to probe, and what answers when the application of a rule is in doubt, one level up at a time",
-  "examples": [
-    {
-      "rules": [
-        {
-          "id": "No suppressed exit status",
-          "marker": "MUST NOT",
-          "group": "Behavior & Failure Handling",
-          "parent": "Fail fast",
-          "body": "Discard a command's non-zero [[Exit status]] so that a failure passes as success."
-        }
-      ],
-      "principles": [
-        {
-          "id": "Fail fast",
-          "parent": "Crash, don't guess",
-          "body": "A system fails loudly and at once on an unexpected state; it never continues on a guess."
-        }
-      ],
-      "rationales": [
-        {
-          "id": "Crash, don't guess",
-          "parent": "Shift Left",
-          "body": "A program that continues past an unexpected state runs on a guess."
-        }
-      ],
-      "definitions": [
-        {
-          "id": "Exit status",
-          "specification": "The number a process returns when it ends; zero means success, anything else failure."
-        }
-      ]
-    }
-  ],
+  "description": "The part of our rules one probe applies, read once by the reviewing context and handed over whole: the rules to probe, the principles that answer when the application of a rule is in doubt, and the glossary that defines their terms",
   "type": "object",
   "required": [
     "rules",
     "principles",
-    "rationales",
     "definitions"
   ],
   "properties": {
@@ -59,19 +25,38 @@
         "$ref": "../governance/principles.schema.json#/$defs/Principle"
       }
     },
-    "rationales": {
-      "description": "The rationale each listed principle names as its parent",
-      "type": "array",
-      "items": {
-        "$ref": "../governance/rationales.schema.json#/$defs/Rationale"
-      }
-    },
     "definitions": {
-      "description": "The glossary definition of every [[term]] a listed rule, principle, rationale, or definition names. A rule is applied as the glossary defines its terms",
+      "description": "The glossary definition of every [[term]] a listed rule, principle, or definition names. A rule is applied as the glossary defines its terms",
       "type": "array",
       "items": {
         "$ref": "../governance/definitions.schema.json#/$defs/Definition"
       }
     }
-  }
+  },
+  "examples": [
+    {
+      "rules": [
+        {
+          "id": "No suppressed exit status",
+          "marker": "MUST NOT",
+          "group": "Behavior & Failure Handling",
+          "parent": "Fail fast",
+          "body": "Discard a command's non-zero [[Exit status]] so that a failure passes as success."
+        }
+      ],
+      "principles": [
+        {
+          "id": "Fail fast",
+          "parent": "Crash, don't guess",
+          "body": "A system fails loudly and at once on an unexpected state; it never continues on a guess."
+        }
+      ],
+      "definitions": [
+        {
+          "id": "Exit status",
+          "specification": "The number a process returns when it ends; zero means success, anything else failure."
+        }
+      ]
+    }
+  ]
 }

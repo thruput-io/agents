@@ -2,130 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/instructions/dead-code.schema.json",
   "title": "Dead-code instructions",
-  "description": "The instructions of the probe of the rules that ask what the change leaves behind. Beyond the review and its rules it is handed the dead-code facts, computed over the whole repository at the head commit, and the files they name. It judges those facts; it does not search for dead code",
-  "examples": [
-    {
-      "kind": "dead-code",
-      "review": {
-        "pullRequest": {
-          "host": {
-            "kind": "github",
-            "owner": "thruput-io",
-            "repository": "agents",
-            "number": 12
-          },
-          "author": "agent-rasmus[bot]",
-          "reviewer": "review4thruput",
-          "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
-        },
-        "changeSet": {
-          "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
-          "files": [
-            {
-              "path": "scripts/verify.sh",
-              "added": [
-                {
-                  "start": 21,
-                  "end": 21
-                }
-              ],
-              "removed": []
-            }
-          ]
-        },
-        "surface": {
-          "files": [
-            {
-              "path": "scripts/verify.sh",
-              "added": [
-                {
-                  "start": 21,
-                  "end": 21
-                }
-              ],
-              "removed": []
-            }
-          ]
-        },
-        "files": [
-          {
-            "path": "scripts/verify.sh",
-            "content": "#!/usr/bin/env bash\nset -euo pipefail\n"
-          }
-        ],
-        "ledger": "/home/user/review/ledger/08-dead-code.json"
-      },
-      "rulebook": {
-        "rules": [
-          {
-            "id": "Delete unused",
-            "marker": "MUST",
-            "group": "Dead Code & Comments",
-            "parent": "You aren't gonna need it",
-            "body": "Delete [[Test]]s, [[Production code]], and [[Helper code]] that are no longer relevant or used."
-          }
-        ],
-        "principles": [
-          {
-            "id": "You aren't gonna need it",
-            "parent": "Code is a liability, not an asset",
-            "body": "Always implement things when you actually need them, never when you just foresee that you need them."
-          }
-        ],
-        "rationales": [
-          {
-            "id": "Code is a liability, not an asset",
-            "parent": "Simplicity",
-            "body": "Every line carries the ongoing cost of being read, supported, and updated, and is worth that cost only where it meets a user need."
-          }
-        ],
-        "definitions": [
-          {
-            "id": "Test",
-            "specification": "Code that runs a piece of the system and checks that it behaves as specified."
-          },
-          {
-            "id": "Production code",
-            "specification": "Code that executes in a deployment runtime after the build and serves [[Users]]."
-          },
-          {
-            "id": "Helper code",
-            "specification": "Small supporting code that exists to serve other code rather than a user-facing behaviour."
-          },
-          {
-            "id": "Users",
-            "specification": "Whoever consumes the software or system to fulfill a need."
-          }
-        ]
-      },
-      "surroundings": {
-        "callSites": {
-          "into": [
-            "build.sh"
-          ],
-          "outOf": []
-        },
-        "files": [
-          {
-            "path": "build.sh",
-            "content": "#!/usr/bin/env bash\nset -euo pipefail\n\"$PROJECT_ROOT/scripts/verify.sh\"\n"
-          }
-        ]
-      },
-      "deadCode": {
-        "unusedDefinitions": [],
-        "danglingReferences": [],
-        "orphanedDefinitions": [
-          {
-            "name": "run_checks",
-            "definedIn": [
-              "build.sh"
-            ]
-          }
-        ]
-      }
-    }
-  ],
+  "description": "The instructions of the probe of the rules that ask what the change leaves behind. Beyond the review and its rules it is handed the dead-code facts, computed over the whole repository at the head commit, and the surroundings, which hold the files those facts and the call sites name. It judges those facts; it does not search for dead code\n\nOne thing outside the surface is reportable: code the surface makes dead, a symbol whose last caller this pull request removes or a branch it makes unreachable; the orphaned definitions are the candidates. The host cannot carry a comment on a line outside the diff, so anchor it at the pull request, name the dead code by file and line in the observation, and name in evidence the surface line that killed it. Dead code the surface merely failed to clean up is not this",
   "type": "object",
   "required": [
     "kind",
@@ -228,5 +105,121 @@
       "type": "string",
       "minLength": 1
     }
-  }
+  },
+  "examples": [
+    {
+      "kind": "dead-code",
+      "review": {
+        "pullRequest": {
+          "host": {
+            "kind": "github",
+            "owner": "thruput-io",
+            "repository": "agents",
+            "number": 12
+          },
+          "author": "agent-rasmus[bot]",
+          "reviewer": "review4thruput",
+          "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
+        },
+        "changeSet": {
+          "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
+          "files": [
+            {
+              "path": "scripts/verify.sh",
+              "added": [
+                {
+                  "start": 21,
+                  "end": 21
+                }
+              ],
+              "removed": []
+            }
+          ]
+        },
+        "surface": {
+          "files": [
+            {
+              "path": "scripts/verify.sh",
+              "added": [
+                {
+                  "start": 21,
+                  "end": 21
+                }
+              ],
+              "removed": []
+            }
+          ]
+        },
+        "files": [
+          {
+            "path": "scripts/verify.sh",
+            "content": "#!/usr/bin/env bash\nset -euo pipefail\n"
+          }
+        ],
+        "ledger": "/home/user/review/ledger/08-dead-code.json"
+      },
+      "rulebook": {
+        "rules": [
+          {
+            "id": "Delete unused",
+            "marker": "MUST",
+            "group": "Dead Code & Comments",
+            "parent": "You aren't gonna need it",
+            "body": "Delete [[Test]]s, [[Production code]], and [[Helper code]] that are no longer relevant or used."
+          }
+        ],
+        "principles": [
+          {
+            "id": "You aren't gonna need it",
+            "parent": "Code is a liability, not an asset",
+            "body": "Always implement things when you actually need them, never when you just foresee that you need them."
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Test",
+            "specification": "Code that runs a piece of the system and checks that it behaves as specified."
+          },
+          {
+            "id": "Production code",
+            "specification": "Code that executes in a deployment runtime after the build and serves [[Users]]."
+          },
+          {
+            "id": "Helper code",
+            "specification": "Small supporting code that exists to serve other code rather than a user-facing behaviour."
+          },
+          {
+            "id": "Users",
+            "specification": "Whoever consumes the software or system to fulfill a need."
+          }
+        ]
+      },
+      "surroundings": {
+        "callSites": {
+          "into": [
+            "build.sh"
+          ],
+          "outOf": []
+        },
+        "files": [
+          {
+            "path": "build.sh",
+            "content": "#!/usr/bin/env bash\nset -euo pipefail\n\"$PROJECT_ROOT/scripts/verify.sh\"\n"
+          }
+        ]
+      },
+      "deadCode": {
+        "unusedDefinitions": [],
+        "danglingReferences": [],
+        "orphanedDefinitions": [
+          {
+            "name": "run_checks",
+            "definedIn": [
+              "build.sh"
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

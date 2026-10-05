@@ -3,18 +3,6 @@
   "$id": "https://thruput.se/agents/schemas/governance/standards.schema.json",
   "title": "Standards",
   "description": "The standards: entries whose parent is a rule, each implementing it for one technology",
-  "examples": [
-    {
-      "standards": [
-        {
-          "id": "Example standard",
-          "context": "Example tool",
-          "parent": "Example rule",
-          "body": "`example` is never `false`."
-        }
-      ]
-    }
-  ],
   "type": "object",
   "required": [
     "standards"
@@ -54,5 +42,17 @@
       "type": "string",
       "minLength": 1
     }
-  }
+  },
+  "examples": [
+    {
+      "standards": [
+        {
+          "id": "Example standard",
+          "context": "Example tool",
+          "parent": "Example rule",
+          "body": "`example` is never `false`."
+        }
+      ]
+    }
+  ]
 }

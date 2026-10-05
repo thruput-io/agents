@@ -2,23 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/surroundings.schema.json",
   "title": "Surroundings",
-  "description": "The repository around the change, handed to the probes whose rules reach beyond the changed files: context a verdict is reached from, never what it is reported against",
-  "examples": [
-    {
-      "callSites": {
-        "into": [
-          "build.sh"
-        ],
-        "outOf": []
-      },
-      "files": [
-        {
-          "path": "build.sh",
-          "content": "#!/usr/bin/env bash\nset -euo pipefail\n\"$PROJECT_ROOT/scripts/verify.sh\"\n"
-        }
-      ]
-    }
-  ],
+  "description": "The repository around the change, handed to the dead-code probe: context a verdict is reached from, never what it is reported against",
   "type": "object",
   "required": [
     "callSites",
@@ -61,5 +45,21 @@
         }
       }
     }
-  }
+  },
+  "examples": [
+    {
+      "callSites": {
+        "into": [
+          "build.sh"
+        ],
+        "outOf": []
+      },
+      "files": [
+        {
+          "path": "build.sh",
+          "content": "#!/usr/bin/env bash\nset -euo pipefail\n\"$PROJECT_ROOT/scripts/verify.sh\"\n"
+        }
+      ]
+    }
+  ]
 }

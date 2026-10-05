@@ -3,16 +3,6 @@
   "$id": "https://thruput.se/agents/schemas/governance/definitions.schema.json",
   "title": "Definitions",
   "description": "The glossary: the definitions of terms the other documents rely on",
-  "examples": [
-    {
-      "definitions": [
-        {
-          "id": "API",
-          "specification": "Alias for [[Interface]]."
-        }
-      ]
-    }
-  ],
   "type": "object",
   "required": [
     "definitions"
@@ -140,5 +130,15 @@
       "description": "Prose whose every [[Id]] names a declared id. Accepts any prose on its own; the build binds the dynamic anchor to the pattern of every declared id",
       "$dynamicAnchor": "References"
     }
-  }
+  },
+  "examples": [
+    {
+      "definitions": [
+        {
+          "id": "API",
+          "specification": "Alias for [[Interface]]."
+        }
+      ]
+    }
+  ]
 }

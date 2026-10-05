@@ -3,13 +3,6 @@
   "$id": "https://thruput.se/agents/schemas/repository/repository.schema.json",
   "title": "Repository",
   "description": "How every repository is laid out. Each property is a location in the file tree, named in its description relative to the repository root, and its value is what lives there",
-  "examples": [
-    {
-      "readme": {},
-      "plans": [],
-      "adrs": []
-    }
-  ],
   "type": "object",
   "required": [
     "readme",
@@ -43,5 +36,12 @@
         "$ref": "adr.schema.json"
       }
     }
-  }
+  },
+  "examples": [
+    {
+      "readme": {},
+      "plans": [],
+      "adrs": []
+    }
+  ]
 }

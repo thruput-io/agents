@@ -3,26 +3,6 @@
   "$id": "https://thruput.se/agents/schemas/review/violation.schema.json",
   "title": "Violation",
   "description": "One finding of the rule in whose ledger row it sits: the observation of what is wrong, and where it is reported. It carries no reference of its own: the row names the rule once, and the reporting script renders the comment as '{observation} breaks {principle name}', the principle being the parent of that rule",
-  "examples": [
-    {
-      "observation": "Losing the check's exit status in a pipe into tail",
-      "anchor": {
-        "kind": "lines",
-        "path": "scripts/verify.sh",
-        "side": "head",
-        "lines": {
-          "start": 21,
-          "end": 21
-        }
-      }
-    },
-    {
-      "observation": "Writing a new diff parser where parseDiff in skills/pr-review/scripts/lib.mjs already serves",
-      "anchor": {
-        "kind": "pull-request"
-      }
-    }
-  ],
   "type": "object",
   "required": [
     "observation",
@@ -96,5 +76,25 @@
         "base"
       ]
     }
-  }
+  },
+  "examples": [
+    {
+      "observation": "Losing the check's exit status in a pipe into tail",
+      "anchor": {
+        "kind": "lines",
+        "path": "scripts/verify.sh",
+        "side": "head",
+        "lines": {
+          "start": 21,
+          "end": 21
+        }
+      }
+    },
+    {
+      "observation": "Writing a new diff parser where parseDiff in skills/pr-review/scripts/lib.mjs already serves",
+      "anchor": {
+        "kind": "pull-request"
+      }
+    }
+  ]
 }

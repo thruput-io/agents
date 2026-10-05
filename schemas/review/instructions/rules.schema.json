@@ -3,6 +3,23 @@
   "$id": "https://thruput.se/agents/schemas/review/instructions/rules.schema.json",
   "title": "Rules instructions",
   "description": "The instructions of a probe of the rules",
+  "type": "object",
+  "required": [
+    "kind",
+    "review",
+    "rulebook"
+  ],
+  "properties": {
+    "kind": {
+      "const": "rules"
+    },
+    "review": {
+      "$ref": "../review.schema.json"
+    },
+    "rulebook": {
+      "$ref": "../rulebook.schema.json"
+    }
+  },
   "examples": [
     {
       "kind": "rules",
@@ -72,13 +89,6 @@
             "body": "A system fails loudly and at once on an unexpected state; it never continues on a guess."
           }
         ],
-        "rationales": [
-          {
-            "id": "Crash, don't guess",
-            "parent": "Shift Left",
-            "body": "A program that continues past an unexpected state runs on a guess."
-          }
-        ],
         "definitions": [
           {
             "id": "Exit status",
@@ -87,22 +97,5 @@
         ]
       }
     }
-  ],
-  "type": "object",
-  "required": [
-    "kind",
-    "review",
-    "rulebook"
-  ],
-  "properties": {
-    "kind": {
-      "const": "rules"
-    },
-    "review": {
-      "$ref": "../review.schema.json"
-    },
-    "rulebook": {
-      "$ref": "../rulebook.schema.json"
-    }
-  }
+  ]
 }
