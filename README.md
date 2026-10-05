@@ -23,12 +23,6 @@ Install as an [AgentPlugins](https://agentplugins.pages.dev/) plugin:
 npx --yes @agentplugins/cli add thruput-io/agents
 ```
 
-### Skills
-
-- `dad-joke`: Programming dad jokes with zero input.
-- `pr-review`: Reviews a GitHub or Azure DevOps Pull Request against the rules in this repository and posts the review
-  as inline comments on the correct lines.
-
 ## License
 
 Licensed under the [Apache 2.0 License](LICENSE).
