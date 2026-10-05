@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thruput.se/agents/schemas/rationales.schema.json",
+  "$id": "https://thruput.se/agents/schemas/governance/rationales.schema.json",
   "title": "Rationales",
   "description": "The rationales: entries whose parent is an axiom, with any solutions that apply them",
   "examples": [

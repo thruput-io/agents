@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thruput.se/agents/schemas/taxonomy.schema.json",
+  "$id": "https://thruput.se/agents/schemas/governance/taxonomy.schema.json",
   "title": "Taxonomy",
   "description": "A classification scheme: a hierarchy of levels, each a definition with criteria for what belongs to it",
   "examples": [

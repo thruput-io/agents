@@ -61,7 +61,7 @@ layout: default
   <ul>
   {%- assign schemas = site.static_files | where_exp: "file", "file.path contains '/schemas/'" -%}
   {%- for file in schemas %}
-    <li><a href="schemas/{{ file.name }}">{{ file.name }}</a></li>
+    <li><a href="{{ file.path | remove_first: '/' }}">{{ file.path | remove_first: '/schemas/' }}</a></li>
   {%- endfor %}
   </ul>
 </section>

@@ -30,7 +30,7 @@ For Azure DevOps PR reviews, note that Azure DevOps does not support atomic batc
 - `PROBE_SUBAGENT_TEMPLATE.md` — the prompt one probe subagent receives, around one instructions file.
 - `scripts/prepare.mjs`, `scripts/review.mjs` — the two commands the process runs; `scripts/lib.mjs` holds their logic, tested by `scripts/lib.test.mjs`.
 - `rules/`, `schemas/` — this repository's rules and schemas, linked into the skill.
-- `https://thruput.se/agents/schemas/change-set.schema.json`, `surface.schema.json`, `agent-instructions.schema.json`, `ledger.schema.json`, `violation.schema.json` — the shapes the process passes around, from this repository's `schemas/`.
+- `https://thruput.se/agents/schemas/review/change-set.schema.json`, `surface.schema.json`, `agent-instructions.schema.json`, `ledger.schema.json`, `violation.schema.json` — the shapes the process passes around, from this repository's `schemas/`.
 - `references/agent-rules-books-INDEX.md`, `references/agent-rules-books-search-index.json` — escalation index, byte-for-byte mirrors of the handbook's `references/`. Refresh with:
 
       for f in agent-rules-books-INDEX.md agent-rules-books-search-index.json; do

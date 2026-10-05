@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/review/instructions/rules.schema.json",
+  "title": "Rules instructions",
+  "description": "The instructions of a probe of the rules",
+  "examples": [
+    {
+      "kind": "rules",
+      "review": {
+        "pullRequest": {
+          "host": {
+            "kind": "github",
+            "owner": "thruput-io",
+            "repository": "agents",
+            "number": 12
+          },
+          "author": "agent-rasmus[bot]",
+          "reviewer": "review4thruput",
+          "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
+        },
+        "changeSet": {
+          "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
+          "files": [
+            {
+              "path": "scripts/verify.sh",
+              "added": [
+                {
+                  "start": 21,
+                  "end": 21
+                }
+              ],
+              "removed": []
+            }
+          ]
+        },
+        "surface": {
+          "files": [
+            {
+              "path": "scripts/verify.sh",
+              "added": [
+                {
+                  "start": 21,
+                  "end": 21
+                }
+              ],
+              "removed": []
+            }
+          ]
+        },
+        "files": [
+          {
+            "path": "scripts/verify.sh",
+            "content": "#!/usr/bin/env bash\nset -euo pipefail\n"
+          }
+        ],
+        "ledger": "/home/user/review/ledger/11-behavior-failure-handling.json"
+      },
+      "rulebook": {
+        "rules": [
+          {
+            "id": "No suppressed exit status",
+            "marker": "MUST NOT",
+            "group": "Behavior & Failure Handling",
+            "parent": "Fail fast",
+            "body": "Discard a command's non-zero [[Exit status]] so that a failure passes as success."
+          }
+        ],
+        "principles": [
+          {
+            "id": "Fail fast",
+            "parent": "Crash, don't guess",
+            "body": "A system fails loudly and at once on an unexpected state; it never continues on a guess."
+          }
+        ],
+        "rationales": [
+          {
+            "id": "Crash, don't guess",
+            "parent": "Shift Left",
+            "body": "A program that continues past an unexpected state runs on a guess."
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Exit status",
+            "specification": "The number a process returns when it ends; zero means success, anything else failure."
+          }
+        ]
+      }
+    }
+  ],
+  "type": "object",
+  "required": [
+    "kind",
+    "review",
+    "rulebook"
+  ],
+  "properties": {
+    "kind": {
+      "const": "rules"
+    },
+    "review": {
+      "$ref": "../review.schema.json"
+    },
+    "rulebook": {
+      "$ref": "../rulebook.schema.json"
+    }
+  }
+}

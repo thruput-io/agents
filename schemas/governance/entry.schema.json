@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thruput.se/agents/schemas/entry.schema.json",
+  "$id": "https://thruput.se/agents/schemas/governance/entry.schema.json",
   "title": "Entry",
   "description": "What every entry in the taxonomy carries: an id and a body, and below the root the id of its parent one level up. Each level schema extends an entry and narrows its id and its parent to its own level",
   "examples": [

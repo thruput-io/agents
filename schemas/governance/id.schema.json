@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thruput.se/agents/schemas/id.schema.json",
+  "$id": "https://thruput.se/agents/schemas/governance/id.schema.json",
   "title": "Id",
   "description": "Abstract stable handle for citing an entity: readable text with no leading or trailing whitespace. Each entity schema defines its concrete id by inheriting this. Where an id names another entry it is reached through the dynamic anchor, which the build binds to the enumeration of every declared id",
   "$dynamicAnchor": "Id",

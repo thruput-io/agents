@@ -35,7 +35,7 @@ jobs:
           cp -R "$PROJECT_ROOT/rules" "$PROJECT_ROOT/site/_data"
           cp -R "$PROJECT_ROOT/schemas" "$PROJECT_ROOT/site/schemas"
           printf 'version: %s\n' "$version" > "$PROJECT_ROOT/site/_data/release.yml"
-      - run: npx --yes @sourcemeta/jsonschema@17.0.0 validate "$PROJECT_ROOT/schemas/release.schema.json" "$PROJECT_ROOT/site/_data/release.yml" --resolve "$PROJECT_ROOT/schemas"
+      - run: npx --yes @sourcemeta/jsonschema@17.0.0 validate "$PROJECT_ROOT/schemas/repository/release.schema.json" "$PROJECT_ROOT/site/_data/release.yml" --resolve "$PROJECT_ROOT/schemas"
       - uses: actions/jekyll-build-pages@v1
         with:
           source: site

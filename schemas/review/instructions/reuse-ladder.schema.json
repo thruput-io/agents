@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/review/instructions/reuse-ladder.schema.json",
+  "title": "Reuse ladder instructions",
+  "description": "The instructions of the probe of the rules that ask whether the code needed to be written at all. Its probes are searches, so beyond the review and its rules it is handed the repository around the change",
+  "examples": [
+    {
+      "kind": "reuse-ladder",
+      "review": {
+        "pullRequest": {
+          "host": {
+            "kind": "github",
+            "owner": "thruput-io",
+            "repository": "agents",
+            "number": 12
+          },
+          "author": "agent-rasmus[bot]",
+          "reviewer": "review4thruput",
+          "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
+        },
+        "changeSet": {
+          "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
+          "files": [
+            {
+              "path": "scripts/verify.sh",
+              "added": [
+                {
+                  "start": 21,
+                  "end": 21
+                }
+              ],
+              "removed": []
+            }
+          ]
+        },
+        "surface": {
+          "files": [
+            {
+              "path": "scripts/verify.sh",
+              "added": [
+                {
+                  "start": 21,
+                  "end": 21
+                }
+              ],
+              "removed": []
+            }
+          ]
+        },
+        "files": [
+          {
+            "path": "scripts/verify.sh",
+            "content": "#!/usr/bin/env bash\nset -euo pipefail\n"
+          }
+        ],
+        "ledger": "/home/user/review/ledger/02-development-stack.json"
+      },
+      "rulebook": {
+        "rules": [
+          {
+            "id": "No new code where an external tool serves",
+            "marker": "MUST NOT",
+            "group": "Development Stack",
+            "parent": "Choose boring technology",
+            "body": "Write [[New code]] when an [[External tool or service]] meets the need."
+          }
+        ],
+        "principles": [
+          {
+            "id": "Choose boring technology",
+            "parent": "Code is a liability, not an asset",
+            "body": "Keep the [[Development Stack]] small and well known."
+          }
+        ],
+        "rationales": [
+          {
+            "id": "Code is a liability, not an asset",
+            "parent": "Simplicity",
+            "body": "Every line carries the ongoing cost of being read, supported, and updated, and is worth that cost only where it meets a user need."
+          }
+        ],
+        "definitions": [
+          {
+            "id": "New code",
+            "specification": "Meeting the need by writing new code."
+          },
+          {
+            "id": "External tool or service",
+            "specification": "Meeting the need by integrating an existing external tool or calling an existing service."
+          },
+          {
+            "id": "Development Stack",
+            "specification": "The ways to meet a need, in order of how little code we own afterwards."
+          }
+        ]
+      },
+      "surroundings": {
+        "callSites": {
+          "into": [
+            "build.sh"
+          ],
+          "outOf": []
+        },
+        "files": [
+          {
+            "path": "build.sh",
+            "content": "#!/usr/bin/env bash\nset -euo pipefail\n\"$PROJECT_ROOT/scripts/verify.sh\"\n"
+          }
+        ]
+      },
+      "tree": [
+        "build.sh",
+        "scripts/build_site.sh",
+        "scripts/verify.sh"
+      ]
+    }
+  ],
+  "type": "object",
+  "required": [
+    "kind",
+    "review",
+    "rulebook",
+    "surroundings",
+    "tree"
+  ],
+  "properties": {
+    "kind": {
+      "const": "reuse-ladder"
+    },
+    "review": {
+      "$ref": "../review.schema.json"
+    },
+    "rulebook": {
+      "$ref": "../rulebook.schema.json"
+    },
+    "surroundings": {
+      "$ref": "../surroundings.schema.json"
+    },
+    "tree": {
+      "$ref": "#/$defs/Tree"
+    }
+  },
+  "$defs": {
+    "Tree": {
+      "description": "Every file in the repository at the head commit, by path: what exists, without its content",
+      "type": "array",
+      "items": {
+        "$ref": "../change-set.schema.json#/$defs/Path"
+      }
+    }
+  }
+}

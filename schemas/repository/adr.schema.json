@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thruput.se/agents/schemas/adr.schema.json",
+  "$id": "https://thruput.se/agents/schemas/repository/adr.schema.json",
   "title": "ADR",
   "description": "One Architecture Decision Record. ADRs together form the Architectural Direction, defined in definitions.yaml: they are read from the highest number downward, a later ADR supersedes an earlier one, and an ADR is never edited once written; a change is a new ADR. An ADR governs direction and does not describe current state",
   "examples": [
@@ -59,7 +59,7 @@
     },
     "Context": {
       "description": "The forces and circumstances that called for the decision",
-      "$ref": "definitions.schema.json#/$defs/Prose"
+      "$ref": "../governance/definitions.schema.json#/$defs/Prose"
     },
     "Decisions": {
       "description": "What is decided, when several decisions are taken together. A single decision is written as decision, so each ADR has exactly one valid shape",
@@ -71,7 +71,7 @@
     },
     "Decision": {
       "description": "One decision",
-      "$ref": "definitions.schema.json#/$defs/Prose"
+      "$ref": "../governance/definitions.schema.json#/$defs/Prose"
     },
     "SingleDecision": {
       "description": "An ADR that takes one decision",

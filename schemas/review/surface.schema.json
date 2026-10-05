@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/review/surface.schema.json",
+  "title": "Surface",
+  "description": "What is under review: the lines a violation may be reported against, a selection of the change set numbered against its head commit. On a first-time review the whole change set; on a subsequent review the changes carrying an unresolved comment, carrying a comment the author resolved since the prior review, or new since the prior review",
+  "examples": [
+    {
+      "files": [
+        {
+          "path": "scripts/verify.sh",
+          "added": [
+            {
+              "start": 21,
+              "end": 21
+            }
+          ],
+          "removed": [
+            {
+              "start": 21,
+              "end": 21
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "type": "object",
+  "required": [
+    "files"
+  ],
+  "properties": {
+    "files": {
+      "description": "The lines a violation may be reported against",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/FileUnderReview"
+      }
+    }
+  },
+  "$defs": {
+    "FileUnderReview": {
+      "description": "The lines of one file a violation may be reported against, by number only: added ranges numbered at the head commit, removed ranges at the base",
+      "type": "object",
+      "required": [
+        "path",
+        "added",
+        "removed"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "change-set.schema.json#/$defs/Path"
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "$ref": "change-set.schema.json#/$defs/LineRange"
+          }
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "$ref": "change-set.schema.json#/$defs/LineRange"
+          }
+        }
+      }
+    }
+  }
+}

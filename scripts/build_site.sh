@@ -15,7 +15,7 @@ trap remove_site EXIT
 
 version=$(git -C "$PROJECT_ROOT" describe --tags | sed 's/^v//')
 printf 'version: %s\n' "$version" > "$release/release.yml"
-npx --yes @sourcemeta/jsonschema@17.0.0 validate "$PROJECT_ROOT/schemas/release.schema.json" "$release/release.yml" --resolve "$PROJECT_ROOT/schemas"
+npx --yes @sourcemeta/jsonschema@17.0.0 validate "$PROJECT_ROOT/schemas/repository/release.schema.json" "$release/release.yml" --resolve "$PROJECT_ROOT/schemas"
 
 source=(
   --volume "$PROJECT_ROOT/rules:/github/workspace/site/_data:ro"

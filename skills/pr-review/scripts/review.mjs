@@ -27,7 +27,7 @@ if (missing.length > 0) {
 }
 
 const entries = probes.map((probe) => {
-  validate('ledger.schema.json', probe.document.ledger);
+  validate('review/ledger.schema.json', probe.document.ledger);
   const ledger = read(probe.document.ledger);
   checkLedger(probe.name, probe.document, ledger);
   return { document: probe.document, ledger };

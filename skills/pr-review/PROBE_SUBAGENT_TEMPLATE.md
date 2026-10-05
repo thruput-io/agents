@@ -1,10 +1,10 @@
 # PROBE SUBAGENT TEMPLATE
 
-Instructions for one review subagent, dispatched by [`CODE_REVIEW.md` step 3](CODE_REVIEW.md#3-rule-evaluation). Copy the block below verbatim into the subagent prompt, substituting `{{INSTRUCTIONS}}` with the content of one file from `<workdir>/instructions/`, written by `prepare.mjs` and validated against [`agent-instructions.schema.json`](schemas/agent-instructions.schema.json). One subagent per file. Never hand two files to one subagent, and never edit a file before handing it over.
+Instructions for one review subagent, dispatched by [`CODE_REVIEW.md` step 3](CODE_REVIEW.md#3-rule-evaluation). Copy the block below verbatim into the subagent prompt, substituting `{{INSTRUCTIONS}}` with the content of one file from `<workdir>/instructions/`, written by `prepare.mjs` and validated against [`agent-instructions.schema.json`](schemas/review/agent-instructions.schema.json). One subagent per file. Never hand two files to one subagent, and never edit a file before handing it over.
 
 ---
 
-You are running one review probe. Your instructions are the JSON document below; its schema is [`agent-instructions.schema.json`](schemas/agent-instructions.schema.json) and says what each field holds. Your entire job is to probe each rule your instructions name — one probe per rule — and to write one ledger row per rule to the file `ledger` names. You do not review anything else, and you do not post anything to the PR host.
+You are running one review probe. Your instructions are the JSON document below; its schema is [`agent-instructions.schema.json`](schemas/review/agent-instructions.schema.json) and says what each field holds. Your entire job is to probe each rule your instructions name — one probe per rule — and to write one ledger row per rule to the file `ledger` names. You do not review anything else, and you do not post anything to the PR host.
 
 ## Instructions
 
@@ -55,7 +55,7 @@ If your instructions carry `escalation`, you are the escalation probe, and your 
 
 ## Return value
 
-Write a ledger that validates against [`ledger.schema.json`](schemas/ledger.schema.json) to the file `ledger` names: `headCommit` is `changeSet.headCommit`, and `rows` holds one row per rule in your instructions, in that order, nothing else. The schema says what a row of each verdict carries; a `violation` row carries its findings as violations shaped by [`violation.schema.json`](schemas/violation.schema.json). The reviewing context validates the file and refuses it when a row is missing, extra, or out of order; it then re-runs you rather than repair the file.
+Write a ledger that validates against [`ledger.schema.json`](schemas/review/ledger.schema.json) to the file `ledger` names: `headCommit` is `changeSet.headCommit`, and `rows` holds one row per rule in your instructions, in that order, nothing else. The schema says what a row of each verdict carries; a `violation` row carries its findings as violations shaped by [`violation.schema.json`](schemas/review/violation.schema.json). The reviewing context validates the file and refuses it when a row is missing, extra, or out of order; it then re-runs you rather than repair the file.
 
 - A violation's `anchor` is a line or a range in `surface.files`, numbered in the file at the head commit on side `RIGHT` within the added ranges, or in the file at the base on side `LEFT` within the removed ranges, never a diff hunk offset. The reviewing context refuses any other line. Where no surface line is to blame — an existing component that replaces a whole module, a standard the change set as a whole does not follow, code outside the surface the change made dead — the anchor is the pull request and the observation names the place.
 - A violation's `rule` is a reference to the rule by its id, exactly as `rules` gives it: the rule of the row it sits in. It carries nothing else of the rule.

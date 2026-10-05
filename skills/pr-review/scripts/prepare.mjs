@@ -120,8 +120,8 @@ for (const path of new Set([...changed, ...surface.callSites.into, ...surface.ca
 rmSync(snapshot, { recursive: true });
 rmSync(tarball);
 
-validate('change-set.schema.json', write('change-set.json', changeSet));
-validate('surface.schema.json', write('surface.json', surface));
+validate('review/change-set.schema.json', write('change-set.json', changeSet));
+validate('review/surface.schema.json', write('surface.json', surface));
 
 const { rules } = JSON.parse(run('npx', ['--yes', 'js-yaml@4.1.0', join(skill, 'rules', 'Rules.yaml')]));
 const context = {
@@ -130,7 +130,7 @@ const context = {
   ledger: (name) => join(workdir, 'ledger', `${name}.json`),
 };
 const probes = instructions(context, partition(rules), join(skill, 'references', 'agent-rules-books-INDEX.md'));
-for (const probe of probes) validate('agent-instructions.schema.json', write(join('instructions', `${probe.name}.json`), probe.document));
+for (const probe of probes) validate('review/agent-instructions.schema.json', write(join('instructions', `${probe.name}.json`), probe.document));
 
 const count = (files, side) => files.reduce((sum, file) => sum + file[side].reduce((n, range) => n + range.end - range.start + 1, 0), 0);
 const summary = {

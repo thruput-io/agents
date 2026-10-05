@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thruput.se/agents/schemas/change-set.schema.json",
+  "$id": "https://thruput.se/agents/schemas/review/change-set.schema.json",
   "title": "Change set",
-  "description": "The lines a pull request adds or removes, resolved once at its head commit by the reviewing context and handed to every probe. Added lines are numbered in the file at the head commit, removed lines in the file at the base",
+  "description": "The lines a pull request adds or removes, resolved once at its head commit by the reviewing context and handed to every probe. Added lines are numbered in the file at the head commit, where their text is read; removed lines are numbered in the file at the base and carry their text, which no file at the head commit holds",
   "examples": [
     {
       "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
@@ -15,7 +15,13 @@
               "end": 21
             }
           ],
-          "removed": []
+          "removed": [
+            {
+              "start": 21,
+              "end": 21,
+              "content": "lychee --offline \"$site\""
+            }
+          ]
         }
       ]
     }
@@ -32,6 +38,11 @@
       "type": "string",
       "pattern": "^[^/]"
     },
+    "LineNumber": {
+      "description": "A line of a file, by its 1-based number",
+      "type": "integer",
+      "minimum": 1
+    },
     "LineRange": {
       "description": "Consecutive lines of one file, by their 1-based numbers, both ends included",
       "type": "object",
@@ -41,17 +52,31 @@
       ],
       "properties": {
         "start": {
-          "type": "integer",
-          "minimum": 1
+          "$ref": "#/$defs/LineNumber"
         },
         "end": {
-          "type": "integer",
-          "minimum": 1
+          "$ref": "#/$defs/LineNumber"
         }
       }
     },
+    "RemovedLines": {
+      "description": "Consecutive lines the change removes, with their text",
+      "$ref": "#/$defs/LineRange",
+      "required": [
+        "content"
+      ],
+      "properties": {
+        "content": {
+          "$ref": "#/$defs/RemovedContent"
+        }
+      }
+    },
+    "RemovedContent": {
+      "description": "The text of removed lines as they stood at the base, one line of text per line removed",
+      "type": "string"
+    },
     "ChangedFile": {
-      "description": "One file the pull request touches: the ranges it adds, numbered at the head commit, and the ranges it removes, numbered at the base. A new file has no removed ranges, a deleted file no added ones",
+      "description": "One file the pull request touches: the ranges it adds, numbered at the head commit, and the lines it removes, numbered at the base, with their text. A new file has no removed lines, a deleted file no added ranges",
       "type": "object",
       "required": [
         "path",
@@ -71,7 +96,7 @@
         "removed": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/LineRange"
+            "$ref": "#/$defs/RemovedLines"
           }
         }
       }

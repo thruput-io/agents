@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/review/surroundings.schema.json",
+  "title": "Surroundings",
+  "description": "The repository around the change, handed to the probes whose rules reach beyond the changed files: context a verdict is reached from, never what it is reported against",
+  "examples": [
+    {
+      "callSites": {
+        "into": [
+          "build.sh"
+        ],
+        "outOf": []
+      },
+      "files": [
+        {
+          "path": "build.sh",
+          "content": "#!/usr/bin/env bash\nset -euo pipefail\n\"$PROJECT_ROOT/scripts/verify.sh\"\n"
+        }
+      ]
+    }
+  ],
+  "type": "object",
+  "required": [
+    "callSites",
+    "files"
+  ],
+  "properties": {
+    "callSites": {
+      "$ref": "#/$defs/CallSites"
+    },
+    "files": {
+      "description": "Every file a call site or a dead-code fact names, in full",
+      "type": "array",
+      "items": {
+        "$ref": "review.schema.json#/$defs/FileAtHead"
+      }
+    }
+  },
+  "$defs": {
+    "CallSites": {
+      "description": "The files outside the change set that the change touches by name",
+      "type": "object",
+      "required": [
+        "into",
+        "outOf"
+      ],
+      "properties": {
+        "into": {
+          "description": "Files that mention a changed file or a name its changed lines define: the callers",
+          "type": "array",
+          "items": {
+            "$ref": "change-set.schema.json#/$defs/Path"
+          }
+        },
+        "outOf": {
+          "description": "Files that a changed file mentions: the callees",
+          "type": "array",
+          "items": {
+            "$ref": "change-set.schema.json#/$defs/Path"
+          }
+        }
+      }
+    }
+  }
+}

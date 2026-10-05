@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/review/violation.schema.json",
+  "title": "Violation",
+  "description": "One finding of the rule in whose ledger row it sits: the observation of what is wrong, and where it is reported. It carries no reference of its own: the row names the rule once, and the reporting script renders the comment as '{observation} breaks {principle name}', the principle being the parent of that rule",
+  "examples": [
+    {
+      "observation": "Losing the check's exit status in a pipe into tail",
+      "anchor": {
+        "kind": "lines",
+        "path": "scripts/verify.sh",
+        "side": "head",
+        "lines": {
+          "start": 21,
+          "end": 21
+        }
+      }
+    },
+    {
+      "observation": "Writing a new diff parser where parseDiff in skills/pr-review/scripts/lib.mjs already serves",
+      "anchor": {
+        "kind": "pull-request"
+      }
+    }
+  ],
+  "type": "object",
+  "required": [
+    "observation",
+    "anchor"
+  ],
+  "properties": {
+    "observation": {
+      "$ref": "#/$defs/Observation"
+    },
+    "anchor": {
+      "$ref": "#/$defs/Anchor"
+    }
+  },
+  "$defs": {
+    "Observation": {
+      "description": "What the code does wrong, briefly, worded as the subject of the sentence the reporting script completes: '{observation} breaks {principle name}'. It names no rule and no principle, by name, id, link, or wording, and it says what is wrong, not how to fix it",
+      "type": "string",
+      "minLength": 1
+    },
+    "Anchor": {
+      "description": "Where the violation is reported",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/LinesAnchor"
+        },
+        {
+          "$ref": "#/$defs/PullRequestAnchor"
+        }
+      ]
+    },
+    "LinesAnchor": {
+      "description": "Consecutive lines of one file inside the surface, a single line being a range that starts and ends on it. Numbered in the file on the side named, never as a diff hunk offset",
+      "type": "object",
+      "required": [
+        "kind",
+        "path",
+        "side",
+        "lines"
+      ],
+      "properties": {
+        "kind": {
+          "const": "lines"
+        },
+        "path": {
+          "$ref": "change-set.schema.json#/$defs/Path"
+        },
+        "side": {
+          "$ref": "#/$defs/Side"
+        },
+        "lines": {
+          "$ref": "change-set.schema.json#/$defs/LineRange"
+        }
+      }
+    },
+    "PullRequestAnchor": {
+      "description": "The pull request as a whole, where no surface line is to blame: an existing component that replaces a whole module, a standard the change set as a whole does not follow, or code outside the surface that the change made dead, which the observation names by file and line. Carried in the review body rather than on a line",
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "pull-request"
+        }
+      }
+    },
+    "Side": {
+      "description": "Which numbering a lines anchor uses: head for lines the change adds, numbered in the file at the head commit; base for lines the change removes, numbered in the file at the base",
+      "enum": [
+        "head",
+        "base"
+      ]
+    }
+  }
+}
