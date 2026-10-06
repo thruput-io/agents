@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parseDiff, parseHunks, intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
-  instructions, complete, numbered, anchorInside, checkLedger, merge, verdict, table, comment, citation, message, alreadyOpen,
-  review, azureDevOpsReview, CELL, SITE,
+  instructions, complete, numbered, settled, anchorInside, checkLedger, merge, verdict, table, citation, message, alreadyOpen,
+  outcome, CELL, SITE,
 } from './lib.mjs';
 
 const diff = [
@@ -53,15 +53,14 @@ test('intersect and union of ranges', () => {
 });
 
 const threads = [
-  { path: 'a.sh', diffSide: 'RIGHT', startLine: null, line: 5, isResolved: false, resolvedBy: null },
-  { path: 'a.sh', diffSide: 'RIGHT', startLine: 8, line: 9, isResolved: true, resolvedBy: { login: 'author' } },
-  { path: 'a.sh', diffSide: 'RIGHT', startLine: null, line: 12, isResolved: true, resolvedBy: { login: 'reviewer' } },
-  { path: 'b.sh', diffSide: 'LEFT', startLine: null, line: 2, isResolved: false, resolvedBy: null },
-  { path: 'c.sh', diffSide: 'RIGHT', startLine: null, line: null, isResolved: false, resolvedBy: null },
+  { id: 't1', path: 'a.sh', side: 'head', lines: { start: 5, end: 5 }, state: 'open', body: 'x' },
+  { id: 't2', path: 'a.sh', side: 'head', lines: { start: 8, end: 9 }, state: 'resolved-by-author', body: 'x' },
+  { id: 't3', path: 'a.sh', side: 'head', lines: { start: 12, end: 12 }, state: 'resolved', body: 'x' },
+  { id: 't4', path: 'b.sh', side: 'base', lines: { start: 2, end: 2 }, state: 'open', body: 'x' },
 ];
 
-test('threadRanges keeps unresolved threads and threads the author resolved, folding the host side into head and base', () => {
-  const sides = threadRanges(threads, 'author');
+test('threadRanges keeps open threads and threads the author resolved, by side', () => {
+  const sides = threadRanges(threads);
   assert.deepEqual([...sides.head], [['a.sh', [{ start: 5, end: 5 }, { start: 8, end: 9 }]]]);
   assert.deepEqual([...sides.base], [['b.sh', [{ start: 2, end: 2 }]]]);
 });
@@ -87,7 +86,7 @@ test('wholeSurface is every line of the change set, by number only', () => {
 
 test('narrowSurface keeps change-set lines that changed since the prior review or carry a thread', () => {
   const changedSince = new Map([['a.sh', [{ start: 15, end: 30 }]]]);
-  assert.deepEqual(narrowSurface(changeSet, changedSince, threadRanges(threads, 'author')), {
+  assert.deepEqual(narrowSurface(changeSet, changedSince, threadRanges(threads)), {
     files: [
       { path: 'a.sh', added: [{ start: 5, end: 5 }, { start: 8, end: 9 }, { start: 15, end: 20 }], removed: [] },
       { path: 'b.sh', added: [], removed: [{ start: 2, end: 2 }] },
@@ -269,8 +268,8 @@ const entries = [{ document: probe, ledger }, { document: escalation, ledger: es
 
 test('merge concatenates rows into the one ledger and verdict follows any violation', () => {
   assert.deepEqual(merge([{ headCommit: 'h', rows: [cleanRow('A')] }, { headCommit: 'h', rows: [cleanBookRow('x')] }]), { headCommit: 'h', rows: [cleanRow('A'), cleanBookRow('x')] });
-  assert.equal(verdict(ledger), 'REQUEST_CHANGES');
-  assert.equal(verdict({ headCommit: 'h', rows: [cleanRow('A')] }), 'APPROVE');
+  assert.equal(verdict(ledger), 'request-changes');
+  assert.equal(verdict({ headCommit: 'h', rows: [cleanRow('A')] }), 'approve');
 });
 
 test('table escapes pipes and newlines, caps a cell, and names a book rule by its heading', () => {
@@ -291,49 +290,44 @@ test('message renders the observation as breaking what is cited', () => {
   assert.equal(message(violation(atPullRequest), citeP), `what is wrong breaks ${citeP}`);
 });
 
-test('comment maps one line, a range, and the pull request onto what the host accepts', () => {
-  assert.deepEqual(comment(finding(lines('p', 3, 3, 'head'))), { path: 'p', line: 3, side: 'RIGHT', body: 'rendered' });
-  assert.deepEqual(comment(finding(lines('q', 1, 4, 'base'))), { path: 'q', start_line: 1, start_side: 'LEFT', line: 4, side: 'LEFT', body: 'rendered' });
-  assert.equal(comment(finding(atPullRequest)), undefined);
-});
-
 test('alreadyOpen matches an open thread on the same line citing the same principle', () => {
-  const open = [{ path: 'p', line: 3, body: `earlier breaks ${citeP}` }];
+  const open = [{ path: 'p', lines: { start: 3, end: 3 }, body: `earlier breaks ${citeP}` }];
   assert.equal(alreadyOpen(violation(lines('p', 3, 3, 'head')), citeP, open), true);
   assert.equal(alreadyOpen(violation(lines('p', 4, 4, 'head')), citeP, open), false);
   assert.equal(alreadyOpen(violation(lines('p', 3, 3, 'head')), `[Q](${SITE}#q)`, open), false);
   assert.equal(alreadyOpen(violation(atPullRequest), citeP, open), false);
 });
 
-test('review carries every violation as breaking what its rule protects: inline ones as comments, the rest in the body', () => {
-  const payload = review(entries, { self: false, threads: [] });
-  assert.equal(payload.commit_id, 'h');
-  assert.equal(payload.event, 'REQUEST_CHANGES');
-  assert.deepEqual(payload.comments.map((item) => item.body), [`what is wrong breaks ${citeP}`, 'what is wrong breaks [Book rule](https://books.example/ddd.md)']);
-  assert.match(payload.body, /^\*\*Verdict: REQUEST_CHANGES\*\*\n/);
-  assert.match(payload.body, /3 rules probed by 2 probes at h: 3 violations, 2 inline, 1 at the pull request, 0 already carried by an open thread/);
-  assert.equal(payload.body.includes(`\n\nwhat is wrong breaks ${citeP}\n\n<details>`), true);
+test('settled lists the open threads of ours that no finding of this review carries any more: the fixed ones', () => {
+  const document = { kind: 'rules', rulebook: { rules: [{ id: 'R', parent: 'P' }], principles: [{ id: 'P' }], definitions: [] } };
+  const violation = { observation: 'x', anchor: { kind: 'lines', path: 'a.sh', side: 'head', lines: { start: 3, end: 4 } } };
+  const ledger = { headCommit: 'h', rows: [{ rule: 'R', verdict: 'violation', examined: ['a.sh'], evidence: 'e', violations: [violation] }] };
+  const threads = [
+    { id: 1, path: 'a.sh', lines: { start: 4, end: 4 }, body: message(violation, citation(document, ledger.rows[0])) },
+    { id: 2, path: 'a.sh', lines: { start: 9, end: 9 }, body: message(violation, citation(document, ledger.rows[0])) },
+    { id: 3, path: 'b.sh', lines: { start: 1, end: 1 }, body: 'something else breaks [P](https://thruput.se/agents/#p)' },
+  ];
+  assert.deepEqual(settled([{ document, ledger }], threads).map((thread) => thread.id), [2, 3]);
 });
 
-test('review posts a comment with the verdict when the reviewer is the author, and skips what an open thread carries', () => {
-  const payload = review(entries, { self: true, threads: [{ path: 'p', line: 3, body: `earlier breaks ${citeP}` }] });
-  assert.equal(payload.event, 'COMMENT');
-  assert.match(payload.body, /^\*\*Verdict: REQUEST_CHANGES\*\* \(posted as a comment: the reviewer is the author\)/);
-  assert.deepEqual(payload.comments.map((item) => item.body), ['what is wrong breaks [Book rule](https://books.example/ddd.md)']);
-  assert.match(payload.body, /1 already carried by an open thread/);
-});
 
-test('azureDevOpsReview carries every violation on lines as a thread of its own, and the verdict, the rest, and the ledger link in one summary thread', () => {
-  const text = (content) => ({ comments: [{ parentCommentId: 0, commentType: 'text', content }], status: 'active' });
-  const posted = azureDevOpsReview(entries, { self: true, threads: [], ledgerUrl: 'https://ado.example/ledger.txt' });
-  assert.deepEqual(posted.threads, [
-    { ...text(`what is wrong breaks ${citeP}`), threadContext: { filePath: '/p', rightFileStart: { line: 3, offset: 1 }, rightFileEnd: { line: 3, offset: 1 } } },
-    { ...text('what is wrong breaks [Book rule](https://books.example/ddd.md)'), threadContext: { filePath: '/p', leftFileStart: { line: 1, offset: 1 }, leftFileEnd: { line: 4, offset: 1 } } },
+test('outcome is host-neutral: the verdict, a summary that names the site, every fresh inline finding with its anchor, the threads to settle, and the threads to reopen', () => {
+  const open = { id: 'o', path: 'p', side: 'head', lines: { start: 3, end: 3 }, state: 'open', body: `earlier breaks ${citeP}` };
+  const gone = { id: 'g', path: 'p', side: 'head', lines: { start: 7, end: 7 }, state: 'open', body: `earlier breaks ${citeP}` };
+  const resolved = { id: 'r', path: 'p', side: 'base', lines: { start: 1, end: 4 }, state: 'resolved-by-author', body: 'earlier breaks [Book rule](https://books.example/ddd.md)' };
+  const result = outcome(entries, [open, gone, resolved]);
+  assert.equal(result.headCommit, 'h');
+  assert.equal(result.verdict, 'request-changes');
+  assert.match(result.summary, /^\*\*Verdict: request-changes\*\*\n/);
+  assert.match(result.summary, /3 rules probed by 2 probes at h against \[the rules\]\(https:\/\/thruput\.se\/agents\/\): 3 violations, 0 inline, 1 at the pull request, 2 already carried by a thread/);
+  assert.equal(result.summary.includes(`\n\nwhat is wrong breaks ${citeP}`), true);
+  assert.deepEqual(result.inline, []);
+  assert.deepEqual(result.settle, ['g']);
+  assert.deepEqual(result.reopen, ['r']);
+  const fresh = outcome(entries, []);
+  assert.deepEqual(fresh.inline, [
+    { path: 'p', side: 'head', lines: { start: 3, end: 3 }, body: `what is wrong breaks ${citeP}` },
+    { path: 'p', side: 'base', lines: { start: 1, end: 4 }, body: 'what is wrong breaks [Book rule](https://books.example/ddd.md)' },
   ]);
-  assert.deepEqual(posted.summary, text([
-    '**Verdict: REQUEST_CHANGES** (posted as a comment: the reviewer is the author)',
-    '3 rules probed by 2 probes at h: 3 violations, 2 inline, 1 at the pull request, 0 already carried by an open thread.',
-    `what is wrong breaks ${citeP}`,
-    '[Review ledger](https://ado.example/ledger.txt)',
-  ].join('\n\n')));
+  assert.equal(outcome([{ document: probe, ledger: { headCommit: 'h', rows: [cleanRow('R1'), cleanRow('R2')] } }], []).verdict, 'approve');
 });

@@ -9,25 +9,30 @@ Read [`CODE_REVIEW.md`](CODE_REVIEW.md) and follow it. It is the source of truth
 
 The rules it serves are the entries of [`rules/Rules.yaml`](rules/Rules.yaml); the `[[term]]`s they name are defined in [`rules/Definitions.yaml`](rules/Definitions.yaml), and their parents in [`rules/Principles.yaml`](rules/Principles.yaml). `prepare.mjs` reads them, once, from `${CLAUDE_SKILL_DIR}/rules/`: the rules this skill was installed with, linked into the skill from this repository's `rules/`. A violation is posted as breaking the principle its rule protects, linked to that principle's anchor on https://thruput.se/agents/.
 
-It dispatches one subagent per instructions file, as [`CODE_REVIEW.md` step 2](CODE_REVIEW.md#2-probe) sets out. What a subagent does is fixed by constants in the schema of that file, `instructions` for every probe and `task` for each kind, which every file carries; `prepare.mjs` populates the rest, so there is no prompt to write and no schema to hand over. The subagents that probe our rules run on the cheapest model available; the escalation subagent runs on the most capable one. What crosses between the reviewing context, a probe, and the review is shaped by the schemas published under `https://thruput.se/agents/schemas/review/`: the change set, the surface, the instructions a probe receives, the ledger its rows go into, and each violation in it. Validate against them rather than reading a shape off this prose.
+It dispatches one subagent per instructions file, as [`CODE_REVIEW.md` step 2](CODE_REVIEW.md#2-probe) sets out. What a subagent does is fixed by constants in the schema of that file, `instructions` for every probe and `task` for each kind, which every file carries; `prepare.mjs` populates the rest, so there is no prompt to write and no schema to hand over. Every subagent is the plugin's `probe` agent, defined in [`agents/probe.md`](../../agents/probe.md): it loads no CLAUDE.md, so nothing but its file tells it what to do. It runs on the cheapest model available; the escalation subagent is dispatched on the most capable one. What crosses between the reviewing context, a probe, and the review is shaped by the schemas published under `https://thruput.se/agents/schemas/review/`: the change set, the surface, the instructions a probe receives, the ledger its rows go into, and each violation in it. Validate against them rather than reading a shape off this prose.
 
 The escalation index is bundled under `references/`; `prepare.mjs` downloads every ruleset it names, once, and hands them to the escalation probe.
 
-Exact commands and payload shapes are not in `CODE_REVIEW.md` — they are in the cheat sheet for the host the PR lives on: [`references/gh-cheat-sheet.md`](references/gh-cheat-sheet.md) for GitHub, [`references/az-cheat-sheet.md`](references/az-cheat-sheet.md) for Azure DevOps (`dev.azure.com`). Read the one that matches the PR URL.
-
-For Azure DevOps PR reviews, note that Azure DevOps does not support atomic batch review posts. Agents MUST draft all comments locally first (in `review.json` / `comments.json`) and then use the submission script or shell loop provided in `references/az-cheat-sheet.md` to iterate through all comments, post each thread individually, attach/link `ledger.md`, post the PR summary thread, and cast the vote.
+The host is folded at the perimeter: one adapter per host beside the scripts, `scripts/github.mjs`, `scripts/azure-devops.mjs`, and `scripts/git.mjs`, each written against the host's published API description under [`references/hosts/`](references/hosts/). Nothing else in the skill names a host. The cheat sheets under `references/` describe the hosts for a reader; the scripts do not read them.
 
 ## Requirements
 
-- For a GitHub PR: `gh` CLI, `node`, and `tar` available; the scripts fetch their other tools with `npx`.
-- For an Azure DevOps PR: `az` CLI with the `azure-devops` extension available; the scripts do not apply there.
+- `node` and `tar`; the scripts fetch their other tools with `npx`.
+- For a GitHub pull request, `gh`; for an Azure DevOps pull request, `az` with the `azure-devops` extension and `git`; for a change in a plain repository, `git`. Each is used as it stands in the environment.
 - The rules: `rules/` in the skill, links to this repository's rules and what they rest on, up to the axioms, which resolve on macOS and Linux.
 - Network access to `raw.githubusercontent.com/ciembor/agent-rules-books`, from which `prepare.mjs` downloads the escalation rulesets.
 
 ## Files
 
 - `CODE_REVIEW.md` — the review process.
-- `scripts/prepare.mjs`, `scripts/review.mjs` — the two commands the process runs; `scripts/lib.mjs` holds their logic, tested by `scripts/lib.test.mjs`.
+- `scripts/prepare.mjs`, `scripts/review.mjs` — the two commands the process runs; `scripts/lib.mjs` holds their host-neutral logic and `scripts/github.mjs`, `scripts/azure-devops.mjs`, `scripts/git.mjs` the adapters, each tested beside it.
+- `references/hosts/` — the hosts' published API descriptions the adapters are written against: GitHub's REST OpenAPI description and GraphQL schema, Azure DevOps' Git and Policy specifications. Refresh with:
+
+      curl -sSL -o references/hosts/github.openapi.json https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json
+      curl -sSL -o references/hosts/github.graphql https://docs.github.com/public/fpt/schema.docs.graphql
+      curl -sSL -o references/hosts/azure-devops-git.json https://raw.githubusercontent.com/MicrosoftDocs/vsts-rest-api-specs/master/specification/git/7.1/git.json
+      curl -sSL -o references/hosts/azure-devops-policy.json https://raw.githubusercontent.com/MicrosoftDocs/vsts-rest-api-specs/master/specification/policy/7.1/policy.json
+
 - `rules/`, `schemas/` — this repository's rules and schemas, linked into the skill.
 - `https://thruput.se/agents/schemas/review/` — the shapes the process passes around, from this repository's `schemas/review/`: the change set, the surface, the review, the rulebook, the instructions for each kind of probe, the ledger, and the violation.
 - `references/agent-rules-books-INDEX.md`, `references/agent-rules-books-search-index.json` — escalation index, byte-for-byte mirrors of the handbook's `references/`. Refresh with:

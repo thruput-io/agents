@@ -85,17 +85,11 @@ export function union(a, b) {
   return result;
 }
 
-const SIDE_OF_HOST_SIDE = { RIGHT: 'head', LEFT: 'base' };
-const HOST_SIDE_OF_SIDE = { head: 'RIGHT', base: 'LEFT' };
-
-export function threadRanges(threads, author) {
-  const relevant = threads.filter((thread) => thread.line !== null
-    && (!thread.isResolved || thread.resolvedBy?.login === author));
+export function threadRanges(threads) {
   const sides = { head: new Map(), base: new Map() };
-  for (const thread of relevant) {
-    const side = sides[SIDE_OF_HOST_SIDE[thread.diffSide]];
-    const ranges = side.get(thread.path) ?? [];
-    side.set(thread.path, union(ranges, [{ start: thread.startLine ?? thread.line, end: thread.line }]));
+  for (const thread of threads.filter((candidate) => candidate.state !== 'resolved')) {
+    const side = sides[thread.side];
+    side.set(thread.path, union(side.get(thread.path) ?? [], [thread.lines]));
   }
   return sides;
 }
@@ -295,7 +289,7 @@ export function merge(ledgers) {
 }
 
 export function verdict(ledger) {
-  return ledger.rows.some((row) => row.verdict === 'violation') ? 'REQUEST_CHANGES' : 'APPROVE';
+  return ledger.rows.some((row) => row.verdict === 'violation') ? 'request-changes' : 'approve';
 }
 
 export const CELL = 400;
@@ -334,47 +328,45 @@ export function comment(finding) {
 export function alreadyOpen(violation, cite, threads) {
   const { anchor } = violation;
   if (anchor.kind === 'pull-request') return false;
-  return threads.some((thread) => thread.path === anchor.path && thread.line === anchor.lines.end && thread.body.includes(cite));
+  return threads.some((thread) => thread.path === anchor.path && thread.lines.end === anchor.lines.end && thread.body.includes(cite));
 }
 
-function outcome(entries, { self, threads }) {
+export function settled(entries, threads) {
+  const carried = new Set();
+  for (const { document, ledger } of entries) {
+    for (const row of ledger.rows.filter((candidate) => candidate.verdict === 'violation')) {
+      const cite = citation(document, row);
+      for (const violation of row.violations) threads.filter((thread) => alreadyOpen(violation, cite, [thread])).forEach((thread) => carried.add(thread));
+    }
+  }
+  return threads.filter((thread) => !carried.has(thread));
+}
+
+export function outcome(entries, threads) {
   const ledger = merge(entries.map((entry) => entry.ledger));
   const findings = entries.flatMap(({ document, ledger: own }) => own.rows.filter((row) => row.verdict === 'violation')
     .flatMap((row) => {
       const cite = citation(document, row);
-      return row.violations.map((violation) => ({ ...violation, body: message(violation, cite), open: alreadyOpen(violation, cite, threads) }));
+      return row.violations.map((violation) => ({ ...violation, body: message(violation, cite), carried: alreadyOpen(violation, cite, threads) }));
     }));
-  const fresh = findings.filter((finding) => !finding.open);
-  const inline = fresh.filter((finding) => finding.anchor.kind === 'lines');
+  const fresh = findings.filter((finding) => !finding.carried);
+  const inline = fresh.filter((finding) => finding.anchor.kind === 'lines')
+    .map(({ anchor, body }) => ({ path: anchor.path, side: anchor.side, lines: anchor.lines, body }));
   const atPullRequest = fresh.filter((finding) => finding.anchor.kind === 'pull-request');
   const decided = verdict(ledger);
-  const opening = [
-    `**Verdict: ${decided}**${self ? ' (posted as a comment: the reviewer is the author)' : ''}`,
-    `${ledger.rows.length} rules probed by ${entries.length} probes at ${ledger.headCommit}: ${findings.length} violations, ${inline.length} inline, ${atPullRequest.length} at the pull request, ${findings.length - fresh.length} already carried by an open thread.`,
+  const summary = [
+    `**Verdict: ${decided}**`,
+    `${ledger.rows.length} rules probed by ${entries.length} probes at ${ledger.headCommit} against [the rules](${SITE}): ${findings.length} violations, ${inline.length} inline, ${atPullRequest.length} at the pull request, ${findings.length - fresh.length} already carried by a thread.`,
     ...atPullRequest.map((finding) => finding.body),
-  ];
-  return { ledger, inline, decided, opening };
-}
-
-export function review(entries, { self, threads }) {
-  const { ledger, inline, decided, opening } = outcome(entries, { self, threads });
-  const body = [...opening, `<details>\n<summary>Review ledger</summary>\n\n${table(ledger)}\n\n</details>`].join('\n\n');
-  return { commit_id: ledger.headCommit, event: self ? 'COMMENT' : decided, body, comments: inline.map(comment) };
-}
-
-const AZURE_DEVOPS_SIDE_OF_SIDE = { head: 'right', base: 'left' };
-const azureDevOpsComment = (content) => ({ comments: [{ parentCommentId: 0, commentType: 'text', content }], status: 'active' });
-
-function azureDevOpsThread(finding) {
-  const side = AZURE_DEVOPS_SIDE_OF_SIDE[finding.anchor.side];
-  const { start, end } = finding.anchor.lines;
+  ].join('\n\n');
+  const open = threads.filter((thread) => thread.state === 'open');
+  const byAuthor = threads.filter((thread) => thread.state === 'resolved-by-author');
   return {
-    ...azureDevOpsComment(finding.body),
-    threadContext: { filePath: `/${finding.anchor.path}`, [`${side}FileStart`]: { line: start, offset: 1 }, [`${side}FileEnd`]: { line: end, offset: 1 } },
+    headCommit: ledger.headCommit,
+    verdict: decided,
+    summary,
+    inline,
+    settle: settled(entries, open).map((thread) => thread.id),
+    reopen: byAuthor.filter((thread) => settled(entries, [thread]).length === 0).map((thread) => thread.id),
   };
-}
-
-export function azureDevOpsReview(entries, { self, threads, ledgerUrl }) {
-  const { inline, opening } = outcome(entries, { self, threads });
-  return { threads: inline.map(azureDevOpsThread), summary: azureDevOpsComment([...opening, `[Review ledger](${ledgerUrl})`].join('\n\n')) };
 }

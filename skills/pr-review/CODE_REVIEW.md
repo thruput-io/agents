@@ -22,17 +22,19 @@ A subsequent review applies the same standards and the same probes; only the sur
 
 ### 1. Prepare
 
-`gh`, `node`, and `tar` must be available. No working copy is needed: the script downloads the repository at the head commit into `<workdir>/snapshot`, for the probes that look beyond the change.
-
 ```
-node <skill>/scripts/prepare.mjs <pull-request-url> <workdir>
+node <skill>/scripts/prepare.mjs <target> <workdir>
 ```
 
-It writes one instructions file per probe under `<workdir>/instructions/`, in YAML, and prints a summary. When a check run on the head commit did not succeed, or the pull request has merge conflicts, it posts a changes-requested verdict naming what blocked the review and stops without writing instructions. That is the only path that skips the ledger. When a subsequent review has nothing left to review, it stops and says so.
+The target is a GitHub pull request URL, an Azure DevOps pull request URL, or `<repository>@<base>..<head>` for a change in a plain git repository. The script resolves it through the adapter for that host, which is the only code that speaks the host's vocabulary; everything after it is one path. It places the repository at the head commit in `<workdir>/snapshot`, for the probes that look beyond the change, writes one instructions file per probe under `<workdir>/instructions/`, in YAML, and prints a summary. When the host reports the change as not reviewable, a failed check or a build policy not passed, or merge conflicts, it posts a changes-requested verdict naming what blocked the review and stops without writing instructions. That is the only path that skips the ledger. When a subsequent review has nothing left to review, it stops and says so.
 
 ### 2. Probe
 
-Dispatch one subagent per file in `<workdir>/instructions/`, concurrently. Hand each subagent the path of its own file and nothing else: the file opens with how every probe works and what this one does, and holds everything it works on. Write no prompt of your own around it, never hand two files to one subagent, and never edit a file before handing it over. A probe needs no tool that writes to the host: where the dispatcher can withhold tools, withhold `gh` and `az`.
+Dispatch one `probe` subagent per file in `<workdir>/instructions/`, concurrently, the escalation one on the most capable model, each with this message and nothing else, the path being that of its own file:
+
+    Read the file <path> and do what it says. It is addressed to you.
+
+The file opens with how every probe works and what this one does, and holds everything it works on. Add nothing to the message, never hand two files to one subagent, and never edit a file before handing it over. A probe needs no tool that writes to the host: where the dispatcher can withhold tools, withhold `gh` and `az`.
 
 Wait for every probe before moving on. A probe that returns without writing its ledger file has not finished: run it again. A violation returned early does not end the pass, and neither does a run of clean verdicts.
 
@@ -49,4 +51,4 @@ Subsequent reviews only. List the threads and their state, then act per thread â
 node <skill>/scripts/review.mjs <workdir>
 ```
 
-It validates what every probe wrote, merges the rows into the one ledger, and posts one review anchored to the head commit. When it stops, read why, fix the cause by running the probe it names again, and run it again. Do not edit a ledger, do not edit `review.json`, and do not post the review any other way.
+It validates what every probe wrote, merges the rows into the one ledger, decides the outcome, `<workdir>/outcome.json`, and hands it to the host's adapter, which posts the review anchored to the head commit, settles the threads that are fixed, and reopens the ones the author resolved without fixing. For a plain git repository the review is written to `<workdir>/review.md`. When it stops, read why, fix the cause by running the probe it names again, and run it again. Do not edit a ledger, do not edit `outcome.json`, and do not post the review any other way.

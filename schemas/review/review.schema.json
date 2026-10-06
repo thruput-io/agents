@@ -80,12 +80,11 @@
       "minLength": 1
     },
     "PullRequest": {
-      "description": "The pull request under review; the probe never fetches its metadata",
+      "description": "The pull request under review, as its host states it; a probe never fetches its metadata",
       "type": "object",
       "required": [
         "host",
         "author",
-        "reviewer",
         "description"
       ],
       "properties": {
@@ -96,10 +95,6 @@
           "description": "The pull request author's login",
           "$ref": "#/$defs/Login"
         },
-        "reviewer": {
-          "description": "The login running the review; a reviewer who is the author posts the verdict as a comment, since the host refuses the other events",
-          "$ref": "#/$defs/Login"
-        },
         "description": {
           "$ref": "#/$defs/PullRequestDescription"
         }
@@ -107,13 +102,16 @@
       "additionalProperties": false
     },
     "Host": {
-      "description": "Where the pull request lives, by its coordinates on its host",
+      "description": "Where the change lives, by its coordinates on its host; or a plain git repository and the two refs that bound the change",
       "oneOf": [
         {
           "$ref": "#/$defs/GitHub"
         },
         {
           "$ref": "#/$defs/AzureDevOps"
+        },
+        {
+          "$ref": "#/$defs/Git"
         }
       ]
     },
@@ -171,6 +169,41 @@
       },
       "additionalProperties": false
     },
+    "Git": {
+      "description": "A change in a git repository with no host: everything between two refs",
+      "type": "object",
+      "required": [
+        "kind",
+        "repository",
+        "base",
+        "head"
+      ],
+      "properties": {
+        "kind": {
+          "const": "git"
+        },
+        "repository": {
+          "$ref": "#/$defs/RepositoryPath"
+        },
+        "base": {
+          "$ref": "#/$defs/Ref"
+        },
+        "head": {
+          "$ref": "#/$defs/Ref"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RepositoryPath": {
+      "description": "A git repository, by its path on the machine the review runs on",
+      "type": "string",
+      "minLength": 1
+    },
+    "Ref": {
+      "description": "A git ref or commit the repository resolves",
+      "type": "string",
+      "minLength": 1
+    },
     "Login": {
       "description": "An account on the pull request's host, by its login",
       "type": "string",
@@ -226,7 +259,6 @@
           "number": 12
         },
         "author": "agent-rasmus[bot]",
-        "reviewer": "review4thruput",
         "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
       },
       "changeSet": {
