@@ -86,7 +86,7 @@ rules:
 - id: File too large
   marker: MUST NOT
   group: Conventions
-  parent: Separation of Concerns
+  parent: Read it whole
   body: |
     Keep a file longer than 200 lines; a file that long holds more than one concern.
 - id: Validating factory

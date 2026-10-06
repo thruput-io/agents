@@ -214,3 +214,19 @@ rationales:
   - marker: MAY
     body: |
       Publish the contract on its own, versioned apart from any implementation, so every consumer reads the same definition.
+- id: Read far more than written
+  parent: Programs are written for people to read
+  body: |
+    A line of code is written once and read many times: by the reviewer, by the next developer, by whoever is on call when it fails. Professionals spend about 58 percent of their working time understanding code ([Xia et al., IEEE TSE 2018](https://doi.org/10.1109/TSE.2017.2734091)), and "code is read much more often than it is written" ([PEP 8](https://peps.python.org/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds)). The reader's cost decides how code is shaped, and [[Readability]] is the first [[Software quality axis]] a reader meets.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Shape every unit of code, a file, a type, a function, to be read in one sitting by a reader who has not seen it before.
+- id: The compiler writes for the machine
+  parent: Programs are written for people to read
+  body: |
+    What the machine executes is the compiler's output, not the author's text. Knuth asked that we stop "imagining that our main task is to instruct a computer what to do" and "concentrate rather on explaining to human beings what we want a computer to do" ([Literate Programming, 1984](https://doi.org/10.1093/comjnl/27.2.97)); Abelson and Sussman put it as "programs must be written for people to read, and only incidentally for machines to execute" ([SICP, preface](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/6515/sicp.zip/full-text/book/book-Z-H-7.html)). Code bent toward the machine, the clever trick, the hand-unrolled loop, the premature micro-optimisation, buys little the compiler would not have bought, and sells the reader: "premature optimization is the root of all evil", and the critical three percent is found by measurement, "only after that code has been identified" ([Knuth, Computing Surveys 1974, p. 268](https://www.gwern.net/doc/cs/algorithm/1974-knuth.pdf)).
+  solutions:
+  - marker: SHOULD
+    body: |
+      Measure before optimising, and optimise only the code the measurement names.
