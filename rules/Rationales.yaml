@@ -238,4 +238,4 @@ rationales:
       Measure before optimising, and optimise only the code the measurement names.
   - marker: SHOULD
     body: |
-      Group [[calls over the network]] together and minimize round-trips.
+      Group [[Calls over the network]] together and minimize round-trips.

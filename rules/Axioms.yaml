@@ -4,9 +4,9 @@ axioms:
   body: |
     Every piece of information is defined exactly once.
   analect:
-    passage: Analects XIII.III
-    text: If names be not correct, language is not in accordance with the truth of things. If language be not in accordance with the truth of things, affairs cannot be carried on to success.
-    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/XIII
+    passage: Analects VII.I
+    text: A transmitter and not a maker, believing in and loving the ancients.
+    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/VII
 - id: Shift Left
   parent: Speed Through Discipline
   body: |
@@ -60,14 +60,14 @@ axioms:
   body: |
     Quality is always the highest priority; it is what makes the other priorities possible.
   analect:
-    passage: Analects XIII.XVII
-    text: Do not be desirous to have things done quickly; do not look at small advantages. Desire to have things done quickly prevents their being done thoroughly. Looking at small advantages prevents great affairs from being accomplished.
-    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/XIII
+    passage: Analects I.VIII
+    text: When you have faults, do not fear to abandon them.
+    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/I
 - id: Code Is Written for People
   parent: Excellence Through Transparency
   body: |
     Code explains to people what the machine will do.
   analect:
-    passage: Analects XV.XXIII
-    text: What you do not want done to yourself, do not do to others.
-    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/XV
+    passage: Analects XIII.III
+    text: If names be not correct, language is not in accordance with the truth of things. If language be not in accordance with the truth of things, affairs cannot be carried on to success.
+    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/XIII

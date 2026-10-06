@@ -613,9 +613,6 @@ definitions:
 - id: Call over the network
   specification: |
     Alias for [[Calls over the network]].
-- id: calls over the network
-  specification: |
-    Alias for [[Calls over the network]].
 - id: Access to filesystem
   specification: |
     Accessing a local or remote file system.
