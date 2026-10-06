@@ -312,6 +312,10 @@ export function citation(document, row) {
   return `[${principle}](${SITE}#${slug(principle)})`;
 }
 
+const RENDERED = / breaks \[[^\]]+\]\([^)]+\)/;
+
+export const ours = (text) => RENDERED.test(text) || text.includes(SITE);
+
 export function message(violation, cite) {
   return `${violation.observation} breaks ${cite}`;
 }

@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseDiff, SITE } from './lib.mjs';
+import { parseDiff, ours as written, SITE } from './lib.mjs';
 import { run } from './shell.mjs';
 
 export const KIND = 'azure-devops';
@@ -23,7 +23,7 @@ export function locate(target) {
 
 const onLines = (raw) => raw.threadContext !== null && raw.threadContext !== undefined && raw.threadContext.filePath !== null;
 const firstComment = (raw) => raw.comments[0]?.content ?? '';
-const ours = (raw) => firstComment(raw).includes(SITE);
+const ours = (raw) => written(firstComment(raw));
 
 export function thread(raw) {
   const context = raw.threadContext;

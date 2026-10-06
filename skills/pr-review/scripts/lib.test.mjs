@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   parseDiff, parseHunks, intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
   instructions, complete, numbered, settled, anchorInside, checkLedger, merge, verdict, table, citation, message, alreadyOpen,
-  outcome, CELL, SITE,
+  outcome, ours, CELL, SITE,
 } from './lib.mjs';
 
 const diff = [
@@ -330,4 +330,12 @@ test('outcome is host-neutral: the verdict, a summary that names the site, every
     { path: 'p', side: 'base', lines: { start: 1, end: 4 }, body: 'what is wrong breaks [Book rule](https://books.example/ddd.md)' },
   ]);
   assert.equal(outcome([{ document: probe, ledger: { headCommit: 'h', rows: [cleanRow('R1'), cleanRow('R2')] } }], []).verdict, 'approve');
+});
+
+test('ours recognises what this review writes: a finding rendered by the template whatever it cites, and a summary or refusal naming the site', () => {
+  assert.equal(ours(`what is wrong breaks ${citeP}`), true);
+  assert.equal(ours('what is wrong breaks [Timeouts Are Mandatory](https://github.com/ciembor/agent-rules-books/blob/main/x.md)'), true);
+  assert.equal(ours(`**Verdict: approve**\n\n3 rules probed by 2 probes at h against [the rules](${SITE}): 0 violations`), true);
+  assert.equal(ours('Policy status has been updated'), false);
+  assert.equal(ours('LGTM, breaks nothing'), false);
 });

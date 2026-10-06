@@ -1,6 +1,6 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseHunks, SITE } from './lib.mjs';
+import { parseHunks, ours, SITE } from './lib.mjs';
 import { run } from './shell.mjs';
 
 export const KIND = 'github';
@@ -51,8 +51,6 @@ function allThreads(host) {
   } while (after !== null);
   return nodes;
 }
-
-const ours = (text) => text.includes(SITE);
 
 export function postedAt(reviews, headCommit) {
   return reviews.find((review) => review.state !== 'PENDING' && ours(review.body) && review.body.includes(`probes at ${headCommit} `))?.html_url;
