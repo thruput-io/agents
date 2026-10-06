@@ -7,7 +7,7 @@ export const KIND = 'azure-devops';
 const PULL_REQUEST_URL = /^https:\/\/dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+)\/pullrequest\/(\d+)/;
 const HOST_SIDE_OF = { head: 'right', base: 'left' };
 const VOTE_OF = { approve: 'approve', 'request-changes': 'wait-for-author' };
-const PRIOR = / probes at ([0-9a-f]{40}) /;
+const PRIOR = / probes at ([0-9a-f]{40})\b/;
 
 const organization = (host) => `https://dev.azure.com/${host.organization}`;
 const az = (...args) => JSON.parse(run('az', [...args, '--output', 'json']));

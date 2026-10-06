@@ -22,6 +22,7 @@ test('priorOf finds the head commit of the last summary we posted, from our own 
   const noise = { id: 2, status: null, threadContext: null, comments: [{ content: 'Policy status has been updated' }] };
   assert.equal(priorOf([noise, summary('a'.repeat(40)), summary('b'.repeat(40))]), 'b'.repeat(40));
   assert.equal(priorOf([noise]), undefined);
+  assert.equal(priorOf([{ id: 3, status: 'active', threadContext: null, comments: [{ content: `77 rules probed by 22 probes at ${'c'.repeat(40)}: 51 violations ... breaks [P](${SITE}#p)` }] }]), 'c'.repeat(40));
 });
 
 test('threadPayload maps an inline finding onto a thread on the right or the left file', () => {
