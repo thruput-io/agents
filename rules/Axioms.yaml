@@ -4,8 +4,8 @@ axioms:
   body: |
     Every piece of information is defined exactly once.
   analect:
-    passage: Analects VII.I
-    text: A transmitter and not a maker, believing in and loving the ancients.
+    passage: Analects VII.VIII
+    text: When I have presented one corner of a subject to any one, and he cannot from it learn the other three, I do not repeat my lesson.
     url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/VII
 - id: Shift Left
   parent: Speed Through Discipline
