@@ -4,7 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   parseDiff, threadRanges, wholeSurface, narrowSurface, isText, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
-  instructions, complete, numbered,
+  instructions, complete, numbered, fragments, removedLines,
 } from './lib.mjs';
 import { run } from './shell.mjs';
 import * as github from './github.mjs';
@@ -49,19 +49,20 @@ const surface = change.prior === undefined ? wholeSurface(changeSet) : narrowSur
 if (surface.files.length === 0) {
   throw new Error(`nothing to review: no line of the change set changed since the prior review at ${change.prior}, and no thread of ours is open or was resolved by the author`);
 }
-validate('review/surface.schema.json', write('surface.json', surface));
 
 const snapshot = join(workdir, 'snapshot');
 change.checkout(snapshot);
 const paths = readdirSync(snapshot, { recursive: true }).map(String).filter((path) => statSync(join(snapshot, path)).isFile()).sort();
-const changed = changeSet.files.map((file) => file.path);
-const atHead = (candidates) => [...new Set(candidates)].filter((path) => paths.includes(path) && isText(readFileSync(join(snapshot, path), 'latin1')))
-  .map((path) => ({ path, lines: numbered(readFileSync(join(snapshot, path), 'utf8')) }));
+const linesAtHead = (path) => (paths.includes(path) && isText(readFileSync(join(snapshot, path), 'latin1')) ? numbered(readFileSync(join(snapshot, path), 'utf8')) : {});
+const files = surface.files.map((file) => {
+  const hunks = changeSet.files.find((candidate) => candidate.path === file.path).removed;
+  return { path: file.path, fragments: fragments(linesAtHead(file.path), file.added, removedLines(hunks, file.removed)) };
+}).filter((file) => file.fragments.length > 0);
 
 const { rules } = yaml('Rules.yaml');
 const governance = { principles: yaml('Principles.yaml').principles, definitions: yaml('Definitions.yaml').definitions };
 const context = {
-  review: { pullRequest, changeSet, surface, files: atHead(changed) },
+  review: { pullRequest, headCommit, files },
   checkout: snapshot,
   ledger: (name) => join(workdir, 'ledger', `${name}.json`),
   report: (name) => `npx --yes @sourcemeta/jsonschema@17.0.0 validate "${join(skill, 'schemas', 'review/ledger.schema.json')}" "${join(workdir, 'ledger', `${name}.json`)}" --resolve "${join(skill, 'schemas')}"`,

@@ -44,42 +44,32 @@
           "author": "agent-rasmus[bot]",
           "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
         },
-        "changeSet": {
-          "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
-          "files": [
-            {
-              "path": "scripts/verify.sh",
-              "added": [
-                {
-                  "start": 21,
-                  "end": 21
-                }
-              ],
-              "removed": []
-            }
-          ]
-        },
-        "surface": {
-          "files": [
-            {
-              "path": "scripts/verify.sh",
-              "added": [
-                {
-                  "start": 21,
-                  "end": 21
-                }
-              ],
-              "removed": []
-            }
-          ]
-        },
+        "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
         "files": [
           {
             "path": "scripts/verify.sh",
-            "lines": {
-              "1": "#!/usr/bin/env bash",
-              "2": "set -euo pipefail"
-            }
+            "fragments": [
+              {
+                "kind": "context",
+                "lines": {
+                  "20": "npx --yes @sourcemeta/jsonschema@17.0.0 lint \"$PROJECT_ROOT/schemas\""
+                }
+              },
+              {
+                "kind": "surface",
+                "side": "head",
+                "lines": {
+                  "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
+                }
+              },
+              {
+                "kind": "surface",
+                "side": "base",
+                "lines": {
+                  "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\""
+                }
+              }
+            ]
           }
         ],
         "ledger": "/home/user/review/ledger/02-development-stack.json",

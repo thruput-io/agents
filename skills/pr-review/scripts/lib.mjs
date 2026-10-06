@@ -204,6 +204,34 @@ export function numbered(text) {
   return Object.fromEntries(lines.map((line, i) => [i + 1, line]));
 }
 
+const inside = (ranges, line) => ranges.some((range) => range.start <= line && line <= range.end);
+
+export function fragments(lines, added, removed) {
+  const head = [];
+  for (const [name, text] of Object.entries(lines)) {
+    const number = Number(name);
+    const kind = inside(added, number) ? 'surface' : 'context';
+    const last = head.at(-1);
+    if (last !== undefined && last.kind === kind) last.lines[number] = text;
+    else head.push(kind === 'surface' ? { kind, side: 'head', lines: { [number]: text } } : { kind, lines: { [number]: text } });
+  }
+  const base = removed.map((hunk) => ({ kind: 'surface', side: 'base', lines: Object.fromEntries(hunk.content.split('\n').map((text, i) => [hunk.start + i, text])) }));
+  return [...head, ...base];
+}
+
+export function removedLines(hunks, ranges) {
+  return ranges.map((range) => {
+    const hunk = hunks.find((candidate) => candidate.start <= range.start && range.end <= candidate.end);
+    if (hunk === undefined) throw new Error(`no removed hunk holds lines ${range.start}-${range.end}`);
+    return { ...range, content: hunk.content.split('\n').slice(range.start - hunk.start, range.end - hunk.start + 1).join('\n') };
+  });
+}
+
+export function span(lines) {
+  const numbers = Object.keys(lines).map(Number);
+  return { start: Math.min(...numbers), end: Math.max(...numbers) };
+}
+
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 function resolve(read, name, ref) {
@@ -240,22 +268,22 @@ export function complete(read, name, document, schema = read(name)) {
 
 export const ESCALATION_ROWS = 3;
 
-const within = (ranges, start, end) => start <= end && ranges.some((range) => range.start <= start && end <= range.end);
-
-export function anchorInside(anchor, surface) {
+export function anchorInside(anchor, files) {
   if (anchor.kind === 'pull-request') return true;
-  const file = surface.files.find((candidate) => candidate.path === anchor.path);
+  const file = files.find((candidate) => candidate.path === anchor.path);
   if (file === undefined) return false;
-  const ranges = { head: file.added, base: file.removed };
-  return within(ranges[anchor.side], anchor.lines.start, anchor.lines.end);
+  const copied = Object.entries(anchor.lines);
+  if (copied.length === 0) return false;
+  return file.fragments.some((fragment) => fragment.kind === 'surface' && fragment.side === anchor.side
+    && copied.every(([number, text]) => fragment.lines[number] === text));
 }
 
 const ruleName = (row) => (row.bookRule === undefined ? row.rule : row.bookRule.heading);
 
 export function checkLedger(name, document, ledger) {
-  const { changeSet, surface } = document.review;
-  if (ledger.headCommit !== changeSet.headCommit) {
-    throw new Error(`${name}: ledger is for ${ledger.headCommit}, the review is of ${changeSet.headCommit}`);
+  const { headCommit, files } = document.review;
+  if (ledger.headCommit !== headCommit) {
+    throw new Error(`${name}: ledger is for ${ledger.headCommit}, the review is of ${headCommit}`);
   }
   if (document.kind === 'escalation') {
     if (ledger.rows.length !== ESCALATION_ROWS) throw new Error(`${name}: ${ledger.rows.length} rows, ${ESCALATION_ROWS} expected`);
@@ -277,7 +305,7 @@ export function checkLedger(name, document, ledger) {
   }
   for (const row of ledger.rows.filter((candidate) => candidate.verdict === 'violation')) {
     for (const violation of row.violations) {
-      if (!anchorInside(violation.anchor, surface)) {
+      if (!anchorInside(violation.anchor, files)) {
         throw new Error(`${name}: a violation of ${ruleName(row)} is anchored outside the surface at ${JSON.stringify(violation.anchor)}; a finding with no surface line to blame is anchored at the pull request`);
       }
     }
@@ -332,7 +360,7 @@ export function comment(finding) {
 export function alreadyOpen(violation, cite, threads) {
   const { anchor } = violation;
   if (anchor.kind === 'pull-request') return false;
-  return threads.some((thread) => thread.path === anchor.path && thread.lines.end === anchor.lines.end && thread.body.includes(cite));
+  return threads.some((thread) => thread.path === anchor.path && thread.lines.end === span(anchor.lines).end && thread.body.includes(cite));
 }
 
 export function settled(entries, threads) {
@@ -354,8 +382,8 @@ export function outcome(entries, threads) {
       return row.violations.map((violation) => ({ ...violation, body: message(violation, cite), carried: alreadyOpen(violation, cite, threads) }));
     }));
   const fresh = findings.filter((finding) => !finding.carried);
-  const inline = fresh.filter((finding) => finding.anchor.kind === 'lines')
-    .map(({ anchor, body }) => ({ path: anchor.path, side: anchor.side, lines: anchor.lines, body }));
+  const inline = fresh.filter((finding) => finding.anchor.kind === 'surface')
+    .map(({ anchor, body }) => ({ path: anchor.path, side: anchor.side, lines: span(anchor.lines), body }));
   const atPullRequest = fresh.filter((finding) => finding.anchor.kind === 'pull-request');
   const decided = verdict(ledger);
   const summary = [

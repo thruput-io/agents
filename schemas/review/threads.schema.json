@@ -36,7 +36,7 @@
           "$ref": "change-set.schema.json#/$defs/Path"
         },
         "side": {
-          "$ref": "violation.schema.json#/$defs/Side"
+          "$ref": "fragment.schema.json#/$defs/Side"
         },
         "lines": {
           "$ref": "change-set.schema.json#/$defs/LineRange"

@@ -2,12 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/review.schema.json",
   "title": "Review",
-  "description": "What every probe is handed about the review it takes part in, resolved once by the reviewing context: the pull request, the lines it changes with the text of those it removes, the lines under review, the changed files in full with their lines numbered, and where the probe writes its rows of the ledger",
+  "description": "What every probe is handed about the review it takes part in, resolved once by the reviewing context: the pull request, the head commit, every changed file as fragments of lines, and where the probe writes its rows of the ledger",
   "type": "object",
   "required": [
     "pullRequest",
-    "changeSet",
-    "surface",
+    "headCommit",
     "files",
     "ledger",
     "report"
@@ -16,17 +15,15 @@
     "pullRequest": {
       "$ref": "#/$defs/PullRequest"
     },
-    "changeSet": {
-      "$ref": "change-set.schema.json"
-    },
-    "surface": {
-      "$ref": "surface.schema.json"
+    "headCommit": {
+      "description": "The commit the review is of; every ledger row is reached against it",
+      "$ref": "change-set.schema.json#/$defs/Commit"
     },
     "files": {
-      "description": "Every changed file that exists at the head commit, in full and line by line: a diff hunk cannot show what the rest of the file does with the changed lines",
+      "description": "Every changed file that has surface lines, whole: its fragments in file order at the head commit, then the fragments the change removed",
       "type": "array",
       "items": {
-        "$ref": "#/$defs/FileAtHead"
+        "$ref": "#/$defs/FileUnderReview"
       }
     },
     "ledger": {
@@ -38,41 +35,26 @@
   },
   "additionalProperties": false,
   "$defs": {
-    "FileAtHead": {
-      "description": "One file as it is at the head commit, its lines by their number",
+    "FileUnderReview": {
+      "description": "One changed file as its fragments",
       "type": "object",
       "required": [
         "path",
-        "lines"
+        "fragments"
       ],
       "properties": {
         "path": {
           "$ref": "change-set.schema.json#/$defs/Path"
         },
-        "lines": {
-          "$ref": "#/$defs/Lines"
+        "fragments": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "fragment.schema.json"
+          }
         }
       },
       "additionalProperties": false
-    },
-    "Lines": {
-      "description": "The lines of a file, each under its number, the first line being 1; a violation anchors on these numbers",
-      "type": "object",
-      "propertyNames": {
-        "$ref": "#/$defs/LineNumberName"
-      },
-      "additionalProperties": {
-        "$ref": "#/$defs/LineText"
-      }
-    },
-    "LineNumberName": {
-      "description": "A line number as the name of a property: a whole number from 1",
-      "type": "string",
-      "pattern": "^[1-9][0-9]*$"
-    },
-    "LineText": {
-      "description": "One line of a file, without its line break",
-      "type": "string"
     },
     "LedgerFile": {
       "description": "The file the probe writes its rows of the ledger to, by its path on the machine the review runs on. The only file a probe touches",
@@ -261,42 +243,32 @@
         "author": "agent-rasmus[bot]",
         "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
       },
-      "changeSet": {
-        "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
-        "files": [
-          {
-            "path": "scripts/verify.sh",
-            "added": [
-              {
-                "start": 21,
-                "end": 21
-              }
-            ],
-            "removed": []
-          }
-        ]
-      },
-      "surface": {
-        "files": [
-          {
-            "path": "scripts/verify.sh",
-            "added": [
-              {
-                "start": 21,
-                "end": 21
-              }
-            ],
-            "removed": []
-          }
-        ]
-      },
+      "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
       "files": [
         {
           "path": "scripts/verify.sh",
-          "lines": {
-            "1": "#!/usr/bin/env bash",
-            "2": "set -euo pipefail"
-          }
+          "fragments": [
+            {
+              "kind": "context",
+              "lines": {
+                "20": "npx --yes @sourcemeta/jsonschema@17.0.0 lint \"$PROJECT_ROOT/schemas\""
+              }
+            },
+            {
+              "kind": "surface",
+              "side": "head",
+              "lines": {
+                "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
+              }
+            },
+            {
+              "kind": "surface",
+              "side": "base",
+              "lines": {
+                "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\""
+              }
+            }
+          ]
         }
       ],
       "ledger": "/home/user/review/ledger/11-behavior-failure-handling.json",

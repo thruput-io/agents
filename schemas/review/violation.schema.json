@@ -26,15 +26,15 @@
       "description": "Where the violation is reported",
       "oneOf": [
         {
-          "$ref": "#/$defs/LinesAnchor"
+          "$ref": "#/$defs/SurfaceAnchor"
         },
         {
           "$ref": "#/$defs/PullRequestAnchor"
         }
       ]
     },
-    "LinesAnchor": {
-      "description": "Consecutive lines of one file inside the surface, a single line being a range that starts and ends on it: a SurfaceRange, never a range read from the change set. Numbered in the file on the side named",
+    "SurfaceAnchor": {
+      "description": "Lines of one surface fragment of one file, copied as they stand under review.files: the kind surface, the side, and the lines with their text. Lines of a context fragment are another kind and cannot be an anchor; lines not copied from the fragment are refused",
       "type": "object",
       "required": [
         "kind",
@@ -44,18 +44,19 @@
       ],
       "properties": {
         "kind": {
-          "const": "lines"
+          "const": "surface"
         },
         "path": {
           "$ref": "change-set.schema.json#/$defs/Path"
         },
         "side": {
-          "$ref": "#/$defs/Side"
+          "$ref": "fragment.schema.json#/$defs/Side"
         },
         "lines": {
-          "$ref": "surface.schema.json#/$defs/SurfaceRange"
+          "$ref": "fragment.schema.json#/$defs/Lines"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "PullRequestAnchor": {
       "description": "The pull request as a whole, where no surface line is to blame: an existing component that replaces a whole module, a standard the change set as a whole does not follow, or code outside the surface that the change made dead, which the observation names by file and line. Carried in the review body rather than on a line",
@@ -68,25 +69,17 @@
           "const": "pull-request"
         }
       }
-    },
-    "Side": {
-      "description": "Which numbering a lines anchor uses: head for lines the change adds, numbered in the file at the head commit; base for lines the change removes, numbered in the file at the base",
-      "enum": [
-        "head",
-        "base"
-      ]
     }
   },
   "examples": [
     {
       "observation": "Losing the check's exit status in a pipe into tail",
       "anchor": {
-        "kind": "lines",
+        "kind": "surface",
         "path": "scripts/verify.sh",
         "side": "head",
         "lines": {
-          "start": 21,
-          "end": 21
+          "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
         }
       }
     },

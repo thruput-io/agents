@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parseDiff, parseHunks, intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
-  instructions, complete, numbered, settled, anchorInside, checkLedger, merge, verdict, table, citation, message, alreadyOpen,
+  instructions, complete, numbered, fragments, span, removedLines, settled, anchorInside, checkLedger, merge, verdict, table, citation, message, alreadyOpen,
   outcome, ours, CELL, SITE,
 } from './lib.mjs';
 
@@ -161,14 +161,14 @@ test('rulesets folds the index and the text read for each entry into what the es
 
 test('instructions hands every probe the review with its ledger file and its report command, a rule probe its rulebook, the probes that look beyond the change the checkout, and the escalation probe the rulesets', () => {
   const context = {
-    review: { changeSet: { headCommit: 'h', files: [] } },
+    review: { headCommit: 'h', files: [] },
     ledger: (name) => `/w/ledger/${name}.json`,
     report: (name) => `validate /w/ledger/${name}.json`,
     checkout: '/w/snapshot',
   };
   const probes = [{ name: 'g1', kind: 'rules', rulebook: 'r1' }, { name: 'g2', kind: 'reuse-ladder', rulebook: 'r2' }, { name: 'g3', kind: 'dead-code', rulebook: 'r3' }];
   const files = instructions(context, probes, ['a ruleset']);
-  const handed = (name) => ({ changeSet: { headCommit: 'h', files: [] }, ledger: `/w/ledger/${name}.json`, report: `validate /w/ledger/${name}.json` });
+  const handed = (name) => ({ headCommit: 'h', files: [], ledger: `/w/ledger/${name}.json`, report: `validate /w/ledger/${name}.json` });
   assert.deepEqual(files.map((file) => file.name), ['01-g1', '02-g2', '03-g3', '04-escalation']);
   assert.deepEqual(files[0].document, { kind: 'rules', review: handed('01-g1'), rulebook: 'r1' });
   assert.deepEqual(files[1].document, { kind: 'reuse-ladder', review: handed('02-g2'), rulebook: 'r2', checkout: '/w/snapshot' });
@@ -176,10 +176,16 @@ test('instructions hands every probe the review with its ledger file and its rep
   assert.deepEqual(files[3].document, { kind: 'escalation', review: handed('04-escalation'), rulesets: ['a ruleset'] });
 });
 
-const surface = { files: [{ path: 'p', added: [{ start: 1, end: 5 }], removed: [{ start: 9, end: 9 }] }] };
-const probe = { kind: 'rules', review: { changeSet: { headCommit: 'h' }, surface }, rulebook: { rules: [{ id: 'A', parent: 'P' }, { id: 'B', parent: 'Q' }] } };
-const escalation = { kind: 'escalation', review: { changeSet: { headCommit: 'h' }, surface }, rulesets: [{ url: 'https://books.example/ddd.md' }, { url: 'https://books.example/clean-code.md' }] };
-const lines = (path, start, end, side) => ({ kind: 'lines', path, side, lines: { start, end } });
+const text = (side, n) => `${side === 'head' ? 'L' : 'R'}${n}`;
+const run = (side, from, to) => Object.fromEntries(Array.from({ length: to - from + 1 }, (_, i) => [from + i, text(side, from + i)]));
+const files = [{ path: 'p', fragments: [
+  { kind: 'surface', side: 'head', lines: run('head', 1, 5) },
+  { kind: 'context', lines: run('head', 6, 8) },
+  { kind: 'surface', side: 'base', lines: run('base', 9, 9) },
+] }];
+const probe = { kind: 'rules', review: { headCommit: 'h', files }, rulebook: { rules: [{ id: 'A', parent: 'P' }, { id: 'B', parent: 'Q' }] } };
+const escalation = { kind: 'escalation', review: { headCommit: 'h', files }, rulesets: [{ url: 'https://books.example/ddd.md' }, { url: 'https://books.example/clean-code.md' }] };
+const lines = (path, start, end, side) => ({ kind: 'surface', path, side, lines: run(side, start, end) });
 const atPullRequest = { kind: 'pull-request' };
 const violation = (anchor) => ({ observation: 'what is wrong', anchor });
 const finding = (anchor) => ({ ...violation(anchor), body: 'rendered' });
@@ -214,18 +220,32 @@ test('complete adds what a schema says itself, at every level: the constants of 
   assert.throws(() => complete(read, 'review/any.schema.json', {}), /belongs to 2 of the 2 branches/);
 });
 
-test('anchorInside accepts lines in the surface on their side, and the pull request', () => {
-  assert.equal(anchorInside(lines('p', 3, 3, 'head'), surface), true);
-  assert.equal(anchorInside(lines('p', 1, 5, 'head'), surface), true);
-  assert.equal(anchorInside(lines('p', 9, 9, 'base'), surface), true);
-  assert.equal(anchorInside(atPullRequest, surface), true);
-  assert.equal(anchorInside(lines('p', 6, 6, 'head'), surface), false);
-  assert.equal(anchorInside(lines('p', 3, 3, 'base'), surface), false);
-  assert.equal(anchorInside(lines('q', 1, 1, 'head'), surface), false);
+test('fragments cuts a file into context and surface fragments in order, head first, then the removed hunks as base fragments', () => {
+  const numberedLines = numbered('a\nb\nc\nd\n');
+  assert.deepEqual(fragments(numberedLines, [{ start: 2, end: 3 }], [{ start: 7, end: 8, content: 'x\ny' }]), [
+    { kind: 'context', lines: { 1: 'a' } },
+    { kind: 'surface', side: 'head', lines: { 2: 'b', 3: 'c' } },
+    { kind: 'context', lines: { 4: 'd' } },
+    { kind: 'surface', side: 'base', lines: { 7: 'x', 8: 'y' } },
+  ]);
+  assert.deepEqual(fragments({}, [], [{ start: 1, end: 1, content: 'gone' }]), [{ kind: 'surface', side: 'base', lines: { 1: 'gone' } }]);
+  assert.deepEqual(fragments(numbered('a\n'), [{ start: 1, end: 1 }], []), [{ kind: 'surface', side: 'head', lines: { 1: 'a' } }]);
 });
 
-test('anchorInside refuses a range that ends before it starts', () => {
-  assert.equal(anchorInside(lines('p', 4, 2, 'head'), surface), false);
+test('span is the first and last line an anchor or a fragment covers', () => {
+  assert.deepEqual(span({ 3: 'c', 4: 'd', 10: 'j' }), { start: 3, end: 10 });
+});
+
+test('anchorInside accepts lines copied from one surface fragment on their side, and the pull request', () => {
+  assert.equal(anchorInside(lines('p', 3, 3, 'head'), files), true);
+  assert.equal(anchorInside(lines('p', 1, 5, 'head'), files), true);
+  assert.equal(anchorInside(lines('p', 9, 9, 'base'), files), true);
+  assert.equal(anchorInside(atPullRequest, files), true);
+  assert.equal(anchorInside(lines('p', 6, 6, 'head'), files), false);
+  assert.equal(anchorInside(lines('p', 3, 3, 'base'), files), false);
+  assert.equal(anchorInside(lines('q', 1, 1, 'head'), files), false);
+  assert.equal(anchorInside({ kind: 'surface', path: 'p', side: 'head', lines: { 3: 'edited' } }, files), false);
+  assert.equal(anchorInside({ kind: 'surface', path: 'p', side: 'head', lines: {} }, files), false);
 });
 
 test('checkLedger accepts rows matching the rules in order', () => {
@@ -263,7 +283,7 @@ const ledger = {
     { rule: 'B', examined: ['x'], verdict: 'clean', evidence: `has | pipe\nand newline ${'x'.repeat(CELL)}` },
   ],
 };
-const escalationLedger = { headCommit: 'h', rows: [violatedBookRow('Book rule', [violation(lines('p', 1, 4, 'base'))])] };
+const escalationLedger = { headCommit: 'h', rows: [violatedBookRow('Book rule', [violation(lines('p', 9, 9, 'base'))])] };
 const entries = [{ document: probe, ledger }, { document: escalation, ledger: escalationLedger }];
 
 test('merge concatenates rows into the one ledger and verdict follows any violation', () => {
@@ -300,7 +320,7 @@ test('alreadyOpen matches an open thread on the same line citing the same princi
 
 test('settled lists the open threads of ours that no finding of this review carries any more: the fixed ones', () => {
   const document = { kind: 'rules', rulebook: { rules: [{ id: 'R', parent: 'P' }], principles: [{ id: 'P' }], definitions: [] } };
-  const violation = { observation: 'x', anchor: { kind: 'lines', path: 'a.sh', side: 'head', lines: { start: 3, end: 4 } } };
+  const violation = { observation: 'x', anchor: { kind: 'surface', path: 'a.sh', side: 'head', lines: { 3: 'c', 4: 'd' } } };
   const ledger = { headCommit: 'h', rows: [{ rule: 'R', verdict: 'violation', examined: ['a.sh'], evidence: 'e', violations: [violation] }] };
   const threads = [
     { id: 1, path: 'a.sh', lines: { start: 4, end: 4 }, body: message(violation, citation(document, ledger.rows[0])) },
@@ -314,7 +334,7 @@ test('settled lists the open threads of ours that no finding of this review carr
 test('outcome is host-neutral: the verdict, a summary that names the site, every fresh inline finding with its anchor, the threads to settle, and the threads to reopen', () => {
   const open = { id: 'o', path: 'p', side: 'head', lines: { start: 3, end: 3 }, state: 'open', body: `earlier breaks ${citeP}` };
   const gone = { id: 'g', path: 'p', side: 'head', lines: { start: 7, end: 7 }, state: 'open', body: `earlier breaks ${citeP}` };
-  const resolved = { id: 'r', path: 'p', side: 'base', lines: { start: 1, end: 4 }, state: 'resolved-by-author', body: 'earlier breaks [Book rule](https://books.example/ddd.md)' };
+  const resolved = { id: 'r', path: 'p', side: 'base', lines: { start: 9, end: 9 }, state: 'resolved-by-author', body: 'earlier breaks [Book rule](https://books.example/ddd.md)' };
   const result = outcome(entries, [open, gone, resolved]);
   assert.equal(result.headCommit, 'h');
   assert.equal(result.verdict, 'request-changes');
@@ -327,7 +347,7 @@ test('outcome is host-neutral: the verdict, a summary that names the site, every
   const fresh = outcome(entries, []);
   assert.deepEqual(fresh.inline, [
     { path: 'p', side: 'head', lines: { start: 3, end: 3 }, body: `what is wrong breaks ${citeP}` },
-    { path: 'p', side: 'base', lines: { start: 1, end: 4 }, body: 'what is wrong breaks [Book rule](https://books.example/ddd.md)' },
+    { path: 'p', side: 'base', lines: { start: 9, end: 9 }, body: 'what is wrong breaks [Book rule](https://books.example/ddd.md)' },
   ]);
   assert.equal(outcome([{ document: probe, ledger: { headCommit: 'h', rows: [cleanRow('R1'), cleanRow('R2')] } }], []).verdict, 'approve');
 });
@@ -338,4 +358,11 @@ test('ours recognises what this review writes: a finding rendered by the templat
   assert.equal(ours(`**Verdict: approve**\n\n3 rules probed by 2 probes at h against [the rules](${SITE}): 0 violations`), true);
   assert.equal(ours('Policy status has been updated'), false);
   assert.equal(ours('LGTM, breaks nothing'), false);
+});
+
+test('removedLines cuts the removed lines the surface keeps out of the hunks that carry their text', () => {
+  const hunks = [{ start: 10, end: 13, content: 'a\nb\nc\nd' }, { start: 30, end: 30, content: 'z' }];
+  assert.deepEqual(removedLines(hunks, [{ start: 11, end: 12 }, { start: 30, end: 30 }]), [{ start: 11, end: 12, content: 'b\nc' }, { start: 30, end: 30, content: 'z' }]);
+  assert.deepEqual(removedLines(hunks, []), []);
+  assert.throws(() => removedLines(hunks, [{ start: 20, end: 20 }]), /no removed hunk holds lines 20-20/);
 });
