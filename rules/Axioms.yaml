@@ -19,10 +19,10 @@ axioms:
   parent: Outcome Over Output
   body: |
     Code proves execution; [[Users]] prove [[Correctness]].
-- id: Nothing Is Complete Without Verification
+- id: Without Verification It Is Worthless
   parent: Speed Through Discipline
   body: |
-    Nothing is complete until it is verified; until then it is a guess.
+    Without verification it is at best worthless, more often a source of confusion.
 - id: Competence Applied Is Leverage
   parent: Excellence Through Transparency
   body: |
