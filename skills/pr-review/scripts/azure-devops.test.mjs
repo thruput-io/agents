@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { locate, thread, priorOf, threadPayload, text, KIND } from './azure-devops.mjs';
+import { locate, thread, priorOf, refusedOf, threadPayload, text, KIND } from './azure-devops.mjs';
 import { SITE } from './lib.mjs';
 
 test('locate reads an Azure DevOps pull request URL, with or without a query, and nothing else', () => {
@@ -29,4 +29,10 @@ test('threadPayload maps an inline finding onto a thread on the right or the lef
   assert.deepEqual(threadPayload({ path: 'p', side: 'head', lines: { start: 3, end: 3 }, body: 'r' }), { ...text('r'), threadContext: { filePath: '/p', rightFileStart: { line: 3, offset: 1 }, rightFileEnd: { line: 3, offset: 1 } } });
   assert.deepEqual(threadPayload({ path: 'p', side: 'base', lines: { start: 1, end: 4 }, body: 'r' }).threadContext, { filePath: '/p', leftFileStart: { line: 1, offset: 1 }, leftFileEnd: { line: 4, offset: 1 } });
   assert.deepEqual(text('c'), { comments: [{ parentCommentId: 0, commentType: 'text', content: 'c' }], status: 'active' });
+});
+
+test('refusedOf finds the refusal we already posted for this head commit, so a second attempt posts none', () => {
+  const refusal = { id: 9, status: 'active', threadContext: null, comments: [{ content: `**Verdict: request-changes**\n\nNot reviewed at ${'a'.repeat(40)} against [the rules](${SITE}): the blocking Build policy is running.` }] };
+  assert.equal(refusedOf([refusal], 'a'.repeat(40)), '9');
+  assert.equal(refusedOf([refusal], 'b'.repeat(40)), undefined);
 });

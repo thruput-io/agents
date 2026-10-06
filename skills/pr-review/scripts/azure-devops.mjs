@@ -39,6 +39,13 @@ export function thread(raw) {
   };
 }
 
+const refusal = (headCommit) => (content) => content.includes(`Not reviewed at ${headCommit} `);
+
+export function refusedOf(rawThreads, headCommit) {
+  const found = rawThreads.find((raw) => !onLines(raw) && ours(raw) && refusal(headCommit)(firstComment(raw)));
+  return found === undefined ? undefined : String(found.id);
+}
+
 export function priorOf(rawThreads) {
   const summaries = rawThreads.filter((raw) => !onLines(raw) && ours(raw)).map((raw) => PRIOR.exec(firstComment(raw))).filter((match) => match !== null);
   return summaries.at(-1)?.[1];
@@ -73,6 +80,7 @@ export function resolve(host, workdir) {
     headCommit,
     blocked,
     prior,
+    refused: refusedOf(raw, headCommit),
     threads,
     diff: () => repo()('diff', '--no-color', repo()('merge-base', 'review/target', headCommit).trim(), headCommit),
     changedSince: (priorHead) => new Map(parseDiff(repo()('diff', '--no-color', priorHead, headCommit)).map((file) => [file.path, file.added])),

@@ -54,13 +54,18 @@ function allThreads(host) {
 
 const ours = (text) => text.includes(SITE);
 
+export function refusedIn(reviews, headCommit) {
+  return reviews.find((review) => review.state !== 'PENDING' && ours(review.body) && review.body.includes(`Not reviewed at ${headCommit} `))?.html_url;
+}
+
 export function resolve(host) {
   const pr = gh(pulls(host));
   const headCommit = pr.head.sha;
   const checks = gh(`repos/${host.owner}/${host.repository}/commits/${headCommit}/check-runs`);
   const failed = checks.check_runs.filter((check) => !['success', 'skipped', 'neutral'].includes(check.conclusion)).map((check) => `check ${check.name} did not succeed`);
   const blocked = [...failed, ...(pr.mergeable_state === 'dirty' ? ['the pull request has merge conflicts'] : [])];
-  const prior = paginate(`${pulls(host)}/reviews`).filter((review) => review.state !== 'PENDING' && ours(review.body)).at(-1)?.commit_id;
+  const reviews = paginate(`${pulls(host)}/reviews`);
+  const prior = reviews.filter((review) => review.state !== 'PENDING' && ours(review.body)).at(-1)?.commit_id;
   const threads = prior === undefined ? [] : allThreads(host)
     .filter((node) => node.line !== null && ours(node.comments.nodes[0]?.body ?? ''))
     .map((node) => thread(node, pr.user.login));
@@ -69,6 +74,7 @@ export function resolve(host) {
     headCommit,
     blocked,
     prior,
+    refused: refusedIn(reviews, headCommit),
     threads,
     diff: () => run('gh', ['api', pulls(host), '-H', 'Accept: application/vnd.github.diff']),
     changedSince: (priorHead) => new Map(gh(`repos/${host.owner}/${host.repository}/compare/${priorHead}...${headCommit}`).files

@@ -38,8 +38,8 @@ const change = adapter.resolve(host, workdir);
 const { pullRequest, headCommit } = change;
 write('pull-request.json', pullRequest);
 if (change.blocked.length > 0) {
-  const where = adapter.refuse(host, headCommit, change.blocked, workdir);
-  throw new Error(`${change.blocked.join('; ')}. A changes-requested verdict was posted (${where}); no review was prepared.`);
+  const where = change.refused ?? adapter.refuse(host, headCommit, change.blocked, workdir);
+  throw new Error(`${change.blocked.join('; ')}. A changes-requested verdict ${change.refused === undefined ? 'was posted' : 'had been posted'} (${where}); no review was prepared.`);
 }
 
 const changeSet = { headCommit, files: parseDiff(change.diff()) };

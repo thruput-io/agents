@@ -20,6 +20,7 @@ export function resolve(host) {
     headCommit,
     blocked: [],
     prior: undefined,
+    refused: undefined,
     threads: [],
     diff: () => git('diff', '--no-color', base, headCommit),
     changedSince: () => new Map(),

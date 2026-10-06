@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { locate, thread, comment, payload, KIND } from './github.mjs';
+import { locate, thread, comment, payload, refusedIn, KIND } from './github.mjs';
+import { SITE } from './lib.mjs';
 
 test('locate reads a GitHub pull request URL and nothing else', () => {
   assert.deepEqual(locate('https://github.com/thruput-io/agents/pull/14'), { kind: KIND, owner: 'thruput-io', repository: 'agents', number: 14 });
@@ -28,4 +29,10 @@ test('comment and payload map the outcome onto what the host accepts', () => {
   assert.equal(review.body, 's\n\n<details>\n<summary>Review ledger</summary>\n\n| t |\n\n</details>');
   assert.deepEqual(review.comments, [comment(one)]);
   assert.equal(payload({ headCommit: 'h', verdict: 'approve', summary: 's', inline: [], settle: [], reopen: [] }, '').event, 'APPROVE');
+});
+
+test('refusedIn finds the refusal we already posted for this head commit, so a second attempt posts none', () => {
+  const refusal = { id: 5, state: 'CHANGES_REQUESTED', html_url: 'https://github.com/o/r/pull/1#pullrequestreview-5', body: `**Verdict: request-changes**\n\nNot reviewed at ${'a'.repeat(40)} against [the rules](${SITE}): check build did not succeed.` };
+  assert.equal(refusedIn([refusal], 'a'.repeat(40)), refusal.html_url);
+  assert.equal(refusedIn([refusal], 'b'.repeat(40)), undefined);
 });
