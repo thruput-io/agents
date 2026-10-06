@@ -16,7 +16,7 @@
         "Name in examined what you opened to reach each verdict, and anything you needed and did not have",
         "Read every file in review.files in full: under lines, each line stands under its number",
         "Give each rule you were handed, in order, one verdict on the change: violation, clean, or not-applicable. clean means you looked and found nothing; evidence says what you looked at",
-        "Place every violation inside review.surface: a file listed there, lines within one of its ranges, side head for an added range and side base for a removed range",
+        "Place every violation on lines of review.surface: a file listed there, lines within one of its ranges, side head for an added range and side base for a removed range. The ranges under review.changeSet are not the surface",
         "Write your rows as JSON to the file named in review.ledger, in the shape of ledger.schema.json: headCommit from review.changeSet.headCommit, one row per rule, in the order handed",
         "Run the command in review.report. Fix what it reports and run it again until it passes. Then reply with the path of your file, and only that"
       ]
@@ -45,7 +45,7 @@
         "Name in examined what you opened to reach each verdict, and anything you needed and did not have",
         "Read every file in review.files in full: under lines, each line stands under its number",
         "Give each rule you were handed, in order, one verdict on the change: violation, clean, or not-applicable. clean means you looked and found nothing; evidence says what you looked at",
-        "Place every violation inside review.surface: a file listed there, lines within one of its ranges, side head for an added range and side base for a removed range",
+        "Place every violation on lines of review.surface: a file listed there, lines within one of its ranges, side head for an added range and side base for a removed range. The ranges under review.changeSet are not the surface",
         "Write your rows as JSON to the file named in review.ledger, in the shape of ledger.schema.json: headCommit from review.changeSet.headCommit, one row per rule, in the order handed",
         "Run the command in review.report. Fix what it reports and run it again until it passes. Then reply with the path of your file, and only that"
       ],

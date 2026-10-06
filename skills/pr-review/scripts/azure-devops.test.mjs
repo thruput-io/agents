@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { locate, thread, priorOf, refusedOf, threadPayload, text, KIND } from './azure-devops.mjs';
+import { locate, thread, priorOf, refusedOf, staleRefusals, threadPayload, text, KIND } from './azure-devops.mjs';
 import { SITE } from './lib.mjs';
 
 test('locate reads an Azure DevOps pull request URL, with or without a query, and nothing else', () => {
@@ -35,4 +35,10 @@ test('refusedOf finds the refusal we already posted for this head commit, so a s
   const refusal = { id: 9, status: 'active', threadContext: null, comments: [{ content: `**Verdict: request-changes**\n\nNot reviewed at ${'a'.repeat(40)} against [the rules](${SITE}): the blocking Build policy is running.` }] };
   assert.equal(refusedOf([refusal], 'a'.repeat(40)), '9');
   assert.equal(refusedOf([refusal], 'b'.repeat(40)), undefined);
+});
+
+test('staleRefusals lists the refusals of ours that are still active, whatever head they named, so a posted review closes them', () => {
+  const refusal = (id, status) => ({ id, status, threadContext: null, comments: [{ content: `**Verdict: request-changes**\n\nNot reviewed at ${'a'.repeat(40)} against [the rules](${SITE}): the blocking Build policy is running.` }] });
+  const summary = { id: 3, status: 'active', threadContext: null, comments: [{ content: `3 rules probed by 2 probes at ${'b'.repeat(40)} against [the rules](${SITE}): 0 violations` }] };
+  assert.deepEqual(staleRefusals([refusal(1, 'active'), refusal(2, 'fixed'), summary]), ['1']);
 });

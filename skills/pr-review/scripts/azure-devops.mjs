@@ -46,6 +46,10 @@ export function refusedOf(rawThreads, headCommit) {
   return found === undefined ? undefined : String(found.id);
 }
 
+export function staleRefusals(rawThreads) {
+  return rawThreads.filter((raw) => !onLines(raw) && ours(raw) && raw.status === 'active' && firstComment(raw).includes('Not reviewed at ')).map((raw) => String(raw.id));
+}
+
 export function priorOf(rawThreads) {
   const summaries = rawThreads.filter((raw) => !onLines(raw) && ours(raw)).map((raw) => PRIOR.exec(firstComment(raw))).filter((match) => match !== null);
   return summaries.at(-1)?.[1];
@@ -118,6 +122,8 @@ export function post(host, outcome, ledgerTable, workdir) {
   const summary = send(host, workdir, 'summary', text(`${outcome.summary}\n\n${ledgerTable}`), { method: 'POST' }).id;
   for (const id of outcome.settle) send(host, workdir, `settle-${id}`, { status: 'fixed' }, { method: 'PATCH', threadId: id });
   for (const id of outcome.reopen) send(host, workdir, `reopen-${id}`, { status: 'active' }, { method: 'PATCH', threadId: id });
+  const stale = staleRefusals(invoke(host, []).value);
+  for (const id of stale) send(host, workdir, `refusal-${id}`, { status: 'fixed' }, { method: 'PATCH', threadId: id });
   run('az', ['repos', 'pr', 'set-vote', '--id', String(host.id), '--vote', VOTE_OF[outcome.verdict], '--organization', organization(host), '--output', 'json']);
-  return { summaryThread: summary, inline: threads.length, settled: outcome.settle.length, reopened: outcome.reopen.length, vote: VOTE_OF[outcome.verdict] };
+  return { summaryThread: summary, inline: threads.length, settled: outcome.settle.length, reopened: outcome.reopen.length, refusalsClosed: stale.length, vote: VOTE_OF[outcome.verdict] };
 }

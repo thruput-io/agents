@@ -32,16 +32,20 @@
         "added": {
           "type": "array",
           "items": {
-            "$ref": "change-set.schema.json#/$defs/LineRange"
+            "$ref": "#/$defs/SurfaceRange"
           }
         },
         "removed": {
           "type": "array",
           "items": {
-            "$ref": "change-set.schema.json#/$defs/LineRange"
+            "$ref": "#/$defs/SurfaceRange"
           }
         }
       }
+    },
+    "SurfaceRange": {
+      "description": "Consecutive lines of the surface, the only lines a violation anchors on; a range of the change set that the surface does not list is not one",
+      "$ref": "change-set.schema.json#/$defs/LineRange"
     }
   },
   "examples": [

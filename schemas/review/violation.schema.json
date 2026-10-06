@@ -34,7 +34,7 @@
       ]
     },
     "LinesAnchor": {
-      "description": "Consecutive lines of one file inside the surface, a single line being a range that starts and ends on it. Numbered in the file on the side named, never as a diff hunk offset",
+      "description": "Consecutive lines of one file inside the surface, a single line being a range that starts and ends on it: a SurfaceRange, never a range read from the change set. Numbered in the file on the side named",
       "type": "object",
       "required": [
         "kind",
@@ -53,7 +53,7 @@
           "$ref": "#/$defs/Side"
         },
         "lines": {
-          "$ref": "change-set.schema.json#/$defs/LineRange"
+          "$ref": "surface.schema.json#/$defs/SurfaceRange"
         }
       }
     },
