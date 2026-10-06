@@ -11,8 +11,9 @@ const PRIOR = / probes at ([0-9a-f]{40})\b/;
 
 const organization = (host) => `https://dev.azure.com/${host.organization}`;
 const az = (...args) => JSON.parse(run('az', [...args, '--output', 'json']));
-const invoke = (host, args) => az('devops', 'invoke', '--organization', organization(host), '--area', 'git', '--resource', 'pullRequestThreads',
-  '--route-parameters', `project=${host.project}`, `repositoryId=${host.repository}`, `pullRequestId=${host.id}`, '--api-version', '7.1', ...args);
+export const routeParameters = (host, threadId) => ['--route-parameters', `project=${host.project}`, `repositoryId=${host.repository}`, `pullRequestId=${host.id}`, ...(threadId === undefined ? [] : [`threadId=${threadId}`])];
+const invoke = (host, args, threadId) => az('devops', 'invoke', '--organization', organization(host), '--area', 'git', '--resource', 'pullRequestThreads',
+  ...routeParameters(host, threadId), '--api-version', '7.1', ...args);
 
 export function locate(target) {
   const match = PULL_REQUEST_URL.exec(target);
@@ -105,11 +106,20 @@ export function threadPayload(finding) {
   return { ...text(finding.body), threadContext: { filePath: `/${finding.path}`, [`${side}FileStart`]: { line: start, offset: 1 }, [`${side}FileEnd`]: { line: end, offset: 1 } } };
 }
 
+export function unposted(outcome, rawThreads) {
+  const active = rawThreads.filter((raw) => raw.status === 'active' && ours(raw));
+  const carried = active.filter(onLines).map(thread);
+  const inline = outcome.inline.filter((finding) => !carried.some((existing) => existing.path === finding.path && existing.lines.end === finding.lines.end && existing.body === finding.body));
+  const summary = !active.some((raw) => !onLines(raw) && firstComment(raw).includes(`probes at ${outcome.headCommit} `));
+  const ids = new Set(active.map((raw) => String(raw.id)));
+  return { inline, summary, settle: outcome.settle.filter((id) => ids.has(id)) };
+}
+
 function send(host, workdir, name, body, args) {
   mkdirSync(join(workdir, 'post'), { recursive: true });
   const file = join(workdir, 'post', `${name}.json`);
   writeFileSync(file, `${JSON.stringify(body, null, 2)}\n`);
-  return invoke(host, ['--http-method', args.method, '--in-file', file, ...(args.threadId === undefined ? [] : ['--route-parameters', `threadId=${args.threadId}`])]);
+  return invoke(host, ['--http-method', args.method, '--in-file', file], args.threadId);
 }
 
 export function refuse(host, headCommit, reasons, workdir) {
@@ -118,12 +128,14 @@ export function refuse(host, headCommit, reasons, workdir) {
 }
 
 export function post(host, outcome, ledgerTable, workdir) {
-  const threads = outcome.inline.map((finding, index) => send(host, workdir, `thread-${String(index + 1).padStart(3, '0')}`, threadPayload(finding), { method: 'POST' }).id);
-  const summary = send(host, workdir, 'summary', text(`${outcome.summary}\n\n${ledgerTable}`), { method: 'POST' }).id;
-  for (const id of outcome.settle) send(host, workdir, `settle-${id}`, { status: 'fixed' }, { method: 'PATCH', threadId: id });
+  const before = invoke(host, []).value;
+  const left = unposted(outcome, before);
+  const threads = left.inline.map((finding, index) => send(host, workdir, `thread-${String(index + 1).padStart(3, '0')}`, threadPayload(finding), { method: 'POST' }).id);
+  const summary = left.summary ? send(host, workdir, 'summary', text(`${outcome.summary}\n\n${ledgerTable}`), { method: 'POST' }).id : undefined;
+  for (const id of left.settle) send(host, workdir, `settle-${id}`, { status: 'fixed' }, { method: 'PATCH', threadId: id });
   for (const id of outcome.reopen) send(host, workdir, `reopen-${id}`, { status: 'active' }, { method: 'PATCH', threadId: id });
-  const stale = staleRefusals(invoke(host, []).value);
+  const stale = staleRefusals(before);
   for (const id of stale) send(host, workdir, `refusal-${id}`, { status: 'fixed' }, { method: 'PATCH', threadId: id });
   run('az', ['repos', 'pr', 'set-vote', '--id', String(host.id), '--vote', VOTE_OF[outcome.verdict], '--organization', organization(host), '--output', 'json']);
-  return { summaryThread: summary, inline: threads.length, settled: outcome.settle.length, reopened: outcome.reopen.length, refusalsClosed: stale.length, vote: VOTE_OF[outcome.verdict] };
+  return { summaryThread: summary ?? 'already posted', inline: threads.length, alreadyPosted: outcome.inline.length - threads.length, settled: left.settle.length, reopened: outcome.reopen.length, refusalsClosed: stale.length, vote: VOTE_OF[outcome.verdict] };
 }

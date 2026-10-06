@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { locate, thread, comment, payload, refusedIn, KIND } from './github.mjs';
+import { locate, thread, comment, payload, refusedIn, postedAt, KIND } from './github.mjs';
 import { SITE } from './lib.mjs';
 
 test('locate reads a GitHub pull request URL and nothing else', () => {
@@ -35,4 +35,10 @@ test('refusedIn finds the refusal we already posted for this head commit, so a s
   const refusal = { id: 5, state: 'CHANGES_REQUESTED', html_url: 'https://github.com/o/r/pull/1#pullrequestreview-5', body: `**Verdict: request-changes**\n\nNot reviewed at ${'a'.repeat(40)} against [the rules](${SITE}): check build did not succeed.` };
   assert.equal(refusedIn([refusal], 'a'.repeat(40)), refusal.html_url);
   assert.equal(refusedIn([refusal], 'b'.repeat(40)), undefined);
+});
+
+test('postedAt finds the review of ours already posted at this head commit, so posting twice posts once', () => {
+  const review = { id: 7, state: 'CHANGES_REQUESTED', html_url: 'https://github.com/o/r/pull/1#pullrequestreview-7', body: `**Verdict: request-changes**\n\n3 rules probed by 2 probes at ${'a'.repeat(40)} against [the rules](${SITE}): 1 violations` };
+  assert.equal(postedAt([review], 'a'.repeat(40)), review.html_url);
+  assert.equal(postedAt([review], 'b'.repeat(40)), undefined);
 });

@@ -54,6 +54,10 @@ function allThreads(host) {
 
 const ours = (text) => text.includes(SITE);
 
+export function postedAt(reviews, headCommit) {
+  return reviews.find((review) => review.state !== 'PENDING' && ours(review.body) && review.body.includes(`probes at ${headCommit} `))?.html_url;
+}
+
 export function refusedIn(reviews, headCommit) {
   return reviews.find((review) => review.state !== 'PENDING' && ours(review.body) && review.body.includes(`Not reviewed at ${headCommit} `))?.html_url;
 }
@@ -120,8 +124,9 @@ export function refuse(host, headCommit, reasons, workdir) {
 const settle = (id, mutation) => gh('graphql', '-f', `query=mutation($id:ID!){${mutation}(input:{threadId:$id}){thread{id}}}`, '-F', `id=${id}`);
 
 export function post(host, outcome, ledgerTable, workdir) {
-  const response = postReview(host, payload(outcome, ledgerTable), workdir);
+  const already = postedAt(paginate(`${pulls(host)}/reviews`), outcome.headCommit);
+  const response = already === undefined ? postReview(host, payload(outcome, ledgerTable), workdir) : undefined;
   for (const id of outcome.settle) settle(id, 'resolveReviewThread');
   for (const id of outcome.reopen) settle(id, 'unresolveReviewThread');
-  return { review: response.html_url, event: response.state, inline: outcome.inline.length, settled: outcome.settle.length, reopened: outcome.reopen.length };
+  return { review: already ?? response.html_url, posted: already === undefined, inline: outcome.inline.length, settled: outcome.settle.length, reopened: outcome.reopen.length };
 }

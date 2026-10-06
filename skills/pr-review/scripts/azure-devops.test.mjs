@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { locate, thread, priorOf, refusedOf, staleRefusals, threadPayload, text, KIND } from './azure-devops.mjs';
+import { locate, thread, priorOf, refusedOf, staleRefusals, threadPayload, text, unposted, routeParameters, KIND } from './azure-devops.mjs';
 import { SITE } from './lib.mjs';
 
 test('locate reads an Azure DevOps pull request URL, with or without a query, and nothing else', () => {
@@ -41,4 +41,25 @@ test('staleRefusals lists the refusals of ours that are still active, whatever h
   const refusal = (id, status) => ({ id, status, threadContext: null, comments: [{ content: `**Verdict: request-changes**\n\nNot reviewed at ${'a'.repeat(40)} against [the rules](${SITE}): the blocking Build policy is running.` }] });
   const summary = { id: 3, status: 'active', threadContext: null, comments: [{ content: `3 rules probed by 2 probes at ${'b'.repeat(40)} against [the rules](${SITE}): 0 violations` }] };
   assert.deepEqual(staleRefusals([refusal(1, 'active'), refusal(2, 'fixed'), summary]), ['1']);
+});
+
+test('unposted keeps only the inline findings and the summary the pull request does not carry yet, so posting twice posts once', () => {
+  const cited = `r breaks [P](${SITE}#p)`;
+  const carried = { id: 11, status: 'active', threadContext: { filePath: '/p', rightFileStart: { line: 3, offset: 1 }, rightFileEnd: { line: 3, offset: 1 } }, comments: [{ content: cited }] };
+  const summary = { id: 12, status: 'active', threadContext: null, comments: [{ content: `**Verdict: request-changes**\n\n3 rules probed by 2 probes at ${'a'.repeat(40)} against [the rules](${SITE}): 1 violations\n\n| t |` }] };
+  const outcome = { headCommit: 'a'.repeat(40), verdict: 'request-changes', summary: `**Verdict: request-changes**\n\n3 rules probed by 2 probes at ${'a'.repeat(40)} against [the rules](${SITE}): 1 violations`, inline: [{ path: 'p', side: 'head', lines: { start: 3, end: 3 }, body: cited }, { path: 'q', side: 'head', lines: { start: 5, end: 5 }, body: 's' }], settle: ['11', '99'], reopen: [] };
+  const left = unposted(outcome, [carried, summary]);
+  assert.deepEqual(left.inline.map((finding) => finding.path), ['q']);
+  assert.equal(left.summary, false);
+  assert.deepEqual(left.settle, ['11']);
+  const all = unposted(outcome, []);
+  assert.equal(all.inline.length, 2);
+  assert.equal(all.summary, true);
+  assert.deepEqual(all.settle, []);
+});
+
+test('routeParameters is one flag with every parameter, the thread included when there is one', () => {
+  const host = { kind: KIND, organization: 'o', project: 'p', repository: 'r', id: 1 };
+  assert.deepEqual(routeParameters(host), ['--route-parameters', 'project=p', 'repositoryId=r', 'pullRequestId=1']);
+  assert.deepEqual(routeParameters(host, '42'), ['--route-parameters', 'project=p', 'repositoryId=r', 'pullRequestId=1', 'threadId=42']);
 });
