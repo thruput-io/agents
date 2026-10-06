@@ -1,6 +1,6 @@
 rationales:
 - id: Robustness Principle
-  parent: Great software is easy to maintain and extend
+  parent: Maintainability and Extensibility Now is Currency in Future
   body: |
     Be conservative in what you send and liberal in what you accept ([RFC 1122 § 1.2.2](https://datatracker.ietf.org/doc/html/rfc1122#section-1.2.2), Postel's law). A producer emits exactly the shape it defines; a consumer takes what it needs from what it receives and is not disturbed by what it does not know.
 
@@ -13,7 +13,7 @@ rationales:
     body: |
       Let consumers publish the parts of the contract they rely on, so the producer sees what a change would break before it ships (Ian Robinson, [Consumer-Driven Contracts](https://martinfowler.com/articles/consumerDrivenContracts.html)).
 - id: Code is a liability, not an asset
-  parent: Simplicity
+  parent: Less is more
   body: |
     Simplicity is the fit between a job and the tools and strategies chosen to do it: a solution is simple when it carries nothing the job does not call for, and complex in proportion to what it carries beyond that. Every line carries the ongoing cost of being read, supported, and updated as the ecosystem around it evolves, and is worth that cost only where it meets a user need ([Software Engineering at Google, Why Deprecate?](https://abseil.io/resources/swe-book/html/ch15.html#why_deprecatequestion_mark)). Edsger Dijkstra: if we count lines of code, "we should not regard them as 'lines produced' but as 'lines spent'" ([EWD1036](https://www.cs.utexas.edu/~EWD/transcriptions/EWD10xx/EWD1036.html)), and Jeff Atwood: "Every new line of code you willingly bring into the world is code that has to be debugged, code that has to be read and understood, code that has to be supported" ([The Best Code is No Code At All](https://blog.codinghorror.com/the-best-code-is-no-code-at-all/)). Code outside the stated [[Purpose]] is not free. Martin Fowler's [Yagni](https://martinfowler.com/bliki/Yagni.html) names four costs: building it, delaying real features, carrying its complexity, and repairing it when the guess proves wrong. Ron Jeffries: "the best way to have fewer bugs is to implement less code." Keeping every part inside the [[Purpose]] keeps the codebase small enough to understand and change quickly, and every test and review aimed at what [[Users]] need.
   solutions:
@@ -116,7 +116,7 @@ rationales:
     body: |
       Implement the language's comparison interface on a [[Domain object]] rather than compare its primitives.
 - id: Optionality Drives Complexity
-  parent: Simplicity
+  parent: Less is more
   body: |
     Each optional flag doubles the paths a function can take, and most of them are never tested (Pete Hodgson, [Feature Toggles](https://martinfowler.com/articles/feature-toggles.html)). Martin Fowler's [FlagArgument](https://martinfowler.com/bliki/FlagArgument.html): a named operation states intent where a bare boolean hides it. Robert Harper's [Boolean Blindness](https://existentialtype.wordpress.com/2011/03/15/boolean-blindness/): a flag carries no meaning of its own.
   solutions:
@@ -152,9 +152,9 @@ rationales:
     body: |
       Enable the strictest static-analysis presets and compiler checks the ecosystem offers, so safeguards are enforced without review.
 - id: The practitioner decides the outcome
-  parent: Leverage
+  parent: Competence Applied is Leverage
   body: |
-    AI is [[Leverage]] applied to a [[Practitioner]]. Applied by someone who does not know what good looks like, it produces a mess at a speed no one could reach unaided, and the mess arrives reviewed, formatted, and entirely plausible. Applied by someone working from these documents, it produces the same [[Quality]] faster, and more of it. Lisanne Bainbridge's [Ironies of Automation](https://doi.org/10.1016/0005-1098(83)90046-8) (1983) names the mechanism: automation takes over the routine and leaves the [[Practitioner]] exactly the judgement it could not encode, so the more capable the tool, the more the outcome rests on the person. Two measurements show it from both sides. [Generative AI at Work](https://www.nber.org/papers/w31161) (Brynjolfsson, Li, Raymond, 2023) found the gains concentrated in novices, because the model disseminated the practice of the most able workers: the tool carried competence that already existed. METR's [early-2025 study](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/) found experienced [[Developer]]s 19% slower with AI tools while believing themselves 20% faster: what the tool multiplied there was the confidence, not the result.
+    AI is leverage applied to a [[Practitioner]] ([[Competence Applied is Leverage]]). Applied by someone who does not know what good looks like, it produces a mess at a speed no one could reach unaided, and the mess arrives reviewed, formatted, and entirely plausible. Applied by someone working from these documents, it produces the same [[Quality]] faster, and more of it. Lisanne Bainbridge's [Ironies of Automation](https://doi.org/10.1016/0005-1098(83)90046-8) (1983) names the mechanism: automation takes over the routine and leaves the [[Practitioner]] exactly the judgement it could not encode, so the more capable the tool, the more the outcome rests on the person. Two measurements show it from both sides. [Generative AI at Work](https://www.nber.org/papers/w31161) (Brynjolfsson, Li, Raymond, 2023) found the gains concentrated in novices, because the model disseminated the practice of the most able workers: the tool carried competence that already existed. METR's [early-2025 study](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/) found experienced [[Developer]]s 19% slower with AI tools while believing themselves 20% faster: what the tool multiplied there was the confidence, not the result.
 
     The distance between what a person and what a model can do narrows every day, so anything justified by "AI cannot do this yet" carries an expiry date and is not written as permanent. What does not narrow is Fred Brooks's [essential complexity](https://worrydream.com/refs/Brooks_1986_-_No_Silver_Bullet.pdf): tools attack the accidental, and knowing which problem is worth solving, what good means here, and whether the result is true stays with the [[Practitioner]]. Investment therefore goes to the [[Practitioner]]'s competence, and to stating our standard explicitly enough to be applied, over the expectation that a better model compensates for the absence of both.
   solutions:

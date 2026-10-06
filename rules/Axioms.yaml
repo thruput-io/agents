@@ -7,27 +7,27 @@ axioms:
   parent: Speed Through Discipline
   body: |
     Do every activity at the earliest point where it can be done.
-- id: Simplicity
+- id: Less is more
   parent: Outcome Over Output
   body: |
-    Simple solutions are better than complex.
-- id: Great software is easy to maintain and extend
+    Simple solutions are better than complex
+- id: Maintainability and Extensibility Now is Currency in Future
   parent: Joy Through Craft
   body: |
-    [[Great software]] is easy to maintain and extend.
-- id: Great Software Requires Users
+    [[Great software]] stays great when is easy to maintain and extend
+- id: Great Products Requires Users
   parent: Outcome Over Output
   body: |
     Code proves execution; [[Users]] prove [[Correctness]].
 - id: Nothing Is Complete Without Verification
   parent: Speed Through Discipline
   body: |
-    Nothing is complete until it is verified.
-- id: Leverage
+    Nothing is complete until it is verified. It's just guessing.
+- id: Competence Applied is Leverage
   parent: Excellence Through Transparency
   body: |
     A tool multiplies the competence applied to it and supplies none of its own; it decides how fast the outcome arrives, never what it is.
 - id: Quality Uncompromised
   parent: Speed Through Discipline
   body: |
-    Quality is always the highest priority.
+    Quality is always the highest priority. It makes other priorities possible.
