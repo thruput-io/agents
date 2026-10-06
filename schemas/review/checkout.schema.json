@@ -6,6 +6,6 @@
   "type": "string",
   "minLength": 1,
   "examples": [
-    "/home/user/review/snapshot"
+    "$WORKDIR/snapshot"
   ]
 }

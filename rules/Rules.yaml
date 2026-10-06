@@ -154,7 +154,7 @@ rules:
   group: Domain Model
   parent: Make illegal states unrepresentable
   body: |
-    Unwrap [[Domain objects]] into [[Primitive]]s for comparison.
+    Unwrap [[Domain objects]] into [[Primitive]]s anywhere but at the [[Perimeter]].
 - id: Strong typing
   marker: MUST NOT
   group: Domain Model
@@ -280,7 +280,7 @@ rules:
   group: Tests
   parent: Never fix a bug without a test pinning it
   body: |
-    Add a [[Unit test]] for any exploratory troubleshooting, even when a natural home for it does not exist.
+    Any bug fix has a [[Unit test]] pinning it.
 - id: No retry on failure
   marker: MUST NOT
   group: Tests
@@ -382,7 +382,7 @@ rules:
   group: Contracts
   parent: Avoid optionality
   body: |
-    Use optional variables or [[Optional parameter]]s unless a [[Framework]] or third-party [[Library]] forces them.
+    Use optional variables or [[Optional parameter]]s unless [[Code We Cannot Control]] forces them.
 - id: Prefer APIs without optionality
   marker: MUST
   group: Contracts
@@ -449,3 +449,15 @@ rules:
   parent: Own the Runtime
   body: |
     Add the [[Signal]] in the change that adds the behaviour it shows.
+- id: No iteration over calls over the network
+  marker: MUST NOT
+  group: Performance
+  parent: Iterations over calls over the network is bad design
+  body: |
+    Iterate over [[Calls over the network]].
+- id: No performance claim without measurement or IO reduction
+  marker: MUST NOT
+  group: Performance
+  parent: Code without calls over the network humans cannot optimize
+  body: |
+    Attribute any code changes to performance without it is reducing [[Calls over the network]] or having a named measurement as [[Evidence]].

@@ -122,7 +122,7 @@ export function partition(rules) {
   return [...groups].map(([group, members]) => ({ name: slug(group), group, rules: members }));
 }
 
-const KIND_OF_GROUP = new Map([['Reuse', 'reuse-ladder'], ['Dead Code', 'dead-code']]);
+const KIND_OF_GROUP = new Map([['Reuse', 'reuse'], ['Dead Code', 'dead-code']]);
 
 export function kindOf(group) {
   return KIND_OF_GROUP.has(group) ? KIND_OF_GROUP.get(group) : 'rules';
@@ -184,13 +184,13 @@ export function rulesets(index, texts) {
   });
 }
 
-const LOOKS_BEYOND_THE_CHANGE = ['reuse-ladder', 'dead-code'];
+const LOOKS_BEYOND_THE_CHANGE = ['reuse', 'dead-code'];
 
 export function instructions(context, probes, handedRulesets) {
   const checkedOut = (kind) => (LOOKS_BEYOND_THE_CHANGE.includes(kind) ? { checkout: context.checkout } : {});
   const handed = [
     ...probes.map((probe) => ({ name: probe.name, kind: probe.kind, beyond: { rulebook: probe.rulebook, ...checkedOut(probe.kind) } })),
-    { name: 'escalation', kind: 'escalation', beyond: { rulesets: handedRulesets } },
+    { name: 'context', kind: 'context', beyond: { rulesets: handedRulesets } },
   ];
   return handed.map((probe, i) => {
     const name = `${String(i + 1).padStart(2, '0')}-${probe.name}`;
@@ -245,7 +245,9 @@ function fixed(read, name, schema) {
     const target = resolve(read, name, schema.$ref);
     return fixed(read, target.name, target.schema);
   }
-  return Object.entries(schema.properties ?? {}).filter(([, property]) => 'const' in property).map(([property, { const: value }]) => [property, value]);
+  const own = Object.entries(schema.properties ?? {}).filter(([, property]) => 'const' in property).map(([property, { const: value }]) => [property, value]);
+  const inherited = (schema.allOf ?? []).flatMap((branch) => fixed(read, name, branch));
+  return [...inherited, ...own];
 }
 
 export function complete(read, name, document, schema = read(name)) {
@@ -260,6 +262,9 @@ export function complete(read, name, document, schema = read(name)) {
     const belongs = schema.oneOf.filter((branch) => fixed(read, name, branch).every(([property, value]) => !(property in document) || same(document[property], value)));
     if (belongs.length !== 1) throw new Error(`${name}: the document belongs to ${belongs.length} of the ${schema.oneOf.length} branches, so what its schema says cannot be told`);
     completed = complete(read, name, document, belongs[0]);
+  }
+  for (const branch of schema.allOf ?? []) {
+    completed = complete(read, name, completed, branch);
   }
   const properties = schema.properties ?? {};
   const own = Object.entries(completed).map(([property, value]) => [property, property in properties ? complete(read, name, value, properties[property]) : value]);
@@ -292,15 +297,15 @@ export function checkLedger(name, document, ledger) {
   if (ledger.headCommit !== headCommit) {
     throw new Error(`${name}: ledger is for ${ledger.headCommit}, the review is of ${headCommit}`);
   }
-  if (document.kind === 'escalation') {
+  if (document.kind === 'context') {
     if (ledger.rows.length !== ESCALATION_ROWS) throw new Error(`${name}: ${ledger.rows.length} rows, ${ESCALATION_ROWS} expected`);
     const ours = ledger.rows.filter((row) => row.bookRule === undefined).map((row) => row.rule);
-    if (ours.length > 0) throw new Error(`${name}: ${JSON.stringify(ours)} is not a rule of the ruleset; the escalation probe writes its rows on book rules`);
+    if (ours.length > 0) throw new Error(`${name}: ${JSON.stringify(ours)} is not a rule of the ruleset; the context probe writes its rows on book rules`);
     const handed = document.rulesets.map((ruleset) => ruleset.url);
     const selected = [...new Set(ledger.rows.map((row) => row.bookRule.ruleset))];
     const foreign = selected.filter((url) => !handed.includes(url));
     if (foreign.length > 0) throw new Error(`${name}: ${JSON.stringify(foreign)} is not a ruleset the probe was handed`);
-    if (selected.length !== 1) throw new Error(`${name}: rows name ${selected.length} rulesets; the escalation probe selects one ruleset`);
+    if (selected.length !== 1) throw new Error(`${name}: rows name ${selected.length} rulesets; the context probe selects one ruleset`);
   } else {
     const found = ledger.rows.map((row) => row.rule);
     const expected = document.rulebook.rules.map((rule) => rule.id);

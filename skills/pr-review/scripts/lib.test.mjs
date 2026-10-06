@@ -111,8 +111,8 @@ test('partition groups rules in first-seen order and keeps rule order inside a g
   ]);
 });
 
-test('kindOf names the probe a group gets: the reuse ladder, dead code, or a probe of rules', () => {
-  assert.equal(kindOf('Reuse'), 'reuse-ladder');
+test('kindOf names the probe a group gets: reuse, dead code, or a probe of rules', () => {
+  assert.equal(kindOf('Reuse'), 'reuse');
   assert.equal(kindOf('Dead Code'), 'dead-code');
   assert.equal(kindOf('Failure Handling'), 'rules');
 });
@@ -151,7 +151,7 @@ test('rawUrl is where the text of a file is read, from its canonical URL on the 
   assert.throws(() => rawUrl('https://books.example/ddd.md'), /is not a file on github.com/);
 });
 
-test('rulesets folds the index and the text read for each entry into what the escalation probe is handed', () => {
+test('rulesets folds the index and the text read for each entry into what the context probe is handed', () => {
   const index = [{ id: 'ddd', title: 'Domain-Driven Design', author: 'Eric Evans', focus: 'Domain Modeling', when_to_use: 'Strategic modeling.', review_checklist: 'Guard aggregates.', tree_url: 'https://books.example/ddd', canonical_url: 'https://books.example/ddd.md' }];
   assert.deepEqual(rulesets(index, new Map([['https://books.example/ddd.md', '# Rules']])), [
     { url: 'https://books.example/ddd.md', title: 'Domain-Driven Design', focus: 'Domain Modeling', whenToUse: 'Strategic modeling.', text: '# Rules' },
@@ -159,21 +159,21 @@ test('rulesets folds the index and the text read for each entry into what the es
   assert.throws(() => rulesets(index, new Map()), /ddd\.md was not read/);
 });
 
-test('instructions hands every probe the review with its ledger file and its report command, a rule probe its rulebook, the probes that look beyond the change the checkout, and the escalation probe the rulesets', () => {
+test('instructions hands every probe the review with its ledger file and its report command, a rule probe its rulebook, the probes that look beyond the change the checkout, and the context probe the rulesets', () => {
   const context = {
     review: { headCommit: 'h', files: [] },
     ledger: (name) => `/w/ledger/${name}.json`,
     report: (name) => `validate /w/ledger/${name}.json`,
     checkout: '/w/snapshot',
   };
-  const probes = [{ name: 'g1', kind: 'rules', rulebook: 'r1' }, { name: 'g2', kind: 'reuse-ladder', rulebook: 'r2' }, { name: 'g3', kind: 'dead-code', rulebook: 'r3' }];
+  const probes = [{ name: 'g1', kind: 'rules', rulebook: 'r1' }, { name: 'g2', kind: 'reuse', rulebook: 'r2' }, { name: 'g3', kind: 'dead-code', rulebook: 'r3' }];
   const files = instructions(context, probes, ['a ruleset']);
   const handed = (name) => ({ headCommit: 'h', files: [], ledger: `/w/ledger/${name}.json`, report: `validate /w/ledger/${name}.json` });
-  assert.deepEqual(files.map((file) => file.name), ['01-g1', '02-g2', '03-g3', '04-escalation']);
+  assert.deepEqual(files.map((file) => file.name), ['01-g1', '02-g2', '03-g3', '04-context']);
   assert.deepEqual(files[0].document, { kind: 'rules', review: handed('01-g1'), rulebook: 'r1' });
-  assert.deepEqual(files[1].document, { kind: 'reuse-ladder', review: handed('02-g2'), rulebook: 'r2', checkout: '/w/snapshot' });
+  assert.deepEqual(files[1].document, { kind: 'reuse', review: handed('02-g2'), rulebook: 'r2', checkout: '/w/snapshot' });
   assert.deepEqual(files[2].document, { kind: 'dead-code', review: handed('03-g3'), rulebook: 'r3', checkout: '/w/snapshot' });
-  assert.deepEqual(files[3].document, { kind: 'escalation', review: handed('04-escalation'), rulesets: ['a ruleset'] });
+  assert.deepEqual(files[3].document, { kind: 'context', review: handed('04-context'), rulesets: ['a ruleset'] });
 });
 
 const text = (side, n) => `${side === 'head' ? 'L' : 'R'}${n}`;
@@ -184,7 +184,7 @@ const files = [{ path: 'p', fragments: [
   { kind: 'surface', side: 'base', lines: run('base', 9, 9) },
 ] }];
 const probe = { kind: 'rules', review: { headCommit: 'h', files }, rulebook: { rules: [{ id: 'A', parent: 'P' }, { id: 'B', parent: 'Q' }] } };
-const escalation = { kind: 'escalation', review: { headCommit: 'h', files }, rulesets: [{ url: 'https://books.example/ddd.md' }, { url: 'https://books.example/clean-code.md' }] };
+const contextProbe = { kind: 'context', review: { headCommit: 'h', files }, rulesets: [{ url: 'https://books.example/ddd.md' }, { url: 'https://books.example/clean-code.md' }] };
 const lines = (path, start, end, side) => ({ kind: 'surface', path, side, lines: run(side, start, end) });
 const atPullRequest = { kind: 'pull-request' };
 const violation = (anchor) => ({ observation: 'what is wrong', anchor });
@@ -203,9 +203,10 @@ test('numbered lists the lines of a file by their number from 1, a final newline
   assert.deepEqual(Object.keys(numbered('x\n'.repeat(12))).at(-1), '12');
 });
 
-test('complete adds what a schema says itself, at every level: the constants of its own properties, of the one branch the document belongs to, and of what its properties and items refer to', () => {
+test('complete adds what a schema says itself, at every level: the constants of its own properties, of inherited schemas via allOf, of the one branch the document belongs to, and of what its properties and items refer to', () => {
   const schemas = {
-    'review/any.schema.json': { properties: { steps: { const: ['first', 'second'] } }, oneOf: [{ $ref: 'kinds/a.schema.json' }, { $ref: 'kinds/b.schema.json' }] },
+    'review/base.schema.json': { properties: { instructions: { const: ['do instructions'] } } },
+    'review/any.schema.json': { allOf: [{ $ref: 'base.schema.json' }], properties: { steps: { const: ['first', 'second'] } }, oneOf: [{ $ref: 'kinds/a.schema.json' }, { $ref: 'kinds/b.schema.json' }] },
     'review/kinds/a.schema.json': { properties: { task: { const: 'do a' }, kind: { const: 'a' }, part: { $ref: '../part.schema.json' } } },
     'review/kinds/b.schema.json': { properties: { task: { const: 'do b' }, kind: { const: 'b' }, part: { $ref: '../part.schema.json' }, items: { type: 'array', items: { $ref: '../part.schema.json#/$defs/Item' } } } },
     'review/part.schema.json': { properties: { note: { const: 'read me' }, value: { type: 'string' } }, $defs: { Item: { properties: { tag: { const: 't' }, n: { type: 'integer' } } } } },
@@ -213,9 +214,9 @@ test('complete adds what a schema says itself, at every level: the constants of 
   const read = (name) => schemas[name];
   assert.deepEqual(
     complete(read, 'review/any.schema.json', { kind: 'b', part: { value: 'x' }, items: [{ n: 1 }, { n: 2 }] }),
-    { steps: ['first', 'second'], task: 'do b', kind: 'b', part: { note: 'read me', value: 'x' }, items: [{ tag: 't', n: 1 }, { tag: 't', n: 2 }] },
+    { instructions: ['do instructions'], steps: ['first', 'second'], task: 'do b', kind: 'b', part: { note: 'read me', value: 'x' }, items: [{ tag: 't', n: 1 }, { tag: 't', n: 2 }] },
   );
-  assert.deepEqual(complete(read, 'review/any.schema.json', { kind: 'a' }), { steps: ['first', 'second'], task: 'do a', kind: 'a' });
+  assert.deepEqual(complete(read, 'review/any.schema.json', { kind: 'a' }), { instructions: ['do instructions'], steps: ['first', 'second'], task: 'do a', kind: 'a' });
   assert.throws(() => complete(read, 'review/any.schema.json', { kind: 'c' }), /belongs to 0 of the 2 branches/);
   assert.throws(() => complete(read, 'review/any.schema.json', {}), /belongs to 2 of the 2 branches/);
 });
@@ -267,13 +268,13 @@ test('checkLedger rejects a violation anchored outside the surface', () => {
   assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: rows(lines('p', 7, 7, 'head')) }), /violation of A is anchored outside the surface/);
 });
 
-test('checkLedger requires exactly three rows on rules of one ruleset the escalation probe was handed', () => {
+test('checkLedger requires exactly three rows on rules of one ruleset the context probe was handed', () => {
   const rowOn = (ruleset) => ({ bookRule: { ruleset, heading: 'x' }, examined: ['x'], verdict: 'clean', evidence: 'e' });
-  checkLedger('e', escalation, { headCommit: 'h', rows: [cleanBookRow('x'), cleanBookRow('y'), cleanBookRow('z')] });
-  assert.throws(() => checkLedger('e', escalation, { headCommit: 'h', rows: [cleanBookRow('x')] }), /1 rows, 3 expected/);
-  assert.throws(() => checkLedger('e', escalation, { headCommit: 'h', rows: [cleanBookRow('x'), cleanBookRow('y'), cleanRow('A')] }), /\["A"\] is not a rule of the ruleset/);
-  assert.throws(() => checkLedger('e', escalation, { headCommit: 'h', rows: [rowOn('https://books.example/other.md'), rowOn('https://books.example/other.md'), rowOn('https://books.example/other.md')] }), /other\.md"\] is not a ruleset the probe was handed/);
-  assert.throws(() => checkLedger('e', escalation, { headCommit: 'h', rows: [cleanBookRow('x'), cleanBookRow('y'), rowOn('https://books.example/clean-code.md')] }), /selects one ruleset/);
+  checkLedger('e', contextProbe, { headCommit: 'h', rows: [cleanBookRow('x'), cleanBookRow('y'), cleanBookRow('z')] });
+  assert.throws(() => checkLedger('e', contextProbe, { headCommit: 'h', rows: [cleanBookRow('x')] }), /1 rows, 3 expected/);
+  assert.throws(() => checkLedger('e', contextProbe, { headCommit: 'h', rows: [cleanBookRow('x'), cleanBookRow('y'), cleanRow('A')] }), /\["A"\] is not a rule of the ruleset/);
+  assert.throws(() => checkLedger('e', contextProbe, { headCommit: 'h', rows: [rowOn('https://books.example/other.md'), rowOn('https://books.example/other.md'), rowOn('https://books.example/other.md')] }), /other\.md"\] is not a ruleset the probe was handed/);
+  assert.throws(() => checkLedger('e', contextProbe, { headCommit: 'h', rows: [cleanBookRow('x'), cleanBookRow('y'), rowOn('https://books.example/clean-code.md')] }), /selects one ruleset/);
 });
 
 const ledger = {
@@ -283,8 +284,8 @@ const ledger = {
     { rule: 'B', examined: ['x'], verdict: 'clean', evidence: `has | pipe\nand newline ${'x'.repeat(CELL)}` },
   ],
 };
-const escalationLedger = { headCommit: 'h', rows: [violatedBookRow('Book rule', [violation(lines('p', 9, 9, 'base'))])] };
-const entries = [{ document: probe, ledger }, { document: escalation, ledger: escalationLedger }];
+const contextLedger = { headCommit: 'h', rows: [violatedBookRow('Book rule', [violation(lines('p', 9, 9, 'base'))])] };
+const entries = [{ document: probe, ledger }, { document: contextProbe, ledger: contextLedger }];
 
 test('merge concatenates rows into the one ledger and verdict follows any violation', () => {
   assert.deepEqual(merge([{ headCommit: 'h', rows: [cleanRow('A')] }, { headCommit: 'h', rows: [cleanBookRow('x')] }]), { headCommit: 'h', rows: [cleanRow('A'), cleanBookRow('x')] });
@@ -297,13 +298,13 @@ test('table escapes pipes and newlines, caps a cell, and names a book rule by it
   assert.match(rendered, /has \\\| pipe and newline/);
   assert.ok(rendered.split('\n')[3].length < CELL + 100);
   assert.match(rendered, /…/);
-  assert.match(table(escalationLedger), /\n\| Book rule \| x \| violation \| e \|$/);
+  assert.match(table(contextLedger), /\n\| Book rule \| x \| violation \| e \|$/);
 });
 
 test('citation links the parent principle of a rule of ours on the site, and a book rule in its ruleset', () => {
   const document = { kind: 'rules', rulebook: { rules: [{ id: 'R', parent: "You aren't gonna need it" }] } };
   assert.equal(citation(document, cleanRow('R')), `[You aren't gonna need it](${SITE}#you-arent-gonna-need-it)`);
-  assert.equal(citation(escalation, cleanBookRow('Book rule')), '[Book rule](https://books.example/ddd.md)');
+  assert.equal(citation(contextProbe, cleanBookRow('Book rule')), '[Book rule](https://books.example/ddd.md)');
 });
 
 test('message renders the observation as breaking what is cited', () => {

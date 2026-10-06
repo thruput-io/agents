@@ -90,8 +90,9 @@ const probes = instructions(
 );
 for (const probe of probes) {
   const file = join(workdir, 'instructions', `${probe.name}.yaml`);
-  writeFileSync(file, jsYaml.dump(complete(schema, 'review/agent-instructions.schema.json', probe.document), { lineWidth: -1, noRefs: true }));
-  validate('review/agent-instructions.schema.json', file);
+  const schemaPath = `review/instructions/${probe.kind}.schema.json`;
+  writeFileSync(file, jsYaml.dump(complete(schema, schemaPath, probe.document), { lineWidth: -1, noRefs: true }));
+  validate(schemaPath, file);
 }
 
 const count = (files, side) => files.reduce((sum, file) => sum + file[side].reduce((n, range) => n + range.end - range.start + 1, 0), 0);

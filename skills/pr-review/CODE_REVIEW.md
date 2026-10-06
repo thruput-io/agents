@@ -30,7 +30,7 @@ The target is a GitHub pull request URL, an Azure DevOps pull request URL, or `<
 
 ### 2. Probe
 
-Dispatch one `probe` subagent per file in `<workdir>/instructions/`, concurrently, the escalation one on the most capable model, each with this message and nothing else, the path being that of its own file:
+Dispatch one `probe` subagent per file in `<workdir>/instructions/`, concurrently, the context one on the most capable model, each with this message and nothing else, the path being that of its own file:
 
     Read the file <path> and do what it says. It is addressed to you.
 

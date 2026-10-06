@@ -119,3 +119,11 @@ principles:
   parent: The compiler writes for the machine
   body: |
     Speed comes from a measured hot spot and a better algorithm, never from obscuring the code; an optimisation that costs readability is undone.
+- id: Code without calls over the network humans cannot optimize
+  parent: The compiler writes for the machine
+  body: |
+    Code without [[Calls over the network]] humans cannot optimize.
+- id: Iterations over calls over the network is bad design
+  parent: The compiler writes for the machine
+  body: |
+    Iterations over [[Calls over the network]] is bad design.

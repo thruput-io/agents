@@ -271,8 +271,8 @@
           ]
         }
       ],
-      "ledger": "/home/user/review/ledger/11-behavior-failure-handling.json",
-      "report": "npx --yes @sourcemeta/jsonschema@17.0.0 validate \"/home/user/agents/skills/pr-review/schemas/review/ledger.schema.json\" \"/home/user/review/ledger/11-behavior-failure-handling.json\" --resolve \"/home/user/agents/skills/pr-review/schemas\""
+      "ledger": "$WORKDIR/ledger/11-behavior-failure-handling.json",
+      "report": "npx --yes @sourcemeta/jsonschema@17.0.0 validate \"$SKILL_DIR/schemas/review/ledger.schema.json\" \"$WORKDIR/ledger/11-behavior-failure-handling.json\" --resolve \"$SKILL_DIR/schemas\""
     }
   ]
 }

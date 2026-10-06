@@ -385,6 +385,9 @@ definitions:
 - id: Mutator
   specification: |
     Alias for [[Setter]].
+- id: Developers
+  specification: |
+    Alias for [[Developer]].
 
 
 
@@ -600,3 +603,25 @@ definitions:
 - id: Environment
   specification: |
     A place where the system runs with its own configuration and infrastructure, such as local, test, or production.
+- id: Calls over the network
+  specification: |
+    Invocations that traverse a network boundary to communicate with another service, database, or process.
+  openEnumerationOf:
+  - Access to filesystem
+  - Access to database
+  - Access to HTTP
+- id: Call over the network
+  specification: |
+    Alias for [[Calls over the network]].
+- id: calls over the network
+  specification: |
+    Alias for [[Calls over the network]].
+- id: Access to filesystem
+  specification: |
+    Accessing a local or remote file system.
+- id: Access to database
+  specification: |
+    Accessing a relational, document, or key-value database.
+- id: Access to HTTP
+  specification: |
+    Accessing an HTTP or HTTPS endpoint.
