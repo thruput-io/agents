@@ -2,14 +2,19 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/instructions/escalation.schema.json",
   "title": "Escalation instructions",
-  "description": "The instructions of the escalation probe, whose rules come from outside our rules: it is handed rulesets in the place of a rulebook. It selects the ruleset whose focus and whenToUse match what the pull request changes, reads its text, never a one-line summary or its memory of the book, picks the three rules most relevant to the change set, and probes those three, the selected ruleset standing in the place of the rulebook. It writes three rows, each on a bookRule: the url of the ruleset it selected and the heading of the rule in its text",
+  "description": "The instructions of the escalation probe, whose rules come from outside our rules: its task, the review, and rulesets in the place of a rulebook",
   "type": "object",
   "required": [
+    "task",
     "kind",
     "review",
     "rulesets"
   ],
   "properties": {
+    "task": {
+      "description": "What this probe does, said to the probe itself",
+      "const": "Work from this document alone. Select from rulesets the one whose focus and whenToUse match what the pull request changes. Read its text in full, pick the three rules in it most relevant to the change set, and probe the pull request in review against those three. Write three rows to the file named in review.ledger, each on a bookRule: the url of the ruleset you selected and the heading of the rule in its text"
+    },
     "kind": {
       "const": "escalation"
     },
@@ -52,7 +57,8 @@
         "text": {
           "$ref": "#/$defs/RulesetText"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "RulesetTitle": {
       "description": "What a ruleset is called",
@@ -77,6 +83,7 @@
   },
   "examples": [
     {
+      "task": "Work from this document alone. Select from rulesets the one whose focus and whenToUse match what the pull request changes. Read its text in full, pick the three rules in it most relevant to the change set, and probe the pull request in review against those three. Write three rows to the file named in review.ledger, each on a bookRule: the url of the ruleset you selected and the heading of the rule in its text",
       "kind": "escalation",
       "review": {
         "pullRequest": {
@@ -122,10 +129,14 @@
         "files": [
           {
             "path": "scripts/verify.sh",
-            "content": "#!/usr/bin/env bash\nset -euo pipefail\n"
+            "lines": {
+              "1": "#!/usr/bin/env bash",
+              "2": "set -euo pipefail"
+            }
           }
         ],
-        "ledger": "/home/user/review/ledger/24-escalation.json"
+        "ledger": "/home/user/review/ledger/24-escalation.json",
+        "report": "npx --yes @sourcemeta/jsonschema@17.0.0 validate \"/home/user/agents/skills/pr-review/schemas/review/ledger.schema.json\" \"/home/user/review/ledger/24-escalation.json\" --resolve \"/home/user/agents/skills/pr-review/schemas\""
       },
       "rulesets": [
         {

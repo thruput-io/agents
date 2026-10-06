@@ -2,14 +2,19 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/instructions/rules.schema.json",
   "title": "Rules instructions",
-  "description": "The instructions of a probe of the rules",
+  "description": "The instructions of a probe of the rules: its task, the review, and those rules",
   "type": "object",
   "required": [
+    "task",
     "kind",
     "review",
     "rulebook"
   ],
   "properties": {
+    "task": {
+      "description": "What this probe does, said to the probe itself",
+      "const": "Probe the pull request in review against every rule in rulebook.rules and write one row per rule to the file named in review.ledger. Work from this document alone"
+    },
     "kind": {
       "const": "rules"
     },
@@ -22,6 +27,7 @@
   },
   "examples": [
     {
+      "task": "Probe the pull request in review against every rule in rulebook.rules and write one row per rule to the file named in review.ledger. Work from this document alone",
       "kind": "rules",
       "review": {
         "pullRequest": {
@@ -67,17 +73,22 @@
         "files": [
           {
             "path": "scripts/verify.sh",
-            "content": "#!/usr/bin/env bash\nset -euo pipefail\n"
+            "lines": {
+              "1": "#!/usr/bin/env bash",
+              "2": "set -euo pipefail"
+            }
           }
         ],
-        "ledger": "/home/user/review/ledger/11-behavior-failure-handling.json"
+        "ledger": "/home/user/review/ledger/11-behavior-failure-handling.json",
+        "report": "npx --yes @sourcemeta/jsonschema@17.0.0 validate \"/home/user/agents/skills/pr-review/schemas/review/ledger.schema.json\" \"/home/user/review/ledger/11-behavior-failure-handling.json\" --resolve \"/home/user/agents/skills/pr-review/schemas\""
       },
       "rulebook": {
+        "instructions": "Apply each rule with its [[term]]s as definitions defines them. When the application of a rule is in doubt, its parent in principles decides",
         "rules": [
           {
             "id": "No suppressed exit status",
             "marker": "MUST NOT",
-            "group": "Behavior & Failure Handling",
+            "group": "Failure Handling",
             "parent": "Fail fast",
             "body": "Discard a command's non-zero [[Exit status]] so that a failure passes as success."
           }

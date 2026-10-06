@@ -128,7 +128,7 @@ export function partition(rules) {
   return [...groups].map(([group, members]) => ({ name: slug(group), group, rules: members }));
 }
 
-const KIND_OF_GROUP = new Map([['Development Stack', 'reuse-ladder'], ['Dead Code & Comments', 'dead-code']]);
+const KIND_OF_GROUP = new Map([['Reuse', 'reuse-ladder'], ['Dead Code', 'dead-code']]);
 
 export function kindOf(group) {
   return KIND_OF_GROUP.has(group) ? KIND_OF_GROUP.get(group) : 'rules';
@@ -139,10 +139,6 @@ export function checkKinds(groups) {
   if (absent.length > 0) throw new Error(`no rule is in the group ${absent.join(', ')}, which a kind of probe is tied to: the group was renamed or removed`);
 }
 
-const DEFINITION = /\b(?:function|def|class|interface|type|enum|struct|fn|func|module|namespace|trait|record|const|let|var|val|protocol|extension)\s+([A-Za-z_$][\w$]*)/g;
-const SHELL_FUNCTION = /^\s*([A-Za-z_]\w*)\s*\(\)\s*\{/;
-const ID = /^\s*-?\s*id:\s*(\S.*?)\s*$/;
-const IDENTIFIER = /[A-Za-z_$][\w$]{2,}/g;
 const CITATION = /\[\[([^\]]+)\]\]/g;
 
 const unique = (items) => [...new Set(items)];
@@ -179,76 +175,7 @@ export function rulebook(rules, governance) {
   return { rules, principles, definitions: governance.definitions.filter((definition) => cited.has(definition.id)) };
 }
 
-export function definedOn(line) {
-  const names = [];
-  for (const match of line.matchAll(DEFINITION)) names.push(match[1]);
-  const shell = SHELL_FUNCTION.exec(line);
-  if (shell) names.push(shell[1]);
-  const id = ID.exec(line);
-  if (id) names.push(id[1].replace(/^["']|["']$/g, ''));
-  return names;
-}
-
-const changedLines = (diff, sign) => diff.split('\n').filter((raw) => raw.startsWith(sign) && !/^[+-]{3} /.test(raw)).map((raw) => raw.slice(1));
-
-export function definitions(diff) {
-  return { added: unique(changedLines(diff, '+').flatMap(definedOn)), removed: unique(changedLines(diff, '-').flatMap(definedOn)) };
-}
-
-export function referencedOn(diff, sign) {
-  return unique(changedLines(diff, sign).flatMap((line) => [...line.matchAll(IDENTIFIER)].map((m) => m[0]).concat([...line.matchAll(CITATION)].map((m) => m[1]))));
-}
-
-const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const basename = (path) => path.slice(path.lastIndexOf('/') + 1);
-const mentions = (text, path) => text.includes(path) || new RegExp(`(^|[^\\w/.-])${escape(basename(path))}(?![\\w.-])`).test(text);
-const word = (name) => new RegExp(`(^|[^\\w$])${escape(name)}(?![\\w$])`);
 export const isText = (text) => !text.includes('\0');
-
-export function callSites(changed, names, paths, read) {
-  const changedSet = new Set(changed);
-  const others = paths.filter((path) => !changedSet.has(path));
-  const words = names.map(word);
-  const into = others.filter((path) => {
-    const text = read(path);
-    return isText(text) && (words.some((w) => w.test(text)) || changed.some((file) => mentions(text, file)));
-  });
-  const outOf = new Set();
-  for (const file of changed.filter((path) => paths.includes(path))) {
-    const text = read(file);
-    if (!isText(text)) continue;
-    for (const path of others) if (mentions(text, path)) outOf.add(path);
-  }
-  return { into, outOf: [...outOf] };
-}
-
-export function definitionIndex(paths, read) {
-  const index = new Map();
-  for (const path of paths) {
-    const text = read(path);
-    if (!isText(text)) continue;
-    for (const name of unique(text.split('\n').flatMap(definedOn))) {
-      if (!index.has(name)) index.set(name, []);
-      index.get(name).push(path);
-    }
-  }
-  return index;
-}
-
-export function deadCode(diff, paths, read) {
-  const textFiles = paths.filter((path) => isText(read(path)));
-  const index = definitionIndex(textFiles, read);
-  const mentioned = (name) => textFiles.filter((path) => word(name).test(read(path)));
-  const defined = (name) => index.get(name) ?? [];
-  const outside = (name) => mentioned(name).filter((path) => !defined(name).includes(path));
-  const { added, removed } = definitions(diff);
-  return {
-    unusedDefinitions: added.filter((name) => outside(name).length === 0).map((name) => ({ name, definedIn: defined(name) })),
-    danglingReferences: removed.filter((name) => !index.has(name)).map((name) => ({ name, usedIn: mentioned(name) })).filter((entry) => entry.usedIn.length > 0),
-    orphanedDefinitions: referencedOn(diff, '-').filter((name) => index.has(name) && !removed.includes(name) && outside(name).length === 0)
-      .map((name) => ({ name, definedIn: defined(name) })),
-  };
-}
 
 export function rawUrl(canonicalUrl) {
   const file = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/.exec(canonicalUrl);
@@ -263,15 +190,58 @@ export function rulesets(index, texts) {
   });
 }
 
+const LOOKS_BEYOND_THE_CHANGE = ['reuse-ladder', 'dead-code'];
+
 export function instructions(context, probes, handedRulesets) {
+  const checkedOut = (kind) => (LOOKS_BEYOND_THE_CHANGE.includes(kind) ? { checkout: context.checkout } : {});
   const handed = [
-    ...probes.map((probe) => ({ name: probe.name, kind: probe.kind, beyond: { rulebook: probe.rulebook, ...context.beyond[probe.kind] } })),
+    ...probes.map((probe) => ({ name: probe.name, kind: probe.kind, beyond: { rulebook: probe.rulebook, ...checkedOut(probe.kind) } })),
     { name: 'escalation', kind: 'escalation', beyond: { rulesets: handedRulesets } },
   ];
   return handed.map((probe, i) => {
     const name = `${String(i + 1).padStart(2, '0')}-${probe.name}`;
-    return { name, document: { kind: probe.kind, review: { ...context.review, ledger: context.ledger(name) }, ...probe.beyond } };
+    return { name, document: { kind: probe.kind, review: { ...context.review, ledger: context.ledger(name), report: context.report(name) }, ...probe.beyond } };
   });
+}
+
+export function numbered(text) {
+  const lines = text.split('\n');
+  if (lines.at(-1) === '') lines.pop();
+  return Object.fromEntries(lines.map((line, i) => [i + 1, line]));
+}
+
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+function resolve(read, name, ref) {
+  const [path, pointer = ''] = ref.split('#');
+  const target = path === '' ? name : new URL(path, `file:///${name}`).pathname.slice(1);
+  return { name: target, schema: pointer.split('/').filter(Boolean).reduce((node, key) => node[key], read(target)) };
+}
+
+function fixed(read, name, schema) {
+  if (schema.$ref !== undefined) {
+    const target = resolve(read, name, schema.$ref);
+    return fixed(read, target.name, target.schema);
+  }
+  return Object.entries(schema.properties ?? {}).filter(([, property]) => 'const' in property).map(([property, { const: value }]) => [property, value]);
+}
+
+export function complete(read, name, document, schema = read(name)) {
+  if (schema.$ref !== undefined) {
+    const target = resolve(read, name, schema.$ref);
+    return complete(read, target.name, document, target.schema);
+  }
+  if (Array.isArray(document)) return schema.items === undefined ? document : document.map((item) => complete(read, name, item, schema.items));
+  if (typeof document !== 'object' || document === null) return document;
+  let completed = document;
+  if (schema.oneOf !== undefined) {
+    const belongs = schema.oneOf.filter((branch) => fixed(read, name, branch).every(([property, value]) => !(property in document) || same(document[property], value)));
+    if (belongs.length !== 1) throw new Error(`${name}: the document belongs to ${belongs.length} of the ${schema.oneOf.length} branches, so what its schema says cannot be told`);
+    completed = complete(read, name, document, belongs[0]);
+  }
+  const properties = schema.properties ?? {};
+  const own = Object.entries(completed).map(([property, value]) => [property, property in properties ? complete(read, name, value, properties[property]) : value]);
+  return Object.fromEntries([...fixed(read, name, schema), ...own]);
 }
 
 export const ESCALATION_ROWS = 3;
@@ -367,7 +337,7 @@ export function alreadyOpen(violation, cite, threads) {
   return threads.some((thread) => thread.path === anchor.path && thread.line === anchor.lines.end && thread.body.includes(cite));
 }
 
-export function review(entries, { self, threads }) {
+function outcome(entries, { self, threads }) {
   const ledger = merge(entries.map((entry) => entry.ledger));
   const findings = entries.flatMap(({ document, ledger: own }) => own.rows.filter((row) => row.verdict === 'violation')
     .flatMap((row) => {
@@ -375,15 +345,36 @@ export function review(entries, { self, threads }) {
       return row.violations.map((violation) => ({ ...violation, body: message(violation, cite), open: alreadyOpen(violation, cite, threads) }));
     }));
   const fresh = findings.filter((finding) => !finding.open);
-  const comments = fresh.map(comment).filter((item) => item !== undefined);
+  const inline = fresh.filter((finding) => finding.anchor.kind === 'lines');
   const atPullRequest = fresh.filter((finding) => finding.anchor.kind === 'pull-request');
   const decided = verdict(ledger);
-  const event = self ? 'COMMENT' : decided;
-  const body = [
+  const opening = [
     `**Verdict: ${decided}**${self ? ' (posted as a comment: the reviewer is the author)' : ''}`,
-    `${ledger.rows.length} rules probed by ${entries.length} probes at ${ledger.headCommit}: ${findings.length} violations, ${comments.length} inline, ${atPullRequest.length} at the pull request, ${findings.length - fresh.length} already carried by an open thread.`,
+    `${ledger.rows.length} rules probed by ${entries.length} probes at ${ledger.headCommit}: ${findings.length} violations, ${inline.length} inline, ${atPullRequest.length} at the pull request, ${findings.length - fresh.length} already carried by an open thread.`,
     ...atPullRequest.map((finding) => finding.body),
-    `<details>\n<summary>Review ledger</summary>\n\n${table(ledger)}\n\n</details>`,
-  ].join('\n\n');
-  return { commit_id: ledger.headCommit, event, body, comments };
+  ];
+  return { ledger, inline, decided, opening };
+}
+
+export function review(entries, { self, threads }) {
+  const { ledger, inline, decided, opening } = outcome(entries, { self, threads });
+  const body = [...opening, `<details>\n<summary>Review ledger</summary>\n\n${table(ledger)}\n\n</details>`].join('\n\n');
+  return { commit_id: ledger.headCommit, event: self ? 'COMMENT' : decided, body, comments: inline.map(comment) };
+}
+
+const AZURE_DEVOPS_SIDE_OF_SIDE = { head: 'right', base: 'left' };
+const azureDevOpsComment = (content) => ({ comments: [{ parentCommentId: 0, commentType: 'text', content }], status: 'active' });
+
+function azureDevOpsThread(finding) {
+  const side = AZURE_DEVOPS_SIDE_OF_SIDE[finding.anchor.side];
+  const { start, end } = finding.anchor.lines;
+  return {
+    ...azureDevOpsComment(finding.body),
+    threadContext: { filePath: `/${finding.anchor.path}`, [`${side}FileStart`]: { line: start, offset: 1 }, [`${side}FileEnd`]: { line: end, offset: 1 } },
+  };
+}
+
+export function azureDevOpsReview(entries, { self, threads, ledgerUrl }) {
+  const { inline, opening } = outcome(entries, { self, threads });
+  return { threads: inline.map(azureDevOpsThread), summary: azureDevOpsComment([...opening, `[Review ledger](${ledgerUrl})`].join('\n\n')) };
 }

@@ -2,14 +2,15 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/review.schema.json",
   "title": "Review",
-  "description": "What every probe is handed about the review it takes part in, resolved once by the reviewing context: the pull request, the lines it changes with the text of those it removes, the lines under review, the changed files in full, and where the probe writes its rows of the ledger",
+  "description": "What every probe is handed about the review it takes part in, resolved once by the reviewing context: the pull request, the lines it changes with the text of those it removes, the lines under review, the changed files in full with their lines numbered, and where the probe writes its rows of the ledger",
   "type": "object",
   "required": [
     "pullRequest",
     "changeSet",
     "surface",
     "files",
-    "ledger"
+    "ledger",
+    "report"
   ],
   "properties": {
     "pullRequest": {
@@ -22,7 +23,7 @@
       "$ref": "surface.schema.json"
     },
     "files": {
-      "description": "Every changed file that exists at the head commit, in full: a diff hunk cannot show what the rest of the file does with the changed lines",
+      "description": "Every changed file that exists at the head commit, in full and line by line: a diff hunk cannot show what the rest of the file does with the changed lines",
       "type": "array",
       "items": {
         "$ref": "#/$defs/FileAtHead"
@@ -30,27 +31,47 @@
     },
     "ledger": {
       "$ref": "#/$defs/LedgerFile"
+    },
+    "report": {
+      "$ref": "#/$defs/ReportCommand"
     }
   },
+  "additionalProperties": false,
   "$defs": {
     "FileAtHead": {
-      "description": "One file as it is at the head commit",
+      "description": "One file as it is at the head commit, its lines by their number",
       "type": "object",
       "required": [
         "path",
-        "content"
+        "lines"
       ],
       "properties": {
         "path": {
           "$ref": "change-set.schema.json#/$defs/Path"
         },
-        "content": {
-          "$ref": "#/$defs/FileContent"
+        "lines": {
+          "$ref": "#/$defs/Lines"
         }
+      },
+      "additionalProperties": false
+    },
+    "Lines": {
+      "description": "The lines of a file, each under its number, the first line being 1; a violation anchors on these numbers",
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/LineNumberName"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/LineText"
       }
     },
-    "FileContent": {
-      "description": "The whole text of a file",
+    "LineNumberName": {
+      "description": "A line number as the name of a property: a whole number from 1",
+      "type": "string",
+      "pattern": "^[1-9][0-9]*$"
+    },
+    "LineText": {
+      "description": "One line of a file, without its line break",
       "type": "string"
     },
     "LedgerFile": {
@@ -82,7 +103,8 @@
         "description": {
           "$ref": "#/$defs/PullRequestDescription"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "Host": {
       "description": "Where the pull request lives, by its coordinates on its host",
@@ -117,7 +139,8 @@
         "number": {
           "$ref": "#/$defs/PullRequestNumber"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "AzureDevOps": {
       "description": "An Azure DevOps pull request",
@@ -145,7 +168,8 @@
         "id": {
           "$ref": "#/$defs/PullRequestId"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "Login": {
       "description": "An account on the pull request's host, by its login",
@@ -185,6 +209,11 @@
       "description": "An Azure DevOps pull request, by its id",
       "type": "integer",
       "minimum": 1
+    },
+    "ReportCommand": {
+      "description": "The command a probe verifies its ledger file with before it returns: the schema validator, run on that file against the ledger schema. It says what it rejects",
+      "type": "string",
+      "minLength": 1
     }
   },
   "examples": [
@@ -232,10 +261,14 @@
       "files": [
         {
           "path": "scripts/verify.sh",
-          "content": "#!/usr/bin/env bash\nset -euo pipefail\n"
+          "lines": {
+            "1": "#!/usr/bin/env bash",
+            "2": "set -euo pipefail"
+          }
         }
       ],
-      "ledger": "/home/user/review/ledger/11-behavior-failure-handling.json"
+      "ledger": "/home/user/review/ledger/11-behavior-failure-handling.json",
+      "report": "npx --yes @sourcemeta/jsonschema@17.0.0 validate \"/home/user/agents/skills/pr-review/schemas/review/ledger.schema.json\" \"/home/user/review/ledger/11-behavior-failure-handling.json\" --resolve \"/home/user/agents/skills/pr-review/schemas\""
     }
   ]
 }

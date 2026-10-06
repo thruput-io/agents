@@ -1,6 +1,6 @@
 # AZ CHEAT SHEET
 
-Exact `az` invocations for reviewing an **Azure DevOps** pull request. Counterpart to [`gh-cheat-sheet.md`](./gh-cheat-sheet.md): syntax only, no rules. Referenced by [`CODE_REVIEW.md`](../CODE_REVIEW.md) and [`PROBE_SUBAGENT_TEMPLATE.md`](../PROBE_SUBAGENT_TEMPLATE.md), which own the rules; where a command here would contradict them, the rule wins.
+Exact `az` invocations for reviewing an **Azure DevOps** pull request. Counterpart to [`gh-cheat-sheet.md`](./gh-cheat-sheet.md): syntax only, no rules. Referenced by [`CODE_REVIEW.md`](../CODE_REVIEW.md), which owns the rules; where a command here would contradict them, the rule wins.
 
 Requires the `azure-devops` extension (`az extension add --name azure-devops`).
 
@@ -42,10 +42,10 @@ az repos pr show --id {id} --org {org} --detect false \
 | Purpose                               | Command                                                                                                                                                                        |
 |---------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | List active PRs                       | `az repos pr list --status active --org {org} --detect false -o table`                                                                                                         |
-| Branch policies (the checks analogue) | `az repos pr policy list --id {id} --org {org} --detect false --query '[].{policy:configuration.type.displayName, status:status, blocking:configuration.isBlocking}' -o table` |
+| Build policy (the checks analogue)    | `az repos pr policy list --id {id} --org {org} --detect false --query "[?configuration.type.displayName=='Build'].{policy:configuration.type.displayName, status:status, blocking:configuration.isBlocking}" -o table` |
 | Reviewers and their votes             | `az repos pr reviewer list --id {id} --org {org} --detect false --query '[].{name:displayName, vote:vote}' -o table`                                                           |
 
-Policy `status` is `approved`, `queued`, `running`, or `rejected`. A blocking policy that is not `approved` is the Azure DevOps equivalent of a failing check.
+Policy `status` is `approved`, `queued`, `running`, or `rejected`. Only the build counts as a check: a blocking `Build` policy that is not `approved` is the Azure DevOps equivalent of a check that did not succeed. The reviewer, comment, and merge-strategy policies are about the review and the merge themselves, and never stop a review.
 
 Votes are integers: `10` approved, `5` approved with suggestions, `0` no vote, `-5` waiting for author, `-10` rejected.
 

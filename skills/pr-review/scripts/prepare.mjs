@@ -1,10 +1,11 @@
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  parseDiff, parseHunks, threadRanges, wholeSurface, narrowSurface, definitions, callSites, deadCode, isText, partition, kindOf, checkKinds,
-  rulebook, rawUrl, rulesets, instructions,
+  parseDiff, parseHunks, threadRanges, wholeSurface, narrowSurface, isText, partition, kindOf, checkKinds,
+  rulebook, rawUrl, rulesets, instructions, complete, numbered,
 } from './lib.mjs';
 
 const skill = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -27,6 +28,8 @@ function paginate(path) {
 }
 const validate = (schema, file) => run('npx', ['--yes', '@sourcemeta/jsonschema@17.0.0', 'validate', join(skill, 'schemas', schema), file, '--resolve', join(skill, 'schemas')]);
 const yaml = (name) => JSON.parse(run('npx', ['--yes', 'js-yaml@4.1.0', join(skill, 'rules', name)]));
+const schema = (name) => JSON.parse(readFileSync(join(skill, 'schemas', name), 'utf8'));
+const jsYaml = createRequire(run('npx', ['--yes', '--package', 'js-yaml@4.1.0', '-c', 'command -v js-yaml']).trim())('js-yaml');
 
 const match = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)$/.exec(url);
 if (match === null) throw new Error(`${url} is not a GitHub pull request URL; for Azure DevOps follow references/az-cheat-sheet.md`);
@@ -106,27 +109,18 @@ const read = (path) => {
   return scanned.get(path);
 };
 const changed = changeSet.files.map((file) => file.path);
-const defined = definitions(diff);
-const sites = callSites(changed, [...defined.added, ...defined.removed], paths, read);
-const dead = deadCode(diff, paths, read);
-const deadPaths = Object.values(dead).flat().flatMap((entry) => entry.definedIn ?? entry.usedIn);
 
 const { rules } = yaml('Rules.yaml');
 const governance = { principles: yaml('Principles.yaml').principles, definitions: yaml('Definitions.yaml').definitions };
 
 const atHead = (candidates) => [...new Set(candidates)].filter((path) => paths.includes(path) && isText(read(path)))
-  .map((path) => ({ path, content: readFileSync(join(snapshot, path), 'utf8') }));
-const around = (candidates) => ({ callSites: sites, files: atHead(candidates.filter((path) => !changed.includes(path))) });
+  .map((path) => ({ path, lines: numbered(readFileSync(join(snapshot, path), 'utf8')) }));
 const context = {
   review: { pullRequest, changeSet, surface, files: atHead(changed) },
-  beyond: {
-    rules: {},
-    'reuse-ladder': {},
-    'dead-code': { surroundings: around([...sites.into, ...sites.outOf, ...deadPaths]), deadCode: dead },
-  },
+  checkout: snapshot,
   ledger: (name) => join(workdir, 'ledger', `${name}.json`),
+  report: (name) => `npx --yes @sourcemeta/jsonschema@17.0.0 validate "${join(skill, 'schemas', 'review/ledger.schema.json')}" "${join(workdir, 'ledger', `${name}.json`)}" --resolve "${join(skill, 'schemas')}"`,
 };
-rmSync(snapshot, { recursive: true });
 rmSync(tarball);
 
 validate('review/change-set.schema.json', write('change-set.json', changeSet));
@@ -147,7 +141,11 @@ const probes = instructions(
   groups.map((group) => ({ name: group.name, kind: kindOf(group.group), rulebook: rulebook(group.rules, governance) })),
   rulesets(index, texts),
 );
-for (const probe of probes) validate('review/agent-instructions.schema.json', write(join('instructions', `${probe.name}.json`), probe.document));
+for (const probe of probes) {
+  const file = join(workdir, 'instructions', `${probe.name}.yaml`);
+  writeFileSync(file, jsYaml.dump(complete(schema, 'review/agent-instructions.schema.json', probe.document), { lineWidth: -1, noRefs: true }));
+  validate('review/agent-instructions.schema.json', file);
+}
 
 const count = (files, side) => files.reduce((sum, file) => sum + file[side].reduce((n, range) => n + range.end - range.start + 1, 0), 0);
 const summary = {
@@ -159,8 +157,6 @@ const summary = {
   since: prior === undefined ? pr.base.sha : prior.commit_id,
   changeSet: { files: changeSet.files.length, added: count(changeSet.files, 'added'), removed: count(changeSet.files, 'removed') },
   surface: { files: surface.files.length, added: count(surface.files, 'added'), removed: count(surface.files, 'removed') },
-  callSites: { into: sites.into.length, outOf: sites.outOf.length },
-  deadCode: Object.fromEntries(Object.entries(dead).map(([kind, entries]) => [kind, entries.length])),
   repository: paths.length,
   probes: probes.map((probe) => probe.name),
   rules: rules.length,

@@ -2,16 +2,20 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/instructions/dead-code.schema.json",
   "title": "Dead-code instructions",
-  "description": "The instructions of the probe of the rules that ask what the change leaves behind. Beyond the review and its rules it is handed the dead-code facts, computed over the whole repository at the head commit, and the surroundings, which hold the files those facts and the call sites name. It judges those facts; it does not search for dead code\n\nOne thing outside the surface is reportable: code the surface makes dead, a symbol whose last caller this pull request removes or a branch it makes unreachable; the orphaned definitions are the candidates. The host cannot carry a comment on a line outside the diff, so anchor it at the pull request, name the dead code by file and line in the observation, and name in evidence the surface line that killed it. Dead code the surface merely failed to clean up is not this",
+  "description": "The instructions of the probe of the rules that ask what the change leaves behind: its task, the review, those rules, and the checkout",
   "type": "object",
   "required": [
+    "task",
     "kind",
     "review",
     "rulebook",
-    "surroundings",
-    "deadCode"
+    "checkout"
   ],
   "properties": {
+    "task": {
+      "description": "What this probe does, said to the probe itself",
+      "const": "Probe the pull request in review against every rule in rulebook.rules and write one row per rule to the file named in review.ledger. These rules ask what the change leaves behind, and finding what it left dead is your task: search the repository at checkout. Outside the surface, report only code this pull request makes dead: a symbol whose last caller it removes, or a branch it makes unreachable. Anchor such a finding at the pull request, name the dead code by file and line in the observation, and name in evidence the surface line that killed it"
+    },
     "kind": {
       "const": "dead-code"
     },
@@ -21,93 +25,13 @@
     "rulebook": {
       "$ref": "../rulebook.schema.json"
     },
-    "surroundings": {
-      "$ref": "../surroundings.schema.json"
-    },
-    "deadCode": {
-      "$ref": "#/$defs/DeadCode"
-    }
-  },
-  "$defs": {
-    "DeadCode": {
-      "description": "What the change leaves behind, by name: a mention is the name as a whole word in any text file",
-      "type": "object",
-      "required": [
-        "unusedDefinitions",
-        "danglingReferences",
-        "orphanedDefinitions"
-      ],
-      "properties": {
-        "unusedDefinitions": {
-          "description": "Names the change defines that no file beyond the defining ones mentions",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/Defined"
-          }
-        },
-        "danglingReferences": {
-          "description": "Names whose definition the change removes while files still mention them",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/Used"
-          }
-        },
-        "orphanedDefinitions": {
-          "description": "Names the change stops mentioning that are now mentioned nowhere beyond the files defining them: definitions the change made dead",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/Defined"
-          }
-        }
-      }
-    },
-    "Defined": {
-      "description": "A name and the files that define it",
-      "type": "object",
-      "required": [
-        "name",
-        "definedIn"
-      ],
-      "properties": {
-        "name": {
-          "$ref": "#/$defs/DefinedName"
-        },
-        "definedIn": {
-          "type": "array",
-          "items": {
-            "$ref": "../change-set.schema.json#/$defs/Path"
-          }
-        }
-      }
-    },
-    "Used": {
-      "description": "A name whose definition is gone and the files that still mention it",
-      "type": "object",
-      "required": [
-        "name",
-        "usedIn"
-      ],
-      "properties": {
-        "name": {
-          "$ref": "#/$defs/DefinedName"
-        },
-        "usedIn": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "../change-set.schema.json#/$defs/Path"
-          }
-        }
-      }
-    },
-    "DefinedName": {
-      "description": "A name the definition patterns recognise: a function, class, type, variable, shell function, or id",
-      "type": "string",
-      "minLength": 1
+    "checkout": {
+      "$ref": "../checkout.schema.json"
     }
   },
   "examples": [
     {
+      "task": "Probe the pull request in review against every rule in rulebook.rules and write one row per rule to the file named in review.ledger. These rules ask what the change leaves behind, and finding what it left dead is your task: search the repository at checkout. Outside the surface, report only code this pull request makes dead: a symbol whose last caller it removes, or a branch it makes unreachable. Anchor such a finding at the pull request, name the dead code by file and line in the observation, and name in evidence the surface line that killed it",
       "kind": "dead-code",
       "review": {
         "pullRequest": {
@@ -153,17 +77,22 @@
         "files": [
           {
             "path": "scripts/verify.sh",
-            "content": "#!/usr/bin/env bash\nset -euo pipefail\n"
+            "lines": {
+              "1": "#!/usr/bin/env bash",
+              "2": "set -euo pipefail"
+            }
           }
         ],
-        "ledger": "/home/user/review/ledger/08-dead-code.json"
+        "ledger": "/home/user/review/ledger/08-dead-code.json",
+        "report": "npx --yes @sourcemeta/jsonschema@17.0.0 validate \"/home/user/agents/skills/pr-review/schemas/review/ledger.schema.json\" \"/home/user/review/ledger/08-dead-code.json\" --resolve \"/home/user/agents/skills/pr-review/schemas\""
       },
       "rulebook": {
+        "instructions": "Apply each rule with its [[term]]s as definitions defines them. When the application of a rule is in doubt, its parent in principles decides",
         "rules": [
           {
             "id": "Delete unused",
             "marker": "MUST",
-            "group": "Dead Code & Comments",
+            "group": "Dead Code",
             "parent": "You aren't gonna need it",
             "body": "Delete [[Test]]s, [[Production code]], and [[Helper code]] that are no longer relevant or used."
           }
@@ -194,32 +123,7 @@
           }
         ]
       },
-      "surroundings": {
-        "callSites": {
-          "into": [
-            "build.sh"
-          ],
-          "outOf": []
-        },
-        "files": [
-          {
-            "path": "build.sh",
-            "content": "#!/usr/bin/env bash\nset -euo pipefail\n\"$PROJECT_ROOT/scripts/verify.sh\"\n"
-          }
-        ]
-      },
-      "deadCode": {
-        "unusedDefinitions": [],
-        "danglingReferences": [],
-        "orphanedDefinitions": [
-          {
-            "name": "run_checks",
-            "definedIn": [
-              "build.sh"
-            ]
-          }
-        ]
-      }
+      "checkout": "/home/user/review/snapshot"
     }
   ]
 }

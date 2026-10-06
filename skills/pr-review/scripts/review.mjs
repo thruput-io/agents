@@ -18,8 +18,9 @@ const read = (file) => JSON.parse(readFileSync(file, 'utf8'));
 const validate = (schema, file) => run('npx', ['--yes', '@sourcemeta/jsonschema@17.0.0', 'validate', join(skill, 'schemas', schema), file, '--resolve', join(skill, 'schemas')]);
 
 const pullRequest = read(join(workdir, 'pull-request.json'));
-const names = readdirSync(join(workdir, 'instructions')).filter((name) => name.endsWith('.json')).sort();
-const probes = names.map((name) => ({ name: name.replace(/\.json$/, ''), document: read(join(workdir, 'instructions', name)) }));
+const names = readdirSync(join(workdir, 'instructions')).filter((name) => name.endsWith('.yaml')).sort();
+const yaml = (file) => JSON.parse(run('npx', ['--yes', 'js-yaml@4.1.0', file]));
+const probes = names.map((name) => ({ name: name.replace(/\.yaml$/, ''), document: yaml(join(workdir, 'instructions', name)) }));
 
 const missing = probes.filter((probe) => !existsSync(probe.document.review.ledger));
 if (missing.length > 0) {

@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parseDiff, parseHunks, intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
-  definitions, callSites, deadCode, instructions, anchorInside, checkLedger, merge, verdict, table, comment, citation, message, alreadyOpen,
-  review, CELL, SITE,
+  instructions, complete, numbered, anchorInside, checkLedger, merge, verdict, table, comment, citation, message, alreadyOpen,
+  review, azureDevOpsReview, CELL, SITE,
 } from './lib.mjs';
 
 const diff = [
@@ -113,14 +113,14 @@ test('partition groups rules in first-seen order and keeps rule order inside a g
 });
 
 test('kindOf names the probe a group gets: the reuse ladder, dead code, or a probe of rules', () => {
-  assert.equal(kindOf('Development Stack'), 'reuse-ladder');
-  assert.equal(kindOf('Dead Code & Comments'), 'dead-code');
-  assert.equal(kindOf('Behavior & Failure Handling'), 'rules');
+  assert.equal(kindOf('Reuse'), 'reuse-ladder');
+  assert.equal(kindOf('Dead Code'), 'dead-code');
+  assert.equal(kindOf('Failure Handling'), 'rules');
 });
 
 test('checkKinds refuses rules that lack a group a kind of probe is tied to', () => {
-  checkKinds(['Development Stack', 'Dead Code & Comments', 'Behavior & Failure Handling']);
-  assert.throws(() => checkKinds(['Development Stack', 'Behavior & Failure Handling']), /Dead Code & Comments/);
+  checkKinds(['Reuse', 'Dead Code', 'Failure Handling']);
+  assert.throws(() => checkKinds(['Reuse', 'Failure Handling']), /Dead Code/);
 });
 
 const governance = {
@@ -147,61 +147,6 @@ test('rulebook refuses a parent that is not declared', () => {
   assert.throws(() => rulebook([{ id: 'A', parent: 'Missing', body: 'Do.' }], governance), /principle Missing/);
 });
 
-test('definitions names what the changed lines define: functions, classes, shell functions, ids', () => {
-  const text = [
-    '--- a/x', '+++ b/x',
-    '+export function parseDiff(text) {',
-    '-class Old {',
-    '+  const inner = 1;',
-    '+remove_site() {',
-    '+- id: Delete unused',
-    ' def untouched():',
-  ].join('\n');
-  assert.deepEqual(definitions(text), { added: ['parseDiff', 'inner', 'remove_site', 'Delete unused'], removed: ['Old'] });
-});
-
-test('callSites finds the files that mention a changed file or its definitions, and the files a changed file mentions', () => {
-  const files = {
-    'scripts/lib.mjs': 'export function parseDiff() {}',
-    'scripts/prepare.mjs': "import { parseDiff } from './lib.mjs';",
-    'docs/notes.md': 'parseDiffer is not a call, nor is lib.mjs.bak',
-    'web/index.html': '{% include chain.html %}',
-    'web/_includes/chain.html': '{% include anchor.html id=x %}',
-    'web/_includes/anchor.html': 'slug',
-    'logo.png': 'PNG\0binary parseDiff',
-    'rules/Rules.yaml': '- id: Delete unused',
-    'rules/Principles.yaml': 'cites [[Delete unused]]',
-  };
-  const read = (path) => files[path];
-  const sites = callSites(['scripts/lib.mjs', 'web/_includes/chain.html', 'rules/Rules.yaml', 'gone.txt'], ['parseDiff', 'Delete unused'], Object.keys(files), read);
-  assert.deepEqual(sites.into, ['scripts/prepare.mjs', 'web/index.html', 'rules/Principles.yaml']);
-  assert.deepEqual(sites.outOf, ['web/_includes/anchor.html']);
-});
-
-test('deadCode reports definitions nothing uses, references whose definition is gone, and definitions the change orphaned', () => {
-  const removal = [
-    '--- a/scripts/lib.mjs', '+++ b/scripts/lib.mjs',
-    '+export function fresh() {}',
-    '+export function wired() {}',
-    '-export function gone() {}',
-    '-  return helper(count);',
-    '-  cites [[Delete unused]]',
-  ].join('\n');
-  const files = {
-    'scripts/lib.mjs': 'export function fresh() {}\nexport function wired() {}\nexport function helper() {}\nexport function count() {}',
-    'scripts/prepare.mjs': "import { wired, count } from './lib.mjs'; gone();",
-    'rules/Rules.yaml': '- id: Delete unused',
-    'rules/Principles.yaml': 'nothing here',
-    'logo.png': 'PNG\0 fresh gone helper',
-  };
-  const read = (path) => files[path];
-  assert.deepEqual(deadCode(removal, Object.keys(files), read), {
-    unusedDefinitions: [{ name: 'fresh', definedIn: ['scripts/lib.mjs'] }],
-    danglingReferences: [{ name: 'gone', usedIn: ['scripts/prepare.mjs'] }],
-    orphanedDefinitions: [{ name: 'helper', definedIn: ['scripts/lib.mjs'] }, { name: 'Delete unused', definedIn: ['rules/Rules.yaml'] }],
-  });
-});
-
 test('rawUrl is where the text of a file is read, from its canonical URL on the host', () => {
   assert.equal(rawUrl('https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md'), 'https://raw.githubusercontent.com/ciembor/agent-rules-books/main/ddd/ddd.md');
   assert.throws(() => rawUrl('https://books.example/ddd.md'), /is not a file on github.com/);
@@ -215,19 +160,20 @@ test('rulesets folds the index and the text read for each entry into what the es
   assert.throws(() => rulesets(index, new Map()), /ddd\.md was not read/);
 });
 
-test('instructions hands every probe the review with its ledger file, and each kind what it needs beyond', () => {
+test('instructions hands every probe the review with its ledger file and its report command, a rule probe its rulebook, the probes that look beyond the change the checkout, and the escalation probe the rulesets', () => {
   const context = {
     review: { changeSet: { headCommit: 'h', files: [] } },
     ledger: (name) => `/w/ledger/${name}.json`,
-    beyond: { rules: {}, 'reuse-ladder': {}, 'dead-code': { surroundings: 'around the dead', deadCode: 'facts' } },
+    report: (name) => `validate /w/ledger/${name}.json`,
+    checkout: '/w/snapshot',
   };
   const probes = [{ name: 'g1', kind: 'rules', rulebook: 'r1' }, { name: 'g2', kind: 'reuse-ladder', rulebook: 'r2' }, { name: 'g3', kind: 'dead-code', rulebook: 'r3' }];
   const files = instructions(context, probes, ['a ruleset']);
-  const handed = (name) => ({ changeSet: { headCommit: 'h', files: [] }, ledger: `/w/ledger/${name}.json` });
+  const handed = (name) => ({ changeSet: { headCommit: 'h', files: [] }, ledger: `/w/ledger/${name}.json`, report: `validate /w/ledger/${name}.json` });
   assert.deepEqual(files.map((file) => file.name), ['01-g1', '02-g2', '03-g3', '04-escalation']);
   assert.deepEqual(files[0].document, { kind: 'rules', review: handed('01-g1'), rulebook: 'r1' });
-  assert.deepEqual(files[1].document, { kind: 'reuse-ladder', review: handed('02-g2'), rulebook: 'r2' });
-  assert.deepEqual(files[2].document, { kind: 'dead-code', review: handed('03-g3'), rulebook: 'r3', surroundings: 'around the dead', deadCode: 'facts' });
+  assert.deepEqual(files[1].document, { kind: 'reuse-ladder', review: handed('02-g2'), rulebook: 'r2', checkout: '/w/snapshot' });
+  assert.deepEqual(files[2].document, { kind: 'dead-code', review: handed('03-g3'), rulebook: 'r3', checkout: '/w/snapshot' });
   assert.deepEqual(files[3].document, { kind: 'escalation', review: handed('04-escalation'), rulesets: ['a ruleset'] });
 });
 
@@ -244,6 +190,30 @@ const bookRule = (heading) => ({ ruleset: 'https://books.example/ddd.md', headin
 const cleanBookRow = (heading) => ({ bookRule: bookRule(heading), examined: ['x'], verdict: 'clean', evidence: 'e' });
 const violatedBookRow = (heading, violations) => ({ bookRule: bookRule(heading), examined: ['x'], verdict: 'violation', evidence: 'e', violations });
 const citeP = `[P](${SITE}#p)`;
+
+test('numbered lists the lines of a file by their number from 1, a final newline ending the last line rather than starting another, and an empty file having none', () => {
+  assert.deepEqual(numbered('#!/usr/bin/env bash\nset -euo pipefail\n'), { 1: '#!/usr/bin/env bash', 2: 'set -euo pipefail' });
+  assert.deepEqual(numbered('a\n\nb'), { 1: 'a', 2: '', 3: 'b' });
+  assert.deepEqual(numbered(''), {});
+  assert.deepEqual(Object.keys(numbered('x\n'.repeat(12))).at(-1), '12');
+});
+
+test('complete adds what a schema says itself, at every level: the constants of its own properties, of the one branch the document belongs to, and of what its properties and items refer to', () => {
+  const schemas = {
+    'review/any.schema.json': { properties: { steps: { const: ['first', 'second'] } }, oneOf: [{ $ref: 'kinds/a.schema.json' }, { $ref: 'kinds/b.schema.json' }] },
+    'review/kinds/a.schema.json': { properties: { task: { const: 'do a' }, kind: { const: 'a' }, part: { $ref: '../part.schema.json' } } },
+    'review/kinds/b.schema.json': { properties: { task: { const: 'do b' }, kind: { const: 'b' }, part: { $ref: '../part.schema.json' }, items: { type: 'array', items: { $ref: '../part.schema.json#/$defs/Item' } } } },
+    'review/part.schema.json': { properties: { note: { const: 'read me' }, value: { type: 'string' } }, $defs: { Item: { properties: { tag: { const: 't' }, n: { type: 'integer' } } } } },
+  };
+  const read = (name) => schemas[name];
+  assert.deepEqual(
+    complete(read, 'review/any.schema.json', { kind: 'b', part: { value: 'x' }, items: [{ n: 1 }, { n: 2 }] }),
+    { steps: ['first', 'second'], task: 'do b', kind: 'b', part: { note: 'read me', value: 'x' }, items: [{ tag: 't', n: 1 }, { tag: 't', n: 2 }] },
+  );
+  assert.deepEqual(complete(read, 'review/any.schema.json', { kind: 'a' }), { steps: ['first', 'second'], task: 'do a', kind: 'a' });
+  assert.throws(() => complete(read, 'review/any.schema.json', { kind: 'c' }), /belongs to 0 of the 2 branches/);
+  assert.throws(() => complete(read, 'review/any.schema.json', {}), /belongs to 2 of the 2 branches/);
+});
 
 test('anchorInside accepts lines in the surface on their side, and the pull request', () => {
   assert.equal(anchorInside(lines('p', 3, 3, 'head'), surface), true);
@@ -351,4 +321,19 @@ test('review posts a comment with the verdict when the reviewer is the author, a
   assert.match(payload.body, /^\*\*Verdict: REQUEST_CHANGES\*\* \(posted as a comment: the reviewer is the author\)/);
   assert.deepEqual(payload.comments.map((item) => item.body), ['what is wrong breaks [Book rule](https://books.example/ddd.md)']);
   assert.match(payload.body, /1 already carried by an open thread/);
+});
+
+test('azureDevOpsReview carries every violation on lines as a thread of its own, and the verdict, the rest, and the ledger link in one summary thread', () => {
+  const text = (content) => ({ comments: [{ parentCommentId: 0, commentType: 'text', content }], status: 'active' });
+  const posted = azureDevOpsReview(entries, { self: true, threads: [], ledgerUrl: 'https://ado.example/ledger.txt' });
+  assert.deepEqual(posted.threads, [
+    { ...text(`what is wrong breaks ${citeP}`), threadContext: { filePath: '/p', rightFileStart: { line: 3, offset: 1 }, rightFileEnd: { line: 3, offset: 1 } } },
+    { ...text('what is wrong breaks [Book rule](https://books.example/ddd.md)'), threadContext: { filePath: '/p', leftFileStart: { line: 1, offset: 1 }, leftFileEnd: { line: 4, offset: 1 } } },
+  ]);
+  assert.deepEqual(posted.summary, text([
+    '**Verdict: REQUEST_CHANGES** (posted as a comment: the reviewer is the author)',
+    '3 rules probed by 2 probes at h: 3 violations, 2 inline, 1 at the pull request, 0 already carried by an open thread.',
+    `what is wrong breaks ${citeP}`,
+    '[Review ledger](https://ado.example/ledger.txt)',
+  ].join('\n\n')));
 });

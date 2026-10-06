@@ -22,19 +22,19 @@ A subsequent review applies the same standards and the same probes; only the sur
 
 ### 1. Prepare
 
-`gh`, `node`, and `tar` must be available. Nothing is checked out.
+`gh`, `node`, and `tar` must be available. No working copy is needed: the script downloads the repository at the head commit into `<workdir>/snapshot`, for the probes that look beyond the change.
 
 ```
 node <skill>/scripts/prepare.mjs <pull-request-url> <workdir>
 ```
 
-It writes one file per probe under `<workdir>/instructions/` and prints a summary. When a check run on the head commit did not succeed, or the pull request has merge conflicts, it posts a changes-requested verdict naming what blocked the review and stops without writing instructions. That is the only path that skips the ledger. When a subsequent review has nothing left to review, it stops and says so.
+It writes one instructions file per probe under `<workdir>/instructions/`, in YAML, and prints a summary. When a check run on the head commit did not succeed, or the pull request has merge conflicts, it posts a changes-requested verdict naming what blocked the review and stops without writing instructions. That is the only path that skips the ledger. When a subsequent review has nothing left to review, it stops and says so.
 
 ### 2. Probe
 
-Dispatch one subagent per file in `<workdir>/instructions/`, concurrently. Hand each subagent two paths and nothing else: its own file, and [`schemas/review/`](schemas/review/), where [`agent-instructions.schema.json`](schemas/review/agent-instructions.schema.json) says what every probe does and the schema named after the `kind` of its file says the rest. Write no prompt of your own around them, never hand two instructions files to one subagent, and never edit a file before handing it over.
+Dispatch one subagent per file in `<workdir>/instructions/`, concurrently. Hand each subagent the path of its own file and nothing else: the file opens with how every probe works and what this one does, and holds everything it works on. Write no prompt of your own around it, never hand two files to one subagent, and never edit a file before handing it over. A probe needs no tool that writes to the host: where the dispatcher can withhold tools, withhold `gh` and `az`.
 
-Wait for every probe before moving on. A probe that returns without writing its file has not finished: run it again. A violation returned early does not end the pass, and neither does a run of clean verdicts.
+Wait for every probe before moving on. A probe that returns without writing its ledger file has not finished: run it again. A violation returned early does not end the pass, and neither does a run of clean verdicts.
 
 ### 3. Settle Existing Threads
 

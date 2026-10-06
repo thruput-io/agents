@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/review/checkout.schema.json",
+  "title": "Checkout",
+  "description": "The repository as it is at the head commit, by its directory on the machine the review runs on. A probe handed it reads from it and changes nothing in it",
+  "type": "string",
+  "minLength": 1,
+  "examples": [
+    "/home/user/review/snapshot"
+  ]
+}

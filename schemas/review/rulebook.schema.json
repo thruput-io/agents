@@ -5,11 +5,16 @@
   "description": "The part of our rules one probe applies, read once by the reviewing context and handed over whole: the rules to probe, the principles that answer when the application of a rule is in doubt, and the glossary that defines their terms",
   "type": "object",
   "required": [
+    "instructions",
     "rules",
     "principles",
     "definitions"
   ],
   "properties": {
+    "instructions": {
+      "description": "How a rulebook is read, said to the probe itself",
+      "const": "Apply each rule with its [[term]]s as definitions defines them. When the application of a rule is in doubt, its parent in principles decides"
+    },
     "rules": {
       "description": "The rules handed over, in order. A probe writes one ledger row for each rule of the rulebook it probes",
       "type": "array",
@@ -33,13 +38,15 @@
       }
     }
   },
+  "additionalProperties": false,
   "examples": [
     {
+      "instructions": "Apply each rule with its [[term]]s as definitions defines them. When the application of a rule is in doubt, its parent in principles decides",
       "rules": [
         {
           "id": "No suppressed exit status",
           "marker": "MUST NOT",
-          "group": "Behavior & Failure Handling",
+          "group": "Failure Handling",
           "parent": "Fail fast",
           "body": "Discard a command's non-zero [[Exit status]] so that a failure passes as success."
         }

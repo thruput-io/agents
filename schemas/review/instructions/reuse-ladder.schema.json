@@ -2,14 +2,20 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/instructions/reuse-ladder.schema.json",
   "title": "Reuse ladder instructions",
-  "description": "The instructions of the probe of the rules that ask whether the code needed to be written at all: the review, and those rules. This probe alone is not limited to what it was handed: it may look at anything, wherever the question leads, and research on the web is a MUST",
+  "description": "The instructions of the probe of the rules that ask whether the code needed to be written at all: its task, the review, those rules, and the checkout",
   "type": "object",
   "required": [
+    "task",
     "kind",
     "review",
-    "rulebook"
+    "rulebook",
+    "checkout"
   ],
   "properties": {
+    "task": {
+      "description": "What this probe does, said to the probe itself",
+      "const": "Probe the pull request in review against every rule in rulebook.rules and write one row per rule to the file named in review.ledger. These rules ask whether the code needed to be written at all: search the repository at checkout, the web, and anywhere else the question leads. Research on the web is required"
+    },
     "kind": {
       "const": "reuse-ladder"
     },
@@ -18,10 +24,14 @@
     },
     "rulebook": {
       "$ref": "../rulebook.schema.json"
+    },
+    "checkout": {
+      "$ref": "../checkout.schema.json"
     }
   },
   "examples": [
     {
+      "task": "Probe the pull request in review against every rule in rulebook.rules and write one row per rule to the file named in review.ledger. These rules ask whether the code needed to be written at all: search the repository at checkout, the web, and anywhere else the question leads. Research on the web is required",
       "kind": "reuse-ladder",
       "review": {
         "pullRequest": {
@@ -67,17 +77,22 @@
         "files": [
           {
             "path": "scripts/verify.sh",
-            "content": "#!/usr/bin/env bash\nset -euo pipefail\n"
+            "lines": {
+              "1": "#!/usr/bin/env bash",
+              "2": "set -euo pipefail"
+            }
           }
         ],
-        "ledger": "/home/user/review/ledger/02-development-stack.json"
+        "ledger": "/home/user/review/ledger/02-development-stack.json",
+        "report": "npx --yes @sourcemeta/jsonschema@17.0.0 validate \"/home/user/agents/skills/pr-review/schemas/review/ledger.schema.json\" \"/home/user/review/ledger/02-development-stack.json\" --resolve \"/home/user/agents/skills/pr-review/schemas\""
       },
       "rulebook": {
+        "instructions": "Apply each rule with its [[term]]s as definitions defines them. When the application of a rule is in doubt, its parent in principles decides",
         "rules": [
           {
             "id": "No new code where an external tool serves",
             "marker": "MUST NOT",
-            "group": "Development Stack",
+            "group": "Reuse",
             "parent": "Choose boring technology",
             "body": "Write [[New code]] when an [[External tool or service]] meets the need."
           }
@@ -103,7 +118,8 @@
             "specification": "The ways to meet a need, in order of how little code we own afterwards."
           }
         ]
-      }
+      },
+      "checkout": "/home/user/review/snapshot"
     }
   ]
 }
