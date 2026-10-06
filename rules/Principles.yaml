@@ -111,3 +111,19 @@ principles:
   parent: Agree at the boundary
   body: |
     The contract stands above both sides of a boundary: each side is derived from it and conforms to it, and where code and contract disagree, the code is wrong.
+- id: Less is more
+  parent: Read far more than written
+  body: |
+    A file is small enough to be read whole, so that a reader unfamiliar with it sees what it does without holding more than one screen in mind.
+- id: Performance is never bought with less readable code
+  parent: The compiler writes for the machine
+  body: |
+    Speed comes from a measured hot spot and a better algorithm, never from obscuring the code; an optimisation that costs readability is undone.
+- id: Code without calls over the network humans cannot optimize
+  parent: The compiler writes for the machine
+  body: |
+    Code without [[Calls over the network]] humans cannot optimize.
+- id: Iterations over calls over the network is bad design
+  parent: The compiler writes for the machine
+  body: |
+    Iterations over [[Calls over the network]] is bad design.

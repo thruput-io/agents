@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/review/violation.schema.json",
+  "title": "Violation",
+  "description": "One finding of the rule in whose ledger row it sits: the observation of what is wrong, and where it is reported. It carries no reference of its own: the row names the rule once, and the reporting script renders the comment as '{observation} breaks {principle name}', the principle being the parent of that rule",
+  "type": "object",
+  "required": [
+    "observation",
+    "anchor"
+  ],
+  "properties": {
+    "observation": {
+      "$ref": "#/$defs/Observation"
+    },
+    "anchor": {
+      "$ref": "#/$defs/Anchor"
+    }
+  },
+  "$defs": {
+    "Observation": {
+      "description": "What the code does wrong, briefly, worded as the subject of the sentence the reporting script completes: '{observation} breaks {principle name}'. It names no rule and no principle, by name, id, link, or wording, and it says what is wrong, not how to fix it",
+      "type": "string",
+      "minLength": 1
+    },
+    "Anchor": {
+      "description": "Where the violation is reported",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SurfaceAnchor"
+        },
+        {
+          "$ref": "#/$defs/PullRequestAnchor"
+        }
+      ]
+    },
+    "SurfaceAnchor": {
+      "description": "Lines of one surface fragment of one file, copied as they stand under review.files: the kind surface, the side, and the lines with their text. Lines of a context fragment are another kind and cannot be an anchor; lines not copied from the fragment are refused",
+      "type": "object",
+      "required": [
+        "kind",
+        "path",
+        "side",
+        "lines"
+      ],
+      "properties": {
+        "kind": {
+          "const": "surface"
+        },
+        "path": {
+          "$ref": "change-set.schema.json#/$defs/Path"
+        },
+        "side": {
+          "$ref": "fragment.schema.json#/$defs/Side"
+        },
+        "lines": {
+          "$ref": "fragment.schema.json#/$defs/Lines"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PullRequestAnchor": {
+      "description": "The pull request as a whole, where no surface line is to blame: an existing component that replaces a whole module, a standard the change set as a whole does not follow, or code outside the surface that the change made dead, which the observation names by file and line. Carried in the review body rather than on a line",
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "pull-request"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "observation": "Losing the check's exit status in a pipe into tail",
+      "anchor": {
+        "kind": "surface",
+        "path": "scripts/verify.sh",
+        "side": "head",
+        "lines": {
+          "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
+        }
+      }
+    },
+    {
+      "observation": "Writing a new diff parser where parseDiff in skills/pr-review/scripts/lib.mjs already serves",
+      "anchor": {
+        "kind": "pull-request"
+      }
+    }
+  ]
+}

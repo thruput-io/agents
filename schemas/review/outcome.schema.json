@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/review/outcome.schema.json",
+  "title": "Outcome",
+  "description": "What a review decided, in the one shape every host's adapter posts from: the verdict, the summary, each fresh finding on lines, the threads that are fixed, and the threads the author resolved that are not",
+  "type": "object",
+  "required": [
+    "headCommit",
+    "verdict",
+    "summary",
+    "inline",
+    "settle",
+    "reopen"
+  ],
+  "properties": {
+    "headCommit": {
+      "$ref": "change-set.schema.json#/$defs/Commit"
+    },
+    "verdict": {
+      "$ref": "#/$defs/ReviewVerdict"
+    },
+    "summary": {
+      "$ref": "#/$defs/Summary"
+    },
+    "inline": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/InlineFinding"
+      }
+    },
+    "settle": {
+      "type": "array",
+      "items": {
+        "$ref": "threads.schema.json#/$defs/ThreadId"
+      }
+    },
+    "reopen": {
+      "type": "array",
+      "items": {
+        "$ref": "threads.schema.json#/$defs/ThreadId"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "ReviewVerdict": {
+      "description": "request-changes when any rule is violated, approve otherwise",
+      "enum": [
+        "approve",
+        "request-changes"
+      ]
+    },
+    "Summary": {
+      "description": "The text of the review itself: the verdict, the count of what was probed and found, and every finding that has no line to sit on",
+      "type": "string",
+      "minLength": 1
+    },
+    "InlineFinding": {
+      "description": "One finding on lines of the pull request that no thread carries yet, with its rendered text",
+      "type": "object",
+      "required": [
+        "path",
+        "side",
+        "lines",
+        "body"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "change-set.schema.json#/$defs/Path"
+        },
+        "side": {
+          "$ref": "fragment.schema.json#/$defs/Side"
+        },
+        "lines": {
+          "$ref": "change-set.schema.json#/$defs/LineRange"
+        },
+        "body": {
+          "$ref": "threads.schema.json#/$defs/ThreadBody"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
+      "verdict": "request-changes",
+      "summary": "**Verdict: request-changes**\n\n74 rules probed by 12 probes at e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7 against [the rules](https://thruput.se/agents/): 1 violations, 1 inline, 0 at the pull request, 0 already carried by a thread.",
+      "inline": [
+        {
+          "path": "scripts/verify.sh",
+          "side": "head",
+          "lines": {
+            "start": 21,
+            "end": 21
+          },
+          "body": "A failing command passes as success breaks [Fail fast](https://thruput.se/agents/#fail-fast)"
+        }
+      ],
+      "settle": [
+        "PRRT_kwDOABCDEF"
+      ],
+      "reopen": []
+    }
+  ]
+}

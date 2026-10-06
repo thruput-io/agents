@@ -1,19 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thruput.se/agents/schemas/principles.schema.json",
+  "$id": "https://thruput.se/agents/schemas/governance/principles.schema.json",
   "title": "Principles",
   "description": "The principles: entries whose parent is a rationale",
-  "examples": [
-    {
-      "principles": [
-        {
-          "id": "Example principle",
-          "parent": "Example rationale",
-          "body": "An example principle says how we code in one sentence."
-        }
-      ]
-    }
-  ],
   "type": "object",
   "required": [
     "principles"
@@ -42,5 +31,16 @@
     "PrincipleId": {
       "$ref": "id.schema.json"
     }
-  }
+  },
+  "examples": [
+    {
+      "principles": [
+        {
+          "id": "Example principle",
+          "parent": "Example rationale",
+          "body": "An example principle says how we code in one sentence."
+        }
+      ]
+    }
+  ]
 }

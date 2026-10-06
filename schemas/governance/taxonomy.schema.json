@@ -1,23 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thruput.se/agents/schemas/taxonomy.schema.json",
+  "$id": "https://thruput.se/agents/schemas/governance/taxonomy.schema.json",
   "title": "Taxonomy",
   "description": "A classification scheme: a hierarchy of levels, each a definition with criteria for what belongs to it",
-  "examples": [
-    {
-      "levels": [
-        {
-          "id": "Example root level",
-          "specification": "The level with nothing above it."
-        },
-        {
-          "id": "Example child level",
-          "specification": "A level one step below the root.",
-          "parent": "Example root level"
-        }
-      ]
-    }
-  ],
   "type": "object",
   "properties": {
     "levels": {
@@ -61,5 +46,20 @@
       "description": "The id of the level directly above",
       "$dynamicRef": "id.schema.json#Id"
     }
-  }
+  },
+  "examples": [
+    {
+      "levels": [
+        {
+          "id": "Example root level",
+          "specification": "The level with nothing above it."
+        },
+        {
+          "id": "Example child level",
+          "specification": "A level one step below the root.",
+          "parent": "Example root level"
+        }
+      ]
+    }
+  ]
 }

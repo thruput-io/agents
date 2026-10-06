@@ -1,5 +1,6 @@
 __pycache__/
 _site/
+build/
 .DS_Store
 .idea/
 node_modules/

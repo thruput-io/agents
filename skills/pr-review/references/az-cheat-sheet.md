@@ -1,6 +1,6 @@
 # AZ CHEAT SHEET
 
-Exact `az` invocations for reviewing an **Azure DevOps** pull request. Counterpart to [`gh-cheat-sheet.md`](./gh-cheat-sheet.md): syntax only, no rules. Referenced by [`CODE_REVIEW.md`](./CODE_REVIEW.md) and [`PROBE_SUBAGENT_TEMPLATE.md`](./PROBE_SUBAGENT_TEMPLATE.md), which own the rules; where a command here would contradict them, the rule wins.
+Exact `az` invocations for reviewing an **Azure DevOps** pull request. Counterpart to [`gh-cheat-sheet.md`](./gh-cheat-sheet.md): syntax only, no rules. Referenced by [`CODE_REVIEW.md`](../CODE_REVIEW.md), which owns the rules; where a command here would contradict them, the rule wins.
 
 Requires the `azure-devops` extension (`az extension add --name azure-devops`).
 
@@ -42,10 +42,10 @@ az repos pr show --id {id} --org {org} --detect false \
 | Purpose                               | Command                                                                                                                                                                        |
 |---------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | List active PRs                       | `az repos pr list --status active --org {org} --detect false -o table`                                                                                                         |
-| Branch policies (the checks analogue) | `az repos pr policy list --id {id} --org {org} --detect false --query '[].{policy:configuration.type.displayName, status:status, blocking:configuration.isBlocking}' -o table` |
+| Build policy (the checks analogue)    | `az repos pr policy list --id {id} --org {org} --detect false --query "[?configuration.type.displayName=='Build'].{policy:configuration.type.displayName, status:status, blocking:configuration.isBlocking}" -o table` |
 | Reviewers and their votes             | `az repos pr reviewer list --id {id} --org {org} --detect false --query '[].{name:displayName, vote:vote}' -o table`                                                           |
 
-Policy `status` is `approved`, `queued`, `running`, or `rejected`. A blocking policy that is not `approved` is the Azure DevOps equivalent of a failing check.
+Policy `status` is `approved`, `queued`, `running`, or `rejected`. Only the build counts as a check: a blocking `Build` policy that is not `approved` is the Azure DevOps equivalent of a check that did not succeed. The reviewer, comment, and merge-strategy policies are about the review and the merge themselves, and never stop a review.
 
 Votes are integers: `10` approved, `5` approved with suggestions, `0` no vote, `-5` waiting for author, `-10` rejected.
 
@@ -72,7 +72,7 @@ Paths are repository-absolute and begin with `/`.
 
 ## Read files at the head commit
 
-There is no `az` command that returns a textual diff. Fetch whole files and compare, which is what [`CODE_REVIEW.md` § Read beyond the diff](./CODE_REVIEW.md#1-setup) requires anyway:
+There is no `az` command that returns a textual diff. Fetch whole files and compare, which is what the review requires anyway:
 
 ```bash
 az devops invoke --area git --resource items \
@@ -113,7 +113,7 @@ One POST per thread. Body in a file, e.g. `thread.json`:
     {
       "parentCommentId": 0,
       "commentType": "text",
-      "content": "[No suppressed exit status](https://github.com/thruput-io/handbook/blob/main/RULES.md#no-suppressed-exit-status): what is wrong, briefly."
+      "content": "[No suppressed exit status](https://thruput.se/agents/#no-suppressed-exit-status): what is wrong, briefly."
     }
   ],
   "status": "active",
@@ -171,7 +171,7 @@ az repos pr set-vote --id {id} --vote approve --org {org} --detect false
 
 ## No atomic review
 
-This is the one place the Azure DevOps model does not fit [`CODE_REVIEW.md` step 7](./CODE_REVIEW.md#7-submit). GitHub accepts one payload carrying every inline comment plus the verdict, producing one review and one notification. Azure DevOps has no such endpoint: each thread is its own POST and the vote is a separate call. N comments therefore mean N requests and N notifications, and there is no way to make them atomic.
+This is the one place the Azure DevOps model does not fit [`CODE_REVIEW.md` step 4](../CODE_REVIEW.md#4-submit). GitHub accepts one payload carrying every inline comment plus the verdict, producing one review and one notification. Azure DevOps has no such endpoint: each thread is its own POST and the vote is a separate call. N comments therefore mean N requests and N notifications, and there is no way to make them atomic.
 
 Consequences for a review run against Azure DevOps:
 

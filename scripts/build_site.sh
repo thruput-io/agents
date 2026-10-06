@@ -1,18 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-pages=ghcr.io/actions/jekyll-build-pages:latest
-vnu=ghcr.io/validator/validator:latest
-lychee=lycheeverse/lychee:latest
+pages=ghcr.io/actions/jekyll-build-pages:v1.0.13
+vnu=ghcr.io/validator/validator:24.10.17
+lychee=lycheeverse/lychee:0.24.2
 site=$(docker volume create)
 
 remove_site() {
   docker volume rm "$site"
+  rm -r "$PROJECT_ROOT/build"
 }
 trap remove_site EXIT
 
+rm -rf "$PROJECT_ROOT/build"
+mkdir -p "$PROJECT_ROOT/build/_data"
+cp "$PROJECT_ROOT"/rules/*.yaml "$PROJECT_ROOT/build/_data/"
+
+version=$(git -C "$PROJECT_ROOT" describe --tags | sed 's/^v//')
+printf 'version: %s\n' "$version" > "$PROJECT_ROOT/build/_data/release.yml"
+npx --yes @sourcemeta/jsonschema@17.0.0 validate "$PROJECT_ROOT/schemas/repository/release.schema.json" "$PROJECT_ROOT/build/_data/release.yml" --resolve "$PROJECT_ROOT/schemas"
+
 source=(
-  --volume "$PROJECT_ROOT/rules:/github/workspace/site/_data:ro"
+  --volume "$PROJECT_ROOT/build/_data:/github/workspace/site/_data:ro"
   --volume "$PROJECT_ROOT/schemas:/github/workspace/site/schemas:ro"
 )
 for entry in "$PROJECT_ROOT"/web/*; do

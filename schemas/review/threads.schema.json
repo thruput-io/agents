@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/review/threads.schema.json",
+  "title": "Threads",
+  "description": "The threads this review left on the pull request before, in the one shape every host is folded into: where each sits, what it says, and whether it is open, resolved by the author, or resolved by someone else",
+  "type": "object",
+  "required": [
+    "threads"
+  ],
+  "properties": {
+    "threads": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Thread"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "Thread": {
+      "description": "One thread of ours on lines of the pull request",
+      "type": "object",
+      "required": [
+        "id",
+        "path",
+        "side",
+        "lines",
+        "state",
+        "body"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ThreadId"
+        },
+        "path": {
+          "$ref": "change-set.schema.json#/$defs/Path"
+        },
+        "side": {
+          "$ref": "fragment.schema.json#/$defs/Side"
+        },
+        "lines": {
+          "$ref": "change-set.schema.json#/$defs/LineRange"
+        },
+        "state": {
+          "$ref": "#/$defs/ThreadState"
+        },
+        "body": {
+          "$ref": "#/$defs/ThreadBody"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ThreadId": {
+      "description": "The thread, by the identifier its host gave it; the host's adapter is the only reader",
+      "type": "string",
+      "minLength": 1
+    },
+    "ThreadState": {
+      "description": "open: still to be answered; resolved-by-author: the author marked it done, so its lines are probed again; resolved: someone else closed it, so it is left alone",
+      "enum": [
+        "open",
+        "resolved-by-author",
+        "resolved"
+      ]
+    },
+    "ThreadBody": {
+      "description": "The first comment of the thread, which names the principle it cites",
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "examples": [
+    {
+      "threads": [
+        {
+          "id": "PRRT_kwDOABCDEF",
+          "path": "scripts/verify.sh",
+          "side": "head",
+          "lines": {
+            "start": 21,
+            "end": 21
+          },
+          "state": "open",
+          "body": "A failing command passes as success breaks [Fail fast](https://thruput.se/agents/#fail-fast)"
+        }
+      ]
+    }
+  ]
+}

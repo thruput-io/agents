@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ site.title }}</title>
 <meta name="description" content="{{ site.description }}">
+<meta name="version" content="{{ site.data.release.version }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&amp;family=Inter:wght@400;500&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css">
-<link rel="stylesheet" href="assets/css/governance.css">
+<link rel="stylesheet" href="assets/css/style.css?v={{ site.data.release.version }}">
+<link rel="stylesheet" href="assets/css/governance.css?v={{ site.data.release.version }}">
 </head>
 <body>
 <nav>

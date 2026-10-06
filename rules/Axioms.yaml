@@ -3,31 +3,71 @@ axioms:
   parent: Speed Through Discipline
   body: |
     Every piece of information is defined exactly once.
+  analect:
+    passage: Analects VII.VIII
+    text: When I have presented one corner of a subject to any one, and he cannot from it learn the other three, I do not repeat my lesson.
+    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/VII
 - id: Shift Left
   parent: Speed Through Discipline
   body: |
     Do every activity at the earliest point where it can be done.
+  analect:
+    passage: Analects XV.IX
+    text: The mechanic, who wishes to do his work well, must first sharpen his tools.
+    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/XV
 - id: Simplicity
   parent: Outcome Over Output
   body: |
-    Simple solutions are better than complex.
-- id: Great software is easy to maintain and extend
+    Simple solutions are better than complex ones.
+  analect:
+    passage: Analects XV.XL
+    text: In language it is simply required that it convey the meaning.
+    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/XV
+- id: Easy to Change
   parent: Joy Through Craft
   body: |
-    [[Great software]] is easy to maintain and extend.
-- id: Great Software Requires Users
+    [[Great software]] stays great when it is easy to maintain and extend.
+  analect:
+    passage: Analects XV.XXIX
+    text: To have faults and not to reform them, this, indeed, should be pronounced having faults.
+    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/XV
+- id: Great Products Require Users
   parent: Outcome Over Output
   body: |
     Code proves execution; [[Users]] prove [[Correctness]].
-- id: Nothing Is Complete Without Verification
+  analect:
+    passage: Analects II.XIII
+    text: He acts before he speaks, and afterwards speaks according to his actions.
+    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/II
+- id: Without Verification It Is Worthless
   parent: Speed Through Discipline
   body: |
-    Nothing is complete until it is verified.
-- id: Leverage
+    Without verification it is at best worthless, more often a source of confusion.
+  analect:
+    passage: Analects II.XVII
+    text: When you know a thing, to hold that you know it; and when you do not know a thing, to allow that you do not know it; this is knowledge.
+    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/II
+- id: Competence Applied Is Leverage
   parent: Excellence Through Transparency
   body: |
     A tool multiplies the competence applied to it and supplies none of its own; it decides how fast the outcome arrives, never what it is.
+  analect:
+    passage: Mencius VII.II.V
+    text: A carpenter or a carriage-maker may give a man the circle and square, but cannot make him skilful in the use of them.
+    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_2/The_Works_of_Mencius/chapter14
 - id: Quality Uncompromised
   parent: Speed Through Discipline
   body: |
-    Quality is always the highest priority.
+    Quality is always the highest priority; it is what makes the other priorities possible.
+  analect:
+    passage: Analects I.VIII
+    text: When you have faults, do not fear to abandon them.
+    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/I
+- id: Code Is Written for People
+  parent: Excellence Through Transparency
+  body: |
+    Code explains to people what the machine will do.
+  analect:
+    passage: Analects XIII.III
+    text: If names be not correct, language is not in accordance with the truth of things. If language be not in accordance with the truth of things, affairs cannot be carried on to success.
+    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/XIII

@@ -1,18 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thruput.se/agents/schemas/values.schema.json",
+  "$id": "https://thruput.se/agents/schemas/governance/values.schema.json",
   "title": "Values",
   "description": "The values: the root entries of the taxonomy, which have no parent",
-  "examples": [
-    {
-      "values": [
-        {
-          "id": "Example value",
-          "body": "An example value names what people care about."
-        }
-      ]
-    }
-  ],
   "type": "object",
   "required": [
     "values"
@@ -38,5 +28,15 @@
     "ValueId": {
       "$ref": "id.schema.json"
     }
-  }
+  },
+  "examples": [
+    {
+      "values": [
+        {
+          "id": "Example value",
+          "body": "An example value names what people care about."
+        }
+      ]
+    }
+  ]
 }

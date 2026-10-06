@@ -2,6 +2,15 @@ name: Build Site
 
 on:
   workflow_call:
+    inputs:
+      artifact:
+        description: The name the built site is uploaded under
+        required: true
+        type: string
+    outputs:
+      version:
+        description: The version the built site carries in its meta header
+        value: ${{ jobs.build-site.outputs.version }}
 
 permissions:
   contents: read
@@ -12,12 +21,21 @@ env:
 jobs:
   build-site:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      - run: |
+        with:
+          fetch-depth: 0
+      - id: release
+        run: |
+          version=$(git describe --tags | sed 's/^v//')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
           cp -R "$PROJECT_ROOT/web" "$PROJECT_ROOT/site"
           cp -R "$PROJECT_ROOT/rules" "$PROJECT_ROOT/site/_data"
           cp -R "$PROJECT_ROOT/schemas" "$PROJECT_ROOT/site/schemas"
+          printf 'version: %s\n' "$version" > "$PROJECT_ROOT/site/_data/release.yml"
+      - run: npx --yes @sourcemeta/jsonschema@17.0.0 validate "$PROJECT_ROOT/schemas/repository/release.schema.json" "$PROJECT_ROOT/site/_data/release.yml" --resolve "$PROJECT_ROOT/schemas"
       - uses: actions/jekyll-build-pages@v1
         with:
           source: site
@@ -28,4 +46,5 @@ jobs:
           args: --offline --include-fragments --root-dir ${{ env.PROJECT_ROOT }}/_site '${{ env.PROJECT_ROOT }}/_site/**/*.html'
       - uses: actions/upload-pages-artifact@v3
         with:
+          name: ${{ inputs.artifact }}
           path: ${{ env.PROJECT_ROOT }}/_site

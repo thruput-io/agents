@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/review/fragment.schema.json",
+  "title": "Fragment",
+  "description": "A run of consecutive lines of a file, each line under its number, of one of two kinds: a surface fragment, which the change added or removed and a violation may anchor on, or a context fragment, which stands around the change and no violation anchors on",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/SurfaceFragment"
+    },
+    {
+      "$ref": "#/$defs/ContextFragment"
+    }
+  ],
+  "$defs": {
+    "SurfaceFragment": {
+      "description": "Lines the change added, on side head and numbered in the file at the head commit, or removed, on side base and numbered in the file at the base. An anchor copies these lines as they stand",
+      "type": "object",
+      "required": [
+        "kind",
+        "side",
+        "lines"
+      ],
+      "properties": {
+        "kind": {
+          "const": "surface"
+        },
+        "side": {
+          "$ref": "#/$defs/Side"
+        },
+        "lines": {
+          "$ref": "#/$defs/Lines"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ContextFragment": {
+      "description": "Lines the change left as they were, handed so that a rule can be judged on the whole file; no violation anchors on them",
+      "type": "object",
+      "required": [
+        "kind",
+        "lines"
+      ],
+      "properties": {
+        "kind": {
+          "const": "context"
+        },
+        "lines": {
+          "$ref": "#/$defs/Lines"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Side": {
+      "description": "Which numbering the lines use: head for the file at the head commit, base for the file at the base",
+      "enum": [
+        "head",
+        "base"
+      ]
+    },
+    "Lines": {
+      "description": "Consecutive lines, each under its number, the first line of a file being 1",
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "$ref": "#/$defs/LineNumberName"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/LineText"
+      }
+    },
+    "LineNumberName": {
+      "description": "A line number as the name of a property: a whole number from 1",
+      "type": "string",
+      "pattern": "^[1-9][0-9]*$"
+    },
+    "LineText": {
+      "description": "One line of a file, without its line break",
+      "type": "string"
+    }
+  },
+  "examples": [
+    {
+      "kind": "surface",
+      "side": "head",
+      "lines": {
+        "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
+      }
+    },
+    {
+      "kind": "context",
+      "lines": {
+        "20": "npx --yes @sourcemeta/jsonschema@17.0.0 lint \"$PROJECT_ROOT/schemas\""
+      }
+    }
+  ]
+}

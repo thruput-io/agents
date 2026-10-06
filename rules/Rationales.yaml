@@ -1,6 +1,6 @@
 rationales:
 - id: Robustness Principle
-  parent: Great software is easy to maintain and extend
+  parent: Easy to Change
   body: |
     Be conservative in what you send and liberal in what you accept ([RFC 1122 § 1.2.2](https://datatracker.ietf.org/doc/html/rfc1122#section-1.2.2), Postel's law). A producer emits exactly the shape it defines; a consumer takes what it needs from what it receives and is not disturbed by what it does not know.
 
@@ -79,7 +79,7 @@ rationales:
   - marker: SHOULD
     body: |
       Give every foreign system its own adapter behind a port.
-  - marker: MAY
+  - marker: SHOULD
     body: |
       Introduce an anti-corruption layer where the foreign model's meaning differs from ours ([Anti-Corruption Layer](https://learn.microsoft.com/en-us/azure/architecture/patterns/anti-corruption-layer)).
 - id: Encapsulation
@@ -102,7 +102,7 @@ rationales:
       Where the environment has no types, mint a naming prefix that marks a value validated by its factory, and enforce it with a linter.
   - marker: SHOULD
     body: |
-      Hide a type's representation outside its defining module, as a newtype or a branded type, rather than share it through an alias, so values that share a representation but not a meaning cannot be mixed.
+      Hide a type's representation outside its defining module, as a new type or a branded type, rather than share it through an alias, so values that share a representation but not a meaning cannot be mixed.
   - marker: SHOULD
     body: |
       Encode a state machine in the type, each transition consuming the old state's type and returning the new one, so an operation invalid in the current state does not typecheck.
@@ -122,9 +122,12 @@ rationales:
   solutions:
   - marker: SHOULD
     body: |
-      Retire a feature toggle as soon as its case is decided.
+      Make the toggle a strategy so that it encodes all options it controls
+  - marker: SHOULD
+    body: |
+      Make overload or specific behaviour [[Explicitly named method]]s instead of optional flags
 - id: Tests prove behaviour, not execution
-  parent: Nothing Is Complete Without Verification
+  parent: Without Verification It Is Worthless
   body: |
     A line that runs under test is not a line that is checked. Martin Fowler's [AssertionFreeTesting](https://martinfowler.com/bliki/AssertionFreeTesting.html) describes suites with full coverage that verified nothing; Inozemtseva and Holmes found coverage predicts little about fault detection once suite size is controlled for. A test that asserts outcomes is an executable specification that documents and guards behaviour on every commit.
   solutions:
@@ -134,6 +137,9 @@ rationales:
   - marker: SHOULD
     body: |
       Treat painful test setup as a design signal: split the subject into smaller domain models or focused interfaces before reaching for a mock.
+  - marker: SHOULD
+    body: |
+      Almost all code has tools for verification, make sure they are used inside the [project].
 - id: Make the wrong thing fail
   parent: Single Source of Truth
   body: |
@@ -152,9 +158,9 @@ rationales:
     body: |
       Enable the strictest static-analysis presets and compiler checks the ecosystem offers, so safeguards are enforced without review.
 - id: The practitioner decides the outcome
-  parent: Leverage
+  parent: Competence Applied Is Leverage
   body: |
-    AI is [[Leverage]] applied to a [[Practitioner]]. Applied by someone who does not know what good looks like, it produces a mess at a speed no one could reach unaided, and the mess arrives reviewed, formatted, and entirely plausible. Applied by someone working from these documents, it produces the same [[Quality]] faster, and more of it. Lisanne Bainbridge's [Ironies of Automation](https://doi.org/10.1016/0005-1098(83)90046-8) (1983) names the mechanism: automation takes over the routine and leaves the [[Practitioner]] exactly the judgement it could not encode, so the more capable the tool, the more the outcome rests on the person. Two measurements show it from both sides. [Generative AI at Work](https://www.nber.org/papers/w31161) (Brynjolfsson, Li, Raymond, 2023) found the gains concentrated in novices, because the model disseminated the practice of the most able workers: the tool carried competence that already existed. METR's [early-2025 study](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/) found experienced [[Developer]]s 19% slower with AI tools while believing themselves 20% faster: what the tool multiplied there was the confidence, not the result.
+    AI is leverage applied to a [[Practitioner]] ([[Competence Applied Is Leverage]]). Applied by someone who does not know what good looks like, it produces a mess at a speed no one could reach unaided, and the mess arrives reviewed, formatted, and entirely plausible. Applied by someone working from these documents, it produces the same [[Quality]] faster, and more of it. Lisanne Bainbridge's [Ironies of Automation](https://doi.org/10.1016/0005-1098(83)90046-8) (1983) names the mechanism: automation takes over the routine and leaves the [[Practitioner]] exactly the judgement it could not encode, so the more capable the tool, the more the outcome rests on the person. Two measurements show it from both sides. [Generative AI at Work](https://www.nber.org/papers/w31161) (Brynjolfsson, Li, Raymond, 2023) found the gains concentrated in novices, because the model disseminated the practice of the most able workers: the tool carried competence that already existed. METR's [early-2025 study](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/) found experienced [[Developer]]s 19% slower with AI tools while believing themselves 20% faster: what the tool multiplied there was the confidence, not the result.
 
     The distance between what a person and what a model can do narrows every day, so anything justified by "AI cannot do this yet" carries an expiry date and is not written as permanent. What does not narrow is Fred Brooks's [essential complexity](https://worrydream.com/refs/Brooks_1986_-_No_Silver_Bullet.pdf): tools attack the accidental, and knowing which problem is worth solving, what good means here, and whether the result is true stays with the [[Practitioner]]. Investment therefore goes to the [[Practitioner]]'s competence, and to stating our standard explicitly enough to be applied, over the expectation that a better model compensates for the absence of both.
   solutions:
@@ -214,3 +220,22 @@ rationales:
   - marker: MAY
     body: |
       Publish the contract on its own, versioned apart from any implementation, so every consumer reads the same definition.
+- id: Read far more than written
+  parent: Code Is Written for People
+  body: |
+    A line of code is written once and read many times: by the reviewer, by the next [[Developer]], by whoever is on call when it fails. Professionals spend about 58 percent of their working time understanding code ([Xia et al., IEEE TSE 2018](https://doi.org/10.1109/TSE.2017.2734091)), and "code is read much more often than it is written" ([PEP 8](https://peps.python.org/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds)). The reader's cost decides how code is shaped, and [[Readability]] is the first [[Software quality axis]] a reader meets.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Shape every unit of code, a file, a type, a function, to be read in one sitting by a reader who has not seen it before.
+- id: The compiler writes for the machine
+  parent: Code Is Written for People
+  body: |
+    What the machine executes is the compiler's output, not the author's text. Knuth asked that we stop "imagining that our main task is to instruct a computer what to do" and "concentrate rather on explaining to human beings what we want a computer to do" ([Literate Programming, 1984](https://doi.org/10.1093/comjnl/27.2.97)); Abelson and Sussman put it as "programs must be written for people to read, and only incidentally for machines to execute" ([SICP, preface](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/6515/sicp.zip/full-text/book/book-Z-H-7.html)). Code bent toward the machine, the clever trick, the hand-unrolled loop, the premature micro-optimisation, buys little the compiler would not have bought, and sells the reader: "premature optimization is the root of all evil", and the critical three percent is found by measurement, "only after that code has been identified" ([Knuth, Computing Surveys 1974, p. 268](https://www.gwern.net/doc/cs/algorithm/1974-knuth.pdf)).
+  solutions:
+  - marker: SHOULD
+    body: |
+      Measure before optimising, and optimise only the code the measurement names.
+  - marker: SHOULD
+    body: |
+      Group [[Calls over the network]] together and minimize round-trips.
