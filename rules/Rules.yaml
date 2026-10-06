@@ -83,6 +83,12 @@ rules:
   parent: Convention Over Novelty
   body: |
     Point at a [[Demonstrable standard]] whenever you invoke a standard as justification. Novel work is not required to cite a standard it does not have.
+- id: File too large
+  marker: MUST NOT
+  group: Conventions
+  parent: Separation of Concerns
+  body: |
+    Keep a file longer than 200 lines; a file that long holds more than one concern.
 - id: Validating factory
   marker: MUST
   group: Types

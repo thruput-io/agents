@@ -4,7 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   parseDiff, threadRanges, wholeSurface, narrowSurface, isText, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
-  instructions, complete, numbered, fragments, removedLines,
+  instructions, complete, numbered, fragments, removedLines, tooLarge, FILE_TOO_LARGE,
 } from './lib.mjs';
 import { run } from './shell.mjs';
 import * as github from './github.mjs';
@@ -54,6 +54,11 @@ const snapshot = join(workdir, 'snapshot');
 change.checkout(snapshot);
 const paths = readdirSync(snapshot, { recursive: true }).map(String).filter((path) => statSync(join(snapshot, path)).isFile()).sort();
 const linesAtHead = (path) => (paths.includes(path) && isText(readFileSync(join(snapshot, path), 'latin1')) ? numbered(readFileSync(join(snapshot, path), 'utf8')) : {});
+const oversized = tooLarge(changeSet.files.map((file) => ({ path: file.path, lines: Object.keys(linesAtHead(file.path)).length })));
+if (oversized.length > 0) {
+  const where = change.refused ?? adapter.refuse(host, headCommit, oversized, workdir);
+  throw new Error(`${oversized.join('; ')}. A changes-requested verdict ${change.refused === undefined ? 'was posted' : 'had been posted'} (${where}); no review was prepared.`);
+}
 const files = surface.files.map((file) => {
   const hunks = changeSet.files.find((candidate) => candidate.path === file.path).removed;
   return { path: file.path, fragments: fragments(linesAtHead(file.path), file.added, removedLines(hunks, file.removed)) };
@@ -76,7 +81,7 @@ for (const entry of index) {
   texts.set(entry.canonical_url, await response.text());
 }
 
-const groups = partition(rules);
+const groups = partition(rules.filter((rule) => rule.id !== FILE_TOO_LARGE));
 checkKinds(groups.map((group) => group.group));
 const probes = instructions(
   context,

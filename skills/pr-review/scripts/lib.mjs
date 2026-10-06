@@ -266,6 +266,13 @@ export function complete(read, name, document, schema = read(name)) {
   return Object.fromEntries([...fixed(read, name, schema), ...own]);
 }
 
+export const FILE_LINES = 200;
+export const FILE_TOO_LARGE = 'File too large';
+
+export function tooLarge(counts) {
+  return counts.filter((file) => file.lines > FILE_LINES).map((file) => `${file.path} is ${file.lines} lines long, which breaks ${FILE_TOO_LARGE}`);
+}
+
 export const ESCALATION_ROWS = 3;
 
 export function anchorInside(anchor, files) {

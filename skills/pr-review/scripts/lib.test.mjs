@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   parseDiff, parseHunks, intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
   instructions, complete, numbered, fragments, span, removedLines, settled, anchorInside, checkLedger, merge, verdict, table, citation, message, alreadyOpen,
-  outcome, ours, CELL, SITE,
+  outcome, ours, tooLarge, FILE_TOO_LARGE, FILE_LINES, CELL, SITE,
 } from './lib.mjs';
 
 const diff = [
@@ -365,4 +365,10 @@ test('removedLines cuts the removed lines the surface keeps out of the hunks tha
   assert.deepEqual(removedLines(hunks, [{ start: 11, end: 12 }, { start: 30, end: 30 }]), [{ start: 11, end: 12, content: 'b\nc' }, { start: 30, end: 30, content: 'z' }]);
   assert.deepEqual(removedLines(hunks, []), []);
   assert.throws(() => removedLines(hunks, [{ start: 20, end: 20 }]), /no removed hunk holds lines 20-20/);
+});
+
+test('tooLarge names every changed file over the limit as a reason to refuse the review', () => {
+  assert.deepEqual(tooLarge([{ path: 'a.cs', lines: 201 }, { path: 'b.cs', lines: 200 }, { path: 'c.cs', lines: 0 }]), ['a.cs is 201 lines long, which breaks File too large']);
+  assert.deepEqual(tooLarge([]), []);
+  assert.equal(FILE_LINES, 200);
 });
