@@ -10,27 +10,27 @@ axioms:
 - id: Simplicity
   parent: Outcome Over Output
   body: |
-    Simple solutions are better than complex
-- id: Maintainability and Extensibility Now is Currency in Future
+    Simple solutions are better than complex ones.
+- id: Easy to Change
   parent: Joy Through Craft
   body: |
-    [[Great software]] stays great when is easy to maintain and extend
-- id: Great Products Requires Users
+    [[Great software]] stays great when it is easy to maintain and extend.
+- id: Great Products Require Users
   parent: Outcome Over Output
   body: |
     Code proves execution; [[Users]] prove [[Correctness]].
 - id: Nothing Is Complete Without Verification
   parent: Speed Through Discipline
   body: |
-    Nothing is complete until it is verified. It's just guessing.
-- id: Competence Applied is Leverage
+    Nothing is complete until it is verified; until then it is a guess.
+- id: Competence Applied Is Leverage
   parent: Excellence Through Transparency
   body: |
     A tool multiplies the competence applied to it and supplies none of its own; it decides how fast the outcome arrives, never what it is.
 - id: Quality Uncompromised
   parent: Speed Through Discipline
   body: |
-    Quality is always the highest priority. It makes other priorities possible.
+    Quality is always the highest priority; it is what makes the other priorities possible.
 - id: Programs are written for people to read
   parent: Excellence Through Transparency
   body: |
