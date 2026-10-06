@@ -31,7 +31,7 @@ axioms:
   parent: Speed Through Discipline
   body: |
     Quality is always the highest priority; it is what makes the other priorities possible.
-- id: Programs are written for people to read
+- id: Code Is Written for People
   parent: Excellence Through Transparency
   body: |
-    Programs are written for people to read.
+    Code explains to people what the machine will do.
