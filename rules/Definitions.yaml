@@ -312,7 +312,7 @@ definitions:
     The property that behavior is exercised in isolation without standing up networks, clocks, or global state.
 - id: Structural simplicity
   specification: |
-    Simplicity ([[Less is more]]) as it shows in the design: the property that the design carries no structure that a present requirement does not demand.
+    [[Simplicity]] as it shows in the design: the property that the design carries no structure that a present requirement does not demand.
 - id: True Test Coverage
   specification: |
     The property that tests fail when behavior breaks, rather than merely executing code paths.

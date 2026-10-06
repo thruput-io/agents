@@ -13,7 +13,7 @@ rationales:
     body: |
       Let consumers publish the parts of the contract they rely on, so the producer sees what a change would break before it ships (Ian Robinson, [Consumer-Driven Contracts](https://martinfowler.com/articles/consumerDrivenContracts.html)).
 - id: Code is a liability, not an asset
-  parent: Less is more
+  parent: Simplicity
   body: |
     Simplicity is the fit between a job and the tools and strategies chosen to do it: a solution is simple when it carries nothing the job does not call for, and complex in proportion to what it carries beyond that. Every line carries the ongoing cost of being read, supported, and updated as the ecosystem around it evolves, and is worth that cost only where it meets a user need ([Software Engineering at Google, Why Deprecate?](https://abseil.io/resources/swe-book/html/ch15.html#why_deprecatequestion_mark)). Edsger Dijkstra: if we count lines of code, "we should not regard them as 'lines produced' but as 'lines spent'" ([EWD1036](https://www.cs.utexas.edu/~EWD/transcriptions/EWD10xx/EWD1036.html)), and Jeff Atwood: "Every new line of code you willingly bring into the world is code that has to be debugged, code that has to be read and understood, code that has to be supported" ([The Best Code is No Code At All](https://blog.codinghorror.com/the-best-code-is-no-code-at-all/)). Code outside the stated [[Purpose]] is not free. Martin Fowler's [Yagni](https://martinfowler.com/bliki/Yagni.html) names four costs: building it, delaying real features, carrying its complexity, and repairing it when the guess proves wrong. Ron Jeffries: "the best way to have fewer bugs is to implement less code." Keeping every part inside the [[Purpose]] keeps the codebase small enough to understand and change quickly, and every test and review aimed at what [[Users]] need.
   solutions:
@@ -116,7 +116,7 @@ rationales:
     body: |
       Implement the language's comparison interface on a [[Domain object]] rather than compare its primitives.
 - id: Optionality Drives Complexity
-  parent: Less is more
+  parent: Simplicity
   body: |
     Each optional flag doubles the paths a function can take, and most of them are never tested (Pete Hodgson, [Feature Toggles](https://martinfowler.com/articles/feature-toggles.html)). Martin Fowler's [FlagArgument](https://martinfowler.com/bliki/FlagArgument.html): a named operation states intent where a bare boolean hides it. Robert Harper's [Boolean Blindness](https://existentialtype.wordpress.com/2011/03/15/boolean-blindness/): a flag carries no meaning of its own.
   solutions:
