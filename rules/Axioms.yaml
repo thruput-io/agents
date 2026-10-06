@@ -52,9 +52,9 @@ axioms:
   body: |
     A tool multiplies the competence applied to it and supplies none of its own; it decides how fast the outcome arrives, never what it is.
   analect:
-    passage: Analects VII.VIII
-    text: When I have presented one corner of a subject to any one, and he cannot from it learn the other three, I do not repeat my lesson.
-    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/VII
+    passage: Mencius VII.II.V
+    text: A carpenter or a carriage-maker may give a man the circle and square, but cannot make him skilful in the use of them.
+    url: https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_2/The_Works_of_Mencius/chapter14
 - id: Quality Uncompromised
   parent: Speed Through Discipline
   body: |

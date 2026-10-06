@@ -38,7 +38,7 @@
       "$ref": "id.schema.json"
     },
     "Analect": {
-      "description": "A saying from the Analects of Confucius that the axiom echoes, in James Legge's translation",
+      "description": "A saying from the Confucian classics that the axiom echoes, the Analects or the Works of Mencius, in James Legge's translation",
       "type": "object",
       "required": [
         "passage",
@@ -58,9 +58,9 @@
       }
     },
     "AnalectPassage": {
-      "description": "The book and chapter in Legge's numbering, as Analects XIII.III",
+      "description": "The classic, with the book, part, and chapter in Legge's numbering: Analects XIII.III, or Mencius VII.II.V",
       "type": "string",
-      "pattern": "^Analects [IVX]+\\.[IVXL]+$"
+      "pattern": "^(Analects|Mencius) [IVX]+(\\.[IVXL]+)+$"
     },
     "AnalectText": {
       "description": "The saying in Legge's words, as much of the chapter as carries it",
