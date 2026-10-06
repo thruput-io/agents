@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/governance/axioms.schema.json",
   "title": "Axioms",
-  "description": "The axioms: entries whose parent is a value",
+  "description": "The axioms: entries whose parent is a value, each with the analect it echoes",
   "type": "object",
   "required": [
     "axioms"
@@ -17,19 +17,60 @@
   },
   "$defs": {
     "Axiom": {
-      "description": "One axiom",
+      "description": "One axiom, with the saying of Confucius it echoes",
       "$ref": "entry.schema.json#/$defs/Entry",
+      "required": [
+        "analect"
+      ],
       "properties": {
         "id": {
           "$ref": "#/$defs/AxiomId"
         },
         "parent": {
           "$ref": "values.schema.json#/$defs/ValueId"
+        },
+        "analect": {
+          "$ref": "#/$defs/Analect"
         }
       }
     },
     "AxiomId": {
       "$ref": "id.schema.json"
+    },
+    "Analect": {
+      "description": "A saying from the Analects of Confucius that the axiom echoes, in James Legge's translation",
+      "type": "object",
+      "required": [
+        "passage",
+        "text",
+        "url"
+      ],
+      "properties": {
+        "passage": {
+          "$ref": "#/$defs/AnalectPassage"
+        },
+        "text": {
+          "$ref": "#/$defs/AnalectText"
+        },
+        "url": {
+          "$ref": "#/$defs/AnalectUrl"
+        }
+      }
+    },
+    "AnalectPassage": {
+      "description": "The book and chapter in Legge's numbering, as Analects XIII.III",
+      "type": "string",
+      "pattern": "^Analects [IVX]+\\.[IVXL]+$"
+    },
+    "AnalectText": {
+      "description": "The saying in Legge's words, as much of the chapter as carries it",
+      "type": "string",
+      "minLength": 1
+    },
+    "AnalectUrl": {
+      "description": "Where the chapter is read, in a public-domain edition",
+      "type": "string",
+      "format": "uri"
     }
   },
   "examples": [
@@ -38,7 +79,12 @@
         {
           "id": "Example axiom",
           "parent": "Example value",
-          "body": "An example axiom states a truth we hold."
+          "body": "An example axiom states a truth we hold.",
+          "analect": {
+            "passage": "Analects XV.XL",
+            "text": "In language it is simply required that it convey the meaning.",
+            "url": "https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/XV"
+          }
         }
       ]
     }

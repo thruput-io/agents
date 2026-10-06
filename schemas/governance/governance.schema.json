@@ -35,7 +35,12 @@
         {
           "id": "Example axiom",
           "parent": "Example value",
-          "body": "An example axiom states a truth we hold."
+          "body": "An example axiom states a truth we hold.",
+          "analect": {
+            "passage": "Analects XV.XL",
+            "text": "In language it is simply required that it convey the meaning.",
+            "url": "https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/XV"
+          }
         }
       ]
     }
