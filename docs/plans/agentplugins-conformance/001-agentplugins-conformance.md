@@ -94,6 +94,7 @@ Not yet written. It follows the goals once they are agreed.
 
 | Assumption or risk | How it was tested | Result | If it turns out false |
 |---|---|---|---|
+| Risk: `audit` passes without scanning for vulnerabilities when `osv-scanner` is absent | [`tracer-bullets/targets-claude-gemini-copilot/`](tracer-bullets/targets-claude-gemini-copilot/RESULT.md) | Confirmed: "Returning empty result", verdict PASS | Accepted in [D15](#discussions) |
 | Risk: 0.6.1 ignores `lint --max-warnings 0`, so lint warnings pass the check until a release honours the flag | [`tracer-bullets/lint-max-warnings/`](tracer-bullets/lint-max-warnings/RESULT.md) | Confirmed: exit 0 with one warning | Accepted in [D12](#discussions) |
 | Risk: once a release honours the flag, the undocumented "no hooks" warning fails the check for the targets of [D8](#discussions) | Same tracer bullet: the warning is raised whenever `targets` is set and no hooks are | Confirmed for 0.6.1 | The check fails on that upgrade and the targets decision is reopened |
 
@@ -137,6 +138,9 @@ Not yet written. It follows the goals once they are agreed.
 | D10 | The build and the pull request check run `agentplugins lint --max-warnings 0` as a step of its own | "Does the pull request check run `lint --max-warnings 0`, and how is the undocumented \"no hooks\" warning treated?", put in conversation after the human asked "they had a linter as well?" | "'-max-warnings 0' and a lint target" | human; the reading of "a lint target" is confirmed in [D11](#discussions) | Rule Strict presets. The tracer bullet `lint-max-warnings` shows 0.6.1 does not fail on a warning with this flag | 2026-10-07 |
 | D11 | The AgentPlugins lint is introduced the way the repository's other linters are: a pinned `npx --yes @agentplugins/cli@0.6.1 lint --max-warnings 0` line in `scripts/verify.sh` and its own `run:` step in `.github/workflows/pr-check.yml`. This confirms the reading of "a lint target" in D10 | "Confirm or correct my reading of \"a lint target\"", among the next steps after the agent stopped on `--max-warnings` | "yes linting should be introduced same way our other linters work¨" | human | Rule Consistent with the codebase; `@sourcemeta/jsonschema` lint is wired exactly this way | 2026-10-07 |
 | D12 | Rule Strict presets is met by wiring `lint --max-warnings 0` as documented and recording that 0.6.1 does not honour the flag | "Which do you choose?", between "1. Wire it like the other linters and record the gap", "2. Fail on the JSON count" and "3. Remove the warning's source" | "1" | human | Rules out a script over the undocumented JSON shape, and keeps the targets of D8 | 2026-10-07 |
+| D13 | `agentplugins.config.json` is renamed to `agentplugins.json`, and `scripts/verify.sh` and the PR check point at the new name | "The docs name the manifest agentplugins.config.ts or agentplugins.json. Rename agentplugins.config.json?" | "Rename to agentplugins.json (Recommended)" | human | The documented JSON name; the lint tracer bullet showed lint loads it | 2026-10-07 |
+| D14 | pr-review and dad-joke are declared in the manifest's `skills` with `filePath` | "How are the two skills, pr-review and dad-joke, found by the framework?" | "Declare with filePath" | human | Passes the schema `audit` checks. The docs name the field `path` | 2026-10-07 |
+| D15 | `audit` stays in the build and the PR check; its skipped vulnerability scan is a recorded gap | "audit is undocumented, but the pull request check runs it. Does it stay?" | "Keep audit (Recommended)" | human | The only command shown to validate the manifest against the published schema, which ADR 0005 favours | 2026-10-07 |
 
 ## Open questions
 
@@ -147,16 +151,14 @@ Not yet written. It follows the goals once they are agreed.
 - [x] The documentation's agent examples use abstract tool names. Which names does the probe declare? … — closed by the human: no plugin agent, [D9](#discussions)
 - [x] The documentation names an installed agent `thruput:probe`. Is that the name pr-review dispatches? … — closed by the human: no plugin agent, [D9](#discussions)
 - [x] The documentation installs agents only through `build` output. How does a user of the plugin get the … — closed by the human: no plugin agent, [D9](#discussions)
-- [ ] Are the skills declared in the manifest, and with the documented `path` or the schema's `filePath`, or left
-  to the `skills/` scan that `add` performs?
+- [x] Are the skills declared in the manifest, and with the documented `path` or the schema's `filePath`, or left … — closed by the human: declared with `filePath`, [D14](#discussions)
 - [x] Is the duplicate `.claude/agents/probe.md` deleted once the manifest declares the agent? … — closed by the human: no plugin agent, [D9](#discussions)
 - [ ] Does the documentation cover a skill reaching files outside its directory, as pr-review does through
   its `rules` and `schemas` links?
-- [ ] The documentation names the manifest `agentplugins.config.ts` or `agentplugins.json`. Is
-  `agentplugins.config.json` renamed to `agentplugins.json`?
+- [x] The documentation names the manifest `agentplugins.config.ts` or `agentplugins.json`. Is … — closed by the human: renamed to `agentplugins.json`, [D13](#discussions)
 - [x] Does the pull request check run `lint --max-warnings 0`? — closed by the human: yes, as its own step, [D10](#discussions)
 - [x] 0.6.1 does not fail `lint --max-warnings 0` on a warning. How is Strict presets met? — closed by the human: wire the documented flag and record the gap, [D12](#discussions)
-- [ ] `audit` is not documented, yet the pull request check runs it. Does it stay?
+- [x] `audit` is not documented, yet the pull request check runs it. Does it stay? … — closed by the human: it stays, [D15](#discussions)
 - [ ] How does pr-review ask for the cheapest model for each probe now that no agent file pins it?
 - [ ] `PLANNING.md` cites `WORKFLOW.md#risk-assumptions-in-plan`, which does not exist, and the template
   places tracer bullets under `{test-context}/exploratory/` while `PLANNING.md` places them under the plan's
