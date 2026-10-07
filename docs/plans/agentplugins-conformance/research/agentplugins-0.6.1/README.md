@@ -41,3 +41,19 @@ release, which this repository pins in `scripts/verify.sh`.
 
 The scripts that produced the observations were deleted before planning began, on the human's instruction, because they
 did not meet the tracer-bullet rules. Any observation the plan relies on is re-run as a tracer bullet under this plan.
+
+## What the documentation says about the tracer bullet's warnings
+
+| Topic | What the documentation says | Source |
+|---|---|---|
+| Lint exit status | Exit `0` means "All rules passed (warnings allowed)". To fail on warnings, `lint` takes `--max-warnings <n>`. No `--strict` flag is documented for `lint` or `build`. | [linting.md § Exit codes](https://github.com/sigilco/agentplugins/blob/main/docs/guide/linting.md#exit-codes), [commands.md § lint](https://github.com/sigilco/agentplugins/blob/main/docs/reference/commands.md#lint) |
+| `target-hygiene` | Checks that every target is recognised, and warns on duplicates or an empty list. A warning about targets without hooks is not documented. | [linting.md § target-hygiene](https://github.com/sigilco/agentplugins/blob/main/docs/guide/linting.md#target-hygiene) |
+| Warnings in CI | "Fail the build on any error. Treat `hook-coverage` warnings as informational unless the hook is critical to your plugin's behavior." | [linting.md § CI integration](https://github.com/sigilco/agentplugins/blob/main/docs/guide/linting.md#ci-integration) |
+| `audit` | Not documented. The command reference has no `audit` section, and no page mentions OSV. | [commands.md](https://github.com/sigilco/agentplugins/blob/main/docs/reference/commands.md) |
+| Manifest file name | `agentplugins.config.ts`, or static JSON as `agentplugins.json`. The name this repository uses, `agentplugins.config.json`, is not documented. | [manifest.md](https://github.com/sigilco/agentplugins/blob/main/docs/guide/manifest.md) |
+| Declared skill field | A declared skill takes `path` to its `SKILL.md`, or `content` inline. The published JSON schema names the field `filePath` instead. | [skills.md § Declaring skills in a manifest](https://github.com/sigilco/agentplugins/blob/main/docs/guide/skills.md#declaring-skills-in-a-manifest) |
+| How `add` finds skills | In order: a manifest `skills` array, a root `SKILL.md`, a `skills/` directory of nested `SKILL.md` files. | [skills.md § How agentplugins add reads skills](https://github.com/sigilco/agentplugins/blob/main/docs/guide/skills.md#how-agentplugins-add-reads-skills) |
+| How skills are installed | The plugin lives whole in the universal store, and is symlinked into each detected harness's skill path. | [skills.md § Symlink behavior](https://github.com/sigilco/agentplugins/blob/main/docs/guide/skills.md#symlink-behavior) |
+| Role of `build` | "Inspect `dist/` to see exactly what each adapter emitted." Testing and publishing go through `add`, not through `dist/`. | [creating-plugins.md § 5. Build to § 7. Publish](https://github.com/sigilco/agentplugins/blob/main/docs/guide/creating-plugins.md#_5-build) |
+| Publishing | Push to a public GitHub repository; users install with `agentplugins add user/repo`, and pin with `@<version>` from semver tags. | [creating-plugins.md § 7. Publish](https://github.com/sigilco/agentplugins/blob/main/docs/guide/creating-plugins.md#_7-publish) |
+| Local testing | `agentplugins add ./my-plugin`. 0.6.1 refuses that with "Refusing to clone from non-GitHub source". | [creating-plugins.md § 6. Test locally](https://github.com/sigilco/agentplugins/blob/main/docs/guide/creating-plugins.md#_6-test-locally) |
