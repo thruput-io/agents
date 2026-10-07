@@ -103,6 +103,7 @@ Not yet written. It follows the goals once they are agreed.
 
 | Question | Test | Outcome |
 |---|---|---|
+| Does 0.6.1 accept `targets` claude, gemini, copilot with the probe agent and pr-review skill, and what does `build` emit? | [`tracer-bullets/targets-claude-gemini-copilot/`](tracer-bullets/targets-claude-gemini-copilot/RESULT.md) | Accepted by lint, validate, audit and build. Only claude gets the agent. Gemini gets no skill. Unexpected warnings, see the result |
 
 ### Research
 
@@ -128,13 +129,13 @@ Not yet written. It follows the goals once they are agreed.
 | D5 | The plan is named `agentplugins-conformance` and covers the whole plugin, with pr-review as its main part | "Problem statement: \"The pr-review skill is not packaged the way the AgentPlugins documentation prescribes.\" Which plan name?" | "agentplugins-conformance" | human | The option described the scope as the whole repository's plugin | 2026-10-07 |
 | D6 | The handbook's `PLANNING.md` governs how this plan is run, although it is obsolete elsewhere | "Do you agree that `rules/Rules.yaml` governs the plan's content and the handbook's PLANNING.md governs the process?" and, after the agent stopped because PLANNING.md is obsolete, "Which do you want?" | "planning.md is obselete" and then "but we will use it here" | human | Keeps the planning skill's process; it rules out stopping for a replacement process | 2026-10-07 |
 | D7 | This repository's `rules/Rules.yaml` governs the plan's content, not the handbook's `RULES.md` | "Do you agree that `rules/Rules.yaml` governs the plan's content?" | "yes it will be reitered" | human | ADR 0001 moved the rules here, and pr-review reviews the resulting change against them | 2026-10-07 |
+| D8 | The plugin targets Claude Code and Gemini CLI, and GitHub Copilot if possible | "What would you like to clarify about the targets question? It could be what declaring a target commits the plugin to, the per-harness table, or my recommendation." | "claude, gemini and if possible copilot" | human | "If possible" for Copilot is settled by the tracer bullet `targets-claude-gemini-copilot` | 2026-10-07 |
 
 ## Open questions
 
 - [x] Which process governs this plan? — closed by the human: `PLANNING.md`, [D6](#discussions)
 - [x] Which rules govern the plan's content? — closed by the human: `rules/Rules.yaml`, [D7](#discussions)
-- [ ] Which harnesses does the plugin declare in `targets`? The documentation supports Claude Code, Codex,
-  OpenCode and Pi Mono, and tracks Gemini.
+- [x] Which harnesses does the plugin declare in `targets`? — closed by the human: claude, gemini, and copilot if possible, [D8](#discussions)
 - [ ] The documentation contradicts itself on `agents[].model`: the capability matrix says Claude emits it,
   the schema `audit` checks rejects it. How is the probe's cheapest-model requirement expressed?
 - [ ] The documentation's agent examples use abstract tool names. Which names does the probe declare?
