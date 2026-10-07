@@ -94,6 +94,8 @@ Not yet written. It follows the goals once they are agreed.
 
 | Assumption or risk | How it was tested | Result | If it turns out false |
 |---|---|---|---|
+| Risk: 0.6.1 ignores `lint --max-warnings 0`, so lint warnings pass the check until a release honours the flag | [`tracer-bullets/lint-max-warnings/`](tracer-bullets/lint-max-warnings/RESULT.md) | Confirmed: exit 0 with one warning | Accepted in [D12](#discussions) |
+| Risk: once a release honours the flag, the undocumented "no hooks" warning fails the check for the targets of [D8](#discussions) | Same tracer bullet: the warning is raised whenever `targets` is set and no hooks are | Confirmed for 0.6.1 | The check fails on that upgrade and the targets decision is reopened |
 
 **Preconditions.** Not yet established.
 
@@ -134,6 +136,7 @@ Not yet written. It follows the goals once they are agreed.
 | D9 | The probe is folded into the pr-review skill: pr-review dispatches an ordinary subagent with its fixed message, and `agents/probe.md` and `.claude/agents/probe.md` are deleted | "Which do you choose?", between "1. Fold the probe into the skill" and "2. Declare the probe in the manifest's agents list, and have pr-review dispatch it as `thruput:probe`" | "1" | human | `add`, the documented install route, delivers skills to every target and agents to none. The cost is the agent file's model pin, tool list and CLAUDE.md opt-out | 2026-10-07 |
 | D10 | The build and the pull request check run `agentplugins lint --max-warnings 0` as a step of its own | "Does the pull request check run `lint --max-warnings 0`, and how is the undocumented \"no hooks\" warning treated?", put in conversation after the human asked "they had a linter as well?" | "'-max-warnings 0' and a lint target" | human; the reading of "a lint target" is confirmed in [D11](#discussions) | Rule Strict presets. The tracer bullet `lint-max-warnings` shows 0.6.1 does not fail on a warning with this flag | 2026-10-07 |
 | D11 | The AgentPlugins lint is introduced the way the repository's other linters are: a pinned `npx --yes @agentplugins/cli@0.6.1 lint --max-warnings 0` line in `scripts/verify.sh` and its own `run:` step in `.github/workflows/pr-check.yml`. This confirms the reading of "a lint target" in D10 | "Confirm or correct my reading of \"a lint target\"", among the next steps after the agent stopped on `--max-warnings` | "yes linting should be introduced same way our other linters work¨" | human | Rule Consistent with the codebase; `@sourcemeta/jsonschema` lint is wired exactly this way | 2026-10-07 |
+| D12 | Rule Strict presets is met by wiring `lint --max-warnings 0` as documented and recording that 0.6.1 does not honour the flag | "Which do you choose?", between "1. Wire it like the other linters and record the gap", "2. Fail on the JSON count" and "3. Remove the warning's source" | "1" | human | Rules out a script over the undocumented JSON shape, and keeps the targets of D8 | 2026-10-07 |
 
 ## Open questions
 
@@ -152,7 +155,7 @@ Not yet written. It follows the goals once they are agreed.
 - [ ] The documentation names the manifest `agentplugins.config.ts` or `agentplugins.json`. Is
   `agentplugins.config.json` renamed to `agentplugins.json`?
 - [x] Does the pull request check run `lint --max-warnings 0`? — closed by the human: yes, as its own step, [D10](#discussions)
-- [ ] 0.6.1 does not fail `lint --max-warnings 0` on a warning, contrary to the documentation. How is Strict presets met?
+- [x] 0.6.1 does not fail `lint --max-warnings 0` on a warning. How is Strict presets met? — closed by the human: wire the documented flag and record the gap, [D12](#discussions)
 - [ ] `audit` is not documented, yet the pull request check runs it. Does it stay?
 - [ ] How does pr-review ask for the cheapest model for each probe now that no agent file pins it?
 - [ ] `PLANNING.md` cites `WORKFLOW.md#risk-assumptions-in-plan`, which does not exist, and the template
