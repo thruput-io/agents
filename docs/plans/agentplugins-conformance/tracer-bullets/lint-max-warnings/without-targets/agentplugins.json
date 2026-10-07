@@ -1,0 +1,7 @@
+{
+  "$schema": "https://raw.githubusercontent.com/sigilco/agentplugins/main/spec/v1/manifest.schema.json",
+  "name": "thruput",
+  "version": "0.0.0",
+  "description": "Fixture of the thruput plugin for the lint tracer bullet",
+  "license": "Apache-2.0"
+}

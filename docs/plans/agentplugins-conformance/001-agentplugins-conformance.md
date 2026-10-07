@@ -104,6 +104,7 @@ Not yet written. It follows the goals once they are agreed.
 | Question | Test | Outcome |
 |---|---|---|
 | Does 0.6.1 accept `targets` claude, gemini, copilot with the probe agent and pr-review skill, and what does `build` emit? | [`tracer-bullets/targets-claude-gemini-copilot/`](tracer-bullets/targets-claude-gemini-copilot/RESULT.md) | Accepted by lint, validate, audit and build. Only claude gets the agent. Gemini gets no skill. Unexpected warnings, see the result |
+| Does `lint --max-warnings 0` fail on the "no hooks" warning? | [`tracer-bullets/lint-max-warnings/`](tracer-bullets/lint-max-warnings/RESULT.md) | Disproved: exit 0 with one warning. `lint --help` lists no `--max-warnings` |
 
 ### Research
 
@@ -131,6 +132,7 @@ Not yet written. It follows the goals once they are agreed.
 | D7 | This repository's `rules/Rules.yaml` governs the plan's content, not the handbook's `RULES.md` | "Do you agree that `rules/Rules.yaml` governs the plan's content?" | "yes it will be reitered" | human | ADR 0001 moved the rules here, and pr-review reviews the resulting change against them | 2026-10-07 |
 | D8 | The plugin targets Claude Code and Gemini CLI, and GitHub Copilot if possible | "What would you like to clarify about the targets question? It could be what declaring a target commits the plugin to, the per-harness table, or my recommendation." | "claude, gemini and if possible copilot" | human | "If possible" for Copilot is settled by the tracer bullet `targets-claude-gemini-copilot` | 2026-10-07 |
 | D9 | The probe is folded into the pr-review skill: pr-review dispatches an ordinary subagent with its fixed message, and `agents/probe.md` and `.claude/agents/probe.md` are deleted | "Which do you choose?", between "1. Fold the probe into the skill" and "2. Declare the probe in the manifest's agents list, and have pr-review dispatch it as `thruput:probe`" | "1" | human | `add`, the documented install route, delivers skills to every target and agents to none. The cost is the agent file's model pin, tool list and CLAUDE.md opt-out | 2026-10-07 |
+| D10 | The build and the pull request check run `agentplugins lint --max-warnings 0` as a step of its own | "Does the pull request check run `lint --max-warnings 0`, and how is the undocumented \"no hooks\" warning treated?", put in conversation after the human asked "they had a linter as well?" | "'-max-warnings 0' and a lint target" | human; the agent reads "a lint target" as a lint step of its own, not yet confirmed | Rule Strict presets. The tracer bullet `lint-max-warnings` shows 0.6.1 does not fail on a warning with this flag | 2026-10-07 |
 
 ## Open questions
 
@@ -148,8 +150,8 @@ Not yet written. It follows the goals once they are agreed.
   its `rules` and `schemas` links?
 - [ ] The documentation names the manifest `agentplugins.config.ts` or `agentplugins.json`. Is
   `agentplugins.config.json` renamed to `agentplugins.json`?
-- [ ] The documentation lets `lint` pass with warnings and offers `--max-warnings <n>`. Does the pull request
-  check run `lint --max-warnings 0`, and how is the undocumented "no hooks" warning treated?
+- [x] Does the pull request check run `lint --max-warnings 0`? — closed by the human: yes, as its own step, [D10](#discussions)
+- [ ] 0.6.1 does not fail `lint --max-warnings 0` on a warning, contrary to the documentation. How is Strict presets met?
 - [ ] `audit` is not documented, yet the pull request check runs it. Does it stay?
 - [ ] How does pr-review ask for the cheapest model for each probe now that no agent file pins it?
 - [ ] `PLANNING.md` cites `WORKFLOW.md#risk-assumptions-in-plan`, which does not exist, and the template
