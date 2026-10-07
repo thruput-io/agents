@@ -128,11 +128,13 @@ Not yet written. It follows the goals once they are agreed.
 | D3 | The two untracked experiment scripts are deleted before planning | "Do you agree to deleting the two scripts, and to that plan name?" | "scripts/agentplugins-preview.sh & scripts/agentplugins-add-trial.sh you shoud delete" | human | They broke the tracer-bullet rules and dirtied the tree | 2026-10-07 |
 | D4 | The documentation is the authority; the plan conforms to it rather than measuring the framework against other needs | "Do you accept this problem statement and name, or do you want to reword either?" | "Stop fighting the framework" | human | The problem statement became "The pr-review skill is not packaged the way the AgentPlugins documentation prescribes." | 2026-10-07 |
 | D5 | The plan is named `agentplugins-conformance` and covers the whole plugin, with pr-review as its main part | "Problem statement: \"The pr-review skill is not packaged the way the AgentPlugins documentation prescribes.\" Which plan name?" | "agentplugins-conformance" | human | The option described the scope as the whole repository's plugin | 2026-10-07 |
+| D6 | The handbook's `PLANNING.md` governs how this plan is run, although it is obsolete elsewhere | "Do you agree that `rules/Rules.yaml` governs the plan's content and the handbook's PLANNING.md governs the process?" and, after the agent stopped because PLANNING.md is obsolete, "Which do you want?" | "planning.md is obselete" and then "but we will use it here" | human | Keeps the planning skill's process; it rules out stopping for a replacement process | 2026-10-07 |
 
 ## Open questions
 
-- [ ] ADR 0001 says this repository's rules replace the handbook's `RULES.md`, yet `PLANNING.md` and the
-  global agent instructions still point at the handbook's `RULES.md`. Which governs this plan?
+- [x] Which process governs this plan? — closed by the human: `PLANNING.md`, [D6](#discussions)
+- [ ] ADR 0001 says this repository's rules replace the handbook's `RULES.md`. Which governs the plan's
+  content, `rules/Rules.yaml` or the handbook's `RULES.md`?
 - [ ] Which harnesses does the plugin declare in `targets`? The documentation supports Claude Code, Codex,
   OpenCode and Pi Mono, and tracks Gemini.
 - [ ] The documentation contradicts itself on `agents[].model`: the capability matrix says Claude emits it,
