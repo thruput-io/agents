@@ -10,4 +10,6 @@ Run from this folder:
 
     docker build -t agentplugins-lint . && docker run --rm agentplugins-lint
 
+It also records what `lint --json` prints for each fixture.
+
 The result is recorded in `RESULT.md`.
