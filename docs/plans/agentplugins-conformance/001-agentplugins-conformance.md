@@ -142,10 +142,16 @@ Not yet written. It follows the goals once they are agreed.
 - [ ] The documentation names an installed agent `thruput:probe`. Is that the name pr-review dispatches?
 - [ ] The documentation installs agents only through `build` output. How does a user of the plugin get the
   probe, and does `README.md` say so?
-- [ ] Are the skills declared in the manifest with `filePath`, or left to the `skills/` scan `add` performs?
+- [ ] Are the skills declared in the manifest, and with the documented `path` or the schema's `filePath`, or left
+  to the `skills/` scan that `add` performs?
 - [ ] Is the duplicate `.claude/agents/probe.md` deleted once the manifest declares the agent?
 - [ ] Does the documentation cover a skill reaching files outside its directory, as pr-review does through
   its `rules` and `schemas` links?
+- [ ] The documentation names the manifest `agentplugins.config.ts` or `agentplugins.json`. Is
+  `agentplugins.config.json` renamed to `agentplugins.json`?
+- [ ] The documentation lets `lint` pass with warnings and offers `--max-warnings <n>`. Does the pull request
+  check run `lint --max-warnings 0`, and how is the undocumented "no hooks" warning treated?
+- [ ] `audit` is not documented, yet the pull request check runs it. Does it stay?
 - [ ] `PLANNING.md` cites `WORKFLOW.md#risk-assumptions-in-plan`, which does not exist, and the template
   places tracer bullets under `{test-context}/exploratory/` while `PLANNING.md` places them under the plan's
   `tracer-bullets/`. This plan follows `PLANNING.md`. Is that right?
