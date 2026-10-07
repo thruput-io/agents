@@ -15,12 +15,10 @@
 Read this section first, and in full, before touching any code.
 
 **Read before starting.**
-[`RULES.md`](https://github.com/thruput-io/handbook/blob/main/RULES.md),
-[`PHILOSOPHY.md`](https://github.com/thruput-io/handbook/blob/main/PHILOSOPHY.md),
-[`WORKFLOW.md`](https://github.com/thruput-io/handbook/blob/main/WORKFLOW.md), and this plan end
-to end. They outrank this plan; raise any conflict with the human instead of resolving it
-yourself. Whether this repository's `rules/Rules.yaml` replaces the handbook's `RULES.md` here is an
-[open question](#open-questions).
+This repository's rules, [`rules/Rules.yaml`](../../../rules/Rules.yaml), with the principles and definitions they
+rest on, published at <https://thruput.se/agents/>, and this plan end to end. The rules outrank this plan; raise any
+conflict with the human instead of resolving it yourself. The handbook's `RULES.md` does not apply, see
+[D7](#discussions).
 
 **Scope.** Implement exactly the milestones in [Execution Plan](#execution-plan), in order.
 Anything not in this plan is out of scope — stop and ask rather than extending it.
@@ -129,12 +127,12 @@ Not yet written. It follows the goals once they are agreed.
 | D4 | The documentation is the authority; the plan conforms to it rather than measuring the framework against other needs | "Do you accept this problem statement and name, or do you want to reword either?" | "Stop fighting the framework" | human | The problem statement became "The pr-review skill is not packaged the way the AgentPlugins documentation prescribes." | 2026-10-07 |
 | D5 | The plan is named `agentplugins-conformance` and covers the whole plugin, with pr-review as its main part | "Problem statement: \"The pr-review skill is not packaged the way the AgentPlugins documentation prescribes.\" Which plan name?" | "agentplugins-conformance" | human | The option described the scope as the whole repository's plugin | 2026-10-07 |
 | D6 | The handbook's `PLANNING.md` governs how this plan is run, although it is obsolete elsewhere | "Do you agree that `rules/Rules.yaml` governs the plan's content and the handbook's PLANNING.md governs the process?" and, after the agent stopped because PLANNING.md is obsolete, "Which do you want?" | "planning.md is obselete" and then "but we will use it here" | human | Keeps the planning skill's process; it rules out stopping for a replacement process | 2026-10-07 |
+| D7 | This repository's `rules/Rules.yaml` governs the plan's content, not the handbook's `RULES.md` | "Do you agree that `rules/Rules.yaml` governs the plan's content?" | "yes it will be reitered" | human | ADR 0001 moved the rules here, and pr-review reviews the resulting change against them | 2026-10-07 |
 
 ## Open questions
 
 - [x] Which process governs this plan? — closed by the human: `PLANNING.md`, [D6](#discussions)
-- [ ] ADR 0001 says this repository's rules replace the handbook's `RULES.md`. Which governs the plan's
-  content, `rules/Rules.yaml` or the handbook's `RULES.md`?
+- [x] Which rules govern the plan's content? — closed by the human: `rules/Rules.yaml`, [D7](#discussions)
 - [ ] Which harnesses does the plugin declare in `targets`? The documentation supports Claude Code, Codex,
   OpenCode and Pi Mono, and tracks Gemini.
 - [ ] The documentation contradicts itself on `agents[].model`: the capability matrix says Claude emits it,
