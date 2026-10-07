@@ -69,8 +69,8 @@ Draft, not yet agreed with the human.
 
 1. Every component the plugin provides is declared in its manifest the way the AgentPlugins
    documentation prescribes.
-2. The pr-review skill reaches its probe agent under the name the AgentPlugins documentation
-   gives an installed agent.
+2. The pr-review skill runs its probes with nothing but what the documented install route,
+   `agentplugins add`, delivers.
 3. The pull request check proves the manifest conforms, by running the framework's own checks
    for every harness the plugin declares.
 
@@ -130,21 +130,20 @@ Not yet written. It follows the goals once they are agreed.
 | D6 | The handbook's `PLANNING.md` governs how this plan is run, although it is obsolete elsewhere | "Do you agree that `rules/Rules.yaml` governs the plan's content and the handbook's PLANNING.md governs the process?" and, after the agent stopped because PLANNING.md is obsolete, "Which do you want?" | "planning.md is obselete" and then "but we will use it here" | human | Keeps the planning skill's process; it rules out stopping for a replacement process | 2026-10-07 |
 | D7 | This repository's `rules/Rules.yaml` governs the plan's content, not the handbook's `RULES.md` | "Do you agree that `rules/Rules.yaml` governs the plan's content?" | "yes it will be reitered" | human | ADR 0001 moved the rules here, and pr-review reviews the resulting change against them | 2026-10-07 |
 | D8 | The plugin targets Claude Code and Gemini CLI, and GitHub Copilot if possible | "What would you like to clarify about the targets question? It could be what declaring a target commits the plugin to, the per-harness table, or my recommendation." | "claude, gemini and if possible copilot" | human | "If possible" for Copilot is settled by the tracer bullet `targets-claude-gemini-copilot` | 2026-10-07 |
+| D9 | The probe is folded into the pr-review skill: pr-review dispatches an ordinary subagent with its fixed message, and `agents/probe.md` and `.claude/agents/probe.md` are deleted | "Which do you choose?", between "1. Fold the probe into the skill" and "2. Declare the probe in the manifest's agents list, and have pr-review dispatch it as `thruput:probe`" | "1" | human | `add`, the documented install route, delivers skills to every target and agents to none. The cost is the agent file's model pin, tool list and CLAUDE.md opt-out | 2026-10-07 |
 
 ## Open questions
 
 - [x] Which process governs this plan? — closed by the human: `PLANNING.md`, [D6](#discussions)
 - [x] Which rules govern the plan's content? — closed by the human: `rules/Rules.yaml`, [D7](#discussions)
 - [x] Which harnesses does the plugin declare in `targets`? — closed by the human: claude, gemini, and copilot if possible, [D8](#discussions)
-- [ ] The documentation contradicts itself on `agents[].model`: the capability matrix says Claude emits it,
-  the schema `audit` checks rejects it. How is the probe's cheapest-model requirement expressed?
-- [ ] The documentation's agent examples use abstract tool names. Which names does the probe declare?
-- [ ] The documentation names an installed agent `thruput:probe`. Is that the name pr-review dispatches?
-- [ ] The documentation installs agents only through `build` output. How does a user of the plugin get the
-  probe, and does `README.md` say so?
+- [x] The documentation contradicts itself on `agents[].model`: the capability matrix says Claude emits it, … — closed by the human: no plugin agent, [D9](#discussions)
+- [x] The documentation's agent examples use abstract tool names. Which names does the probe declare? … — closed by the human: no plugin agent, [D9](#discussions)
+- [x] The documentation names an installed agent `thruput:probe`. Is that the name pr-review dispatches? … — closed by the human: no plugin agent, [D9](#discussions)
+- [x] The documentation installs agents only through `build` output. How does a user of the plugin get the … — closed by the human: no plugin agent, [D9](#discussions)
 - [ ] Are the skills declared in the manifest, and with the documented `path` or the schema's `filePath`, or left
   to the `skills/` scan that `add` performs?
-- [ ] Is the duplicate `.claude/agents/probe.md` deleted once the manifest declares the agent?
+- [x] Is the duplicate `.claude/agents/probe.md` deleted once the manifest declares the agent? … — closed by the human: no plugin agent, [D9](#discussions)
 - [ ] Does the documentation cover a skill reaching files outside its directory, as pr-review does through
   its `rules` and `schemas` links?
 - [ ] The documentation names the manifest `agentplugins.config.ts` or `agentplugins.json`. Is
@@ -152,6 +151,7 @@ Not yet written. It follows the goals once they are agreed.
 - [ ] The documentation lets `lint` pass with warnings and offers `--max-warnings <n>`. Does the pull request
   check run `lint --max-warnings 0`, and how is the undocumented "no hooks" warning treated?
 - [ ] `audit` is not documented, yet the pull request check runs it. Does it stay?
+- [ ] How does pr-review ask for the cheapest model for each probe now that no agent file pins it?
 - [ ] `PLANNING.md` cites `WORKFLOW.md#risk-assumptions-in-plan`, which does not exist, and the template
   places tracer bullets under `{test-context}/exploratory/` while `PLANNING.md` places them under the plan's
   `tracer-bullets/`. This plan follows `PLANNING.md`. Is that right?
