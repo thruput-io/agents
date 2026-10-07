@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/sigilco/agentplugins/main/spec/v1/manifest.schema.json",
+  "name": "thruput",
+  "version": "0.0.0",
+  "description": "Fixture of the thruput plugin for the targets tracer bullet",
+  "license": "Apache-2.0",
+  "targets": ["claude", "gemini", "copilot"],
+  "skills": [
+    { "name": "pr-review", "description": "Fixture of the pr-review skill", "filePath": "skills/pr-review/SKILL.md" }
+  ],
+  "agents": [
+    {
+      "name": "probe",
+      "description": "Fixture of the probe agent",
+      "prompt": "You are one probe of a pull request review. The message you receive names a file that is addressed to you. Read it and do what it says.",
+      "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "WebSearch", "WebFetch"]
+    }
+  ]
+}
