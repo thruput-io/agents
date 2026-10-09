@@ -82,9 +82,12 @@ In the human's words and priority order ([D25](#discussions), sharpened in [D43]
 5. Install via the apm command: a user installs pr-review with exactly one documented APM command,
    `apm install -g thruput-io/agents#<ref>`, after installing APM itself, and with no other step: no clone, no copy,
    no link, no per-harness command.
-6. Validated by APM's schemas: every APM file our solution commits validates against the schema APM publishes for
-   it, pinned to `manifest-v0.1.41`, in `./build.sh` and the pull request check, using the JSON Schema validator the
-   build already runs (`@sourcemeta/jsonschema`) ([D46](#discussions)).
+6. Validated by APM's schemas and built from APM's intended constructs: everything our solution ships lives in
+   `.apm/`, each piece in the primitive APM's
+   [Author primitives](https://microsoft.github.io/apm/producer/author-primitives/) page intends for it (skills with
+   `scripts/`, `references/` and `assets/`, prompts, instructions, agents, hooks), with no MCP servers. Every APM file
+   we commit validates against the schema APM publishes for it, pinned to `manifest-v0.1.41`, in `./build.sh` and the
+   pull request check, using `@sourcemeta/jsonschema` ([D46](#discussions), [D47](#discussions)).
 
 The human's earlier fifth goal, "Manage default GEMINI.md and CLAUDE.md instructions", is moved to a plan of its own
 ([D26](#discussions)), see [Non-goals](#non-goals); goal 5 above is a different, later goal.
@@ -101,7 +104,7 @@ sigilco/agentplugins and no longer apply.
 | 3 | pr-review lands in `~/.claude/skills/pr-review/`, but its scripts cannot reach `rules/` and `schemas/`, so the review stops at preparation | A full review must finish and write `review.md` on Claude Code | pending |
 | 4 | pr-review lands in `~/.agents/skills/`, for which APM's source says "no documented Copilot CLI user-scope surface yet", and no review is run | A full review must finish and write `review.md` on Copilot's CLI | pending |
 | 5 | A README tells the user to install with APM, then clone the repository or link `rules/` by hand | Exactly one APM command, and no other step | pending |
-| 6 | `apm.yml` sets no `$schema` and is never validated, or is validated against a schema copied into this repository | The published schema, pinned to `manifest-v0.1.41`, validated in the build and the pull request check | pending |
+| 6 | `apm.yml` sets no `$schema` and is never validated, or is validated against a schema copied into this repository; or the skill keeps linking out to `rules/` and `schemas/` outside `.apm/`; or every primitive type gets a placeholder so that "all constructs" are used | The published schema, pinned, validated in the build and the pull request check; everything shipped lives in `.apm/`; a primitive is used only where content belongs in it | pending |
 
 ### Non-goals
 
@@ -212,6 +215,7 @@ in, and a small git repository other than this one cloned, see [M3](#milestone-m
 | D44 | Goals 2 to 4 each get a cheapest-passing row of their own instead of one shared row | "Which of these is it? 1. Split the shared row … 2. Three new goals, 5 to 7 … 3. Something else", after the human wrote "Add 3 new goals gemini, claude, copilot" | "1" | human | Each harness has its own install path and failure | 2026-10-09 |
 | D45 | Goals 1 to 4 carry their own definition, goal 5 is installation by one APM command, goal 6 is validation by APM's published schemas | "Do goals 1 to 6 stand as written?", after the human asked "Extend Goal so it is not ambigues", "Add goal number 5, it shold be installed via apm command for installing plz show it to me" and "Golas 6 is that our solution can be validated with these schemas" | "yes" | human | Closes the loopholes in the goal wording itself, per PLANNING.md | 2026-10-09 |
 | D46 | Goal 6 pins APM's manifest schema `manifest-v0.1.41` | "Goal 6: which version of APM's manifest schema does our apm.yml pin and validate against?" | "manifest-v0.1.41 (Recommended)" | human | What APM 0.33.0 uses; the docs call it an unratified amendment of a v0.3 working draft. The schemas are committed in microsoft/apm under `docs/public/specs/schemas/`, and the repository names microsoft.github.io/apm as its homepage | 2026-10-09 |
+| D47 | Goal 6 also requires that everything shipped lives in `.apm/`, each piece in the primitive APM intends for it, and no MCP servers. A primitive is used only where content belongs in it, not every primitive type | "Is it (a), with this wording, or (b)?", after the human wrote "6. needs to comlemented with that we use all intented constructs in" with APM's `.apm/` layout pasted, and "but no mcp" | "great push it" | human | Reading (b) would collide with D9, with agents not deployed to Gemini, with D26, and with rule Nothing beyond the Purpose | 2026-10-09 |
 
 ## Open questions
 
