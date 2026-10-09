@@ -72,7 +72,7 @@ Intent, in the human's words ([D25](#discussions)):
 
 In the human's words and priority order ([D25](#discussions)):
 
-1. Make our pr-review skill conform to sigilco/agentplugins.
+1. Make our pr-review skill conform to microsoft/apm.
 2. Support Gemini.
 3. Support Claude.
 4. Support Copilot.
@@ -192,6 +192,7 @@ in, and a small git repository other than this one cloned, see [M3](#milestone-m
 | D40 | The Agent Plugins specification at github.com/agentplugins is examined as a candidate | none, the human gave the direction unprompted during the search of D39 | "use https://github.com/agentplugins" | human | A specification, not a tool: skills and MCP only, Copilot reads it, Claude Code and Gemini CLI are not listed clients; see [maintained-alternatives](research/maintained-alternatives/README.md) | 2026-10-09 |
 | D41 | microsoft/apm replaces sigilco/agentplugins as the distribution framework. Supersedes D1, D4 and D10 to D15, withdraws D37, and reopens exploration | "Before I plan anything, I need one answer: is goal 1 now to conform to the **Agent Plugins spec** (github.com/agentplugins) instead of **sigilco/agentplugins**?" | "Use https://github.com/microsoft/apm" | human | APM passes Maintained (about 50 authors in 90 days, ten releases since 2026-07-12, MIT); see [apm-0.33.0](research/apm-0.33.0/README.md) | 2026-10-09 |
 | D42 | The plan is renamed `instruction-distribution`, after the human's intent 1, replacing the name of D5; the branch is `001-instruction-distribution` | "What should the plan be named, now that APM replaces sigilco/agentplugins?" | "instruction-distribution (Recommended)" | human | PLANNING.md: name the plan after the stable problem, not the solution; `agentplugins-conformance` named the dropped tool | 2026-10-09 |
+| D43 | Goal 1 reads "Make our pr-review skill conform to microsoft/apm", replacing sigilco/agentplugins in the human's goal of D25 | "My suggestion is \"Make our pr-review skill conform to microsoft/apm\". It keeps your wording and swaps only the tool. How would you like goal 1 to read?" | "yes" | human | Follows D41 | 2026-10-09 |
 
 ## Open questions
 
@@ -213,7 +214,8 @@ in, and a small git repository other than this one cloned, see [M3](#milestone-m
 - [x] Where do tracer bullets live? — closed by the human: under the plan's `tracer-bullets/`, [D23](#discussions)
 - [x] Can Gemini CLI and Copilot's CLI run pr-review? — closed by the human, Gemini's gaps recorded as risks, [D28](#discussions)
 - [x] How are goals 2 to 4 verified? — closed by the human: a recorded acceptance run, [D34](#discussions) to [D36](#discussions)
-- [ ] Goal 1 reads "Make our pr-review skill conform to sigilco/agentplugins". How is it worded now that APM replaces sigilco, [D41](#discussions)?
+- [x] Goal 1 reads "Make our pr-review skill conform to sigilco/agentplugins". How is it worded now that APM replaces sigilco? — closed by the human: "conform to microsoft/apm", [D43](#discussions)
+- [ ] The cheapest-passing rows for goals 1 to 4 rest on sigilco's `lint`, `validate`, `audit` and `agentplugins add`. What do "conform" and "support" mean under APM?
 - [ ] Installing the pr-review subpath fails on its `schemas` symlink. How is pr-review made installable: the whole repository as the package, or no links out of the skill? See [apm-0.33.0](research/apm-0.33.0/README.md)
 - [ ] APM puts Gemini and Copilot skills in `~/.agents/skills/`. Do Gemini CLI and Copilot's CLI load skills from there? Not proven; needs a tracer bullet
 - [ ] APM has no lint and no strict or max-warnings mode; `apm audit --ci` is its only CI check. What meets rule Strict presets for the package?
@@ -225,7 +227,7 @@ in, and a small git repository other than this one cloned, see [M3](#milestone-m
 
 | Goal | Delivered by |
 |---|---|
-| 1 Make our pr-review skill conform to sigilco/agentplugins | M1, M2 |
+| 1 Make our pr-review skill conform to microsoft/apm | M1, M2 |
 | 2 Support Gemini | M2, verified by M3 |
 | 3 Support Claude | M2, verified by M3 |
 | 4 Support Copilot | M2, verified by M3 |
