@@ -2,13 +2,13 @@
 
 |                |                                                                                         |
 |----------------|-----------------------------------------------------------------------------------------|
-| Plan           | `docs/plans/agentplugins-conformance/001-agentplugins-conformance.md`                   |
-| Branch         | `001-agentplugins-conformance`                                                          |
+| Plan           | `docs/plans/instruction-distribution/001-instruction-distribution.md`                   |
+| Branch         | `001-instruction-distribution`                                                          |
 | Started        | 2026-10-07                                                                              |
 | Supersedes     | —                                                                                       |
 | ADRs consulted | [0001](../../adrs/0001-separating-principles-rules-and-standards.md), [0002](../../adrs/0002-schema-validated-yaml-governance-documents.md), [0003](../../adrs/0003-axioms-above-principles.md), [0004](../../adrs/0004-schemas-and-taxonomy-published-to-the-web.md), [0005](../../adrs/0005-structure-is-described-in-json-schema.md), [0006](../../adrs/0006-diffs-are-described-in-a-schema-of-our-own.md) |
 | ADRs added     | —                                                                                       |
-| Status         | complete                                                                                |
+| Status         | planning: exploration reopened by D41                                                   |
 
 ## Implementing Agent Instructions
 
@@ -34,7 +34,7 @@ a milestone as done on inspection alone.
 
 Keep an append-only progress log for this attempt:
 
-- Open `docs/plans/agentplugins-conformance/progress/001-attempt-{n}-{YYYY-MM-DD}.md` before the
+- Open `docs/plans/instruction-distribution/progress/001-attempt-{n}-{YYYY-MM-DD}.md` before the
   first change, where `{n}` is one higher than the highest attempt already in `progress/`.
 - Append as you go: what you attempted, what the evidence showed, what you decided, what broke.
 - **MUST NOT** rewrite, condense, or delete an existing entry. Corrections are new entries.
@@ -186,6 +186,12 @@ in, and a small git repository other than this one cloned, see [M3](#milestone-m
 | D34 | Goals 2 to 4 are verified by a recorded acceptance run, one pr-review per CLI, each `review.md` committed with the progress log | "With automation moved to another plan, how does this plan verify goals 2 to 4, that a full pr-review runs on Claude, Gemini and Copilot after `agentplugins add`?" | "Recorded acceptance run (Recommended)" | human | Manual until the automation plan replaces it | 2026-10-07 |
 | D35 | The acceptance run is performed in an empty user account | "M3, the recorded acceptance run (see preview). Does it stand, including its three preconditions?" | "Test will be performed in an empty user account" | human | Removes the preconditions about this account's existing install and shared skills link | 2026-10-07 |
 | D36 | The acceptance run reviews a plain-git range of some other small repository, chosen at run time; this repository is only the install source | "Is github.com/thruput-io/agents the right GitHub home of this repository, the one users install the plugin from?", then "Which repository and range should each CLI review in the acceptance run?" | "Don't review this repo", then "yes we will make it with git on something else it doesnt matter" | human | A plain-git range posts nothing | 2026-10-07 |
+| D37 | Withdrawn by D41. Closing the gap of D12, that 0.6.1 does not fail `lint --max-warnings 0` on a warning, becomes milestone M0 ahead of M1 | none, the human gave the direction unprompted while the agent was starting M1 | "lint --max-warnings 0 doesn't actually fail on warnings (D12) should be m0" | human | Reopens D12; overtaken when D41 drops sigilco/agentplugins | 2026-10-09 |
+| D38 | The rules governing this plan and its implementation are the published set at https://thruput.se/agents, replacing D7 | "How do you want to settle *Maintained* against goal 1, and, depending on that, how should M0 close the `--max-warnings` gap?" | "Neew rules are at https://thruput.se/agents", then "Your rules are at https://thruput.se/agents then end" | human | The human also said "DO NOT COMARE ANY RULES" | 2026-10-09 |
+| D39 | sigilco/agentplugins fails rule Maintained, so a maintained framework doing the same job is searched for | "How do you want *Maintained* settled against goal 1, conformance with sigilco? And how should M0 close the `--max-warnings` gap?" | "plz research a frework that does same as sigilco/agentplugins but is maintained" | human | sigilco/agentplugins has one contributor, `espetro`, and no default-branch commit since 2026-07-02; see [maintained-alternatives](research/maintained-alternatives/README.md) | 2026-10-09 |
+| D40 | The Agent Plugins specification at github.com/agentplugins is examined as a candidate | none, the human gave the direction unprompted during the search of D39 | "use https://github.com/agentplugins" | human | A specification, not a tool: skills and MCP only, Copilot reads it, Claude Code and Gemini CLI are not listed clients; see [maintained-alternatives](research/maintained-alternatives/README.md) | 2026-10-09 |
+| D41 | microsoft/apm replaces sigilco/agentplugins as the distribution framework. Supersedes D1, D4 and D10 to D15, withdraws D37, and reopens exploration | "Before I plan anything, I need one answer: is goal 1 now to conform to the **Agent Plugins spec** (github.com/agentplugins) instead of **sigilco/agentplugins**?" | "Use https://github.com/microsoft/apm" | human | APM passes Maintained (about 50 authors in 90 days, ten releases since 2026-07-12, MIT); see [apm-0.33.0](research/apm-0.33.0/README.md) | 2026-10-09 |
+| D42 | The plan is renamed `instruction-distribution`, after the human's intent 1, replacing the name of D5; the branch is `001-instruction-distribution` | "What should the plan be named, now that APM replaces sigilco/agentplugins?" | "instruction-distribution (Recommended)" | human | PLANNING.md: name the plan after the stable problem, not the solution; `agentplugins-conformance` named the dropped tool | 2026-10-09 |
 
 ## Open questions
 
@@ -207,6 +213,11 @@ in, and a small git repository other than this one cloned, see [M3](#milestone-m
 - [x] Where do tracer bullets live? — closed by the human: under the plan's `tracer-bullets/`, [D23](#discussions)
 - [x] Can Gemini CLI and Copilot's CLI run pr-review? — closed by the human, Gemini's gaps recorded as risks, [D28](#discussions)
 - [x] How are goals 2 to 4 verified? — closed by the human: a recorded acceptance run, [D34](#discussions) to [D36](#discussions)
+- [ ] Goal 1 reads "Make our pr-review skill conform to sigilco/agentplugins". How is it worded now that APM replaces sigilco, [D41](#discussions)?
+- [ ] Installing the pr-review subpath fails on its `schemas` symlink. How is pr-review made installable: the whole repository as the package, or no links out of the skill? See [apm-0.33.0](research/apm-0.33.0/README.md)
+- [ ] APM puts Gemini and Copilot skills in `~/.agents/skills/`. Do Gemini CLI and Copilot's CLI load skills from there? Not proven; needs a tracer bullet
+- [ ] APM has no lint and no strict or max-warnings mode; `apm audit --ci` is its only CI check. What meets rule Strict presets for the package?
+- [ ] The Execution Plan, M1 to M3, was written for sigilco/agentplugins. It is redrafted only after exploration closes, per PLANNING.md
 
 ## Execution Plan
 
@@ -230,7 +241,7 @@ Delivers: goal 1, the part "the framework's own `lint`, `validate` and `audit` p
 
 Steps, test first:
 
-1. Open the progress log `docs/plans/agentplugins-conformance/progress/001-attempt-1-{date}.md`.
+1. Open the progress log `docs/plans/instruction-distribution/progress/001-attempt-1-{date}.md`.
 2. Add the checks first, so they fail: in `scripts/verify.sh`, beside the existing `audit` line, add
    `npx --yes @agentplugins/cli@0.6.1 lint --max-warnings 0 --config "$PROJECT_ROOT/agentplugins.json"` and
    `npx --yes @agentplugins/cli@0.6.1 validate --config "$PROJECT_ROOT/agentplugins.json"`. Add the same two
@@ -305,11 +316,11 @@ Preconditions, in an empty user account on this machine (D35):
 Steps:
 
 1. Push the branch carrying M1 and M2.
-2. `npx --yes @agentplugins/cli@0.6.1 add https://github.com/thruput-io/agents/tree/001-agentplugins-conformance`.
+2. `npx --yes @agentplugins/cli@0.6.1 add https://github.com/thruput-io/agents/tree/001-instruction-distribution`.
    Log the output, which must list Claude Code, Gemini CLI and GitHub Copilot CLI as linked.
 3. In each of Claude Code, Gemini CLI and Copilot's CLI, ask for a pr-review of `<that repository>@<base>..<head>`, each
    with its own work directory.
-4. Copy each run's `review.md` to `docs/plans/agentplugins-conformance/progress/review-{claude,gemini,copilot}.md`
+4. Copy each run's `review.md` to `docs/plans/instruction-distribution/progress/review-{claude,gemini,copilot}.md`
    in the working copy of the branch, and log each run's dispatched subagents and the model each used.
 
 Verification, "a full review on every harness": for each of the three CLIs, `review.mjs` finished without refusing a
