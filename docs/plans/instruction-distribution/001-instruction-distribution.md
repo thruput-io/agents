@@ -70,22 +70,38 @@ Intent, in the human's words ([D25](#discussions)):
 
 ### Goals
 
-In the human's words and priority order ([D25](#discussions)):
+In the human's words and priority order ([D25](#discussions), sharpened in [D43](#discussions) and [D45](#discussions)):
 
-1. Make our pr-review skill conform to microsoft/apm.
-2. Support Gemini.
-3. Support Claude.
-4. Support Copilot.
+1. Make our pr-review skill conform to microsoft/apm: `apm install thruput-io/agents#<ref>` delivers everything
+   pr-review needs (the skill, its scripts, `rules/` and `schemas/`), and `apm audit --ci` passes in `./build.sh`
+   and the pull request check.
+2. Support Gemini: after the install of goal 5, in a user account with no other setup, Gemini CLI finds pr-review,
+   and a full pr-review of a git range finishes and writes `review.md`, with no further step.
+3. Support Claude: the same, on Claude Code.
+4. Support Copilot: the same, on GitHub Copilot's CLI.
+5. Install via the apm command: a user installs pr-review with exactly one documented APM command,
+   `apm install -g thruput-io/agents#<ref>`, after installing APM itself, and with no other step: no clone, no copy,
+   no link, no per-harness command.
+6. Validated by APM's schemas: every APM file our solution commits validates against the schema APM publishes for
+   it, pinned to `manifest-v0.1.41`, in `./build.sh` and the pull request check, using the JSON Schema validator the
+   build already runs (`@sourcemeta/jsonschema`) ([D46](#discussions)).
 
-The human's fifth goal, "Manage default GEMINI.md and CLAUDE.md instructions", is moved to a plan of its own, see
-[Non-goals](#non-goals).
+The human's earlier fifth goal, "Manage default GEMINI.md and CLAUDE.md instructions", is moved to a plan of its own
+([D26](#discussions)), see [Non-goals](#non-goals); goal 5 above is a different, later goal.
 
 #### Cheapest passing interpretation
 
+One row per goal ([D44](#discussions)). Awaiting the human's acceptance; the rows of [D27](#discussions) rested on
+sigilco/agentplugins and no longer apply.
+
 | Goal | Cheapest way to "pass" while missing the point | How the goal excludes it | Accepted by |
 |---|---|---|---|
-| 1 | Add `agentplugins.json` declaring the skills, while pr-review still dispatches the undeclared `probe` agent | Conform means: the framework's own `lint`, `validate` and `audit` pass, and everything pr-review needs arrives through `agentplugins add` | [D27](#discussions) |
-| 2, 3, 4 | `add` places `pr-review` in the harness's skills directory, and no review is ever run there | Support means: after `agentplugins add thruput-io/agents`, a full pr-review runs on that harness with no further step | [D27](#discussions) |
+| 1 | Add `apm.yml`; `apm audit --ci` passes on its two trivial checks; pr-review breaks after install | Everything pr-review needs must arrive through the install | pending |
+| 2 | APM puts pr-review in `~/.agents/skills/`, which Gemini CLI never reads; or a probe hits Gemini's default limit of 15 turns or 5 minutes and the review is refused | Gemini CLI must find pr-review, and a full review must finish and write `review.md` | pending |
+| 3 | pr-review lands in `~/.claude/skills/pr-review/`, but its scripts cannot reach `rules/` and `schemas/`, so the review stops at preparation | A full review must finish and write `review.md` on Claude Code | pending |
+| 4 | pr-review lands in `~/.agents/skills/`, for which APM's source says "no documented Copilot CLI user-scope surface yet", and no review is run | A full review must finish and write `review.md` on Copilot's CLI | pending |
+| 5 | A README tells the user to install with APM, then clone the repository or link `rules/` by hand | Exactly one APM command, and no other step | pending |
+| 6 | `apm.yml` sets no `$schema` and is never validated, or is validated against a schema copied into this repository | The published schema, pinned to `manifest-v0.1.41`, validated in the build and the pull request check | pending |
 
 ### Non-goals
 
@@ -193,6 +209,9 @@ in, and a small git repository other than this one cloned, see [M3](#milestone-m
 | D41 | microsoft/apm replaces sigilco/agentplugins as the distribution framework. Supersedes D1, D4 and D10 to D15, withdraws D37, and reopens exploration | "Before I plan anything, I need one answer: is goal 1 now to conform to the **Agent Plugins spec** (github.com/agentplugins) instead of **sigilco/agentplugins**?" | "Use https://github.com/microsoft/apm" | human | APM passes Maintained (about 50 authors in 90 days, ten releases since 2026-07-12, MIT); see [apm-0.33.0](research/apm-0.33.0/README.md) | 2026-10-09 |
 | D42 | The plan is renamed `instruction-distribution`, after the human's intent 1, replacing the name of D5; the branch is `001-instruction-distribution` | "What should the plan be named, now that APM replaces sigilco/agentplugins?" | "instruction-distribution (Recommended)" | human | PLANNING.md: name the plan after the stable problem, not the solution; `agentplugins-conformance` named the dropped tool | 2026-10-09 |
 | D43 | Goal 1 reads "Make our pr-review skill conform to microsoft/apm", replacing sigilco/agentplugins in the human's goal of D25 | "My suggestion is \"Make our pr-review skill conform to microsoft/apm\". It keeps your wording and swaps only the tool. How would you like goal 1 to read?" | "yes" | human | Follows D41 | 2026-10-09 |
+| D44 | Goals 2 to 4 each get a cheapest-passing row of their own instead of one shared row | "Which of these is it? 1. Split the shared row … 2. Three new goals, 5 to 7 … 3. Something else", after the human wrote "Add 3 new goals gemini, claude, copilot" | "1" | human | Each harness has its own install path and failure | 2026-10-09 |
+| D45 | Goals 1 to 4 carry their own definition, goal 5 is installation by one APM command, goal 6 is validation by APM's published schemas | "Do goals 1 to 6 stand as written?", after the human asked "Extend Goal so it is not ambigues", "Add goal number 5, it shold be installed via apm command for installing plz show it to me" and "Golas 6 is that our solution can be validated with these schemas" | "yes" | human | Closes the loopholes in the goal wording itself, per PLANNING.md | 2026-10-09 |
+| D46 | Goal 6 pins APM's manifest schema `manifest-v0.1.41` | "Goal 6: which version of APM's manifest schema does our apm.yml pin and validate against?" | "manifest-v0.1.41 (Recommended)" | human | What APM 0.33.0 uses; the docs call it an unratified amendment of a v0.3 working draft. The schemas are committed in microsoft/apm under `docs/public/specs/schemas/`, and the repository names microsoft.github.io/apm as its homepage | 2026-10-09 |
 
 ## Open questions
 
