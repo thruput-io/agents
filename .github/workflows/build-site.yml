@@ -54,9 +54,7 @@ jobs:
             --offline
             --include-fragments
             --root-dir '${{ env.PROJECT_ROOT }}/_site'
-            './**/*.md'
-            './**/*.html'
-            './**/*.json'
+            '${{ env.PROJECT_ROOT }}/_site/**/*.html'
       - uses: actions/upload-pages-artifact@v3
         with:
           name: ${{ inputs.artifact }}
