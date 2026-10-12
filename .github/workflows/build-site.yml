@@ -40,7 +40,6 @@ jobs:
         with:
           source: site
           destination: _site
-      - run: docker run --rm --volume "$PROJECT_ROOT/_site:/site:ro" ghcr.io/validator/validator@sha256:c36cfc6b48442c174d511145df69502babec69cae467268c705fac88cff4dfed vnu --skip-non-html /site
       - uses: lycheeverse/lychee-action@v2
         with:
           args: --offline --include-fragments --root-dir ${{ env.PROJECT_ROOT }}/_site '${{ env.PROJECT_ROOT }}/_site/**/*.html'
