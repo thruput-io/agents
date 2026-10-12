@@ -1,5 +1,0 @@
-==> Downloading https://ghcr.io/v2/homebrew/core/ruby-install/manifests/0.10.2
-Already downloaded: /Users/johan/Library/Caches/Homebrew/downloads/994aef81998cbafc11c847b230b28ff1a8b8fe11d91d7f7d8b70047e0b1fe7d1--ruby-install-0.10.2.bottle_manifest.json
-==> Reinstalling ruby-install 
-==> Pouring ruby-install--0.10.2.all.bottle.tar.gz
-🍺  /opt/homebrew/Cellar/ruby-install/0.10.2: 31 files, 104.3KB
