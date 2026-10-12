@@ -22,5 +22,6 @@ lychee  --verbose\
         --no-progress\
         --offline\
         --include-fragments\
-        --root-dir "$PROJECT_ROOT/_site" \
-        './**/*.html'
+        --root-dir "$build/_site" \
+        "$build/_site/**/*.html" \
+        "$build/_site/**/*.json"
