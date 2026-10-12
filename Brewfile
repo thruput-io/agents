@@ -1,2 +1,5 @@
 brew "node"
+brew "lychee"
+brew "chruby"
+brew "ruby-install"
 cask "docker-desktop"
