@@ -1,0 +1,686 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/architecture/enterprise-architecture.schema.json",
+  "title": "Enterprise Architecture",
+  "description": "An enterprise architecture: the strategic objectives that drive it, the business value horizons that frame it, the clients and tiers that compose it, the components and contracts within each tier, and the directional flows connecting them",
+  "type": "object",
+  "required": [
+    "title",
+    "objectives",
+    "horizons",
+    "clients",
+    "tiers",
+    "flows"
+  ],
+  "properties": {
+    "title": {
+      "description": "The name or subject of the enterprise architecture",
+      "type": "string",
+      "minLength": 1
+    },
+    "objectives": {
+      "$ref": "#/$defs/Objectives"
+    },
+    "horizons": {
+      "$ref": "#/$defs/Horizons"
+    },
+    "clients": {
+      "$ref": "#/$defs/Clients"
+    },
+    "tiers": {
+      "$ref": "#/$defs/Tiers"
+    },
+    "flows": {
+      "$ref": "#/$defs/Flows"
+    },
+    "rules": {
+      "$ref": "#/$defs/Rules"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "Objectives": {
+      "description": "The strategic business objectives driving the architecture",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Objective"
+      }
+    },
+    "Objective": {
+      "description": "One strategic objective",
+      "type": "string",
+      "minLength": 1
+    },
+    "Horizons": {
+      "description": "The business value horizons classifying the architecture's tiers",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Horizon"
+      }
+    },
+    "Horizon": {
+      "description": "One business value horizon framing an architectural tier",
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "tenets"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/HorizonId"
+        },
+        "name": {
+          "description": "The display title of the horizon",
+          "type": "string",
+          "minLength": 1
+        },
+        "tenets": {
+          "description": "The guiding principles, characteristics, or constraints of this horizon",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "HorizonId": {
+      "description": "The identifier of a business value horizon",
+      "enum": [
+        "tactical",
+        "strategic",
+        "business-facts",
+        "already-present"
+      ]
+    },
+    "Clients": {
+      "description": "The external and internal actors that interact with enterprise solutions",
+      "type": "object",
+      "required": [
+        "name",
+        "audiences"
+      ],
+      "properties": {
+        "name": {
+          "description": "The display name of the client layer",
+          "type": "string",
+          "minLength": 1
+        },
+        "audiences": {
+          "description": "The distinct groups of users or consumers",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "description": {
+          "description": "Prose explaining the client roles and access modes",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "Tiers": {
+      "description": "The architectural tiers composing the enterprise topology",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Tier"
+      }
+    },
+    "Tier": {
+      "description": "One architectural tier",
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "horizon",
+        "components",
+        "contracts"
+      ],
+      "properties": {
+        "id": {
+          "description": "The stable identifier for the tier",
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "description": "The title of the tier",
+          "type": "string",
+          "minLength": 1
+        },
+        "horizon": {
+          "description": "The business value horizon this tier belongs to",
+          "$ref": "#/$defs/HorizonId"
+        },
+        "description": {
+          "description": "The purpose and scope of the tier",
+          "type": "string",
+          "minLength": 1
+        },
+        "tenets": {
+          "description": "The specific tenets and operating principles of this tier",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "components": {
+          "description": "The services, tools, streams, or data stores within this tier",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Component"
+          }
+        },
+        "contracts": {
+          "description": "The interface contracts, protocols, or capture points exposed or consumed by this tier",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Contract"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Component": {
+      "description": "One architectural building block within a tier: a service, stream, application, COTS system, or data store",
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "kind"
+      ],
+      "properties": {
+        "id": {
+          "description": "The unique identifier of the component",
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "description": "The display name of the component",
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "description": "The functional classification of the component",
+          "$ref": "#/$defs/ComponentKind"
+        },
+        "description": {
+          "description": "The role and behavior of the component",
+          "type": "string",
+          "minLength": 1
+        },
+        "contracts": {
+          "description": "Identifiers of contracts this component provides or binds to",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status": {
+          "description": "The lifecycle state of the component",
+          "$ref": "#/$defs/ComponentStatus"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ComponentKind": {
+      "description": "The type of architectural component",
+      "enum": [
+        "application",
+        "orchestration-tool",
+        "domain-service",
+        "cots-or-service",
+        "event-stream",
+        "entity-stream",
+        "legacy-service",
+        "data-store"
+      ]
+    },
+    "ComponentStatus": {
+      "description": "The lifecycle status of the component: active, planned, or decommission-asap",
+      "enum": [
+        "active",
+        "planned",
+        "decommission-asap"
+      ]
+    },
+    "Contract": {
+      "description": "An interface boundary or contract governing interaction with components in a tier",
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "kind"
+      ],
+      "properties": {
+        "id": {
+          "description": "The unique identifier of the contract",
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "description": "The display name of the contract",
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "description": "The contract or interface paradigm",
+          "$ref": "#/$defs/ContractKind"
+        },
+        "description": {
+          "description": "The specification or purpose of the contract",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "ContractKind": {
+      "description": "The interface or contract paradigm",
+      "enum": [
+        "user-interface",
+        "rest-api",
+        "event-contract",
+        "data-capture",
+        "legacy-api"
+      ]
+    },
+    "Flows": {
+      "description": "The directional interactions and data flows crossing tier and component boundaries",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Flow"
+      }
+    },
+    "Flow": {
+      "description": "One directional interaction between architectural tiers or components",
+      "type": "object",
+      "required": [
+        "from",
+        "to",
+        "pattern"
+      ],
+      "properties": {
+        "from": {
+          "description": "The identifier of the source tier or component",
+          "type": "string",
+          "minLength": 1
+        },
+        "to": {
+          "description": "The identifier of the target tier or component",
+          "type": "string",
+          "minLength": 1
+        },
+        "pattern": {
+          "description": "The communication pattern",
+          "$ref": "#/$defs/FlowPattern"
+        },
+        "contract": {
+          "description": "The contract governing this interaction, if applicable",
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "description": "What is exchanged across the boundary",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "FlowPattern": {
+      "description": "The communication pattern connecting source and target",
+      "enum": [
+        "request-response",
+        "event-stream",
+        "data-capture",
+        "user-interaction",
+        "integration"
+      ]
+    },
+    "Rules": {
+      "description": "Architectural rules and constraints enforced across the enterprise",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Rule"
+      }
+    },
+    "Rule": {
+      "description": "One architectural rule or constraint",
+      "type": "object",
+      "required": [
+        "id",
+        "body"
+      ],
+      "properties": {
+        "id": {
+          "description": "The name or handle of the rule",
+          "type": "string",
+          "minLength": 1
+        },
+        "tier": {
+          "description": "The tier the rule applies to, or all tiers if omitted",
+          "type": "string",
+          "minLength": 1
+        },
+        "body": {
+          "description": "The normative requirement of the rule",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "title": "Enterprise Architecture",
+      "objectives": [
+        "Deliver new business capabilities faster",
+        "Adoption of artificial intelligence done right",
+        "Eliminate high-risk legacy systems",
+        "Reduce the cost of introducing new capabilities"
+      ],
+      "horizons": [
+        {
+          "id": "tactical",
+          "name": "Tactical",
+          "tenets": [
+            "Solution Centric",
+            "Fast to Market",
+            "Innovation",
+            "Initiative Scoped",
+            "Planned Lifecycle",
+            "Isolated, one solution cannot be dependent on another solution"
+          ]
+        },
+        {
+          "id": "strategic",
+          "name": "Strategic",
+          "tenets": [
+            "Domain Centric",
+            "Durable, Reusable and Generic",
+            "Enterprise Scoped",
+            "Scalable, Reliable and Maintainable",
+            "Pluggable Third Party COTS",
+            "Versioned"
+          ]
+        },
+        {
+          "id": "business-facts",
+          "name": "Business Facts",
+          "tenets": [
+            "Data Centric",
+            "Persistent and Immutable",
+            "Data Products",
+            "Carefully Governed",
+            "Curated Legacy Data Access"
+          ]
+        },
+        {
+          "id": "already-present",
+          "name": "Already Present",
+          "tenets": [
+            "Operational Risky",
+            "Unmaintainable",
+            "Decommission ASAP"
+          ]
+        }
+      ],
+      "clients": {
+        "name": "Clients - Customers, Partners and Internal Users",
+        "audiences": [
+          "Customers",
+          "Partners",
+          "Internal Users"
+        ],
+        "description": "Clients accessing enterprise applications and orchestration tools"
+      },
+      "tiers": [
+        {
+          "id": "solution-tier",
+          "name": "Solution Tier",
+          "horizon": "tactical",
+          "description": "Tactical layer delivering fast-to-market business capabilities and user experiences",
+          "tenets": [
+            "Solution Centric",
+            "Fast to Market",
+            "Innovation",
+            "Initiative Scoped",
+            "Planned Lifecycle",
+            "Isolated, one solution cannot be dependent on another solution"
+          ],
+          "components": [
+            {
+              "id": "applications-and-orchestration-tools",
+              "name": "Applications and Orchestration Tools",
+              "kind": "application",
+              "description": "End-user applications and workflow orchestration tools",
+              "contracts": [
+                "user-interfaces-and-external-rest-apis"
+              ],
+              "status": "active"
+            }
+          ],
+          "contracts": [
+            {
+              "id": "user-interfaces-and-external-rest-apis",
+              "name": "User Interfaces and External Rest APIs",
+              "kind": "user-interface",
+              "description": "Perimeter interfaces exposing web, mobile, and REST entry points to clients"
+            }
+          ]
+        },
+        {
+          "id": "domain-tier",
+          "name": "Domain Tier",
+          "horizon": "strategic",
+          "description": "Strategic layer encapsulating core enterprise business logic and durable domain capabilities",
+          "tenets": [
+            "Domain Centric",
+            "Durable, Reusable and Generic",
+            "Enterprise Scoped",
+            "Scalable, Reliable and Maintainable",
+            "Pluggable Third Party COTS",
+            "Versioned"
+          ],
+          "components": [
+            {
+              "id": "domain-services",
+              "name": "Domain Services",
+              "kind": "domain-service",
+              "description": "Core reusable business services exposing domain capabilities through REST API contracts",
+              "contracts": [
+                "rest-apis-contracts"
+              ],
+              "status": "active"
+            },
+            {
+              "id": "third-party-cots-or-services",
+              "name": "Third Party COTS or Services",
+              "kind": "cots-or-service",
+              "description": "Pluggable third-party commercial off-the-shelf software or SaaS integrated behind domain boundaries",
+              "contracts": [],
+              "status": "active"
+            }
+          ],
+          "contracts": [
+            {
+              "id": "rest-apis-contracts",
+              "name": "Rest APIs Contracts",
+              "kind": "rest-api",
+              "description": "Versioned REST contracts defining domain service boundaries"
+            }
+          ]
+        },
+        {
+          "id": "data-mesh-tier",
+          "name": "Data Mesh Tier",
+          "horizon": "business-facts",
+          "description": "Governed data product layer publishing persistent, immutable business facts and curated streams",
+          "tenets": [
+            "Data Centric",
+            "Persistent and Immutable",
+            "Data Products",
+            "Carefully Governed",
+            "Curated Legacy Data Access"
+          ],
+          "components": [
+            {
+              "id": "curated-event-and-entity-streams",
+              "name": "Curated Event and Entity Streams",
+              "kind": "event-stream",
+              "description": "Governed analytical and operational event and entity streams",
+              "contracts": [
+                "event-contracts"
+              ],
+              "status": "active"
+            },
+            {
+              "id": "legacy-data-streams",
+              "name": "Legacy Data Streams",
+              "kind": "entity-stream",
+              "description": "Streams ingested from legacy datastores via data capture mechanisms",
+              "contracts": [
+                "legacy-data-capture"
+              ],
+              "status": "active"
+            }
+          ],
+          "contracts": [
+            {
+              "id": "event-contracts",
+              "name": "Event Contracts",
+              "kind": "event-contract",
+              "description": "Schema-governed contracts defining structure and semantics of published business events"
+            },
+            {
+              "id": "legacy-data-capture",
+              "name": "Legacy Data Capture",
+              "kind": "data-capture",
+              "description": "Ingestion interface capturing changes and records from legacy persistence systems"
+            }
+          ]
+        },
+        {
+          "id": "legacy-tier",
+          "name": "Legacy Tier",
+          "horizon": "already-present",
+          "description": "Existing legacy systems carrying operational risk and targeted for prompt decommissioning",
+          "tenets": [
+            "Operational Risky",
+            "Unmaintainable",
+            "Decommission ASAP"
+          ],
+          "components": [
+            {
+              "id": "legacy-service",
+              "name": "Legacy Service",
+              "kind": "legacy-service",
+              "description": "Pre-existing unmaintainable service slated for decommissioning",
+              "contracts": [
+                "legacy-api"
+              ],
+              "status": "decommission-asap"
+            },
+            {
+              "id": "db2",
+              "name": "DB2",
+              "kind": "data-store",
+              "description": "Legacy database store accessed solely through legacy data capture",
+              "contracts": [],
+              "status": "decommission-asap"
+            }
+          ],
+          "contracts": [
+            {
+              "id": "legacy-api",
+              "name": "Legacy API",
+              "kind": "legacy-api",
+              "description": "Uncurated legacy API endpoint"
+            }
+          ]
+        }
+      ],
+      "flows": [
+        {
+          "from": "clients",
+          "to": "applications-and-orchestration-tools",
+          "pattern": "user-interaction",
+          "contract": "user-interfaces-and-external-rest-apis",
+          "description": "Clients interact with applications and external REST APIs"
+        },
+        {
+          "from": "applications-and-orchestration-tools",
+          "to": "domain-services",
+          "pattern": "request-response",
+          "contract": "rest-apis-contracts",
+          "description": "Solutions invoke domain services via REST API contracts"
+        },
+        {
+          "from": "curated-event-and-entity-streams",
+          "to": "applications-and-orchestration-tools",
+          "pattern": "event-stream",
+          "contract": "event-contracts",
+          "description": "Applications consume curated event and entity streams from the data mesh"
+        },
+        {
+          "from": "domain-services",
+          "to": "curated-event-and-entity-streams",
+          "pattern": "event-stream",
+          "contract": "event-contracts",
+          "description": "Domain services publish entity state changes and consume domain events"
+        },
+        {
+          "from": "domain-services",
+          "to": "third-party-cots-or-services",
+          "pattern": "integration",
+          "description": "Domain services encapsulate and integrate pluggable third-party COTS"
+        },
+        {
+          "from": "db2",
+          "to": "legacy-data-streams",
+          "pattern": "data-capture",
+          "contract": "legacy-data-capture",
+          "description": "Legacy database changes are captured into legacy data streams"
+        }
+      ],
+      "rules": [
+        {
+          "id": "solution-isolation",
+          "tier": "solution-tier",
+          "body": "One solution cannot be dependent on another solution"
+        },
+        {
+          "id": "pluggable-cots",
+          "tier": "domain-tier",
+          "body": "Third-party COTS must be pluggable and encapsulated behind domain service contracts"
+        },
+        {
+          "id": "curated-legacy-access",
+          "tier": "data-mesh-tier",
+          "body": "Legacy data must be accessed through curated data capture rather than direct database dependencies"
+        },
+        {
+          "id": "legacy-decommissioning",
+          "tier": "legacy-tier",
+          "body": "High-risk legacy systems must be decommissioned as soon as possible"
+        }
+      ]
+    }
+  ]
+}
