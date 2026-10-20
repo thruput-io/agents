@@ -116,7 +116,7 @@ function completeWithSchema(read, name, document, schema) {
   if (typeof document !== 'object' || document === null) return document;
   let completed = document;
   if (schema.oneOf !== undefined) {
-    const belongs = schema.oneOf.filter((branch) => fixed(read, name, branch).every(([property, value]) => !(property in document) || same(document[property], value)));
+    const belongs = schema.oneOf.filter((branch) => fixed(read, name, branch).every(([property, value]) => !(property in completed) || same(completed[property], value)));
     if (belongs.length !== 1) throw new Error(`${name}: the document belongs to ${belongs.length} of the ${schema.oneOf.length} branches, so what its schema says cannot be told`);
     completed = completeWithSchema(read, name, document, belongs[0]);
   }

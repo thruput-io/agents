@@ -180,7 +180,7 @@ test('numbered, fragments, span, removedLines, complete, and tooLarge behave det
   assert.deepEqual(numbered('a\n\nb'), { 1: 'a', 2: '', 3: 'b' });
   assert.deepEqual(numbered(''), {});
   assert.deepEqual(Object.keys(numbered('x\n'.repeat(12))).at(-1), '12');
-  const numberedLines = numbered('a\nb\nc\nd\n');
+c  const numberedLines = numbered('a\nb\nc\nd\n');
   assert.deepEqual(fragments(numberedLines, [{ start: 2, end: 3 }], [{ start: 7, end: 8, content: 'x\ny' }]), [
     { kind: 'context', lines: { 1: 'a' } },
     { kind: 'surface', side: 'head', lines: { 2: 'b', 3: 'c' } },
