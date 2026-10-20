@@ -241,27 +241,25 @@ function resolve(read, name, ref) {
 }
 
 function fixed(read, name, schema) {
-  if (schema.$ref !== undefined) {
-    const target = resolve(read, name, schema.$ref);
-    return fixed(read, target.name, target.schema);
-  }
+  const target = schema.$ref === undefined ? undefined : resolve(read, name, schema.$ref);
+  const referenced = target === undefined ? [] : fixed(read, target.name, target.schema);
   const own = Object.entries(schema.properties ?? {}).filter(([, property]) => 'const' in property).map(([property, { const: value }]) => [property, value]);
   const inherited = (schema.allOf ?? []).flatMap((branch) => fixed(read, name, branch));
-  return [...inherited, ...own];
+  return [...referenced, ...inherited, ...own];
 }
 
 export function complete(read, name, document, schema = read(name)) {
+  let completed = document;
   if (schema.$ref !== undefined) {
     const target = resolve(read, name, schema.$ref);
-    return complete(read, target.name, document, target.schema);
+    completed = complete(read, target.name, completed, target.schema);
   }
-  if (Array.isArray(document)) return schema.items === undefined ? document : document.map((item) => complete(read, name, item, schema.items));
-  if (typeof document !== 'object' || document === null) return document;
-  let completed = document;
+  if (Array.isArray(completed)) return schema.items === undefined ? completed : completed.map((item) => complete(read, name, item, schema.items));
+  if (typeof completed !== 'object' || completed === null) return completed;
   if (schema.oneOf !== undefined) {
-    const belongs = schema.oneOf.filter((branch) => fixed(read, name, branch).every(([property, value]) => !(property in document) || same(document[property], value)));
+    const belongs = schema.oneOf.filter((branch) => fixed(read, name, branch).every(([property, value]) => !(property in completed) || same(completed[property], value)));
     if (belongs.length !== 1) throw new Error(`${name}: the document belongs to ${belongs.length} of the ${schema.oneOf.length} branches, so what its schema says cannot be told`);
-    completed = complete(read, name, document, belongs[0]);
+    completed = complete(read, name, completed, belongs[0]);
   }
   for (const branch of schema.allOf ?? []) {
     completed = complete(read, name, completed, branch);
