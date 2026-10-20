@@ -38,7 +38,7 @@ const change = adapter.resolve(host, workdir);
 const { pullRequest, headCommit } = change;
 write('pull-request.json', pullRequest);
 if (change.blocked.length > 0) {
-  const where = change.refused ?? adapter.refuse(host, headCommit, change.blocked, workdir);
+  const where = change.refused === undefined ? adapter.refuse(host, headCommit, change.blocked, workdir) : change.refused;
   throw new Error(`${change.blocked.join('; ')}. A changes-requested verdict ${change.refused === undefined ? 'was posted' : 'had been posted'} (${where}); no review was prepared.`);
 }
 
@@ -56,7 +56,7 @@ const paths = readdirSync(snapshot, { recursive: true }).map(String).filter((pat
 const linesAtHead = (path) => (paths.includes(path) && isText(readFileSync(join(snapshot, path), 'latin1')) ? numbered(readFileSync(join(snapshot, path), 'utf8')) : {});
 const oversized = tooLarge(changeSet.files.map((file) => ({ path: file.path, lines: Object.keys(linesAtHead(file.path)).length })));
 if (oversized.length > 0) {
-  const where = change.refused ?? adapter.refuse(host, headCommit, oversized, workdir);
+  const where = change.refused === undefined ? adapter.refuse(host, headCommit, oversized, workdir) : change.refused;
   throw new Error(`${oversized.join('; ')}. A changes-requested verdict ${change.refused === undefined ? 'was posted' : 'had been posted'} (${where}); no review was prepared.`);
 }
 const files = surface.files.map((file) => {
@@ -99,7 +99,7 @@ const count = (files, side) => files.reduce((sum, file) => sum + file[side].redu
 const summary = {
   host: host.kind,
   headCommit,
-  since: change.prior ?? null,
+  since: change.prior === undefined ? null : change.prior,
   threadsOfOurs: change.threads.length,
   changeSet: { files: changeSet.files.length, added: count(changeSet.files, 'added'), removed: count(changeSet.files, 'removed') },
   surface: { files: surface.files.length, added: count(surface.files, 'added'), removed: count(surface.files, 'removed') },

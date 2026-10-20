@@ -1,7 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseHunks, ours, SITE } from './lib.mjs';
-import { run } from './shell.mjs';
+import { run, runBuffer } from './shell.mjs';
 
 export const KIND = 'github';
 const PULL_REQUEST_URL = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/;
@@ -23,8 +23,7 @@ function paginate(path) {
 
 export function locate(target) {
   const match = PULL_REQUEST_URL.exec(target);
-  if (match === null) return undefined;
-  return { kind: KIND, owner: match[1], repository: match[2], number: Number(match[3]) };
+  return match === null ? undefined : { kind: KIND, owner: match[1], repository: match[2], number: Number(match[3]) };
 }
 
 export function thread(node, author) {
@@ -33,7 +32,7 @@ export function thread(node, author) {
     id: node.id,
     path: node.path,
     side: SIDE_OF[node.diffSide],
-    lines: { start: node.startLine ?? node.line, end: node.line },
+    lines: { start: node.startLine !== null && node.startLine !== undefined ? node.startLine : node.line, end: node.line },
     state,
     body: node.comments.nodes[0].body,
   };
@@ -69,10 +68,10 @@ export function resolve(host) {
   const reviews = paginate(`${pulls(host)}/reviews`);
   const prior = reviews.filter((review) => review.state !== 'PENDING' && ours(review.body)).at(-1)?.commit_id;
   const threads = prior === undefined ? [] : allThreads(host)
-    .filter((node) => node.line !== null && ours(node.comments.nodes[0]?.body ?? ''))
+    .filter((node) => node.line !== null && node.comments.nodes.length > 0 && ours(node.comments.nodes[0].body))
     .map((node) => thread(node, pr.user.login));
   return {
-    pullRequest: { host, author: pr.user.login, description: pr.body ?? '' },
+    pullRequest: { host, author: pr.user.login, description: typeof pr.body === 'string' ? pr.body : '' },
     headCommit,
     blocked,
     prior,
@@ -83,7 +82,7 @@ export function resolve(host) {
       .filter((file) => file.patch !== undefined).map((file) => [file.filename, parseHunks(file.patch.split('\n')).added])),
     checkout: (dir) => {
       const tarball = `${dir}.tgz`;
-      writeFileSync(tarball, run('gh', ['api', `repos/${host.owner}/${host.repository}/tarball/${headCommit}`], 'buffer'));
+      writeFileSync(tarball, runBuffer('gh', ['api', `repos/${host.owner}/${host.repository}/tarball/${headCommit}`]));
       mkdirSync(dir, { recursive: true });
       run('tar', ['-xzf', tarball, '-C', dir, '--strip-components=1']);
       rmSync(tarball);
@@ -106,12 +105,14 @@ export function payload(outcome, ledgerTable) {
 function postReview(host, review, workdir) {
   const file = join(workdir, 'review.json');
   writeFileSync(file, `${JSON.stringify(review, null, 2)}\n`);
+  let posted;
   try {
-    return gh('-X', 'POST', `${pulls(host)}/reviews`, '--input', file);
+    posted = gh('-X', 'POST', `${pulls(host)}/reviews`, '--input', file);
   } catch (error) {
     if (!OWN_PULL_REQUEST.test(error.message) || review.event === 'COMMENT') throw error;
-    return postReview(host, { ...review, event: 'COMMENT', body: `${review.body}\n\nPosted as a comment: the host refused the verdict on the author's own pull request.` }, workdir);
+    posted = postReview(host, { ...review, event: 'COMMENT', body: `${review.body}\n\nPosted as a comment: the host refused the verdict on the author's own pull request.` }, workdir);
   }
+  return posted;
 }
 
 export function refuse(host, headCommit, reasons, workdir) {
@@ -126,5 +127,5 @@ export function post(host, outcome, ledgerTable, workdir) {
   const response = already === undefined ? postReview(host, payload(outcome, ledgerTable), workdir) : undefined;
   for (const id of outcome.settle) settle(id, 'resolveReviewThread');
   for (const id of outcome.reopen) settle(id, 'unresolveReviewThread');
-  return { review: already ?? response.html_url, posted: already === undefined, inline: outcome.inline.length, settled: outcome.settle.length, reopened: outcome.reopen.length };
+  return { review: already === undefined ? response.html_url : already, posted: already === undefined, inline: outcome.inline.length, settled: outcome.settle.length, reopened: outcome.reopen.length };
 }

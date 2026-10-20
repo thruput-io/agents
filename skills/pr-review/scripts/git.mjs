@@ -7,8 +7,7 @@ const RANGE = /^(.+)@([^.]+(?:\.[^.]+)*)\.\.([^.].*)$/;
 
 export function locate(target) {
   const match = RANGE.exec(target);
-  if (match === null) return undefined;
-  return { kind: KIND, repository: absolute(match[1]), base: match[2], head: match[3] };
+  return match === null ? undefined : { kind: KIND, repository: absolute(match[1]), base: match[2], head: match[3] };
 }
 
 export function resolve(host) {

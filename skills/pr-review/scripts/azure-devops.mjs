@@ -17,12 +17,11 @@ const invoke = (host, args, threadId) => az('devops', 'invoke', '--organization'
 
 export function locate(target) {
   const match = PULL_REQUEST_URL.exec(target);
-  if (match === null) return undefined;
-  return { kind: KIND, organization: match[1], project: match[2], repository: match[3], id: Number(match[4]) };
+  return match === null ? undefined : { kind: KIND, organization: match[1], project: match[2], repository: match[3], id: Number(match[4]) };
 }
 
 const onLines = (raw) => raw.threadContext !== null && raw.threadContext !== undefined && raw.threadContext.filePath !== null;
-const firstComment = (raw) => raw.comments[0]?.content ?? '';
+const firstComment = (raw) => (raw.comments.length > 0 && typeof raw.comments[0].content === 'string' ? raw.comments[0].content : '');
 const ours = (raw) => written(firstComment(raw));
 
 export function thread(raw) {
@@ -34,7 +33,7 @@ export function thread(raw) {
     id: String(raw.id),
     path: context.filePath.replace(/^\//, ''),
     side,
-    lines: { start: start?.line ?? end.line, end: end.line },
+    lines: { start: start !== null && start !== undefined ? start.line : end.line, end: end.line },
     state: raw.status === 'active' ? 'open' : 'resolved-by-author',
     body: firstComment(raw),
   };
@@ -79,9 +78,12 @@ export function resolve(host, workdir) {
     return git;
   };
   let ready;
-  const repo = () => { ready ??= fetched(); return ready; };
+  const repo = () => {
+    if (ready === undefined) ready = fetched();
+    return ready;
+  };
   return {
-    pullRequest: { host, author: pr.createdBy.uniqueName, description: pr.description ?? '' },
+    pullRequest: { host, author: pr.createdBy.uniqueName, description: typeof pr.description === 'string' ? pr.description : '' },
     headCommit,
     blocked,
     prior,
@@ -137,5 +139,5 @@ export function post(host, outcome, ledgerTable, workdir) {
   const stale = staleRefusals(before);
   for (const id of stale) send(host, workdir, `refusal-${id}`, { status: 'fixed' }, { method: 'PATCH', threadId: id });
   run('az', ['repos', 'pr', 'set-vote', '--id', String(host.id), '--vote', VOTE_OF[outcome.verdict], '--organization', organization(host), '--output', 'json']);
-  return { summaryThread: summary ?? 'already posted', inline: threads.length, alreadyPosted: outcome.inline.length - threads.length, settled: left.settle.length, reopened: outcome.reopen.length, refusalsClosed: stale.length, vote: VOTE_OF[outcome.verdict] };
+  return { summaryThread: summary === undefined ? 'already posted' : summary, inline: threads.length, alreadyPosted: outcome.inline.length - threads.length, settled: left.settle.length, reopened: outcome.reopen.length, refusalsClosed: stale.length, vote: VOTE_OF[outcome.verdict] };
 }
