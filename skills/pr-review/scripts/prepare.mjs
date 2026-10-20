@@ -70,7 +70,7 @@ const context = {
   review: { pullRequest, headCommit, files },
   checkout: snapshot,
   ledger: (name) => join(workdir, 'ledger', `${name}.json`),
-  report: (name) => `npx --yes @sourcemeta/jsonschema@17.0.0 validate "${join(skill, 'schemas', 'review/ledger.schema.json')}" "${join(workdir, 'ledger', `${name}.json`)}" --resolve "${join(skill, 'schemas')}"`,
+  report: (name) => `node "${join(skill, 'scripts', 'check.mjs')}" "${join(workdir, 'instructions', `${name}.yaml`)}"`,
 };
 
 const index = JSON.parse(readFileSync(join(skill, 'references', 'agent-rules-books-search-index.json'), 'utf8'));
@@ -90,7 +90,7 @@ const probes = instructions(
 );
 for (const probe of probes) {
   const file = join(workdir, 'instructions', `${probe.name}.yaml`);
-  const schemaPath = `review/instructions/${probe.kind}.schema.json`;
+  const schemaPath = `review/instructions/${probe.document.kind}.schema.json`;
   writeFileSync(file, jsYaml.dump(complete(schema, schemaPath, probe.document), { lineWidth: -1, noRefs: true }));
   validate(schemaPath, file);
 }
