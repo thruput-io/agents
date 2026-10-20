@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { locate, thread, comment, payload, refusedIn, postedAt, KIND } from './github.mjs';
+import { locate, thread, comment, payload, refusedIn, postedAt, priorIn, KIND } from './github.mjs';
 import { SITE } from './lib.mjs';
 
 test('locate reads a GitHub pull request URL and nothing else', () => {
@@ -41,4 +41,11 @@ test('postedAt finds the review of ours already posted at this head commit, so p
   const review = { id: 7, state: 'CHANGES_REQUESTED', html_url: 'https://github.com/o/r/pull/1#pullrequestreview-7', body: `**Verdict: request-changes**\n\n3 rules probed by 2 probes at ${'a'.repeat(40)} against [the rules](${SITE}): 1 violations` };
   assert.equal(postedAt([review], 'a'.repeat(40)), review.html_url);
   assert.equal(postedAt([review], 'b'.repeat(40)), undefined);
+});
+
+test('priorIn takes the last review of ours that probed, so a review rejected only by the checks counts as never reviewed', () => {
+  const reviewed = { state: 'CHANGES_REQUESTED', commit_id: 'r', body: `**Verdict: request-changes**\n\n3 rules probed by 2 probes at r against [the rules](${SITE}): 1 violations` };
+  const refused = { state: 'CHANGES_REQUESTED', commit_id: 'f', body: `**Verdict: request-changes**\n\nNot reviewed at f against [the rules](${SITE}): check build did not succeed.` };
+  assert.equal(priorIn([reviewed, refused]), 'r');
+  assert.equal(priorIn([refused]), undefined);
 });

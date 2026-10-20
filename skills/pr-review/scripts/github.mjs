@@ -60,6 +60,10 @@ export function refusedIn(reviews, headCommit) {
   return reviews.find((review) => review.state !== 'PENDING' && ours(review.body) && review.body.includes(`Not reviewed at ${headCommit} `))?.html_url;
 }
 
+export function priorIn(reviews) {
+  return reviews.filter((review) => review.state !== 'PENDING' && ours(review.body) && !review.body.includes('Not reviewed at ')).at(-1)?.commit_id;
+}
+
 export function resolve(host) {
   const pr = gh(pulls(host));
   const headCommit = pr.head.sha;
@@ -67,7 +71,7 @@ export function resolve(host) {
   const failed = checks.check_runs.filter((check) => !['success', 'skipped', 'neutral'].includes(check.conclusion)).map((check) => `check ${check.name} did not succeed`);
   const blocked = [...failed, ...(pr.mergeable_state === 'dirty' ? ['the pull request has merge conflicts'] : [])];
   const reviews = paginate(`${pulls(host)}/reviews`);
-  const prior = reviews.filter((review) => review.state !== 'PENDING' && ours(review.body)).at(-1)?.commit_id;
+  const prior = priorIn(reviews);
   const threads = prior === undefined ? [] : allThreads(host)
     .filter((node) => node.line !== null && ours(node.comments.nodes[0]?.body ?? ''))
     .map((node) => thread(node, pr.user.login));
