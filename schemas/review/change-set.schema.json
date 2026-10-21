@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/change-set.schema.json",
   "title": "Change set",
-  "description": "The lines a [[Change]] adds at the head commit or removes from the base",
+  "description": "The lines a [[Change]] in a pull request adds or removes, resolved once at its head commit by the reviewing context and handed to every probe. Added lines are numbered in the file at the head commit, where their text is read; removed lines are numbered in the file at the base and carry their text, which no file at the head commit holds",
   "type": "object",
   "required": [
     "headCommit",
@@ -19,20 +19,19 @@
       }
     }
   },
-  "additionalProperties": false,
   "$defs": {
     "Commit": {
-      "description": "A commit SHA-1",
+      "description": "A commit, named by its full SHA-1",
       "type": "string",
       "pattern": "^[0-9a-f]{40}$"
     },
     "Path": {
-      "description": "A file path relative to the repository root",
+      "description": "A file, by its path relative to the repository root, with no leading separator",
       "type": "string",
       "pattern": "^[^/]"
     },
     "ChangedFile": {
-      "description": "One file touched by the [[Change]]: added line ranges at head and removed lines with their text at base",
+      "description": "One file the pull request touches: the ranges it adds, numbered at the head commit, and the lines it removes, numbered at the base, with their text. A new file has no removed lines, a deleted file no added ranges",
       "type": "object",
       "required": [
         "path",
@@ -55,8 +54,7 @@
             "$ref": "lines.schema.json#/$defs/RemovedLines"
           }
         }
-      },
-      "additionalProperties": false
+      }
     }
   },
   "examples": [

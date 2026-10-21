@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/outcome.schema.json",
   "title": "Outcome",
-  "description": "The review decision folded into the host adapter at the [[Perimeter]]: verdict, summary, fresh inline findings, and thread transitions",
+  "description": "What a review decided, in the one shape every host's adapter posts from: the verdict, the summary, each fresh finding on lines, the threads that are fixed, and the threads the author resolved that are not",
   "type": "object",
   "required": [
     "headCommit",
@@ -51,12 +51,12 @@
       ]
     },
     "Summary": {
-      "description": "Rendered review summary and pull-request-anchored findings",
+      "description": "The text of the review itself: the verdict, the count of what was probed and found, and every finding that has no line to sit on",
       "type": "string",
       "minLength": 1
     },
     "InlineFinding": {
-      "description": "A finding on lines not yet carried by an open thread",
+      "description": "One finding on lines of the pull request that no thread carries yet, with its rendered text",
       "type": "object",
       "required": [
         "path",

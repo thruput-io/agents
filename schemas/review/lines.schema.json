@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/lines.schema.json",
   "title": "Lines",
-  "description": "Line-level domain shapes of a [[Change]]: numbered lines, line ranges, removed lines, and file side",
+  "description": "Line-level domain shapes of a [[Change]]: consecutive numbered lines, line ranges, removed lines with their text at the base, and file side",
   "oneOf": [
     {
       "$ref": "#/$defs/NumberedLines"
@@ -16,7 +16,7 @@
   ],
   "$defs": {
     "NumberedLines": {
-      "description": "Consecutive lines of a file, each under its 1-based line number",
+      "description": "Consecutive lines, each under its number, the first line of a file being 1",
       "type": "object",
       "minProperties": 1,
       "propertyNames": {
@@ -27,28 +27,28 @@
       }
     },
     "Side": {
-      "description": "Which file numbering applies: head at the head commit, base at the base",
+      "description": "Which numbering the lines use: head for the file at the head commit, base for the file at the base",
       "enum": [
         "head",
         "base"
       ]
     },
     "LineNumber": {
-      "description": "A 1-based line number",
+      "description": "A line of a file, by its 1-based number",
       "type": "integer",
       "minimum": 1
     },
     "LineNumberName": {
-      "description": "A 1-based line number as a property name",
+      "description": "A line number as the name of a property: a whole number from 1",
       "type": "string",
       "pattern": "^[1-9][0-9]*$"
     },
     "LineText": {
-      "description": "One line of text without its line break",
+      "description": "One line of a file, without its line break",
       "type": "string"
     },
     "LineRange": {
-      "description": "An inclusive 1-based range of consecutive lines",
+      "description": "Consecutive lines of one file, by their 1-based numbers, both ends included",
       "type": "object",
       "required": [
         "start",
@@ -64,11 +64,11 @@
       }
     },
     "RemovedContent": {
-      "description": "The text of removed lines at the base, joined by line breaks",
+      "description": "The text of removed lines as they stood at the base, one line of text per line removed",
       "type": "string"
     },
     "RemovedLines": {
-      "description": "Consecutive removed lines with their text at the base",
+      "description": "Consecutive lines the [[Change]] removes, with their text",
       "$ref": "#/$defs/LineRange",
       "required": [
         "content"
