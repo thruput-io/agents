@@ -1,0 +1,769 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/architecture/system-architecture.schema.json",
+  "title": "System Architecture",
+  "description": "An implementation of a system architecture: the domain services, solution tools, event topics, REST endpoints, and legacy integrations that realize an enterprise architecture",
+  "type": "object",
+  "required": [
+    "title",
+    "services",
+    "solutions",
+    "topics"
+  ],
+  "properties": {
+    "title": {
+      "description": "The name or subject of the system architecture",
+      "type": "string",
+      "minLength": 1
+    },
+    "enterpriseArchitecture": {
+      "description": "The identifier or URL of the enterprise architecture this system realizes",
+      "type": "string",
+      "minLength": 1
+    },
+    "services": {
+      "$ref": "#/$defs/Services"
+    },
+    "solutions": {
+      "$ref": "#/$defs/Solutions"
+    },
+    "topics": {
+      "$ref": "#/$defs/Topics"
+    },
+    "endpoints": {
+      "$ref": "#/$defs/Endpoints"
+    },
+    "legacyIntegrations": {
+      "$ref": "#/$defs/LegacyIntegrations"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "Services": {
+      "description": "The domain services implementing core business capabilities",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Service"
+      }
+    },
+    "Service": {
+      "description": "One domain service",
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "description": "The unique identifier of the service",
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "description": "The display name of the service",
+          "type": "string",
+          "minLength": 1
+        },
+        "tier": {
+          "description": "The architectural tier the service belongs to",
+          "type": "string",
+          "minLength": 1
+        },
+        "apis": {
+          "description": "The APIs exposed by the service",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "publishes": {
+          "description": "Topics published by this service",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "subscribes": {
+          "description": "Topics consumed by this service",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "description": {
+          "description": "The role and behavior of the service",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "Solutions": {
+      "description": "The solution applications and orchestration tools",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Solution"
+      }
+    },
+    "Solution": {
+      "description": "One solution application or tool",
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "description": "The unique identifier of the solution",
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "description": "The display name of the solution",
+          "type": "string",
+          "minLength": 1
+        },
+        "tier": {
+          "description": "The architectural tier the solution belongs to",
+          "type": "string",
+          "minLength": 1
+        },
+        "invokes": {
+          "description": "Service APIs invoked by this solution",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "subscribes": {
+          "description": "Topics consumed directly by this solution",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "description": {
+          "description": "The role and audience of the solution",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "Topics": {
+      "description": "The event and state topics in the data mesh",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Topic"
+      }
+    },
+    "Topic": {
+      "description": "One event or state topic",
+      "type": "object",
+      "required": [
+        "name",
+        "scope",
+        "kind"
+      ],
+      "properties": {
+        "name": {
+          "description": "The fully qualified topic name",
+          "type": "string",
+          "minLength": 1
+        },
+        "alias": {
+          "description": "The shorthand alias of the topic",
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "description": "The accessibility scope of the topic",
+          "$ref": "#/$defs/TopicScope"
+        },
+        "kind": {
+          "description": "The classification of the stream: state stream or domain event stream",
+          "$ref": "#/$defs/TopicKind"
+        },
+        "key": {
+          "description": "The message key field name",
+          "type": "string",
+          "minLength": 1
+        },
+        "partitionKey": {
+          "description": "The partition key field name used for message routing and ordering",
+          "type": "string",
+          "minLength": 1
+        },
+        "schema": {
+          "description": "The payload schema or sample object describing the message body",
+          "type": "object"
+        },
+        "publishers": {
+          "description": "Identifiers of services or adapters publishing to this topic",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "subscribers": {
+          "description": "Identifiers of services or solutions consuming from this topic",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "description": {
+          "description": "The specification or purpose of the topic",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "TopicScope": {
+      "description": "Whether the topic is publicly exposed to peer domains or internal",
+      "enum": [
+        "public",
+        "internal"
+      ]
+    },
+    "TopicKind": {
+      "description": "The classification of the stream: state or event",
+      "enum": [
+        "state",
+        "event"
+      ]
+    },
+    "Endpoints": {
+      "description": "The REST endpoints exposed by services",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Endpoint"
+      }
+    },
+    "Endpoint": {
+      "description": "One REST endpoint specification",
+      "type": "object",
+      "required": [
+        "service",
+        "name",
+        "method"
+      ],
+      "properties": {
+        "service": {
+          "description": "The identifier of the service providing this endpoint",
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "description": "The endpoint resource path or name",
+          "type": "string",
+          "minLength": 1
+        },
+        "method": {
+          "description": "The HTTP method used to invoke the endpoint",
+          "$ref": "#/$defs/HttpMethod"
+        },
+        "returns": {
+          "description": "The return value or response structure of the endpoint",
+          "type": "string",
+          "minLength": 1
+        },
+        "requestBody": {
+          "description": "The request body payload structure for the endpoint",
+          "type": "object"
+        },
+        "description": {
+          "description": "The specification of the endpoint",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "HttpMethod": {
+      "description": "The HTTP verb for the endpoint",
+      "enum": [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE"
+      ]
+    },
+    "LegacyIntegrations": {
+      "description": "The legacy system integrations and data capture bridges",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/LegacyIntegration"
+      }
+    },
+    "LegacyIntegration": {
+      "description": "One legacy integration capturing data from existing systems",
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "environment",
+        "source",
+        "adapter",
+        "targetTopic"
+      ],
+      "properties": {
+        "id": {
+          "description": "The unique identifier of the integration",
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "description": "The display name of the integration",
+          "type": "string",
+          "minLength": 1
+        },
+        "environment": {
+          "description": "The deployment environment where the legacy source resides",
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "description": "The legacy datastore or system being captured",
+          "type": "string",
+          "minLength": 1
+        },
+        "adapter": {
+          "description": "The agent, connector, or capture mechanism extracting data from the legacy system",
+          "type": "string",
+          "minLength": 1
+        },
+        "targetTopic": {
+          "description": "The topic that captured legacy events are published to",
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "description": "The purpose and scope of the legacy integration",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "title": "Contracts and Sales System Architecture",
+      "enterpriseArchitecture": "https://thruput.se/agents/schemas/architecture/enterprise-architecture.schema.json",
+      "services": [
+        {
+          "id": "policy-service",
+          "name": "Policy Service",
+          "tier": "domain-tier",
+          "apis": [
+            "Contract Cfg Mgmt API"
+          ],
+          "publishes": [
+            "public.contract.policies.state.v1"
+          ],
+          "subscribes": [
+            "internal.warranty.inbound.event.v1"
+          ],
+          "description": "Manages policy configurations and publishes policy state"
+        },
+        {
+          "id": "product-service",
+          "name": "Product Service",
+          "tier": "domain-tier",
+          "apis": [
+            "Product API"
+          ],
+          "publishes": [
+            "public.sales.products.state.v1"
+          ],
+          "subscribes": [
+            "public.contract.policies.state.v1",
+            "internal.warranty.inbound.event.v1"
+          ],
+          "description": "Manages product catalog and consumes policy updates"
+        },
+        {
+          "id": "pricing-service",
+          "name": "Pricing Service",
+          "tier": "domain-tier",
+          "apis": [
+            "Price Mgmt API",
+            "Price Query API"
+          ],
+          "publishes": [
+            "public.sales.prices.state.v1"
+          ],
+          "subscribes": [
+            "public.sales.products.state.v1",
+            "internal.warranty.inbound.event.v1"
+          ],
+          "description": "Calculates and publishes prices based on product definitions"
+        },
+        {
+          "id": "order-service",
+          "name": "Order Service",
+          "tier": "domain-tier",
+          "apis": [
+            "Order API"
+          ],
+          "publishes": [
+            "orders"
+          ],
+          "subscribes": [],
+          "description": "Accepts customer orders and publishes order events"
+        },
+        {
+          "id": "contract-service",
+          "name": "Contract Service",
+          "tier": "domain-tier",
+          "apis": [],
+          "publishes": [],
+          "subscribes": [
+            "public.contract.policies.state.v1",
+            "public.sales.products.state.v1",
+            "orders",
+            "signings",
+            "payment-status",
+            "internal.warranty.inbound.event.v1"
+          ],
+          "description": "Aggregates policy, product, order, signing, and payment events into contracts"
+        },
+        {
+          "id": "signing-service",
+          "name": "Signing Service",
+          "tier": "domain-tier",
+          "apis": [],
+          "publishes": [
+            "signings"
+          ],
+          "subscribes": [
+            "orders"
+          ],
+          "description": "Handles electronic signatures for received orders"
+        },
+        {
+          "id": "payment-service",
+          "name": "Payment Service",
+          "tier": "domain-tier",
+          "apis": [],
+          "publishes": [
+            "payment-status"
+          ],
+          "subscribes": [
+            "public.sales.prices.state.v1",
+            "orders"
+          ],
+          "description": "Processes payments for placed orders using published pricing"
+        }
+      ],
+      "solutions": [
+        {
+          "id": "policy-configuration-tool",
+          "name": "Policy Configuration Tool",
+          "tier": "solution-tier",
+          "invokes": [
+            "Contract Cfg Mgmt API"
+          ],
+          "description": "Internal tool for configuring policies"
+        },
+        {
+          "id": "product-management-tool",
+          "name": "Product Management Tool",
+          "tier": "solution-tier",
+          "invokes": [
+            "Product API"
+          ],
+          "description": "Internal tool for managing the product catalog"
+        },
+        {
+          "id": "price-management-tool",
+          "name": "Price Management Tool",
+          "tier": "solution-tier",
+          "invokes": [
+            "Price Mgmt API"
+          ],
+          "description": "Internal tool for configuring pricing structures"
+        },
+        {
+          "id": "ssp",
+          "name": "SSP",
+          "tier": "solution-tier",
+          "invokes": [
+            "Order API"
+          ],
+          "subscribes": [
+            "public.sales.products.state.v1",
+            "public.sales.prices.state.v1"
+          ],
+          "description": "Self-Service Portal consuming product and price streams to submit orders"
+        },
+        {
+          "id": "contract-management",
+          "name": "Contract Management",
+          "tier": "solution-tier",
+          "subscribes": [
+            "public.contract.policies.state.v1"
+          ],
+          "description": "Solution for managing contract lifecycles"
+        },
+        {
+          "id": "mire",
+          "name": "MIRE",
+          "tier": "solution-tier",
+          "subscribes": [
+            "public.contract.policies.state.v1"
+          ],
+          "description": "Reporting and analytics tool consuming policy states"
+        }
+      ],
+      "topics": [
+        {
+          "name": "public.contract.policies.state.v1",
+          "alias": "policy",
+          "scope": "public",
+          "kind": "state",
+          "key": "policyId",
+          "partitionKey": "policyId",
+          "schema": {
+            "type": "object",
+            "required": [
+              "policyId"
+            ],
+            "properties": {
+              "policyId": {
+                "type": "string"
+              },
+              "legacyIdentifiers": {
+                "type": "object",
+                "properties": {
+                  "policyNumber": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "publishers": [
+            "policy-service"
+          ],
+          "subscribers": [
+            "product-service",
+            "contract-service",
+            "contract-management",
+            "mire"
+          ],
+          "description": "Public entity state stream for policy records"
+        },
+        {
+          "name": "public.sales.products.state.v1",
+          "alias": "products",
+          "scope": "public",
+          "kind": "state",
+          "key": "productId",
+          "partitionKey": "productId",
+          "schema": {
+            "type": "object",
+            "required": [
+              "productId"
+            ],
+            "properties": {
+              "productId": {
+                "type": "string"
+              },
+              "legacyIdentifiers": {
+                "type": "object",
+                "properties": {
+                  "policyNumber": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "publishers": [
+            "product-service"
+          ],
+          "subscribers": [
+            "pricing-service",
+            "contract-service",
+            "ssp"
+          ],
+          "description": "Public entity state stream for sales products"
+        },
+        {
+          "name": "public.sales.prices.state.v1",
+          "alias": "prices",
+          "scope": "public",
+          "kind": "state",
+          "key": "priceId",
+          "partitionKey": "productId",
+          "schema": {
+            "type": "object",
+            "required": [
+              "priceId",
+              "productId",
+              "currency"
+            ],
+            "properties": {
+              "priceId": {
+                "type": "string"
+              },
+              "productId": {
+                "type": "string"
+              },
+              "currency": {
+                "type": "string"
+              }
+            }
+          },
+          "publishers": [
+            "pricing-service"
+          ],
+          "subscribers": [
+            "payment-service",
+            "ssp"
+          ],
+          "description": "Public entity state stream for product pricing"
+        },
+        {
+          "name": "orders",
+          "scope": "public",
+          "kind": "event",
+          "key": "orderId",
+          "partitionKey": "orderId",
+          "publishers": [
+            "order-service"
+          ],
+          "subscribers": [
+            "signing-service",
+            "payment-service",
+            "contract-service"
+          ],
+          "description": "Domain events emitted upon order placement"
+        },
+        {
+          "name": "signings",
+          "scope": "public",
+          "kind": "event",
+          "key": "signingId",
+          "partitionKey": "orderId",
+          "publishers": [
+            "signing-service"
+          ],
+          "subscribers": [
+            "contract-service"
+          ],
+          "description": "Domain events emitted upon document signing completion"
+        },
+        {
+          "name": "payment-status",
+          "scope": "public",
+          "kind": "event",
+          "key": "paymentId",
+          "partitionKey": "orderId",
+          "publishers": [
+            "payment-service"
+          ],
+          "subscribers": [
+            "contract-service"
+          ],
+          "description": "Domain events emitted upon payment status transition"
+        },
+        {
+          "name": "internal.warranty.inbound.event.v1",
+          "alias": "warranty",
+          "scope": "internal",
+          "kind": "event",
+          "key": "warrantyId",
+          "partitionKey": "policyNumber",
+          "publishers": [
+            "soa-agents"
+          ],
+          "subscribers": [
+            "policy-service",
+            "product-service",
+            "pricing-service",
+            "contract-service"
+          ],
+          "description": "Inbound legacy event stream captured from on-prem DB2 database"
+        }
+      ],
+      "endpoints": [
+        {
+          "service": "order-service",
+          "name": "orders",
+          "method": "POST",
+          "returns": "orderId",
+          "requestBody": {
+            "type": "object",
+            "required": [
+              "universalCustomerId",
+              "dealershipId",
+              "plans",
+              "createdAt"
+            ],
+            "properties": {
+              "universalCustomerId": {
+                "type": "string"
+              },
+              "dealershipId": {
+                "type": "string"
+              },
+              "plans": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "vin",
+                    "productId",
+                    "priceId"
+                  ],
+                  "properties": {
+                    "vin": {
+                      "type": "string"
+                    },
+                    "productId": {
+                      "type": "string"
+                    },
+                    "priceId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "description": "Creates a new customer order for selected plans"
+        }
+      ],
+      "legacyIntegrations": [
+        {
+          "id": "db2-integration",
+          "name": "DB2 Integration",
+          "environment": "on-prem",
+          "source": "DB2",
+          "adapter": "SOA Agents",
+          "targetTopic": "internal.warranty.inbound.event.v1",
+          "description": "Captures legacy warranty data from on-prem DB2 into internal event stream"
+        }
+      ]
+    }
+  ]
+}
