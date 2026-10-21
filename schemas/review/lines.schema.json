@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/review/lines.schema.json",
+  "title": "Lines",
+  "description": "Line-level domain shapes of a [[Change]]: numbered lines, line ranges, removed lines, and file side",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/NumberedLines"
+    },
+    {
+      "$ref": "#/$defs/RemovedLines"
+    },
+    {
+      "$ref": "#/$defs/Side"
+    }
+  ],
+  "$defs": {
+    "NumberedLines": {
+      "description": "Consecutive lines of a file, each under its 1-based line number",
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "$ref": "#/$defs/LineNumberName"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/LineText"
+      }
+    },
+    "Side": {
+      "description": "Which file numbering applies: head at the head commit, base at the base",
+      "enum": [
+        "head",
+        "base"
+      ]
+    },
+    "LineNumber": {
+      "description": "A 1-based line number",
+      "type": "integer",
+      "minimum": 1
+    },
+    "LineNumberName": {
+      "description": "A 1-based line number as a property name",
+      "type": "string",
+      "pattern": "^[1-9][0-9]*$"
+    },
+    "LineText": {
+      "description": "One line of text without its line break",
+      "type": "string"
+    },
+    "LineRange": {
+      "description": "An inclusive 1-based range of consecutive lines",
+      "type": "object",
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "$ref": "#/$defs/LineNumber"
+        },
+        "end": {
+          "$ref": "#/$defs/LineNumber"
+        }
+      }
+    },
+    "RemovedContent": {
+      "description": "The text of removed lines at the base, joined by line breaks",
+      "type": "string"
+    },
+    "RemovedLines": {
+      "description": "Consecutive removed lines with their text at the base",
+      "$ref": "#/$defs/LineRange",
+      "required": [
+        "content"
+      ],
+      "properties": {
+        "content": {
+          "$ref": "#/$defs/RemovedContent"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\""
+    }
+  ]
+}

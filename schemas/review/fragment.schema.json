@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/fragment.schema.json",
   "title": "Fragment",
-  "description": "A run of consecutive lines of a file, each line under its number, of one of two kinds: a surface fragment, which the change added or removed and a violation may anchor on, or a context fragment, which stands around the change and no violation anchors on",
+  "description": "A run of consecutive numbered lines of a file: a surface fragment added or removed by the [[Change]], or a context fragment around it",
   "oneOf": [
     {
       "$ref": "#/$defs/SurfaceFragment"
@@ -13,7 +13,7 @@
   ],
   "$defs": {
     "SurfaceFragment": {
-      "description": "Lines the change added, on side head and numbered in the file at the head commit, or removed, on side base and numbered in the file at the base. An anchor copies these lines as they stand",
+      "description": "Lines under review on side head or base that a violation may anchor on",
       "type": "object",
       "required": [
         "kind",
@@ -25,16 +25,16 @@
           "const": "surface"
         },
         "side": {
-          "$ref": "#/$defs/Side"
+          "$ref": "lines.schema.json#/$defs/Side"
         },
         "lines": {
-          "$ref": "#/$defs/Lines"
+          "$ref": "lines.schema.json#/$defs/NumberedLines"
         }
       },
       "additionalProperties": false
     },
     "ContextFragment": {
-      "description": "Lines the change left as they were, handed so that a rule can be judged on the whole file; no violation anchors on them",
+      "description": "Unchanged surrounding lines at head; no violation anchors on them",
       "type": "object",
       "required": [
         "kind",
@@ -45,37 +45,10 @@
           "const": "context"
         },
         "lines": {
-          "$ref": "#/$defs/Lines"
+          "$ref": "lines.schema.json#/$defs/NumberedLines"
         }
       },
       "additionalProperties": false
-    },
-    "Side": {
-      "description": "Which numbering the lines use: head for the file at the head commit, base for the file at the base",
-      "enum": [
-        "head",
-        "base"
-      ]
-    },
-    "Lines": {
-      "description": "Consecutive lines, each under its number, the first line of a file being 1",
-      "type": "object",
-      "minProperties": 1,
-      "propertyNames": {
-        "$ref": "#/$defs/LineNumberName"
-      },
-      "additionalProperties": {
-        "$ref": "#/$defs/LineText"
-      }
-    },
-    "LineNumberName": {
-      "description": "A line number as the name of a property: a whole number from 1",
-      "type": "string",
-      "pattern": "^[1-9][0-9]*$"
-    },
-    "LineText": {
-      "description": "One line of a file, without its line break",
-      "type": "string"
     }
   },
   "examples": [

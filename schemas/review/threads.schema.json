@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/threads.schema.json",
   "title": "Threads",
-  "description": "The threads this review left on the pull request before, in the one shape every host is folded into: where each sits, what it says, and whether it is open, resolved by the author, or resolved by someone else",
+  "description": "Prior review threads folded at the [[Perimeter]] from the host",
   "type": "object",
   "required": [
     "threads"
@@ -18,7 +18,7 @@
   "additionalProperties": false,
   "$defs": {
     "Thread": {
-      "description": "One thread of ours on lines of the pull request",
+      "description": "One review thread on lines of the pull request",
       "type": "object",
       "required": [
         "id",
@@ -36,10 +36,10 @@
           "$ref": "change-set.schema.json#/$defs/Path"
         },
         "side": {
-          "$ref": "fragment.schema.json#/$defs/Side"
+          "$ref": "lines.schema.json#/$defs/Side"
         },
         "lines": {
-          "$ref": "change-set.schema.json#/$defs/LineRange"
+          "$ref": "lines.schema.json#/$defs/LineRange"
         },
         "state": {
           "$ref": "#/$defs/ThreadState"
@@ -51,12 +51,12 @@
       "additionalProperties": false
     },
     "ThreadId": {
-      "description": "The thread, by the identifier its host gave it; the host's adapter is the only reader",
+      "description": "Host identifier for the thread",
       "type": "string",
       "minLength": 1
     },
     "ThreadState": {
-      "description": "open: still to be answered; resolved-by-author: the author marked it done, so its lines are probed again; resolved: someone else closed it, so it is left alone",
+      "description": "open, resolved-by-author, or resolved by another reviewer",
       "enum": [
         "open",
         "resolved-by-author",
@@ -64,7 +64,7 @@
       ]
     },
     "ThreadBody": {
-      "description": "The first comment of the thread, which names the principle it cites",
+      "description": "First comment body citing the violated principle",
       "type": "string",
       "minLength": 1
     }

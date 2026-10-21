@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/review/surface.schema.json",
+  "title": "Surface",
+  "description": "The lines of the [[Change]] under review: the whole change set on first review, or the lines changed since the prior review together with active threads",
+  "type": "object",
+  "required": [
+    "files"
+  ],
+  "properties": {
+    "files": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SurfaceFile"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "SurfaceFile": {
+      "description": "Added and removed line ranges under review in one file",
+      "type": "object",
+      "required": [
+        "path",
+        "added",
+        "removed"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "change-set.schema.json#/$defs/Path"
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "$ref": "lines.schema.json#/$defs/LineRange"
+          }
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "$ref": "lines.schema.json#/$defs/LineRange"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "files": [
+        {
+          "path": "scripts/verify.sh",
+          "added": [
+            {
+              "start": 21,
+              "end": 21
+            }
+          ],
+          "removed": [
+            {
+              "start": 21,
+              "end": 21
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
