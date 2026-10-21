@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/review.schema.json",
   "title": "Review",
-  "description": "The review context handed to a probe: the pull request, head commit, fragmented files on the surface, ledger path, and report command",
+  "description": "What every probe is handed about the review it takes part in, resolved once by the reviewing context: the pull request, the head commit, every changed file as fragments of lines, and where the probe writes its rows of the ledger",
   "type": "object",
   "required": [
     "pullRequest",
@@ -19,9 +19,10 @@
       "$ref": "change-set.schema.json#/$defs/Commit"
     },
     "files": {
+      "description": "Every changed file that has surface lines, whole: its fragments in file order at the head commit, then the fragments the change removed",
       "type": "array",
       "items": {
-        "$ref": "#/$defs/FileUnderReview"
+        "$ref": "surface.schema.json"
       }
     },
     "ledger": {
@@ -33,34 +34,13 @@
   },
   "additionalProperties": false,
   "$defs": {
-    "FileUnderReview": {
-      "description": "One changed file cut into context and surface fragments",
-      "type": "object",
-      "required": [
-        "path",
-        "fragments"
-      ],
-      "properties": {
-        "path": {
-          "$ref": "change-set.schema.json#/$defs/Path"
-        },
-        "fragments": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "fragment.schema.json"
-          }
-        }
-      },
-      "additionalProperties": false
-    },
     "LedgerFile": {
-      "description": "Path where the probe writes its ledger JSON",
+      "description": "The file the probe writes its rows of the ledger to, by its path on the machine the review runs on. The only file a probe touches",
       "type": "string",
       "minLength": 1
     },
     "ReportCommand": {
-      "description": "Command the probe runs to validate its ledger against its instructions",
+      "description": "The command a probe checks its ledger file with before it returns: the skill's check script, run on the probe's own instructions file. It applies every check the review applies to that file, and says what it rejects",
       "type": "string",
       "minLength": 1
     }

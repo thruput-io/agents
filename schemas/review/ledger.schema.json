@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/ledger.schema.json",
   "title": "Ledger",
-  "description": "Completeness record of a review at the head commit: one row per rule probed with what was examined, the verdict, and [[Evidence]]",
+  "description": "The completeness record of a review, of which there is one: one row per rule probed, naming what was opened, the verdict reached, and [[Evidence]]. Each probe writes its rows to the file its instructions name; the reporting script reads those files, never what a probe says when it returns, and merges them into the one ledger that travels with the review. A row is complete only with its examined and evidence filled; a statement that a rule was considered is not a row",
   "type": "object",
   "required": [
     "headCommit",
@@ -13,138 +13,66 @@
       "$ref": "change-set.schema.json#/$defs/Commit"
     },
     "rows": {
+      "description": "One row per rule probed: the rows of each probe in the order of its instructions",
       "type": "array",
       "items": {
         "$ref": "#/$defs/Row"
       }
     }
   },
-  "additionalProperties": false,
   "$defs": {
     "Row": {
-      "description": "One verdict row for a governance rule or an external book rule",
+      "description": "One probe's result on one rule: a rule of ours, or a rule of a ruleset from outside ours",
+      "$ref": "#/$defs/Verdict",
       "oneOf": [
         {
-          "$ref": "#/$defs/RuleRow"
+          "description": "The verdict reached on one of our rules by [[Id]]",
+          "type": "object",
+          "required": [
+            "rule"
+          ],
+          "properties": {
+            "rule": {
+              "$ref": "../governance/rules.schema.json#/$defs/RuleId"
+            }
+          }
         },
         {
-          "$ref": "#/$defs/BookRow"
+          "description": "The verdict the escalation probe reached on one rule of the ruleset it selected",
+          "type": "object",
+          "required": [
+            "bookRule"
+          ],
+          "properties": {
+            "bookRule": {
+              "description": "A rule from outside ours, referenced by where it is read: the reporting script renders the link, the probe writes none into its observation",
+              "type": "object",
+              "required": [
+                "ruleset",
+                "heading"
+              ],
+              "properties": {
+                "ruleset": {
+                  "$ref": "#/$defs/RulesetUrl"
+                },
+                "heading": {
+                  "description": "The heading of a rule in its ruleset",
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
         }
       ]
     },
-    "RuleRow": {
-      "description": "Verdict row for a governance rule by [[Id]]",
-      "$ref": "#/$defs/Verdict",
-      "required": [
-        "rule"
-      ],
-      "properties": {
-        "rule": {
-          "$ref": "../governance/rules.schema.json#/$defs/RuleId"
-        }
-      }
-    },
-    "BookRow": {
-      "description": "Verdict row for an external ruleset rule",
-      "$ref": "#/$defs/Verdict",
-      "required": [
-        "bookRule"
-      ],
-      "properties": {
-        "bookRule": {
-          "$ref": "#/$defs/BookRule"
-        }
-      }
-    },
-    "BookRule": {
-      "description": "External rule identified by ruleset URL and heading",
-      "type": "object",
-      "required": [
-        "ruleset",
-        "heading"
-      ],
-      "properties": {
-        "ruleset": {
-          "$ref": "#/$defs/RulesetUrl"
-        },
-        "heading": {
-          "$ref": "#/$defs/BookRuleHeading"
-        }
-      },
-      "additionalProperties": false
-    },
     "RulesetUrl": {
-      "description": "Canonical URL of the external ruleset",
+      "description": "A ruleset from outside our rules, by its canonical URL",
       "type": "string",
       "format": "uri"
     },
-    "BookRuleHeading": {
-      "description": "Heading of the rule in the ruleset",
-      "type": "string",
-      "minLength": 1
-    },
     "Verdict": {
-      "description": "Outcome reached on a rule: violation, clean, or not-applicable",
-      "oneOf": [
-        {
-          "$ref": "#/$defs/Violated"
-        },
-        {
-          "$ref": "#/$defs/Clean"
-        },
-        {
-          "$ref": "#/$defs/NotApplicable"
-        }
-      ]
-    },
-    "Violated": {
-      "description": "Violated rule with [[Evidence]] and anchored violations",
-      "$ref": "#/$defs/Audited",
-      "required": [
-        "verdict",
-        "violations"
-      ],
-      "properties": {
-        "verdict": {
-          "const": "violation"
-        },
-        "violations": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "violation.schema.json"
-          }
-        }
-      }
-    },
-    "Clean": {
-      "description": "Rule holds against what was examined",
-      "$ref": "#/$defs/Audited",
-      "required": [
-        "verdict"
-      ],
-      "properties": {
-        "verdict": {
-          "const": "clean"
-        },
-        "violations": false
-      }
-    },
-    "NotApplicable": {
-      "description": "Rule cannot apply to what is under review",
-      "$ref": "#/$defs/Audited",
-      "required": [
-        "verdict"
-      ],
-      "properties": {
-        "verdict": {
-          "const": "not-applicable"
-        },
-        "violations": false
-      }
-    },
-    "Audited": {
-      "description": "Examined artifacts and [[Evidence]] required on every row",
+      "description": "What a probe reached on one rule; the verdict decides what else is carried",
       "type": "object",
       "required": [
         "examined",
@@ -152,30 +80,69 @@
       ],
       "properties": {
         "examined": {
-          "$ref": "#/$defs/Examined"
+          "description": "What was actually opened to reach the verdict. Context the probe needed and was not handed is named here rather than silently dropped",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "description": "One thing opened to reach the verdict: a file, a symbol, a call site, a test file including the case where none exists, or a search with its query",
+            "type": "string",
+            "minLength": 1
+          }
         },
         "evidence": {
-          "$ref": "#/$defs/Evidence"
+          "description": "Verifiable [[Evidence]] that the verdict rests on; the verdict it sits in says what it has to name",
+          "type": "string",
+          "minLength": 1
         }
-      }
-    },
-    "Examined": {
-      "description": "Files, symbols, tests, or queries opened to reach the verdict",
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "$ref": "#/$defs/ExaminedItem"
-      }
-    },
-    "ExaminedItem": {
-      "description": "One artifact or search query examined",
-      "type": "string",
-      "minLength": 1
-    },
-    "Evidence": {
-      "description": "Verifiable [[Evidence]] grounding the verdict",
-      "type": "string",
-      "minLength": 1
+      },
+      "oneOf": [
+        {
+          "description": "The rule is violated: [[Evidence]] names file and line inside the surface, and every finding is carried as a violation",
+          "type": "object",
+          "required": [
+            "verdict",
+            "violations"
+          ],
+          "properties": {
+            "verdict": {
+              "const": "violation"
+            },
+            "violations": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "violation.schema.json"
+              }
+            }
+          }
+        },
+        {
+          "description": "The rule holds: [[Evidence]] names what was checked that would have exposed a violation; it carries no violations",
+          "type": "object",
+          "required": [
+            "verdict"
+          ],
+          "properties": {
+            "verdict": {
+              "const": "clean"
+            },
+            "violations": false
+          }
+        },
+        {
+          "description": "The rule cannot apply to what is under review: [[Evidence]] says why. No findings is not a reason; it carries no violations",
+          "type": "object",
+          "required": [
+            "verdict"
+          ],
+          "properties": {
+            "verdict": {
+              "const": "not-applicable"
+            },
+            "violations": false
+          }
+        }
+      ]
     }
   },
   "examples": [
@@ -183,12 +150,45 @@
       "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
       "rows": [
         {
+          "rule": "Scripts abort on error",
+          "examined": [
+            "scripts/verify.sh",
+            "build.sh"
+          ],
+          "verdict": "clean",
+          "evidence": "Both scripts run under set -euo pipefail, and no step is wrapped in a construct that would let the script continue."
+        },
+        {
           "rule": "No suppressed exit status",
           "examined": [
             "scripts/verify.sh"
           ],
+          "verdict": "violation",
+          "evidence": "scripts/verify.sh:21 pipes the check into tail, so its status is lost.",
+          "violations": [
+            {
+              "observation": "Losing the check's exit status in a pipe into tail",
+              "anchor": {
+                "kind": "surface",
+                "path": "scripts/verify.sh",
+                "side": "head",
+                "lines": {
+                  "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "bookRule": {
+            "ruleset": "https://github.com/ciembor/agent-rules-books/blob/main/domain-driven-design/domain-driven-design.md",
+            "heading": "Make implicit concepts explicit"
+          },
+          "examined": [
+            "scripts/verify.sh"
+          ],
           "verdict": "clean",
-          "evidence": "Every command in scripts/verify.sh:1-12 runs under set -euo pipefail without suppression."
+          "evidence": "The change adds one check to a script and introduces no domain concept that could be left implicit."
         }
       ]
     }

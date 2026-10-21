@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/violation.schema.json",
   "title": "Violation",
-  "description": "One finding on a violated rule: the observation of what is wrong and the anchor where it sits",
+  "description": "One finding of the rule in whose ledger row it sits: the observation of what is wrong, and where it is reported. It carries no reference of its own: the row names the rule once, and the reporting script renders the comment as '{observation} breaks {principle name}', the principle being the parent of that rule",
   "type": "object",
   "required": [
     "observation",
@@ -16,15 +16,14 @@
       "$ref": "#/$defs/Anchor"
     }
   },
-  "additionalProperties": false,
   "$defs": {
     "Observation": {
-      "description": "Subject phrase completing '{observation} breaks {principle}', naming no rule or principle",
+      "description": "What the code does wrong, briefly, worded as the subject of the sentence the reporting script completes: '{observation} breaks {principle name}'. It names no rule and no principle, by name, id, link, or wording, and it says what is wrong, not how to fix it",
       "type": "string",
       "minLength": 1
     },
     "Anchor": {
-      "description": "Where the violation is anchored: on surface lines or at the pull request",
+      "description": "Where the violation is reported",
       "oneOf": [
         {
           "$ref": "#/$defs/SurfaceAnchor"
@@ -35,7 +34,7 @@
       ]
     },
     "SurfaceAnchor": {
-      "description": "Lines copied verbatim from one surface fragment of review.files",
+      "description": "Lines of one surface fragment of one file, copied as they stand under review.files: the kind surface, the side, and the lines with their text. Lines of a context fragment are another kind and cannot be an anchor; lines not copied from the fragment are refused",
       "type": "object",
       "required": [
         "kind",
@@ -60,7 +59,7 @@
       "additionalProperties": false
     },
     "PullRequestAnchor": {
-      "description": "The pull request as a whole when no surface line is to blame",
+      "description": "The pull request as a whole, where no surface line is to blame: an existing component that replaces a whole module, a standard the change set as a whole does not follow, or code outside the surface that the change made dead, which the observation names by file and line. Carried in the review body rather than on a line",
       "type": "object",
       "required": [
         "kind"
@@ -69,8 +68,7 @@
         "kind": {
           "const": "pull-request"
         }
-      },
-      "additionalProperties": false
+      }
     }
   },
   "examples": [
