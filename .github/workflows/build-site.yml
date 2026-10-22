@@ -33,6 +33,8 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           cp -R "$PROJECT_ROOT/web" "$PROJECT_ROOT/site"
           cp -R "$PROJECT_ROOT/rules" "$PROJECT_ROOT/site/_data"
+          mkdir -p "$PROJECT_ROOT/site/rules"
+          cp "$PROJECT_ROOT/rules/"*.yaml "$PROJECT_ROOT/site/rules/"
           cp -R "$PROJECT_ROOT/schemas" "$PROJECT_ROOT/site/schemas"
           printf 'version: %s\n' "$version" > "$PROJECT_ROOT/site/_data/release.yml"
       - run: npx --yes @sourcemeta/jsonschema@17.0.0 validate "$PROJECT_ROOT/schemas/repository/release.schema.json" "$PROJECT_ROOT/site/_data/release.yml" --resolve "$PROJECT_ROOT/schemas"

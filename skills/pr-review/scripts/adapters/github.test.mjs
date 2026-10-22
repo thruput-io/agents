@@ -7,6 +7,7 @@ import {
   buildGitHubPayload,
   createGitHubAdapter,
   findPostedReviewUrl,
+  findPriorReviewCommit,
   findRefusedReviewUrl,
   foldGitHubThread,
 } from './github.mjs';
@@ -97,20 +98,24 @@ describe('github adapter', () => {
     const refusal = {
       id: 5,
       state: 'CHANGES_REQUESTED',
+      commit_id: SHA_B,
       html_url: 'https://github.com/o/r/pull/1#pullrequestreview-5',
-      body: `**Verdict: request-changes**\n\nNot reviewed at ${SHA_A} against [the rules](${RULES_SITE_URL}): check build did not succeed.`,
+      body: `**Verdict: request-changes**\n\nNot reviewed at ${SHA_B} against [the rules](${RULES_SITE_URL}): check build did not succeed.`,
     };
-    assert.equal(findRefusedReviewUrl([refusal], SHA_A), refusal.html_url);
-    assert.equal(findRefusedReviewUrl([refusal], SHA_B), null);
+    assert.equal(findRefusedReviewUrl([refusal], SHA_B), refusal.html_url);
+    assert.equal(findRefusedReviewUrl([refusal], SHA_A), null);
 
     const review = {
       id: 7,
       state: 'CHANGES_REQUESTED',
+      commit_id: SHA_A,
       html_url: 'https://github.com/o/r/pull/1#pullrequestreview-7',
       body: `**Verdict: request-changes**\n\n3 rules probed by 2 probes at ${SHA_A} against [the rules](${RULES_SITE_URL}): 1 violations`,
     };
     assert.equal(findPostedReviewUrl([review], SHA_A), review.html_url);
     assert.equal(findPostedReviewUrl([review], SHA_B), null);
+    assert.equal(findPriorReviewCommit([review, refusal]).toContract(), SHA_A);
+    assert.equal(findPriorReviewCommit([refusal]), null);
     assert.equal(typeof createGitHubAdapter, 'function');
   });
 });

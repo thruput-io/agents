@@ -63,6 +63,13 @@ export function findRefusedReviewUrl(reviews, headCommit) {
   return found !== undefined ? found.html_url : null;
 }
 
+export function findPriorReviewCommit(reviews) {
+  const found = reviews
+    .filter((r) => r.state !== 'PENDING' && Thread.isOurs(r.body) && !r.body.includes('Not reviewed at '))
+    .at(-1);
+  return found !== undefined ? CommitSha.fromRaw(found.commit_id).unwrap() : null;
+}
+
 export function buildGitHubComment(finding) {
   const side = HOST_SIDE_OF[finding.side().toContract()];
   const { start, end } = finding.lines().toContract();
@@ -106,8 +113,7 @@ export function createGitHubAdapter(run, runBuffer) {
         .map((check) => `check ${check.name} did not succeed`);
       const blocked = [...failed, ...(pr.mergeable_state === 'dirty' ? ['the pull request has merge conflicts'] : [])];
       const reviews = paginateRest(gh, `${pullsPath(host)}/reviews`, 1, []);
-      const lastOurReview = reviews.filter((r) => r.state !== 'PENDING' && Thread.isOurs(r.body)).at(-1);
-      const prior = lastOurReview !== undefined ? CommitSha.fromRaw(lastOurReview.commit_id).unwrap() : null;
+      const prior = findPriorReviewCommit(reviews);
       const rawThreadNodes = prior === null
         ? []
         : paginateThreads(gh, host, null, []).filter((node) => {
