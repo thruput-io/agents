@@ -130,23 +130,11 @@ into `scripts/verify.sh` so static analysis guards the entire JavaScript codebas
 
 ## References
 
-### Tracer-bullet tests
-
-- [zod-schema-derivation](tracer-bullets/zod-schema-derivation/README.md) — tests `@sourcemeta/jsonschema@17.0.0 bundle
-  --without-id` + RFC 6901 pointer dereferencing + `zod@4.6.7` `z.fromJSONSchema()` vs `json-schema-to-zod@2.8.1` across
-  all 26 schemas in `schemas/`. Result in [RESULT.md](tracer-bullets/zod-schema-derivation/RESULT.md).
-
-### Research
-
-- [JSON Schema Draft 2020-12 to Zod Derivation and Bundling](research/zod-json-schema-2020-12/README.md) — compares
-  `zod@4.6.7` (`z.fromJSONSchema`), `@sourcemeta/jsonschema@17.0.0 bundle --without-id`, `x-to-zod@0.10.9`, and
-  `json-schema-to-zod@2.8.1` against the repository's rules and Semgrep guardrails.
-
 ### Rejected alternatives
 
 | Alternative | Why it was rejected |
 |---|---|
-| `json-schema-to-zod@2.8.1` | Archived and deprecated in March 2026 (violates `[[Maintained]]`); does not resolve `$ref` or `$defs` (silently emits `z.any()`); emits invalid TypeScript generic syntax `reduce<{...}>` in `parseOneOf.ts` that crashes Node 22 `.mjs` with `SyntaxError` on `pull-request`, `fragment`, and `violation` schemas; emits `.strict()` which violates Semgrep `accept-unknown-properties`. See [research](research/zod-json-schema-2020-12/README.md). |
+| `json-schema-to-zod@2.8.1` | Archived and deprecated in March 2026 (violates `[[Maintained]]`); does not resolve `$ref` or `$defs` (silently emits `z.any()`); emits invalid TypeScript generic syntax `reduce<{...}>` in `parseOneOf.ts` that crashes Node 22 `.mjs` with `SyntaxError` on `pull-request`, `fragment`, and `violation` schemas; emits `.strict()` which violates Semgrep `accept-unknown-properties`. |
 | `x-to-zod@0.10.9` | Emits `.strict()` in generated code on `additionalProperties: false` branches (violating Semgrep `accept-unknown-properties`) and adds an external dependency where core `zod@4.6.7` `z.fromJSONSchema()` already meets the need (`[[No dependency where the platform serves]]`). |
 | Committing generated `.zod.mjs` files to git | Violates `[[No committing generated code]]`, `[[No second representation]]`, and Semgrep rule `no-committing-generated-code`. Generating into gitignored `skills/pr-review/scripts/.generated/` during `build.sh` keeps the JSON Schema as the sole committed representation. |
 | Patching `skills/pr-review/scripts/lib.mjs` in place | `lib.mjs` is a 414-line procedural bag of raw-primitive helpers that mutates objects in place. Incremental patching leaves primitive obsession across all callers (`prepare.mjs`, `check.mjs`, `review.mjs`, `github.mjs`, `azure-devops.mjs`, `git.mjs`). |
