@@ -4,5 +4,4 @@ build/
 .DS_Store
 .idea/
 node_modules/
-skills/pr-review/scripts/.generated/
 *.g.*

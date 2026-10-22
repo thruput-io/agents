@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DEFS, SCHEMAS } from '../.generated/contracts.mjs';
+import { DEFS, SCHEMAS } from './contracts.mjs';
 import { Ledger } from './ledger.mjs';
 import { LineRange } from './line-range.mjs';
 import { Side } from './lines.mjs';

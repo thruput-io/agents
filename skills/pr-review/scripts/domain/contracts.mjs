@@ -1,17 +1,19 @@
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
-import { z } from 'zod';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = new URL('..', import.meta.url).pathname;
-const ALL_SCHEMA_DIR = join(ROOT, 'schemas');
-const SCHEMA_DIR = join(ROOT, 'schemas/review');
-const OUT_FILE = join(ROOT, 'skills/pr-review/scripts/.generated/contracts.mjs');
+const SKILL_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const ALL_SCHEMA_DIR = join(SKILL_DIR, 'schemas');
+const SCHEMA_DIR = join(ALL_SCHEMA_DIR, 'review');
 const IGNORED_KEYS = new Set(['$defs', '$id', '$schema', 'examples']);
 
 function listSchemaFiles(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = join(dir, entry.name);
-    return entry.isDirectory() ? listSchemaFiles(full) : (entry.name.endsWith('.schema.json') ? [full] : []);
+    if (entry.isDirectory()) return listSchemaFiles(full);
+    return entry.name.endsWith('.schema.json') && !entry.name.endsWith('.g.schema.json')
+      ? [full]
+      : [];
   });
 }
 
@@ -121,14 +123,15 @@ function resolveNode(node, currentPath, docs, seen) {
       .map(([key, val]) => [key, resolveNode(val, currentPath, docs, seen)]),
   );
   const merged = mergeTwo(allOfMerged, ownResolved);
-  const withNot = 'not' in merged && merged.not && typeof merged.not === 'object' && Array.isArray(merged.not.required)
-    ? {
-        ...stripKeys(merged, ['not']),
-        ...(merged.not.required.length === 1
-          ? { properties: { ...(merged.properties || {}), [merged.not.required[0]]: { not: {} } } }
-          : {}),
-      }
-    : merged;
+  const withNot =
+    'not' in merged && merged.not && typeof merged.not === 'object' && Array.isArray(merged.not.required)
+      ? {
+          ...stripKeys(merged, ['not']),
+          ...(merged.not.required.length === 1
+            ? { properties: { ...(merged.properties || {}), [merged.not.required[0]]: { not: {} } } }
+            : {}),
+        }
+      : merged;
   if ('const' in withNot && Array.isArray(withNot.const)) {
     const arr = withNot.const;
     return {
@@ -151,33 +154,23 @@ const docs = new Map(
 
 const reviewEntries = Array.from(docs.entries()).filter(([relPath]) => !relPath.startsWith('..'));
 
-const SCHEMAS = Object.fromEntries(
-  reviewEntries.map(([relPath, doc]) => {
-    const resolved = resolveNode(doc, relPath, docs, new Set([`${relPath}#`]));
-    const zodSchema = z.fromJSONSchema(resolved);
-    (doc.examples || []).forEach((ex, i) => {
-      const check = zodSchema.safeParse(ex);
-      if (!check.success) {
-        throw new Error(`Example ${i} failed in ${relPath}: ${JSON.stringify(check.error.issues)}`);
-      }
-    });
-    return [relPath, resolved];
-  }),
+export const SCHEMAS = Object.fromEntries(
+  reviewEntries.map(([relPath, doc]) => [
+    relPath,
+    resolveNode(doc, relPath, docs, new Set([`${relPath}#`])),
+  ]),
 );
 
-const DEFS = Object.fromEntries(
+export const DEFS = Object.fromEntries(
   reviewEntries.flatMap(([relPath, doc]) =>
     Object.entries(doc.$defs || {}).map(([defName, defNode]) => {
-      const pointer = `#/$defs/${defName}`;
-      const key = `${relPath}${pointer}`;
-      const resolved = resolveNode(defNode, relPath, docs, new Set([key]));
-      z.fromJSONSchema(resolved);
-      return [key, resolved];
+      const key = `${relPath}#/$defs/${defName}`;
+      return [key, resolveNode(defNode, relPath, docs, new Set([key]))];
     }),
   ),
 );
 
-const CONSTANTS = {
+export const CONSTANTS = {
   agentInstructions: docs.get('agent-instructions.schema.json').properties.instructions.const,
   rulebookInstructions: docs.get('rulebook.schema.json').properties.instructions.const,
   tasks: {
@@ -187,12 +180,3 @@ const CONSTANTS = {
     context: docs.get('instructions/context.schema.json').properties.task.const,
   },
 };
-
-mkdirSync(dirname(OUT_FILE), { recursive: true });
-const source = [
-  `export const SCHEMAS = ${JSON.stringify(SCHEMAS, null, 2)};`,
-  `export const DEFS = ${JSON.stringify(DEFS, null, 2)};`,
-  `export const CONSTANTS = ${JSON.stringify(CONSTANTS, null, 2)};`,
-  '',
-].join('\n');
-writeFileSync(OUT_FILE, source, 'utf8');

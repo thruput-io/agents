@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DEFS } from '../.generated/contracts.mjs';
+import { DEFS } from './contracts.mjs';
 import { Result } from './result.mjs';
 
 function definePrimitive(typeName, zodSchema) {

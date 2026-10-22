@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SCHEMAS } from '../.generated/contracts.mjs';
+import { SCHEMAS } from './contracts.mjs';
 import { ContextFragment, Fragment, SurfaceFragment } from './fragment.mjs';
 import { LineRange } from './line-range.mjs';
 import { NumberedLines, Side } from './lines.mjs';

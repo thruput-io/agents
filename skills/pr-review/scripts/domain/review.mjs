@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SCHEMAS } from '../.generated/contracts.mjs';
+import { SCHEMAS } from './contracts.mjs';
 import { CommitSha, NonEmptyText } from './primitives.mjs';
 import { PullRequest } from './pull-request.mjs';
 import { Result } from './result.mjs';

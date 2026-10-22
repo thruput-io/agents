@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 import { z } from 'zod';
-import { DEFS, SCHEMAS } from '../.generated/contracts.mjs';
+import { DEFS, SCHEMAS } from './contracts.mjs';
 import { Identifier, PositiveInteger, Ref, RepositoryPath } from './primitives.mjs';
 import { Result } from './result.mjs';
 

@@ -37,6 +37,7 @@ Every shape that crosses between you, the scripts, and a probe subagent is defin
 ### 1. Prepare
 
 ```bash
+npm --prefix <skill> ci
 node <skill>/scripts/prepare.mjs <target> <workdir>
 ```
 

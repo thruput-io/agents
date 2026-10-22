@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
-import { SCHEMAS, DEFS, CONSTANTS } from '../skills/pr-review/scripts/.generated/contracts.mjs';
+import { SCHEMAS, DEFS, CONSTANTS } from './contracts.mjs';
 
-const ROOT = new URL('..', import.meta.url).pathname;
-const SCHEMA_DIR = join(ROOT, 'schemas/review');
+const SKILL_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const SCHEMA_DIR = join(SKILL_DIR, 'schemas', 'review');
 
 function listSchemaFiles(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -15,12 +16,14 @@ function listSchemaFiles(dir) {
   });
 }
 
-test('all 17 review schemas are present in SCHEMAS and compile with z.fromJSONSchema', () => {
+test('all 17 review schemas and all DEFS compile with z.fromJSONSchema', () => {
   const files = listSchemaFiles(SCHEMA_DIR).map((f) => relative(SCHEMA_DIR, f));
   assert.equal(files.length, 17);
   assert.deepEqual(Object.keys(SCHEMAS).sort(), files.sort());
-  const compiled = Object.values(SCHEMAS).map((schema) => z.fromJSONSchema(schema));
-  assert.equal(compiled.length, 17);
+  const compiledSchemas = Object.values(SCHEMAS).map((schema) => z.fromJSONSchema(schema));
+  assert.equal(compiledSchemas.length, 17);
+  const compiledDefs = Object.values(DEFS).map((def) => z.fromJSONSchema(def));
+  assert.equal(compiledDefs.length > 0, true);
 });
 
 test('every example in all 17 review schemas validates against its compiled Zod schema', () => {

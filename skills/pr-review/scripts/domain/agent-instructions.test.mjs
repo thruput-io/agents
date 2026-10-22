@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { CONSTANTS } from '../.generated/contracts.mjs';
+import { CONSTANTS } from './contracts.mjs';
 import { AgentInstructions, Ruleset } from './agent-instructions.mjs';
 import { Rulebook } from './rulebook.mjs';
 

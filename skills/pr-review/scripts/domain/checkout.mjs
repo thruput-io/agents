@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { z } from 'zod';
-import { SCHEMAS } from '../.generated/contracts.mjs';
+import { SCHEMAS } from './contracts.mjs';
 import { Result } from './result.mjs';
 
 const checkoutSchema = z.fromJSONSchema(SCHEMAS['checkout.schema.json']);

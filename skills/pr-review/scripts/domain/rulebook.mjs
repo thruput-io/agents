@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CONSTANTS, SCHEMAS } from '../.generated/contracts.mjs';
+import { CONSTANTS, SCHEMAS } from './contracts.mjs';
 import { Result } from './result.mjs';
 
 const rulebookSchema = z.fromJSONSchema(SCHEMAS['rulebook.schema.json']);

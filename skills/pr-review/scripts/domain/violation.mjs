@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DEFS, SCHEMAS } from '../.generated/contracts.mjs';
+import { DEFS, SCHEMAS } from './contracts.mjs';
 import { NumberedLines, Side } from './lines.mjs';
 import { ChangedPath, NonEmptyText } from './primitives.mjs';
 import { Result } from './result.mjs';

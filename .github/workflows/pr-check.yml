@@ -19,15 +19,15 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm --prefix "$PROJECT_ROOT" ci
-      - run: node "$PROJECT_ROOT/scripts/generate-zod-contracts.mjs"
+          cache-dependency-path: skills/pr-review/package-lock.json
+      - run: npm --prefix "$PROJECT_ROOT/skills/pr-review" ci
       - run: |
           "$PROJECT_ROOT/scripts/declared-ids.schema.sh" > "$PROJECT_ROOT/schemas/governance/declared-ids.g.schema.json"
       - run: npx --yes @sourcemeta/jsonschema@17.0.0 lint "$PROJECT_ROOT/schemas" --resolve "$PROJECT_ROOT/schemas"
       - run: npx --yes @sourcemeta/jsonschema@17.0.0 metaschema "$PROJECT_ROOT/schemas" --resolve "$PROJECT_ROOT/schemas"
       - run: npx --yes @sourcemeta/jsonschema@17.0.0 validate "$PROJECT_ROOT/schemas/governance/declared-ids.g.schema.json" "$PROJECT_ROOT/rules" --resolve "$PROJECT_ROOT/schemas"
       - run: npx --yes @agentplugins/cli@0.6.1 audit "$PROJECT_ROOT"
-      - run: node --test "$PROJECT_ROOT"/scripts/*.test.mjs "$PROJECT_ROOT"/skills/pr-review/scripts/*.test.mjs "$PROJECT_ROOT"/skills/pr-review/scripts/domain/*.test.mjs "$PROJECT_ROOT"/skills/pr-review/scripts/adapters/*.test.mjs
+      - run: node --test "$PROJECT_ROOT"/skills/pr-review/scripts/*.test.mjs "$PROJECT_ROOT"/skills/pr-review/scripts/domain/*.test.mjs "$PROJECT_ROOT"/skills/pr-review/scripts/adapters/*.test.mjs
 
   build-site:
     uses: ./.github/workflows/build-site.yml

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { CONSTANTS } from '../.generated/contracts.mjs';
+import { CONSTANTS } from './contracts.mjs';
 import { AgentInstructions } from './agent-instructions.mjs';
 import { Ledger } from './ledger.mjs';
 import { Outcome } from './outcome.mjs';

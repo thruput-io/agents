@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CONSTANTS, DEFS, SCHEMAS } from '../.generated/contracts.mjs';
+import { CONSTANTS, DEFS, SCHEMAS } from './contracts.mjs';
 import { Checkout } from './checkout.mjs';
 import { NonEmptyText, RulesetUrl } from './primitives.mjs';
 import { Result } from './result.mjs';
