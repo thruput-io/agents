@@ -25,10 +25,10 @@
           "const": "surface"
         },
         "side": {
-          "$ref": "#/$defs/Side"
+          "$ref": "lines.schema.json#/$defs/Side"
         },
         "lines": {
-          "$ref": "#/$defs/Lines"
+          "$ref": "lines.schema.json#/$defs/NumberedLines"
         }
       },
       "additionalProperties": false
@@ -45,37 +45,10 @@
           "const": "context"
         },
         "lines": {
-          "$ref": "#/$defs/Lines"
+          "$ref": "lines.schema.json#/$defs/NumberedLines"
         }
       },
       "additionalProperties": false
-    },
-    "Side": {
-      "description": "Which numbering the lines use: head for the file at the head commit, base for the file at the base",
-      "enum": [
-        "head",
-        "base"
-      ]
-    },
-    "Lines": {
-      "description": "Consecutive lines, each under its number, the first line of a file being 1",
-      "type": "object",
-      "minProperties": 1,
-      "propertyNames": {
-        "$ref": "#/$defs/LineNumberName"
-      },
-      "additionalProperties": {
-        "$ref": "#/$defs/LineText"
-      }
-    },
-    "LineNumberName": {
-      "description": "A line number as the name of a property: a whole number from 1",
-      "type": "string",
-      "pattern": "^[1-9][0-9]*$"
-    },
-    "LineText": {
-      "description": "One line of a file, without its line break",
-      "type": "string"
     }
   },
   "examples": [

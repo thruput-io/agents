@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/ledger.schema.json",
   "title": "Ledger",
-  "description": "The completeness record of a review, of which there is one: one row per rule probed, naming what was opened and the verdict reached. Each probe writes its rows to the file its instructions name; the reporting script reads those files, never what a probe says when it returns, and merges them into the one ledger that travels with the review. A row is complete only with its examined and evidence filled; a statement that a rule was considered is not a row",
+  "description": "The completeness record of a review, of which there is one: one row per rule probed, naming what was opened, the verdict reached, and [[Evidence]]. Each probe writes its rows to the file its instructions name; the reporting script reads those files, never what a probe says when it returns, and merges them into the one ledger that travels with the review. A row is complete only with its examined and evidence filled; a statement that a rule was considered is not a row",
   "type": "object",
   "required": [
     "headCommit",
@@ -10,7 +10,6 @@
   ],
   "properties": {
     "headCommit": {
-      "description": "The commit every row was reached against",
       "$ref": "change-set.schema.json#/$defs/Commit"
     },
     "rows": {
@@ -24,167 +23,126 @@
   "$defs": {
     "Row": {
       "description": "One probe's result on one rule: a rule of ours, or a rule of a ruleset from outside ours",
+      "$ref": "#/$defs/Verdict",
       "oneOf": [
         {
-          "$ref": "#/$defs/RuleRow"
+          "description": "The verdict reached on one of our rules by [[Id]]",
+          "type": "object",
+          "required": [
+            "rule"
+          ],
+          "properties": {
+            "rule": {
+              "$ref": "../governance/rules.schema.json#/$defs/RuleId"
+            }
+          }
         },
         {
-          "$ref": "#/$defs/BookRow"
+          "description": "The verdict the escalation probe reached on one rule of the ruleset it selected",
+          "type": "object",
+          "required": [
+            "bookRule"
+          ],
+          "properties": {
+            "bookRule": {
+              "description": "A rule from outside ours, referenced by where it is read: the reporting script renders the link, the probe writes none into its observation",
+              "type": "object",
+              "required": [
+                "ruleset",
+                "heading"
+              ],
+              "properties": {
+                "ruleset": {
+                  "$ref": "#/$defs/RulesetUrl"
+                },
+                "heading": {
+                  "description": "The heading of a rule in its ruleset",
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
         }
       ]
-    },
-    "RuleRow": {
-      "description": "The verdict reached on one of our rules",
-      "$ref": "#/$defs/Verdict",
-      "required": [
-        "rule"
-      ],
-      "properties": {
-        "rule": {
-          "description": "The rule probed, referenced by its id",
-          "$ref": "../governance/rules.schema.json#/$defs/RuleId"
-        }
-      }
-    },
-    "BookRow": {
-      "description": "The verdict the escalation probe reached on one rule of the ruleset it selected",
-      "$ref": "#/$defs/Verdict",
-      "required": [
-        "bookRule"
-      ],
-      "properties": {
-        "bookRule": {
-          "$ref": "#/$defs/BookRule"
-        }
-      }
-    },
-    "BookRule": {
-      "description": "A rule from outside ours, referenced by where it is read: the reporting script renders the link, the probe writes none into its observation",
-      "type": "object",
-      "required": [
-        "ruleset",
-        "heading"
-      ],
-      "properties": {
-        "ruleset": {
-          "$ref": "#/$defs/RulesetUrl"
-        },
-        "heading": {
-          "$ref": "#/$defs/BookRuleHeading"
-        }
-      }
     },
     "RulesetUrl": {
       "description": "A ruleset from outside our rules, by its canonical URL",
       "type": "string",
       "format": "uri"
     },
-    "BookRuleHeading": {
-      "description": "The heading of a rule in its ruleset",
-      "type": "string",
-      "minLength": 1
-    },
     "Verdict": {
       "description": "What a probe reached on one rule; the verdict decides what else is carried",
-      "oneOf": [
-        {
-          "$ref": "#/$defs/Violated"
-        },
-        {
-          "$ref": "#/$defs/Clean"
-        },
-        {
-          "$ref": "#/$defs/NotApplicable"
-        }
-      ]
-    },
-    "Violated": {
-      "description": "The rule is violated: evidence names file and line inside the surface, and every finding is carried as a violation",
       "type": "object",
       "required": [
         "examined",
-        "verdict",
-        "evidence",
-        "violations"
+        "evidence"
       ],
       "properties": {
         "examined": {
-          "$ref": "#/$defs/Examined"
-        },
-        "verdict": {
-          "const": "violation"
-        },
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
-        "violations": {
+          "description": "What was actually opened to reach the verdict. Context the probe needed and was not handed is named here rather than silently dropped",
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "violation.schema.json"
+            "description": "One thing opened to reach the verdict: a file, a symbol, a call site, a test file including the case where none exists, or a search with its query",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "evidence": {
+          "description": "Verifiable [[Evidence]] that the verdict rests on; the verdict it sits in says what it has to name",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "oneOf": [
+        {
+          "description": "The rule is violated: [[Evidence]] names file and line inside the surface, and every finding is carried as a violation",
+          "type": "object",
+          "required": [
+            "verdict",
+            "violations"
+          ],
+          "properties": {
+            "verdict": {
+              "const": "violation"
+            },
+            "violations": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "violation.schema.json"
+              }
+            }
+          }
+        },
+        {
+          "description": "The rule holds: [[Evidence]] names what was checked that would have exposed a violation; it carries no violations",
+          "type": "object",
+          "required": [
+            "verdict"
+          ],
+          "properties": {
+            "verdict": {
+              "const": "clean"
+            },
+            "violations": false
+          }
+        },
+        {
+          "description": "The rule cannot apply to what is under review: [[Evidence]] says why. No findings is not a reason; it carries no violations",
+          "type": "object",
+          "required": [
+            "verdict"
+          ],
+          "properties": {
+            "verdict": {
+              "const": "not-applicable"
+            },
+            "violations": false
           }
         }
-      }
-    },
-    "Clean": {
-      "description": "The rule holds: evidence names what was checked that would have exposed a violation; it carries no violations",
-      "type": "object",
-      "required": [
-        "examined",
-        "verdict",
-        "evidence"
-      ],
-      "properties": {
-        "examined": {
-          "$ref": "#/$defs/Examined"
-        },
-        "verdict": {
-          "const": "clean"
-        },
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
-        "violations": false
-      }
-    },
-    "NotApplicable": {
-      "description": "The rule cannot apply to what is under review: evidence says why. No findings is not a reason; it carries no violations",
-      "type": "object",
-      "required": [
-        "examined",
-        "verdict",
-        "evidence"
-      ],
-      "properties": {
-        "examined": {
-          "$ref": "#/$defs/Examined"
-        },
-        "verdict": {
-          "const": "not-applicable"
-        },
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
-        "violations": false
-      }
-    },
-    "Examined": {
-      "description": "What was actually opened to reach the verdict. Context the probe needed and was not handed is named here rather than silently dropped",
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "$ref": "#/$defs/ExaminedItem"
-      }
-    },
-    "ExaminedItem": {
-      "description": "One thing opened to reach the verdict: a file, a symbol, a call site, a test file including the case where none exists, or a search with its query",
-      "type": "string",
-      "minLength": 1
-    },
-    "Evidence": {
-      "description": "What the verdict rests on; the verdict it sits in says what it has to name",
-      "type": "string",
-      "minLength": 1
+      ]
     }
   },
   "examples": [

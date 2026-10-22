@@ -50,10 +50,10 @@
           "$ref": "change-set.schema.json#/$defs/Path"
         },
         "side": {
-          "$ref": "fragment.schema.json#/$defs/Side"
+          "$ref": "lines.schema.json#/$defs/Side"
         },
         "lines": {
-          "$ref": "fragment.schema.json#/$defs/Lines"
+          "$ref": "lines.schema.json#/$defs/NumberedLines"
         }
       },
       "additionalProperties": false
