@@ -1,111 +1,160 @@
-import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
+import { mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { azureDevOpsAdapter } from './adapters/azure-devops.mjs';
 import {
-  parseDiff, threadRanges, wholeSurface, narrowSurface, isText, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
-  instructions, complete, numbered, fragments, removedLines, tooLarge, FILE_TOO_LARGE,
-} from './lib.mjs';
-import { run } from './shell.mjs';
-import * as github from './github.mjs';
-import * as azureDevOps from './azure-devops.mjs';
-import * as git from './git.mjs';
+  listSnapshotFiles,
+  readRawJson,
+  readRawYaml,
+  readSnapshotText,
+  writeDomainJson,
+  writeDomainYaml,
+  writeRawJson,
+} from './adapters/fs-store.mjs';
+import { gitAdapter } from './adapters/git.mjs';
+import { githubAdapter } from './adapters/github.mjs';
+import { AgentInstructions, Ruleset } from './domain/agent-instructions.mjs';
+import { Host } from './domain/pull-request.mjs';
+import { Result } from './domain/result.mjs';
+import { Rulebook } from './domain/rulebook.mjs';
+import { Surface } from './domain/surface.mjs';
 
-const ADAPTERS = [github, azureDevOps, git];
-const skill = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const [target, workdirArg] = process.argv.slice(2);
-if (workdirArg === undefined) throw new Error('usage: node prepare.mjs <pull-request-url | repository@base..head> <workdir>');
-
-const validate = (schema, file) => run('npx', ['--yes', '@sourcemeta/jsonschema@17.0.0', 'validate', join(skill, 'schemas', schema), file, '--resolve', join(skill, 'schemas')]);
-const yaml = (name) => JSON.parse(run('npx', ['--yes', 'js-yaml@4.1.0', join(skill, 'rules', name)]));
-const schema = (name) => JSON.parse(readFileSync(join(skill, 'schemas', name), 'utf8'));
-const jsYaml = createRequire(run('npx', ['--yes', '--package', 'js-yaml@4.1.0', '-c', 'command -v js-yaml']).trim())('js-yaml');
-
-const located = ADAPTERS.map((adapter) => ({ adapter, host: adapter.locate(target) })).find(({ host }) => host !== undefined);
-if (located === undefined) throw new Error(`${target} is not a pull request URL this skill knows, nor a repository@base..head range`);
-const { adapter, host } = located;
-
-const workdir = resolve(workdirArg);
-mkdirSync(join(workdir, 'instructions'), { recursive: true });
-mkdirSync(join(workdir, 'ledger'), { recursive: true });
-const write = (name, document) => {
-  const file = join(workdir, name);
-  writeFileSync(file, `${JSON.stringify(document, null, 2)}\n`);
-  return file;
-};
-
-const change = adapter.resolve(host, workdir);
-const { pullRequest, headCommit } = change;
-write('pull-request.json', pullRequest);
-if (change.blocked.length > 0) {
-  const where = change.refused ?? adapter.refuse(host, headCommit, change.blocked, workdir);
-  throw new Error(`${change.blocked.join('; ')}. A changes-requested verdict ${change.refused === undefined ? 'was posted' : 'had been posted'} (${where}); no review was prepared.`);
+async function defaultFetchText(rawUrl, canonicalUrl) {
+  const response = await fetch(rawUrl);
+  if (!response.ok) {
+    throw new Error(`the ruleset ${canonicalUrl} could not be read: HTTP ${response.status}`);
+  }
+  return response.text();
 }
 
-const changeSet = { headCommit, files: parseDiff(change.diff()) };
-validate('review/change-set.schema.json', write('change-set.json', changeSet));
-validate('review/threads.schema.json', write('threads.json', { threads: change.threads }));
-const surface = change.prior === undefined ? wholeSurface(changeSet) : narrowSurface(changeSet, change.changedSince(change.prior), threadRanges(change.threads));
-if (surface.files.length === 0) {
-  throw new Error(`nothing to review: no line of the change set changed since the prior review at ${change.prior}, and no thread of ours is open or was resolved by the author`);
+export async function prepareWorkspace(target, workdirArg, skillDir, adapters, fetchText) {
+  const host = Host.fromSpec(target).unwrap();
+  const hostContract = host.toContract();
+  const adapter = adapters.find((candidate) => candidate.kind === hostContract.kind);
+  if (adapter === undefined) throw new Error(`no adapter for the host ${hostContract.kind}`);
+
+  const workdir = resolve(workdirArg);
+  mkdirSync(join(workdir, 'instructions'), { recursive: true });
+  mkdirSync(join(workdir, 'ledger'), { recursive: true });
+
+  const resolved = adapter.resolve(hostContract, workdir);
+  const { pullRequest, headCommit } = resolved;
+  writeDomainJson(join(workdir, 'pull-request.json'), pullRequest);
+  if (resolved.blocked.length > 0) {
+    const where =
+      resolved.refused !== null
+        ? resolved.refused
+        : adapter.refuse(hostContract, headCommit, resolved.blocked, workdir);
+    const verb = resolved.refused === null ? 'was posted' : 'had been posted';
+    throw new Error(
+      `${resolved.blocked.join('; ')}. A changes-requested verdict ${verb} (${where}); no review was prepared.`,
+    );
+  }
+
+  const changeSet = resolved.diff();
+  writeDomainJson(join(workdir, 'change-set.json'), changeSet);
+  writeDomainJson(join(workdir, 'threads.json'), resolved.threads);
+
+  const surfaceSet =
+    resolved.prior === null
+      ? changeSet
+      : changeSet
+          .narrowTo(resolved.changedSince(resolved.prior), resolved.threads.activeRangesBySide())
+          .unwrap();
+  if (surfaceSet.files().length === 0) {
+    const priorSha = resolved.prior === null ? '' : resolved.prior.toContract();
+    throw new Error(
+      `nothing to review: no line of the change set changed since the prior review at ${priorSha}, and no thread of ours is open or was resolved by the author`,
+    );
+  }
+
+  const snapshotDir = join(workdir, 'snapshot');
+  const checkout = resolved.checkout(snapshotDir);
+  const repoFiles = listSnapshotFiles(snapshotDir);
+
+  const surfaces = Result.collect(
+    surfaceSet
+      .files()
+      .map((file) => {
+        const headText = readSnapshotText(snapshotDir, file.path().toContract());
+        if (headText === '' && file.removed().length === 0) return null;
+        return Surface.fromFileLinesAndChanges(
+          file.path(),
+          headText,
+          file.added(),
+          file.removed(),
+        );
+      })
+      .filter((item) => item !== null),
+  ).unwrap();
+
+  const { rules } = readRawYaml(join(skillDir, 'rules', 'Rules.yaml'));
+  const governance = {
+    principles: readRawYaml(join(skillDir, 'rules', 'Principles.yaml')).principles,
+    definitions: readRawYaml(join(skillDir, 'rules', 'Definitions.yaml')).definitions,
+  };
+
+  const index = readRawJson(join(skillDir, 'references', 'agent-rules-books-search-index.json'));
+  const fetchedEntries = await Promise.all(
+    index.map(async (entry) => [
+      entry.canonical_url,
+      await fetchText(Ruleset.rawGitHubUrl(entry.canonical_url).unwrap(), entry.canonical_url),
+    ]),
+  );
+  const handedRulesets = Ruleset.fromIndex(index, new Map(fetchedEntries)).unwrap();
+
+  const partitioned = Rulebook.partitionGovernance(rules, governance).unwrap();
+  const context = {
+    checkout: checkout.toContract(),
+    reviewBase: {
+      pullRequest: pullRequest.toContract(),
+      headCommit: headCommit.toContract(),
+      files: surfaces.map((s) => s.toContract()),
+    },
+    ledgerPathFor: (name) => join(workdir, 'ledger', `${name}.json`),
+    reportCommandFor: (name) =>
+      `node "${join(skillDir, 'scripts', 'check.mjs')}" "${join(workdir, 'instructions', `${name}.yaml`)}"`,
+  };
+  const probes = AgentInstructions.buildAll(context, partitioned, handedRulesets).unwrap();
+  probes.forEach(({ name, instructions }) => {
+    writeDomainYaml(join(workdir, 'instructions', `${name}.yaml`), instructions);
+  });
+
+  const summary = {
+    host: hostContract.kind,
+    headCommit: headCommit.toContract(),
+    since: resolved.prior === null ? null : resolved.prior.toContract(),
+    threadsOfOurs: resolved.threads.threads().length,
+    changeSet: {
+      files: changeSet.files().length,
+      added: changeSet.totalAddedLines(),
+      removed: changeSet.totalRemovedLines(),
+    },
+    surface: {
+      files: surfaceSet.files().length,
+      added: surfaceSet.totalAddedLines(),
+      removed: surfaceSet.totalRemovedLines(),
+    },
+    repository: repoFiles.length,
+    probes: probes.map((p) => `${p.name} (${p.instructions.kind()})`),
+    rules: rules.length,
+  };
+  writeRawJson(join(workdir, 'summary.json'), summary);
+  return summary;
 }
 
-const snapshot = join(workdir, 'snapshot');
-change.checkout(snapshot);
-const paths = readdirSync(snapshot, { recursive: true }).map(String).filter((path) => statSync(join(snapshot, path)).isFile()).sort();
-const linesAtHead = (path) => (paths.includes(path) && isText(readFileSync(join(snapshot, path), 'latin1')) ? numbered(readFileSync(join(snapshot, path), 'utf8')) : {});
-const oversized = tooLarge(changeSet.files.map((file) => ({ path: file.path, lines: Object.keys(linesAtHead(file.path)).length })));
-if (oversized.length > 0) {
-  const where = change.refused ?? adapter.refuse(host, headCommit, oversized, workdir);
-  throw new Error(`${oversized.join('; ')}. A changes-requested verdict ${change.refused === undefined ? 'was posted' : 'had been posted'} (${where}); no review was prepared.`);
+if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const [target, workdirArg] = process.argv.slice(2);
+  if (workdirArg === undefined) {
+    throw new Error('usage: node prepare.mjs <pull-request-url | repository@base..head> <workdir>');
+  }
+  const skillDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+  const summary = await prepareWorkspace(
+    target,
+    workdirArg,
+    skillDir,
+    [githubAdapter, azureDevOpsAdapter, gitAdapter],
+    defaultFetchText,
+  );
+  console.log(JSON.stringify(summary, null, 2));
 }
-const files = surface.files.map((file) => {
-  const hunks = changeSet.files.find((candidate) => candidate.path === file.path).removed;
-  return { path: file.path, fragments: fragments(linesAtHead(file.path), file.added, removedLines(hunks, file.removed)) };
-}).filter((file) => file.fragments.length > 0);
-
-const { rules } = yaml('Rules.yaml');
-const governance = { principles: yaml('Principles.yaml').principles, definitions: yaml('Definitions.yaml').definitions };
-const context = {
-  review: { pullRequest, headCommit, files },
-  checkout: snapshot,
-  ledger: (name) => join(workdir, 'ledger', `${name}.json`),
-  report: (name) => `node "${join(skill, 'scripts', 'check.mjs')}" "${join(workdir, 'instructions', `${name}.yaml`)}"`,
-};
-
-const index = JSON.parse(readFileSync(join(skill, 'references', 'agent-rules-books-search-index.json'), 'utf8'));
-const texts = new Map();
-for (const entry of index) {
-  const response = await fetch(rawUrl(entry.canonical_url));
-  if (!response.ok) throw new Error(`the ruleset ${entry.canonical_url} could not be read: HTTP ${response.status}`);
-  texts.set(entry.canonical_url, await response.text());
-}
-
-const groups = partition(rules.filter((rule) => rule.id !== FILE_TOO_LARGE));
-checkKinds(groups.map((group) => group.group));
-const probes = instructions(
-  context,
-  groups.map((group) => ({ name: group.name, kind: kindOf(group.group), rulebook: rulebook(group.rules, governance) })),
-  rulesets(index, texts),
-);
-for (const probe of probes) {
-  const file = join(workdir, 'instructions', `${probe.name}.yaml`);
-  const schemaPath = `review/instructions/${probe.document.kind}.schema.json`;
-  writeFileSync(file, jsYaml.dump(complete(schema, schemaPath, probe.document), { lineWidth: -1, noRefs: true }));
-  validate(schemaPath, file);
-}
-
-const count = (files, side) => files.reduce((sum, file) => sum + file[side].reduce((n, range) => n + range.end - range.start + 1, 0), 0);
-const summary = {
-  host: host.kind,
-  headCommit,
-  since: change.prior ?? null,
-  threadsOfOurs: change.threads.length,
-  changeSet: { files: changeSet.files.length, added: count(changeSet.files, 'added'), removed: count(changeSet.files, 'removed') },
-  surface: { files: surface.files.length, added: count(surface.files, 'added'), removed: count(surface.files, 'removed') },
-  repository: paths.length,
-  probes: probes.map((probe) => `${probe.name} (${probe.document.kind})`),
-  rules: rules.length,
-};
-write('summary.json', summary);
-console.log(JSON.stringify(summary, null, 2));

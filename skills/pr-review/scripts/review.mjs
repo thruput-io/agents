@@ -1,41 +1,55 @@
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { merge, outcome, table } from './lib.mjs';
-import { check, validate, yaml } from './check.mjs';
-import * as github from './github.mjs';
-import * as azureDevOps from './azure-devops.mjs';
-import * as git from './git.mjs';
+import { fileURLToPath } from 'node:url';
+import { azureDevOpsAdapter } from './adapters/azure-devops.mjs';
+import { readDomainJson, readDomainYaml, writeDomainJson, writeTextFile } from './adapters/fs-store.mjs';
+import { gitAdapter } from './adapters/git.mjs';
+import { githubAdapter } from './adapters/github.mjs';
+import { check } from './check.mjs';
+import { AgentInstructions } from './domain/agent-instructions.mjs';
+import { Outcome } from './domain/outcome.mjs';
+import { PullRequest } from './domain/pull-request.mjs';
+import { Threads } from './domain/threads.mjs';
 
-const ADAPTERS = [github, azureDevOps, git];
-const [workdirArg] = process.argv.slice(2);
-if (workdirArg === undefined) throw new Error('usage: node review.mjs <workdir>');
-const workdir = resolve(workdirArg);
+export function runReview(workdir, adapters) {
+  const pullRequest = readDomainJson(join(workdir, 'pull-request.json'), PullRequest).unwrap();
+  const hostContract = pullRequest.host().toContract();
+  const adapter = adapters.find((candidate) => candidate.kind === hostContract.kind);
+  if (adapter === undefined) throw new Error(`no adapter for the host ${hostContract.kind}`);
 
-const read = (file) => JSON.parse(readFileSync(file, 'utf8'));
+  const names = readdirSync(join(workdir, 'instructions'))
+    .filter((name) => name.endsWith('.yaml'))
+    .sort();
+  const probes = names.map((name) => ({
+    name: name.replace(/\.yaml$/, ''),
+    instructions: readDomainYaml(join(workdir, 'instructions', name), AgentInstructions).unwrap(),
+  }));
+  const missing = probes.filter((p) => !existsSync(p.instructions.review().ledger().toContract()));
+  if (missing.length > 0) {
+    throw new Error(
+      `no ledger from: ${missing.map((p) => p.name).join(', ')}. Re-run those probes; a probe that wrote nothing has not run.`,
+    );
+  }
+  const entries = names.map((name) => check(join(workdir, 'instructions', name)));
+  const threads = readDomainJson(join(workdir, 'threads.json'), Threads).unwrap();
+  const { outcome, mergedLedger } = Outcome.fromVerifiedEntries(entries, threads).unwrap();
 
-const pullRequest = read(join(workdir, 'pull-request.json'));
-const adapter = ADAPTERS.find((candidate) => candidate.KIND === pullRequest.host.kind);
-if (adapter === undefined) throw new Error(`no adapter for the host ${pullRequest.host.kind}`);
+  writeDomainJson(join(workdir, 'ledger.json'), mergedLedger);
+  const ledgerTable = mergedLedger.toMarkdownTable();
+  writeTextFile(join(workdir, 'ledger.md'), `${ledgerTable}\n`);
+  writeDomainJson(join(workdir, 'outcome.json'), outcome);
 
-const names = readdirSync(join(workdir, 'instructions')).filter((name) => name.endsWith('.yaml')).sort();
-const probes = names.map((name) => ({ name: name.replace(/\.yaml$/, ''), document: yaml(join(workdir, 'instructions', name)) }));
-const missing = probes.filter((probe) => !existsSync(probe.document.review.ledger));
-if (missing.length > 0) {
-  throw new Error(`no ledger from: ${missing.map((probe) => probe.name).join(', ')}. Re-run those probes; a probe that wrote nothing has not run.`);
+  const posted = adapter.post(hostContract, outcome, ledgerTable, workdir);
+  return {
+    verdict: outcome.verdict(),
+    rows: mergedLedger.rows().length,
+    ...posted,
+  };
 }
-const entries = names.map((name) => check(join(workdir, 'instructions', name)));
 
-const merged = merge(entries.map((entry) => entry.ledger));
-const ledgerFile = join(workdir, 'ledger.json');
-writeFileSync(ledgerFile, `${JSON.stringify(merged, null, 2)}\n`);
-validate('review/ledger.schema.json', ledgerFile);
-const ledgerTable = table(merged);
-writeFileSync(join(workdir, 'ledger.md'), `${ledgerTable}\n`);
-
-const decided = outcome(entries, read(join(workdir, 'threads.json')).threads);
-const outcomeFile = join(workdir, 'outcome.json');
-writeFileSync(outcomeFile, `${JSON.stringify(decided, null, 2)}\n`);
-validate('review/outcome.schema.json', outcomeFile);
-
-const posted = adapter.post(pullRequest.host, decided, ledgerTable, workdir);
-console.log(JSON.stringify({ verdict: decided.verdict, rows: merged.rows.length, ...posted }, null, 2));
+if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const [workdirArg] = process.argv.slice(2);
+  if (workdirArg === undefined) throw new Error('usage: node review.mjs <workdir>');
+  const summary = runReview(resolve(workdirArg), [githubAdapter, azureDevOpsAdapter, gitAdapter]);
+  console.log(JSON.stringify(summary, null, 2));
+}

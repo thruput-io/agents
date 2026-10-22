@@ -1,0 +1,9 @@
+{
+  "name": "pr-review",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "yaml": "2.8.3",
+    "zod": "4.6.7"
+  }
+}
