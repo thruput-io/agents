@@ -1,0 +1,12 @@
+{
+  "name": "agents",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "yaml": "2.8.3",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@sourcemeta/jsonschema": "17.0.0"
+  }
+}

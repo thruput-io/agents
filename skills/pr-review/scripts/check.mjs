@@ -1,22 +1,18 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { existsSync } from 'node:fs';
+import { basename, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { checkLedger } from './lib.mjs';
-import { run } from './shell.mjs';
-
-const skill = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-
-export const validate = (schema, file) => run('npx', ['--yes', '@sourcemeta/jsonschema@17.0.0', 'validate', join(skill, 'schemas', schema), file, '--resolve', join(skill, 'schemas')]);
-export const yaml = (file) => JSON.parse(run('npx', ['--yes', 'js-yaml@4.1.0', file]));
+import { readDomainJson, readDomainYaml } from './adapters/fs-store.mjs';
+import { AgentInstructions } from './domain/agent-instructions.mjs';
+import { Ledger } from './domain/ledger.mjs';
 
 export function check(instructionsFile) {
   const name = basename(instructionsFile).replace(/\.yaml$/, '');
-  const document = yaml(instructionsFile);
-  if (!existsSync(document.review.ledger)) throw new Error(`${name}: no ledger at ${document.review.ledger}`);
-  validate('review/ledger.schema.json', document.review.ledger);
-  const ledger = JSON.parse(readFileSync(document.review.ledger, 'utf8'));
-  checkLedger(name, document, ledger);
-  return { document, ledger };
+  const instructions = readDomainYaml(instructionsFile, AgentInstructions).unwrap();
+  const ledgerPath = instructions.review().ledger().toContract();
+  if (!existsSync(ledgerPath)) throw new Error(`${name}: no ledger at ${ledgerPath}`);
+  const ledger = readDomainJson(ledgerPath, Ledger).unwrap();
+  ledger.verifyAgainstInstructions(name, instructions).unwrap();
+  return Object.freeze({ name, instructions, ledger });
 }
 
 if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -2,7 +2,8 @@
 set -euo pipefail
 
 npx --yes @agentplugins/cli@0.6.1 audit "$PROJECT_ROOT"
-node --test "$PROJECT_ROOT/skills/pr-review/scripts/*.test.mjs"
+node --test "$PROJECT_ROOT"/scripts/*.test.mjs "$PROJECT_ROOT"/skills/pr-review/scripts/*.test.mjs "$PROJECT_ROOT"/skills/pr-review/scripts/domain/*.test.mjs "$PROJECT_ROOT"/skills/pr-review/scripts/adapters/*.test.mjs
+semgrep --config "https://thruput.se/semgrep/javascript.yaml" --error "$PROJECT_ROOT"/scripts/*.mjs "$PROJECT_ROOT"/skills/pr-review/scripts/*.mjs "$PROJECT_ROOT"/skills/pr-review/scripts/domain/*.mjs "$PROJECT_ROOT"/skills/pr-review/scripts/adapters/*.mjs
 
 "$PROJECT_ROOT/scripts/declared-ids.schema.sh" > "$PROJECT_ROOT/schemas/governance/declared-ids.g.schema.json"
 

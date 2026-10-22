@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/repository/release.schema.json",
+  "title": "Release",
+  "description": "The release a build of the site carries in its meta header, written into the site's data by the build from the nearest tag. A published site states which release it serves, and the deployment verifies that it does",
+  "type": "object",
+  "required": [
+    "version"
+  ],
+  "properties": {
+    "version": {
+      "$ref": "#/$defs/Version"
+    }
+  },
+  "$defs": {
+    "Version": {
+      "description": "A Semantic Version, as the registered meta name version requires: the release tag without its v prefix, and for a build between releases the tag followed by the distance and the commit as a pre-release",
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+    }
+  },
+  "examples": [
+    {
+      "version": "0.3.6"
+    }
+  ]
+}

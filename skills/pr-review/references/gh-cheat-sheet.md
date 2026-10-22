@@ -1,6 +1,6 @@
 # GH CHEAT SHEET
 
-Exact `gh` invocations and payload shapes. Referenced by [`CODE_REVIEW.md`](../CODE_REVIEW.md), which owns the *rules*; this file owns only the *syntax*. When a command here conflicts with a rule there, the rule wins.
+Exact `gh` invocations and payload shapes. Referenced by [`SKILL.md`](../SKILL.md), which owns the *rules*; this file owns only the *syntax*. When a command here conflicts with a rule there, the rule wins.
 
 Placeholders: `{owner}`, `{repo}`, `{n}` (PR number), `{path}`, `<URL>` (PR URL), `<headRefOid>` (PR head SHA).
 
@@ -57,4 +57,4 @@ gh api graphql -f query='mutation($t:ID!){ unresolveReviewThread(input:{threadId
 
 `scripts/review.mjs` does this: it builds `review.json` from the probes' ledgers and posts it with one call, `gh api -X POST repos/{owner}/{repo}/pulls/{n}/reviews --input review.json`, with the ledger table appended to the body as a collapsed block. One review, one notification, comments grouped. Do **not** post comments one at a time, and do not post the ledger as a separate comment.
 
-No review is posted by hand. The changes-requested verdict of [`CODE_REVIEW.md` step 1](../CODE_REVIEW.md#1-prepare) is posted by `scripts/prepare.mjs` when a check run failed or the pull request has conflicts.
+No review is posted by hand. The changes-requested verdict of [`SKILL.md` step 1](../SKILL.md#1-prepare) is posted by `scripts/prepare.mjs` when a check run failed or the pull request has conflicts.
