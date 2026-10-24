@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+echo 'start'
+
 out=${1:?usage: bundle-schemas.sh <output-dir>}
 base=https://thruput.se/agents/schemas
 schemas="$PROJECT_ROOT/schemas"
-tmp=$(mktemp -d)
-trap 'rm -rf "$tmp"' EXIT
+tmp=build/bundle
+mkdir -p $tmp
 
 jsonschema=(npx --yes @sourcemeta/jsonschema@17.0.0)
 
@@ -34,4 +36,8 @@ for folder in "$schemas"/*/; do
   bundle "$name" "Bundle of $name schemas" "$base/$name/bundle.g.schema.json"
 done
 
+echo 'soon'
+
 bundle . "Bundle of all schemas" "$base/bundle.g.schema.json"
+
+echo 'done'
