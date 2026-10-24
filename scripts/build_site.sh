@@ -8,6 +8,7 @@ mkdir -p "$build"
 cp -R "$PROJECT_ROOT/web" "$build/site"
 cp -R "$PROJECT_ROOT/rules" "$build/site/_data"
 cp -R "$PROJECT_ROOT/schemas" "$build/site/schemas"
+"$PROJECT_ROOT/scripts/bundle-schemas.sh" "$build/site/schemas"
 
 version=$(git -C "$PROJECT_ROOT" describe --tags | sed 's/^v//')
 echo $version

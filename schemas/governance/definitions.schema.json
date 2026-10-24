@@ -44,11 +44,12 @@
         "id",
         "specification"
       ],
-      "not": {
-        "required": [
-          "closedEnumerationOf",
-          "openEnumerationOf"
-        ]
+      "dependentSchemas": {
+        "closedEnumerationOf": {
+          "properties": {
+            "openEnumerationOf": false
+          }
+        }
       }
     },
     "ClosedEnumeration": {
