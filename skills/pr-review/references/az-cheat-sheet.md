@@ -1,6 +1,6 @@
 # AZ CHEAT SHEET
 
-Exact `az` invocations for reviewing an **Azure DevOps** pull request. Counterpart to [`gh-cheat-sheet.md`](./gh-cheat-sheet.md): syntax only, no rules. Referenced by [`CODE_REVIEW.md`](../CODE_REVIEW.md), which owns the rules; where a command here would contradict them, the rule wins.
+Exact `az` invocations for reviewing an **Azure DevOps** pull request. Counterpart to [`gh-cheat-sheet.md`](./gh-cheat-sheet.md): syntax only, no rules. Referenced by [`SKILL.md`](../SKILL.md), which owns the rules; where a command here would contradict them, the rule wins.
 
 Requires the `azure-devops` extension (`az extension add --name azure-devops`).
 
@@ -171,7 +171,7 @@ az repos pr set-vote --id {id} --vote approve --org {org} --detect false
 
 ## No atomic review
 
-This is the one place the Azure DevOps model does not fit [`CODE_REVIEW.md` step 4](../CODE_REVIEW.md#4-submit). GitHub accepts one payload carrying every inline comment plus the verdict, producing one review and one notification. Azure DevOps has no such endpoint: each thread is its own POST and the vote is a separate call. N comments therefore mean N requests and N notifications, and there is no way to make them atomic.
+This is the one place the Azure DevOps model does not fit [`SKILL.md` step 3](../SKILL.md#3-submit). GitHub accepts one payload carrying every inline comment plus the verdict, producing one review and one notification. Azure DevOps has no such endpoint: each thread is its own POST and the vote is a separate call. N comments therefore mean N requests and N notifications, and there is no way to make them atomic.
 
 Consequences for a review run against Azure DevOps:
 
