@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-rm -rf "$BUILD_DIR"
-mkdir -p "$BUILD_DIR"
 cp -R "$PROJECT_ROOT/web" "$BUILD_DIR/site"
 cp -R "$PROJECT_ROOT/rules" "$BUILD_DIR/site/_data"
 cp -R "$PROJECT_ROOT/schemas" "$BUILD_DIR/site/schemas"
