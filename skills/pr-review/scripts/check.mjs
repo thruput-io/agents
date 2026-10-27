@@ -1,13 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { AgentInstructionsSchema } from './domain/contracts.g.ts';
 import { checkLedger } from './domain/ledger.ts';
 import { run } from './shell.mjs';
 
-const skill = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-
-export const validate = (schema, file) => run('npx', ['--yes', '@sourcemeta/jsonschema@17.0.0', 'validate', join(skill, 'schemas', schema), file, '--resolve', join(skill, 'schemas')]);
 export const yaml = (file) => JSON.parse(run('npx', ['--yes', 'js-yaml@4.1.0', file]));
 
 export function check(instructionsFile) {
