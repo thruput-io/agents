@@ -1,65 +1,62 @@
 import { z } from 'zod';
-import { ChangedFileSchema } from './contracts.g.ts';
+import { ChangedFileSchema, type ChangedFile, type LineRange, type RemovedLines } from './contracts.g.ts';
 
-export type Range = { start: number; end: number };
-export type RemovedRange = Range & { content: string };
-export type Hunks = { added: Range[]; removed: RemovedRange[] };
-export type ChangedFile = z.infer<typeof ChangedFileSchema>;
+const HUNK_START = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/;
 
-const HUNK = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/;
+const hunkStart = z.string().regex(HUNK_START).transform((line) => {
+  const [, oldStart = '', newStart = ''] = HUNK_START.exec(line) ?? [];
+  return { old: Number(oldStart), new: Number(newStart) };
+});
 
-function pushAdded(ranges: Range[], line: number): void {
+type Hunks = { added: LineRange[]; removed: RemovedLines[] };
+type State = Hunks & { old: number; new: number };
+
+const initial: State = { old: 0, new: 0, added: [], removed: [] };
+
+function withAdded(ranges: LineRange[], line: number): LineRange[] {
   const last = ranges.at(-1);
-  if (last !== undefined && last.end === line - 1) last.end = line;
-  else ranges.push({ start: line, end: line });
+  return last !== undefined && last.end === line - 1
+    ? [...ranges.slice(0, -1), { start: last.start, end: line }]
+    : [...ranges, { start: line, end: line }];
 }
 
-function pushRemoved(ranges: RemovedRange[], line: number, text: string): void {
+function withRemoved(ranges: RemovedLines[], line: number, text: string): RemovedLines[] {
   const last = ranges.at(-1);
-  if (last !== undefined && last.end === line - 1) {
-    last.end = line;
-    last.content = `${last.content}\n${text}`;
-  } else {
-    ranges.push({ start: line, end: line, content: text });
+  return last !== undefined && last.end === line - 1
+    ? [...ranges.slice(0, -1), { start: last.start, end: line, content: `${last.content}\n${text}` }]
+    : [...ranges, { start: line, end: line, content: text }];
+}
+
+function step(state: State, line: string): State {
+  if (HUNK_START.test(line)) {
+    const start = hunkStart.parse(line);
+    return { ...state, old: start.old, new: start.new };
   }
+  if (line.startsWith('+')) return { ...state, new: state.new + 1, added: withAdded(state.added, state.new) };
+  if (line.startsWith('-')) return { ...state, old: state.old + 1, removed: withRemoved(state.removed, state.old, line.slice(1)) };
+  if (line.startsWith(' ')) return { ...state, old: state.old + 1, new: state.new + 1 };
+  return state;
 }
 
 export function parseHunks(lines: string[]): Hunks {
-  const hunks: Hunks = { added: [], removed: [] };
-  let oldLine = 0;
-  let newLine = 0;
-  for (const line of lines) {
-    const hunk = HUNK.exec(line);
-    if (hunk) {
-      oldLine = Number(hunk[1]);
-      newLine = Number(hunk[2]);
-    } else if (line.startsWith('+')) {
-      pushAdded(hunks.added, newLine);
-      newLine += 1;
-    } else if (line.startsWith('-')) {
-      pushRemoved(hunks.removed, oldLine, line.slice(1));
-      oldLine += 1;
-    } else if (line.startsWith(' ')) {
-      oldLine += 1;
-      newLine += 1;
-    }
-  }
-  return hunks;
+  const { added, removed } = lines.reduce<State>(step, initial);
+  return { added, removed };
 }
 
-function pathOf(header: string): string | undefined {
-  const name = header.split('\t')[0] ?? '';
+function pathFrom(header: string[], prefix: string): string | undefined {
+  const line = header.find((candidate) => candidate.startsWith(prefix));
+  if (line === undefined) return undefined;
+  const [name = ''] = line.slice(prefix.length).split('\t');
   return name === '/dev/null' ? undefined : name.replace(/^[ab]\//, '');
 }
 
 function fileOf(section: string): ChangedFile[] {
   const lines = section.split('\n');
-  const start = lines.findIndex((line) => HUNK.test(line));
+  const start = lines.findIndex((line) => HUNK_START.test(line));
   const header = start === -1 ? lines : lines.slice(0, start);
-  const oldPath = pathOf(header.find((line) => line.startsWith('--- '))?.slice(4) ?? '/dev/null');
-  const newPath = pathOf(header.find((line) => line.startsWith('+++ '))?.slice(4) ?? '/dev/null');
-  const path = newPath ?? oldPath;
-  return path === undefined ? [] : [{ path, ...parseHunks(start === -1 ? [] : lines.slice(start)) }];
+  const path = pathFrom(header, '+++ ') ?? pathFrom(header, '--- ');
+  if (path === undefined) return [];
+  return [{ path, ...parseHunks(start === -1 ? [] : lines.slice(start)) }];
 }
 
 export function parseDiff(text: string): ChangedFile[] {
