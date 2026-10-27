@@ -29,7 +29,7 @@ The target is a GitHub pull request URL, an Azure DevOps pull request URL, or `<
 The script fails, and the review ends there, in three cases. Report its message to the user and stop; do not run it again, and do not go on to step 2:
 
 - The host reports the change as not reviewable: a failed check or a build policy not passed, or merge conflicts. It posts a changes-requested verdict naming what blocked the review. That is the only path that skips the ledger.
-- A changed file is longer than 200 lines at the head commit, which breaks File too large. It posts a changes-requested verdict naming each such file.
+- A changed production code file is longer than 200 lines at the head commit, which breaks File too large. It posts a changes-requested verdict naming each such file.
 - A subsequent review has nothing left to review. It posts nothing.
 
 ### 2. Probe

@@ -88,7 +88,7 @@ rules:
   group: Conventions
   parent: Less is more
   body: |
-    Keep a file longer than 200 lines; a file that long holds more than one concern.
+    Keep a [[Production code]] file longer than 200 lines; a file that long holds more than one concern.
 - id: Validating factory
   marker: MUST
   group: Types
