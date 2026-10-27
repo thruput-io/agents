@@ -58,13 +58,7 @@ function problemOf(probe: LedgerProbe, ledger: Ledger): string | undefined {
   return rows ?? violationProblem(probe, ledger);
 }
 
-export function checkLedger(name: string, probe: LedgerProbe, raw: unknown): Ledger {
-  const parsed = LedgerSchema.superRefine((ledger, ctx) => {
-    const problem = problemOf(probe, ledger);
-    if (problem !== undefined) ctx.addIssue({ code: 'custom', message: problem });
-  }).safeParse(raw);
-  if (parsed.success) return parsed.data;
-  const [issue] = parsed.error.issues;
-  const where = issue === undefined || issue.path.length === 0 ? '' : `${issue.path.join('.')}: `;
-  throw new Error(`${name}: ${where}${issue?.message ?? 'invalid ledger'}`);
-}
+export const ledgerFor = (probe: LedgerProbe) => LedgerSchema.superRefine((ledger, ctx) => {
+  const problem = problemOf(probe, ledger);
+  if (problem !== undefined) ctx.addIssue({ code: 'custom', message: problem });
+});

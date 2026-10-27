@@ -1,7 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { z } from 'zod';
 import type { Anchor, Row, Violation } from './contracts.g.ts';
-import { anchorInside, checkLedger, type LedgerProbe } from './ledger.ts';
+import { anchorInside, ledgerFor, type LedgerProbe } from './ledger.ts';
+
+const rejects = (probe: LedgerProbe, raw: unknown, pattern: RegExp) => {
+  assert.throws(() => ledgerFor(probe).parse(raw), (error: unknown) => pattern.test(z.prettifyError(error as z.ZodError)));
+};
 
 const H = 'a'.repeat(40);
 const OTHER = 'b'.repeat(40);
@@ -37,29 +42,29 @@ test('anchorInside accepts lines copied from one surface fragment on their side,
   assert.equal(anchorInside({ kind: 'surface', path: 'p', side: 'head', lines: {} }, files), false);
 });
 
-test('checkLedger accepts rows matching the rules in order', () => {
-  checkLedger('g', probe, { headCommit: H, rows: [cleanRow('A'), cleanRow('B')] });
+test('the ledger schema accepts rows matching the rules in order', () => {
+  ledgerFor(probe).parse({ headCommit: H, rows: [cleanRow('A'), cleanRow('B')] });
 });
 
-test('checkLedger rejects a missing, extra, reordered, book-rule, or foreign-commit ledger', () => {
-  assert.throws(() => checkLedger('g', probe, { headCommit: H, rows: [cleanRow('A')] }), /missing: \["B"\]/);
-  assert.throws(() => checkLedger('g', probe, { headCommit: H, rows: [cleanRow('A'), cleanRow('B'), cleanRow('Z')] }), /extra: \["Z"\]/);
-  assert.throws(() => checkLedger('g', probe, { headCommit: H, rows: [cleanRow('B'), cleanRow('A')] }), /in order/);
-  assert.throws(() => checkLedger('g', probe, { headCommit: H, rows: [cleanRow('A'), cleanBookRow('x')] }), /missing: \["B"\]/);
-  assert.throws(() => checkLedger('g', probe, { headCommit: OTHER, rows: [cleanRow('A'), cleanRow('B')] }), /ledger is for b{40}/);
+test('the ledger schema rejects a missing, extra, reordered, book-rule, or foreign-commit ledger', () => {
+  rejects(probe, { headCommit: H, rows: [cleanRow('A')] }, /missing: \["B"\]/);
+  rejects(probe, { headCommit: H, rows: [cleanRow('A'), cleanRow('B'), cleanRow('Z')] }, /extra: \["Z"\]/);
+  rejects(probe, { headCommit: H, rows: [cleanRow('B'), cleanRow('A')] }, /in order/);
+  rejects(probe, { headCommit: H, rows: [cleanRow('A'), cleanBookRow('x')] }, /missing: \["B"\]/);
+  rejects(probe, { headCommit: OTHER, rows: [cleanRow('A'), cleanRow('B')] }, /ledger is for b{40}/);
 });
 
-test('checkLedger rejects a violation anchored outside the surface', () => {
+test('the ledger schema rejects a violation anchored outside the surface', () => {
   const rows = (anchor: Anchor) => [violatedRow('A', [violation(anchor)]), cleanRow('B')];
-  checkLedger('g', probe, { headCommit: H, rows: rows(lines('p', 2, 2, 'head')) });
-  checkLedger('g', probe, { headCommit: H, rows: rows(atPullRequest) });
-  assert.throws(() => checkLedger('g', probe, { headCommit: H, rows: rows(lines('p', 7, 7, 'head')) }), /violation of A is anchored outside the surface/);
+  ledgerFor(probe).parse({ headCommit: H, rows: rows(lines('p', 2, 2, 'head')) });
+  ledgerFor(probe).parse({ headCommit: H, rows: rows(atPullRequest) });
+  rejects(probe, { headCommit: H, rows: rows(lines('p', 7, 7, 'head')) }, /violation of A is anchored outside the surface/);
 });
 
-test('checkLedger requires exactly three rows on rules of one ruleset the context probe was handed', () => {
-  checkLedger('e', contextProbe, { headCommit: H, rows: [cleanBookRow('x'), cleanBookRow('y'), cleanBookRow('z')] });
-  assert.throws(() => checkLedger('e', contextProbe, { headCommit: H, rows: [cleanBookRow('x')] }), /1 rows, 3 expected/);
-  assert.throws(() => checkLedger('e', contextProbe, { headCommit: H, rows: [cleanBookRow('x'), cleanBookRow('y'), cleanRow('A')] }), /\["A"\] is not a rule of the ruleset/);
-  assert.throws(() => checkLedger('e', contextProbe, { headCommit: H, rows: [rowOn('https://books.example/other.md'), rowOn('https://books.example/other.md'), rowOn('https://books.example/other.md')] }), /other\.md"\] is not a ruleset the probe was handed/);
-  assert.throws(() => checkLedger('e', contextProbe, { headCommit: H, rows: [cleanBookRow('x'), cleanBookRow('y'), rowOn('https://books.example/clean-code.md')] }), /selects one ruleset/);
+test('the ledger schema requires exactly three rows on rules of one ruleset the context probe was handed', () => {
+  ledgerFor(contextProbe).parse({ headCommit: H, rows: [cleanBookRow('x'), cleanBookRow('y'), cleanBookRow('z')] });
+  rejects(contextProbe, { headCommit: H, rows: [cleanBookRow('x')] }, /1 rows, 3 expected/);
+  rejects(contextProbe, { headCommit: H, rows: [cleanBookRow('x'), cleanBookRow('y'), cleanRow('A')] }, /\["A"\] is not a rule of the ruleset/);
+  rejects(contextProbe, { headCommit: H, rows: [rowOn('https://books.example/other.md'), rowOn('https://books.example/other.md'), rowOn('https://books.example/other.md')] }, /other\.md"\] is not a ruleset the probe was handed/);
+  rejects(contextProbe, { headCommit: H, rows: [cleanBookRow('x'), cleanBookRow('y'), rowOn('https://books.example/clean-code.md')] }, /selects one ruleset/);
 });
