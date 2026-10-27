@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { checkLedger } from './lib.mjs';
+import { AgentInstructionsSchema } from './domain/contracts.g.ts';
+import { checkLedger } from './domain/ledger.ts';
 import { run } from './shell.mjs';
 
 const skill = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -11,11 +12,9 @@ export const yaml = (file) => JSON.parse(run('npx', ['--yes', 'js-yaml@4.1.0', f
 
 export function check(instructionsFile) {
   const name = basename(instructionsFile).replace(/\.yaml$/, '');
-  const document = yaml(instructionsFile);
+  const document = AgentInstructionsSchema.parse(yaml(instructionsFile));
   if (!existsSync(document.review.ledger)) throw new Error(`${name}: no ledger at ${document.review.ledger}`);
-  validate('review/ledger.schema.json', document.review.ledger);
-  const ledger = JSON.parse(readFileSync(document.review.ledger, 'utf8'));
-  checkLedger(name, document, ledger);
+  const ledger = checkLedger(name, document, JSON.parse(readFileSync(document.review.ledger, 'utf8')));
   return { document, ledger };
 }
 

@@ -1,51 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  parseDiff, parseHunks, intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
-  instructions, complete, numbered, fragments, span, removedLines, settled, anchorInside, checkLedger, merge, verdict, table, citation, message, alreadyOpen,
+  intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
+  instructions, complete, numbered, fragments, span, removedLines, settled, merge, verdict, table, citation, message, alreadyOpen,
   outcome, ours, tooLarge, FILE_TOO_LARGE, FILE_LINES, isTest, CELL, SITE,
 } from './lib.mjs';
+import { anchorInside, checkLedger } from './domain/ledger.ts';
 
-const diff = [
-  'diff --git a/scripts/verify.sh b/scripts/verify.sh',
-  'index 1111111..2222222 100644',
-  '--- a/scripts/verify.sh',
-  '+++ b/scripts/verify.sh',
-  '@@ -18,3 +18,4 @@ jsonschema=(npx)',
-  ' lint',
-  '-old',
-  '+new',
-  '+added',
-  ' tail',
-  'diff --git a/web/_includes/chain.html b/web/_includes/chain.html',
-  'new file mode 100644',
-  '--- /dev/null',
-  '+++ b/web/_includes/chain.html',
-  '@@ -0,0 +1,2 @@',
-  '+<ul>',
-  '+</ul>',
-  'diff --git a/gone.txt b/gone.txt',
-  'deleted file mode 100644',
-  '--- a/gone.txt',
-  '+++ /dev/null',
-  '@@ -1,2 +0,0 @@',
-  '-a',
-  '-b',
-  '--- not a header',
-  '',
-].join('\n');
-
-test('parseDiff numbers added lines at head and removed lines at base with their text, per file', () => {
-  assert.deepEqual(parseDiff(diff), [
-    { path: 'scripts/verify.sh', added: [{ start: 19, end: 20 }], removed: [{ start: 19, end: 19, content: 'old' }] },
-    { path: 'web/_includes/chain.html', added: [{ start: 1, end: 2 }], removed: [] },
-    { path: 'gone.txt', added: [], removed: [{ start: 1, end: 3, content: 'a\nb\n-- not a header' }] },
-  ]);
-});
-
-test('parseHunks reads a compare-API patch without file headers', () => {
-  assert.deepEqual(parseHunks(['@@ -5,2 +5,3 @@', ' keep', '+one', '+two', ' keep']), { added: [{ start: 6, end: 7 }], removed: [] });
-});
+const H = 'a'.repeat(40);
+const OTHER = 'b'.repeat(40);
 
 test('intersect and union of ranges', () => {
   assert.deepEqual(intersect([{ start: 1, end: 10 }, { start: 20, end: 30 }], [{ start: 5, end: 25 }]), [{ start: 5, end: 10 }, { start: 20, end: 25 }]);
@@ -66,7 +29,7 @@ test('threadRanges keeps open threads and threads the author resolved, by side',
 });
 
 const changeSet = {
-  headCommit: 'h',
+  headCommit: H,
   files: [
     { path: 'a.sh', added: [{ start: 1, end: 20 }], removed: [] },
     { path: 'b.sh', added: [{ start: 1, end: 1 }], removed: [{ start: 1, end: 4, content: 'one\ntwo\nthree\nfour' }] },
@@ -161,14 +124,14 @@ test('rulesets folds the index and the text read for each entry into what the co
 
 test('instructions hands every probe the review with its ledger file and its report command, a rule probe its rulebook, the probes that look beyond the change the checkout, and the context probe the rulesets', () => {
   const context = {
-    review: { headCommit: 'h', files: [] },
+    review: { headCommit: H, files: [] },
     ledger: (name) => `/w/ledger/${name}.json`,
     report: (name) => `validate /w/ledger/${name}.json`,
     checkout: '/w/snapshot',
   };
   const probes = [{ name: 'g1', kind: 'rules', rulebook: 'r1' }, { name: 'g2', kind: 'reuse', rulebook: 'r2' }, { name: 'g3', kind: 'dead-code', rulebook: 'r3' }];
   const files = instructions(context, probes, ['a ruleset']);
-  const handed = (name) => ({ headCommit: 'h', files: [], ledger: `/w/ledger/${name}.json`, report: `validate /w/ledger/${name}.json` });
+  const handed = (name) => ({ headCommit: H, files: [], ledger: `/w/ledger/${name}.json`, report: `validate /w/ledger/${name}.json` });
   assert.deepEqual(files.map((file) => file.name), ['01-g1', '02-g2', '03-g3', '04-context']);
   assert.deepEqual(files[0].document, { kind: 'rules', review: handed('01-g1'), rulebook: 'r1' });
   assert.deepEqual(files[1].document, { kind: 'reuse', review: handed('02-g2'), rulebook: 'r2', checkout: '/w/snapshot' });
@@ -183,8 +146,8 @@ const files = [{ path: 'p', fragments: [
   { kind: 'context', lines: run('head', 6, 8) },
   { kind: 'surface', side: 'base', lines: run('base', 9, 9) },
 ] }];
-const probe = { kind: 'rules', review: { headCommit: 'h', files }, rulebook: { rules: [{ id: 'A', parent: 'P' }, { id: 'B', parent: 'Q' }] } };
-const contextProbe = { kind: 'context', review: { headCommit: 'h', files }, rulesets: [{ url: 'https://books.example/ddd.md' }, { url: 'https://books.example/clean-code.md' }] };
+const probe = { kind: 'rules', review: { headCommit: H, files }, rulebook: { rules: [{ id: 'A', parent: 'P' }, { id: 'B', parent: 'Q' }] } };
+const contextProbe = { kind: 'context', review: { headCommit: H, files }, rulesets: [{ url: 'https://books.example/ddd.md' }, { url: 'https://books.example/clean-code.md' }] };
 const lines = (path, start, end, side) => ({ kind: 'surface', path, side, lines: run(side, start, end) });
 const atPullRequest = { kind: 'pull-request' };
 const violation = (anchor) => ({ observation: 'what is wrong', anchor });
@@ -254,47 +217,47 @@ test('anchorInside accepts lines copied from one surface fragment on their side,
 });
 
 test('checkLedger accepts rows matching the rules in order', () => {
-  checkLedger('g', probe, { headCommit: 'h', rows: [cleanRow('A'), cleanRow('B')] });
+  checkLedger('g', probe, { headCommit: H, rows: [cleanRow('A'), cleanRow('B')] });
 });
 
 test('checkLedger rejects a missing, extra, reordered, book-rule, or foreign-commit ledger', () => {
-  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: [cleanRow('A')] }), /missing: \["B"\]/);
-  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: [cleanRow('A'), cleanRow('B'), cleanRow('Z')] }), /extra: \["Z"\]/);
-  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: [cleanRow('B'), cleanRow('A')] }), /in order/);
-  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: [cleanRow('A'), cleanBookRow('x')] }), /missing: \["B"\]/);
-  assert.throws(() => checkLedger('g', probe, { headCommit: 'other', rows: [cleanRow('A'), cleanRow('B')] }), /ledger is for other/);
+  assert.throws(() => checkLedger('g', probe, { headCommit: H, rows: [cleanRow('A')] }), /missing: \["B"\]/);
+  assert.throws(() => checkLedger('g', probe, { headCommit: H, rows: [cleanRow('A'), cleanRow('B'), cleanRow('Z')] }), /extra: \["Z"\]/);
+  assert.throws(() => checkLedger('g', probe, { headCommit: H, rows: [cleanRow('B'), cleanRow('A')] }), /in order/);
+  assert.throws(() => checkLedger('g', probe, { headCommit: H, rows: [cleanRow('A'), cleanBookRow('x')] }), /missing: \["B"\]/);
+  assert.throws(() => checkLedger('g', probe, { headCommit: OTHER, rows: [cleanRow('A'), cleanRow('B')] }), /ledger is for b{40}/);
 });
 
 test('checkLedger rejects a violation anchored outside the surface', () => {
   const rows = (anchor) => [violatedRow('A', [violation(anchor)]), cleanRow('B')];
-  checkLedger('g', probe, { headCommit: 'h', rows: rows(lines('p', 2, 2, 'head')) });
-  checkLedger('g', probe, { headCommit: 'h', rows: rows(atPullRequest) });
-  assert.throws(() => checkLedger('g', probe, { headCommit: 'h', rows: rows(lines('p', 7, 7, 'head')) }), /violation of A is anchored outside the surface/);
+  checkLedger('g', probe, { headCommit: H, rows: rows(lines('p', 2, 2, 'head')) });
+  checkLedger('g', probe, { headCommit: H, rows: rows(atPullRequest) });
+  assert.throws(() => checkLedger('g', probe, { headCommit: H, rows: rows(lines('p', 7, 7, 'head')) }), /violation of A is anchored outside the surface/);
 });
 
 test('checkLedger requires exactly three rows on rules of one ruleset the context probe was handed', () => {
   const rowOn = (ruleset) => ({ bookRule: { ruleset, heading: 'x' }, examined: ['x'], verdict: 'clean', evidence: 'e' });
-  checkLedger('e', contextProbe, { headCommit: 'h', rows: [cleanBookRow('x'), cleanBookRow('y'), cleanBookRow('z')] });
-  assert.throws(() => checkLedger('e', contextProbe, { headCommit: 'h', rows: [cleanBookRow('x')] }), /1 rows, 3 expected/);
-  assert.throws(() => checkLedger('e', contextProbe, { headCommit: 'h', rows: [cleanBookRow('x'), cleanBookRow('y'), cleanRow('A')] }), /\["A"\] is not a rule of the ruleset/);
-  assert.throws(() => checkLedger('e', contextProbe, { headCommit: 'h', rows: [rowOn('https://books.example/other.md'), rowOn('https://books.example/other.md'), rowOn('https://books.example/other.md')] }), /other\.md"\] is not a ruleset the probe was handed/);
-  assert.throws(() => checkLedger('e', contextProbe, { headCommit: 'h', rows: [cleanBookRow('x'), cleanBookRow('y'), rowOn('https://books.example/clean-code.md')] }), /selects one ruleset/);
+  checkLedger('e', contextProbe, { headCommit: H, rows: [cleanBookRow('x'), cleanBookRow('y'), cleanBookRow('z')] });
+  assert.throws(() => checkLedger('e', contextProbe, { headCommit: H, rows: [cleanBookRow('x')] }), /1 rows, 3 expected/);
+  assert.throws(() => checkLedger('e', contextProbe, { headCommit: H, rows: [cleanBookRow('x'), cleanBookRow('y'), cleanRow('A')] }), /\["A"\] is not a rule of the ruleset/);
+  assert.throws(() => checkLedger('e', contextProbe, { headCommit: H, rows: [rowOn('https://books.example/other.md'), rowOn('https://books.example/other.md'), rowOn('https://books.example/other.md')] }), /other\.md"\] is not a ruleset the probe was handed/);
+  assert.throws(() => checkLedger('e', contextProbe, { headCommit: H, rows: [cleanBookRow('x'), cleanBookRow('y'), rowOn('https://books.example/clean-code.md')] }), /selects one ruleset/);
 });
 
 const ledger = {
-  headCommit: 'h',
+  headCommit: H,
   rows: [
     violatedRow('A', [violation(lines('p', 3, 3, 'head')), violation(atPullRequest)]),
     { rule: 'B', examined: ['x'], verdict: 'clean', evidence: `has | pipe\nand newline ${'x'.repeat(CELL)}` },
   ],
 };
-const contextLedger = { headCommit: 'h', rows: [violatedBookRow('Book rule', [violation(lines('p', 9, 9, 'base'))])] };
+const contextLedger = { headCommit: H, rows: [violatedBookRow('Book rule', [violation(lines('p', 9, 9, 'base'))])] };
 const entries = [{ document: probe, ledger }, { document: contextProbe, ledger: contextLedger }];
 
 test('merge concatenates rows into the one ledger and verdict follows any violation', () => {
-  assert.deepEqual(merge([{ headCommit: 'h', rows: [cleanRow('A')] }, { headCommit: 'h', rows: [cleanBookRow('x')] }]), { headCommit: 'h', rows: [cleanRow('A'), cleanBookRow('x')] });
+  assert.deepEqual(merge([{ headCommit: H, rows: [cleanRow('A')] }, { headCommit: H, rows: [cleanBookRow('x')] }]), { headCommit: H, rows: [cleanRow('A'), cleanBookRow('x')] });
   assert.equal(verdict(ledger), 'request-changes');
-  assert.equal(verdict({ headCommit: 'h', rows: [cleanRow('A')] }), 'approve');
+  assert.equal(verdict({ headCommit: H, rows: [cleanRow('A')] }), 'approve');
 });
 
 test('table escapes pipes and newlines, caps a cell, and names a book rule by its heading', () => {
@@ -326,7 +289,7 @@ test('alreadyOpen matches an open thread on the same line citing the same princi
 test('settled lists the open threads of ours that no finding of this review carries any more: the fixed ones', () => {
   const document = { kind: 'rules', rulebook: { rules: [{ id: 'R', parent: 'P' }], principles: [{ id: 'P' }], definitions: [] } };
   const violation = { observation: 'x', anchor: { kind: 'surface', path: 'a.sh', side: 'head', lines: { 3: 'c', 4: 'd' } } };
-  const ledger = { headCommit: 'h', rows: [{ rule: 'R', verdict: 'violation', examined: ['a.sh'], evidence: 'e', violations: [violation] }] };
+  const ledger = { headCommit: H, rows: [{ rule: 'R', verdict: 'violation', examined: ['a.sh'], evidence: 'e', violations: [violation] }] };
   const threads = [
     { id: 1, path: 'a.sh', lines: { start: 4, end: 4 }, body: message(violation, citation(document, ledger.rows[0])) },
     { id: 2, path: 'a.sh', lines: { start: 9, end: 9 }, body: message(violation, citation(document, ledger.rows[0])) },
@@ -341,10 +304,10 @@ test('outcome is host-neutral: the verdict, a summary that names the site, every
   const gone = { id: 'g', path: 'p', side: 'head', lines: { start: 7, end: 7 }, state: 'open', body: `earlier breaks ${citeP}` };
   const resolved = { id: 'r', path: 'p', side: 'base', lines: { start: 9, end: 9 }, state: 'resolved-by-author', body: 'earlier breaks [Book rule](https://books.example/ddd.md)' };
   const result = outcome(entries, [open, gone, resolved]);
-  assert.equal(result.headCommit, 'h');
+  assert.equal(result.headCommit, H);
   assert.equal(result.verdict, 'request-changes');
   assert.match(result.summary, /^\*\*Verdict: request-changes\*\*\n/);
-  assert.match(result.summary, /3 rules probed by 2 probes at h against \[the rules\]\(https:\/\/thruput\.se\/agents\/\): 3 violations, 0 inline, 1 at the pull request, 2 already carried by a thread/);
+  assert.match(result.summary, /3 rules probed by 2 probes at a{40} against \[the rules\]\(https:\/\/thruput\.se\/agents\/\): 3 violations, 0 inline, 1 at the pull request, 2 already carried by a thread/);
   assert.equal(result.summary.includes(`\n\nwhat is wrong breaks ${citeP}`), true);
   assert.deepEqual(result.inline, []);
   assert.deepEqual(result.settle, ['g']);
@@ -354,7 +317,7 @@ test('outcome is host-neutral: the verdict, a summary that names the site, every
     { path: 'p', side: 'head', lines: { start: 3, end: 3 }, body: `what is wrong breaks ${citeP}` },
     { path: 'p', side: 'base', lines: { start: 9, end: 9 }, body: 'what is wrong breaks [Book rule](https://books.example/ddd.md)' },
   ]);
-  assert.equal(outcome([{ document: probe, ledger: { headCommit: 'h', rows: [cleanRow('R1'), cleanRow('R2')] } }], []).verdict, 'approve');
+  assert.equal(outcome([{ document: probe, ledger: { headCommit: H, rows: [cleanRow('R1'), cleanRow('R2')] } }], []).verdict, 'approve');
 });
 
 test('ours recognises what this review writes: a finding rendered by the template whatever it cites, and a summary or refusal naming the site', () => {

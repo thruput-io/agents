@@ -1,6 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseHunks, ours, SITE } from './lib.mjs';
+import { ours, SITE } from './lib.mjs';
+import { parseHunks } from './domain/diff.ts';
 import { run } from './shell.mjs';
 
 export const KIND = 'github';

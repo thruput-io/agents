@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseDiff, ours as written, SITE } from './lib.mjs';
+import { ours as written, SITE } from './lib.mjs';
+import { changedFiles } from './domain/diff.ts';
 import { run } from './shell.mjs';
 
 export const KIND = 'azure-devops';
@@ -88,7 +89,7 @@ export function resolve(host, workdir) {
     refused: refusedOf(raw, headCommit),
     threads,
     diff: () => repo()('diff', '--no-color', repo()('merge-base', 'review/target', headCommit).trim(), headCommit),
-    changedSince: (priorHead) => new Map(parseDiff(repo()('diff', '--no-color', priorHead, headCommit)).map((file) => [file.path, file.added])),
+    changedSince: (priorHead) => new Map(changedFiles(repo()('diff', '--no-color', priorHead, headCommit)).map((file) => [file.path, file.added])),
     checkout: (dir) => {
       mkdirSync(dir, { recursive: true });
       const tarball = `${dir}.tar`;

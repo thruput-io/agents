@@ -3,9 +3,10 @@ import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  parseDiff, threadRanges, wholeSurface, narrowSurface, isText, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
+  threadRanges, wholeSurface, narrowSurface, isText, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
   instructions, complete, numbered, fragments, removedLines, tooLarge, FILE_TOO_LARGE,
 } from './lib.mjs';
+import { changedFiles } from './domain/diff.ts';
 import { run } from './shell.mjs';
 import * as github from './github.mjs';
 import * as azureDevOps from './azure-devops.mjs';
@@ -42,7 +43,7 @@ if (change.blocked.length > 0) {
   throw new Error(`${change.blocked.join('; ')}. A changes-requested verdict ${change.refused === undefined ? 'was posted' : 'had been posted'} (${where}); no review was prepared.`);
 }
 
-const changeSet = { headCommit, files: parseDiff(change.diff()) };
+const changeSet = { headCommit, files: changedFiles(change.diff()) };
 validate('review/change-set.schema.json', write('change-set.json', changeSet));
 validate('review/threads.schema.json', write('threads.json', { threads: change.threads }));
 const surface = change.prior === undefined ? wholeSurface(changeSet) : narrowSurface(changeSet, change.changedSince(change.prior), threadRanges(change.threads));

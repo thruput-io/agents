@@ -1,65 +1,4 @@
-const HUNK = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/;
-
-function pushAdded(ranges, line) {
-  const last = ranges[ranges.length - 1];
-  if (last && last.end === line - 1) {
-    last.end = line;
-    return;
-  }
-  ranges.push({ start: line, end: line });
-}
-
-function pushRemoved(ranges, line, text) {
-  const last = ranges[ranges.length - 1];
-  if (last && last.end === line - 1) {
-    last.end = line;
-    last.content = `${last.content}\n${text}`;
-    return;
-  }
-  ranges.push({ start: line, end: line, content: text });
-}
-
-export function parseHunks(lines) {
-  const file = { added: [], removed: [] };
-  let oldLine = 0;
-  let newLine = 0;
-  for (const line of lines) {
-    const hunk = HUNK.exec(line);
-    if (hunk) {
-      oldLine = Number(hunk[1]);
-      newLine = Number(hunk[2]);
-    } else if (line.startsWith('+')) {
-      pushAdded(file.added, newLine);
-      newLine += 1;
-    } else if (line.startsWith('-')) {
-      pushRemoved(file.removed, oldLine, line.slice(1));
-      oldLine += 1;
-    } else if (line.startsWith(' ')) {
-      oldLine += 1;
-      newLine += 1;
-    }
-  }
-  return file;
-}
-
-function pathOf(header) {
-  const name = header.split('\t')[0];
-  return name === '/dev/null' ? undefined : name.replace(/^[ab]\//, '');
-}
-
-export function parseDiff(text) {
-  const sections = text.split(/^(?=diff --git )/m).filter((section) => section.startsWith('diff --git '));
-  return sections.map((section) => {
-    const lines = section.split('\n');
-    const start = lines.findIndex((line) => HUNK.test(line));
-    const header = start === -1 ? lines : lines.slice(0, start);
-    const oldPath = pathOf(header.find((line) => line.startsWith('--- '))?.slice(4) ?? '/dev/null');
-    const newPath = pathOf(header.find((line) => line.startsWith('+++ '))?.slice(4) ?? '/dev/null');
-    const body = start === -1 ? [] : lines.slice(start);
-    return { path: newPath ?? oldPath, ...parseHunks(body) };
-  }).filter((file) => file.path !== undefined);
-}
-
+import { ruleName } from "./domain/ledger.ts";
 export function intersect(a, b) {
   const result = [];
   let i = 0;
@@ -278,52 +217,6 @@ export const isTest = (path) => TEST_DIR.test(path) || TEST_FILE.test(path);
 
 export function tooLarge(counts) {
   return counts.filter((file) => !isTest(file.path) && file.lines > FILE_LINES).map((file) => `${file.path} is ${file.lines} lines long, which breaks ${FILE_TOO_LARGE}`);
-}
-
-export const ESCALATION_ROWS = 3;
-
-export function anchorInside(anchor, files) {
-  if (anchor.kind === 'pull-request') return true;
-  const file = files.find((candidate) => candidate.path === anchor.path);
-  if (file === undefined) return false;
-  const copied = Object.entries(anchor.lines);
-  if (copied.length === 0) return false;
-  return file.fragments.some((fragment) => fragment.kind === 'surface' && fragment.side === anchor.side
-    && copied.every(([number, text]) => fragment.lines[number] === text));
-}
-
-const ruleName = (row) => (row.bookRule === undefined ? row.rule : row.bookRule.heading);
-
-export function checkLedger(name, document, ledger) {
-  const { headCommit, files } = document.review;
-  if (ledger.headCommit !== headCommit) {
-    throw new Error(`${name}: ledger is for ${ledger.headCommit}, the review is of ${headCommit}`);
-  }
-  if (document.kind === 'context') {
-    if (ledger.rows.length !== ESCALATION_ROWS) throw new Error(`${name}: ${ledger.rows.length} rows, ${ESCALATION_ROWS} expected`);
-    const ours = ledger.rows.filter((row) => row.bookRule === undefined).map((row) => row.rule);
-    if (ours.length > 0) throw new Error(`${name}: ${JSON.stringify(ours)} is not a rule of the ruleset; the context probe writes its rows on book rules`);
-    const handed = document.rulesets.map((ruleset) => ruleset.url);
-    const selected = [...new Set(ledger.rows.map((row) => row.bookRule.ruleset))];
-    const foreign = selected.filter((url) => !handed.includes(url));
-    if (foreign.length > 0) throw new Error(`${name}: ${JSON.stringify(foreign)} is not a ruleset the probe was handed`);
-    if (selected.length !== 1) throw new Error(`${name}: rows name ${selected.length} rulesets; the context probe selects one ruleset`);
-  } else {
-    const found = ledger.rows.map((row) => row.rule);
-    const expected = document.rulebook.rules.map((rule) => rule.id);
-    if (JSON.stringify(found) !== JSON.stringify(expected)) {
-      const missing = expected.filter((id) => !found.includes(id));
-      const extra = found.filter((id) => !expected.includes(id));
-      throw new Error(`${name}: rows do not match the rules, in order. missing: ${JSON.stringify(missing)} extra: ${JSON.stringify(extra)} found: ${JSON.stringify(found)}`);
-    }
-  }
-  for (const row of ledger.rows.filter((candidate) => candidate.verdict === 'violation')) {
-    for (const violation of row.violations) {
-      if (!anchorInside(violation.anchor, files)) {
-        throw new Error(`${name}: a violation of ${ruleName(row)} is anchored outside the surface at ${JSON.stringify(violation.anchor)}; a finding with no surface line to blame is anchored at the pull request`);
-      }
-    }
-  }
 }
 
 export function merge(ledgers) {
