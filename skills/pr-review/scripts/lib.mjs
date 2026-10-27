@@ -272,8 +272,12 @@ export function complete(read, name, document, schema = read(name)) {
 export const FILE_LINES = 200;
 export const FILE_TOO_LARGE = 'File too large';
 
+const TEST_DIR = /(?:^|\/)(?:tests?|specs?|__tests__|[^/]*\.tests?)\//i;
+const TEST_FILE = /(?:^|\/)(?:(?:test|spec)s?[._-].+|.+[._-](?:test|spec)s?|(?:test|spec)s?|[A-Za-z0-9]+Tests?)\.[^/]+$/;
+export const isTest = (path) => TEST_DIR.test(path) || TEST_FILE.test(path);
+
 export function tooLarge(counts) {
-  return counts.filter((file) => file.lines > FILE_LINES).map((file) => `${file.path} is ${file.lines} lines long, which breaks ${FILE_TOO_LARGE}`);
+  return counts.filter((file) => !isTest(file.path) && file.lines > FILE_LINES).map((file) => `${file.path} is ${file.lines} lines long, which breaks ${FILE_TOO_LARGE}`);
 }
 
 export const ESCALATION_ROWS = 3;

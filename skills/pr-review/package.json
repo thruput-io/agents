@@ -1,0 +1,19 @@
+{
+  "name": "pr-review",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "codegen": "node scripts/generate-contracts.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test 'scripts/**/*.test.ts'"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@tsconfig/strictest": "2.0.8",
+    "@types/node": "24.19.2",
+    "json-schema-to-zod": "2.8.1",
+    "typescript": "6.0.3"
+  }
+}

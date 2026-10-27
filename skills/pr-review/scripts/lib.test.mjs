@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   parseDiff, parseHunks, intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
   instructions, complete, numbered, fragments, span, removedLines, settled, anchorInside, checkLedger, merge, verdict, table, citation, message, alreadyOpen,
-  outcome, ours, tooLarge, FILE_TOO_LARGE, FILE_LINES, CELL, SITE,
+  outcome, ours, tooLarge, FILE_TOO_LARGE, FILE_LINES, isTest, CELL, SITE,
 } from './lib.mjs';
 
 const diff = [
@@ -372,8 +372,31 @@ test('removedLines cuts the removed lines the surface keeps out of the hunks tha
   assert.throws(() => removedLines(hunks, [{ start: 20, end: 20 }]), /no removed hunk holds lines 20-20/);
 });
 
-test('tooLarge names every changed file over the limit as a reason to refuse the review', () => {
-  assert.deepEqual(tooLarge([{ path: 'a.cs', lines: 201 }, { path: 'b.cs', lines: 200 }, { path: 'c.cs', lines: 0 }]), ['a.cs is 201 lines long, which breaks File too large']);
+test('tooLarge names every changed production file over the limit as a reason to refuse the review, skipping test files', () => {
+  assert.deepEqual(tooLarge([
+    { path: 'a.cs', lines: 201 },
+    { path: 'b.cs', lines: 200 },
+    { path: 'c.cs', lines: 0 },
+    { path: 'a.test.cs', lines: 350 },
+    { path: 'tests/OrderTests.cs', lines: 300 },
+    { path: 'src/App.Tests/ServiceTests.cs', lines: 250 },
+  ]), ['a.cs is 201 lines long, which breaks File too large']);
   assert.deepEqual(tooLarge([]), []);
   assert.equal(FILE_LINES, 200);
+});
+
+test('isTest identifies test files and directories while ignoring production code', () => {
+  assert.equal(isTest('test/foo.cs'), true);
+  assert.equal(isTest('tests/foo.cs'), true);
+  assert.equal(isTest('src/MyProject.Tests/foo.cs'), true);
+  assert.equal(isTest('foo.test.ts'), true);
+  assert.equal(isTest('foo.spec.js'), true);
+  assert.equal(isTest('foo_test.go'), true);
+  assert.equal(isTest('test_foo.py'), true);
+  assert.equal(isTest('OrderServiceTests.cs'), true);
+  assert.equal(isTest('OrderServiceTest.cs'), true);
+  assert.equal(isTest('contest.cs'), false);
+  assert.equal(isTest('latest.js'), false);
+  assert.equal(isTest('attest.ts'), false);
+  assert.equal(isTest('service.cs'), false);
 });
