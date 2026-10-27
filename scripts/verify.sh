@@ -15,11 +15,8 @@ while IFS= read -r schema; do
     "${jsonschema[@]}" bundle --without-id "$schema" --resolve "$PROJECT_ROOT/schemas" > "$bundle"
 done < <(find "$PROJECT_ROOT/schemas" -name '*.schema.json' ! -name '*.g.schema.json')
 
-(
-    cd "$PROJECT_ROOT/skills/pr-review"
-    npm ci --no-audit --no-fund
-    npm run codegen
-    npm run typecheck
-    npm test
-    node --test scripts/*.test.mjs
-)
+npm --prefix "$PROJECT_ROOT/skills/pr-review" ci --no-audit --no-fund
+npm --prefix "$PROJECT_ROOT/skills/pr-review" run codegen
+npm --prefix "$PROJECT_ROOT/skills/pr-review" run typecheck
+npm --prefix "$PROJECT_ROOT/skills/pr-review" test
+node --test "$PROJECT_ROOT"/skills/pr-review/scripts/*.test.mjs
