@@ -1,30 +1,25 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseHunks, ours, SITE } from './lib.mjs';
+import { ours, SITE } from './lib.mjs';
+import { z } from 'zod';
+import { CheckRunsResponse, CompareResponse, PostedReview, PullRequestResponse, ReviewRecord, ThreadsPage } from './domain/github.ts';
 import { run } from './shell.mjs';
 
 export const KIND = 'github';
-const PULL_REQUEST_URL = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/;
 const SIDE_OF = { RIGHT: 'head', LEFT: 'base' };
 const HOST_SIDE_OF = { head: 'RIGHT', base: 'LEFT' };
 const EVENT_OF = { approve: 'APPROVE', 'request-changes': 'REQUEST_CHANGES' };
 const OWN_PULL_REQUEST = /own pull request/i;
 
-const gh = (...args) => JSON.parse(run('gh', ['api', ...args]));
+const gh = (schema, ...args) => schema.parse(JSON.parse(run('gh', ['api', ...args])));
 const pulls = (host) => `repos/${host.owner}/${host.repository}/pulls/${host.number}`;
-function paginate(path) {
+function paginate(schema, path) {
   const items = [];
   for (let page = 1; ; page += 1) {
-    const batch = gh(`${path}?per_page=100&page=${page}`);
+    const batch = gh(z.array(schema), `${path}?per_page=100&page=${page}`);
     items.push(...batch);
     if (batch.length < 100) return items;
   }
-}
-
-export function locate(target) {
-  const match = PULL_REQUEST_URL.exec(target);
-  if (match === null) return undefined;
-  return { kind: KIND, owner: match[1], repository: match[2], number: Number(match[3]) };
 }
 
 export function thread(node, author) {
@@ -44,8 +39,7 @@ function allThreads(host) {
   const nodes = [];
   let after = null;
   do {
-    const page = gh('graphql', '-f', `query=${THREADS}`, '-F', `owner=${host.owner}`, '-F', `repository=${host.repository}`, '-F', `number=${host.number}`, ...(after === null ? [] : ['-F', `after=${after}`]))
-      .data.repository.pullRequest.reviewThreads;
+    const page = gh(ThreadsPage, 'graphql', '-f', `query=${THREADS}`, '-F', `owner=${host.owner}`, '-F', `repository=${host.repository}`, '-F', `number=${host.number}`, ...(after === null ? [] : ['-F', `after=${after}`]));
     nodes.push(...page.nodes);
     after = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
   } while (after !== null);
@@ -61,26 +55,24 @@ export function refusedIn(reviews, headCommit) {
 }
 
 export function resolve(host) {
-  const pr = gh(pulls(host));
-  const headCommit = pr.head.sha;
-  const checks = gh(`repos/${host.owner}/${host.repository}/commits/${headCommit}/check-runs`);
-  const failed = checks.check_runs.filter((check) => !['success', 'skipped', 'neutral'].includes(check.conclusion)).map((check) => `check ${check.name} did not succeed`);
-  const blocked = [...failed, ...(pr.mergeable_state === 'dirty' ? ['the pull request has merge conflicts'] : [])];
-  const reviews = paginate(`${pulls(host)}/reviews`);
+  const pr = gh(PullRequestResponse, pulls(host));
+  const headCommit = pr.headCommit;
+  const failed = gh(CheckRunsResponse, `repos/${host.owner}/${host.repository}/commits/${headCommit}/check-runs`);
+  const blocked = [...failed, ...(pr.mergeable === 'dirty' ? ['the pull request has merge conflicts'] : [])];
+  const reviews = paginate(ReviewRecord, `${pulls(host)}/reviews`);
   const prior = reviews.filter((review) => review.state !== 'PENDING' && ours(review.body)).at(-1)?.commit_id;
   const threads = prior === undefined ? [] : allThreads(host)
     .filter((node) => node.line !== null && ours(node.comments.nodes[0]?.body ?? ''))
-    .map((node) => thread(node, pr.user.login));
+    .map((node) => thread(node, pr.author));
   return {
-    pullRequest: { host, author: pr.user.login, description: pr.body ?? '' },
+    pullRequest: { host, author: pr.author, description: pr.description },
     headCommit,
     blocked,
     prior,
     refused: refusedIn(reviews, headCommit),
     threads,
     diff: () => run('gh', ['api', pulls(host), '-H', 'Accept: application/vnd.github.diff']),
-    changedSince: (priorHead) => new Map(gh(`repos/${host.owner}/${host.repository}/compare/${priorHead}...${headCommit}`).files
-      .filter((file) => file.patch !== undefined).map((file) => [file.filename, parseHunks(file.patch.split('\n')).added])),
+    changedSince: (priorHead) => gh(CompareResponse, `repos/${host.owner}/${host.repository}/compare/${priorHead}...${headCommit}`),
     checkout: (dir) => {
       const tarball = `${dir}.tgz`;
       writeFileSync(tarball, run('gh', ['api', `repos/${host.owner}/${host.repository}/tarball/${headCommit}`], 'buffer'));
@@ -107,7 +99,7 @@ function postReview(host, review, workdir) {
   const file = join(workdir, 'review.json');
   writeFileSync(file, `${JSON.stringify(review, null, 2)}\n`);
   try {
-    return gh('-X', 'POST', `${pulls(host)}/reviews`, '--input', file);
+    return gh(PostedReview, '-X', 'POST', `${pulls(host)}/reviews`, '--input', file);
   } catch (error) {
     if (!OWN_PULL_REQUEST.test(error.message) || review.event === 'COMMENT') throw error;
     return postReview(host, { ...review, event: 'COMMENT', body: `${review.body}\n\nPosted as a comment: the host refused the verdict on the author's own pull request.` }, workdir);
@@ -119,10 +111,10 @@ export function refuse(host, headCommit, reasons, workdir) {
   return postReview(host, { commit_id: headCommit, event: 'REQUEST_CHANGES', body }, workdir).html_url;
 }
 
-const settle = (id, mutation) => gh('graphql', '-f', `query=mutation($id:ID!){${mutation}(input:{threadId:$id}){thread{id}}}`, '-F', `id=${id}`);
+const settle = (id, mutation) => gh(z.unknown(), 'graphql', '-f', `query=mutation($id:ID!){${mutation}(input:{threadId:$id}){thread{id}}}`, '-F', `id=${id}`);
 
 export function post(host, outcome, ledgerTable, workdir) {
-  const already = postedAt(paginate(`${pulls(host)}/reviews`), outcome.headCommit);
+  const already = postedAt(paginate(ReviewRecord, `${pulls(host)}/reviews`), outcome.headCommit);
   const response = already === undefined ? postReview(host, payload(outcome, ledgerTable), workdir) : undefined;
   for (const id of outcome.settle) settle(id, 'resolveReviewThread');
   for (const id of outcome.reopen) settle(id, 'unresolveReviewThread');

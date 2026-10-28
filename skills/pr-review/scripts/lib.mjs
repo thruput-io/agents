@@ -1,65 +1,4 @@
-const HUNK = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/;
-
-function pushAdded(ranges, line) {
-  const last = ranges[ranges.length - 1];
-  if (last && last.end === line - 1) {
-    last.end = line;
-    return;
-  }
-  ranges.push({ start: line, end: line });
-}
-
-function pushRemoved(ranges, line, text) {
-  const last = ranges[ranges.length - 1];
-  if (last && last.end === line - 1) {
-    last.end = line;
-    last.content = `${last.content}\n${text}`;
-    return;
-  }
-  ranges.push({ start: line, end: line, content: text });
-}
-
-export function parseHunks(lines) {
-  const file = { added: [], removed: [] };
-  let oldLine = 0;
-  let newLine = 0;
-  for (const line of lines) {
-    const hunk = HUNK.exec(line);
-    if (hunk) {
-      oldLine = Number(hunk[1]);
-      newLine = Number(hunk[2]);
-    } else if (line.startsWith('+')) {
-      pushAdded(file.added, newLine);
-      newLine += 1;
-    } else if (line.startsWith('-')) {
-      pushRemoved(file.removed, oldLine, line.slice(1));
-      oldLine += 1;
-    } else if (line.startsWith(' ')) {
-      oldLine += 1;
-      newLine += 1;
-    }
-  }
-  return file;
-}
-
-function pathOf(header) {
-  const name = header.split('\t')[0];
-  return name === '/dev/null' ? undefined : name.replace(/^[ab]\//, '');
-}
-
-export function parseDiff(text) {
-  const sections = text.split(/^(?=diff --git )/m).filter((section) => section.startsWith('diff --git '));
-  return sections.map((section) => {
-    const lines = section.split('\n');
-    const start = lines.findIndex((line) => HUNK.test(line));
-    const header = start === -1 ? lines : lines.slice(0, start);
-    const oldPath = pathOf(header.find((line) => line.startsWith('--- '))?.slice(4) ?? '/dev/null');
-    const newPath = pathOf(header.find((line) => line.startsWith('+++ '))?.slice(4) ?? '/dev/null');
-    const body = start === -1 ? [] : lines.slice(start);
-    return { path: newPath ?? oldPath, ...parseHunks(body) };
-  }).filter((file) => file.path !== undefined);
-}
-
+import { ruleName } from "./domain/ledger.ts";
 export function intersect(a, b) {
   const result = [];
   let i = 0;
@@ -133,20 +72,7 @@ export function checkKinds(groups) {
   if (absent.length > 0) throw new Error(`no rule is in the group ${absent.join(', ')}, which a kind of probe is tied to: the group was renamed or removed`);
 }
 
-const CITATION = /\[\[([^\]]+)\]\]/g;
-
 const unique = (items) => [...new Set(items)];
-const texts = (value) => {
-  if (typeof value === 'string') return [value];
-  if (value !== null && typeof value === 'object') return Object.values(value).flatMap(texts);
-  return [];
-};
-const named = (entry) => unique([
-  ...texts(entry).flatMap((text) => [...text.matchAll(CITATION)].map((match) => match[1])),
-  ...(entry.closedEnumerationOf ?? []),
-  ...(entry.openEnumerationOf ?? []),
-]);
-
 function parents(children, entries, level) {
   return unique(children.map((child) => child.parent)).map((id) => {
     const parent = entries.find((entry) => entry.id === id);
@@ -156,33 +82,10 @@ function parents(children, entries, level) {
 }
 
 export function rulebook(rules, governance) {
-  const principles = parents(rules, governance.principles, 'principle');
-  const glossary = new Map(governance.definitions.map((definition) => [definition.id, definition]));
-  const cited = new Set();
-  const unread = [...rules, ...principles];
-  while (unread.length > 0) {
-    for (const id of named(unread.shift()).filter((candidate) => glossary.has(candidate) && !cited.has(candidate))) {
-      cited.add(id);
-      unread.push(glossary.get(id));
-    }
-  }
-  return { rules, principles, definitions: governance.definitions.filter((definition) => cited.has(definition.id)) };
+  return { rules, principles: parents(rules, governance.principles, 'principle'), definitions: governance.definitions };
 }
 
 export const isText = (text) => !text.includes('\0');
-
-export function rawUrl(canonicalUrl) {
-  const file = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/.exec(canonicalUrl);
-  if (file === null) throw new Error(`${canonicalUrl} is not a file on github.com`);
-  return `https://raw.githubusercontent.com/${file[1]}/${file[2]}/${file[3]}`;
-}
-
-export function rulesets(index, texts) {
-  return index.map((entry) => {
-    if (!texts.has(entry.canonical_url)) throw new Error(`the ruleset ${entry.canonical_url} was not read`);
-    return { url: entry.canonical_url, title: entry.title, focus: entry.focus, whenToUse: entry.when_to_use, text: texts.get(entry.canonical_url) };
-  });
-}
 
 const LOOKS_BEYOND_THE_CHANGE = ['reuse', 'dead-code'];
 
@@ -232,43 +135,6 @@ export function span(lines) {
   return { start: Math.min(...numbers), end: Math.max(...numbers) };
 }
 
-const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-
-function resolve(read, name, ref) {
-  const [path, pointer = ''] = ref.split('#');
-  const target = path === '' ? name : new URL(path, `file:///${name}`).pathname.slice(1);
-  return { name: target, schema: pointer.split('/').filter(Boolean).reduce((node, key) => node[key], read(target)) };
-}
-
-function fixed(read, name, schema) {
-  const target = schema.$ref === undefined ? undefined : resolve(read, name, schema.$ref);
-  const referenced = target === undefined ? [] : fixed(read, target.name, target.schema);
-  const own = Object.entries(schema.properties ?? {}).filter(([, property]) => 'const' in property).map(([property, { const: value }]) => [property, value]);
-  const inherited = (schema.allOf ?? []).flatMap((branch) => fixed(read, name, branch));
-  return [...referenced, ...inherited, ...own];
-}
-
-export function complete(read, name, document, schema = read(name)) {
-  let completed = document;
-  if (schema.$ref !== undefined) {
-    const target = resolve(read, name, schema.$ref);
-    completed = complete(read, target.name, completed, target.schema);
-  }
-  if (Array.isArray(completed)) return schema.items === undefined ? completed : completed.map((item) => complete(read, name, item, schema.items));
-  if (typeof completed !== 'object' || completed === null) return completed;
-  if (schema.oneOf !== undefined) {
-    const belongs = schema.oneOf.filter((branch) => fixed(read, name, branch).every(([property, value]) => !(property in completed) || same(completed[property], value)));
-    if (belongs.length !== 1) throw new Error(`${name}: the document belongs to ${belongs.length} of the ${schema.oneOf.length} branches, so what its schema says cannot be told`);
-    completed = complete(read, name, completed, belongs[0]);
-  }
-  for (const branch of schema.allOf ?? []) {
-    completed = complete(read, name, completed, branch);
-  }
-  const properties = schema.properties ?? {};
-  const own = Object.entries(completed).map(([property, value]) => [property, property in properties ? complete(read, name, value, properties[property]) : value]);
-  return Object.fromEntries([...fixed(read, name, schema), ...own]);
-}
-
 export const FILE_LINES = 200;
 export const FILE_TOO_LARGE = 'File too large';
 
@@ -278,52 +144,6 @@ export const isTest = (path) => TEST_DIR.test(path) || TEST_FILE.test(path);
 
 export function tooLarge(counts) {
   return counts.filter((file) => !isTest(file.path) && file.lines > FILE_LINES).map((file) => `${file.path} is ${file.lines} lines long, which breaks ${FILE_TOO_LARGE}`);
-}
-
-export const ESCALATION_ROWS = 3;
-
-export function anchorInside(anchor, files) {
-  if (anchor.kind === 'pull-request') return true;
-  const file = files.find((candidate) => candidate.path === anchor.path);
-  if (file === undefined) return false;
-  const copied = Object.entries(anchor.lines);
-  if (copied.length === 0) return false;
-  return file.fragments.some((fragment) => fragment.kind === 'surface' && fragment.side === anchor.side
-    && copied.every(([number, text]) => fragment.lines[number] === text));
-}
-
-const ruleName = (row) => (row.bookRule === undefined ? row.rule : row.bookRule.heading);
-
-export function checkLedger(name, document, ledger) {
-  const { headCommit, files } = document.review;
-  if (ledger.headCommit !== headCommit) {
-    throw new Error(`${name}: ledger is for ${ledger.headCommit}, the review is of ${headCommit}`);
-  }
-  if (document.kind === 'context') {
-    if (ledger.rows.length !== ESCALATION_ROWS) throw new Error(`${name}: ${ledger.rows.length} rows, ${ESCALATION_ROWS} expected`);
-    const ours = ledger.rows.filter((row) => row.bookRule === undefined).map((row) => row.rule);
-    if (ours.length > 0) throw new Error(`${name}: ${JSON.stringify(ours)} is not a rule of the ruleset; the context probe writes its rows on book rules`);
-    const handed = document.rulesets.map((ruleset) => ruleset.url);
-    const selected = [...new Set(ledger.rows.map((row) => row.bookRule.ruleset))];
-    const foreign = selected.filter((url) => !handed.includes(url));
-    if (foreign.length > 0) throw new Error(`${name}: ${JSON.stringify(foreign)} is not a ruleset the probe was handed`);
-    if (selected.length !== 1) throw new Error(`${name}: rows name ${selected.length} rulesets; the context probe selects one ruleset`);
-  } else {
-    const found = ledger.rows.map((row) => row.rule);
-    const expected = document.rulebook.rules.map((rule) => rule.id);
-    if (JSON.stringify(found) !== JSON.stringify(expected)) {
-      const missing = expected.filter((id) => !found.includes(id));
-      const extra = found.filter((id) => !expected.includes(id));
-      throw new Error(`${name}: rows do not match the rules, in order. missing: ${JSON.stringify(missing)} extra: ${JSON.stringify(extra)} found: ${JSON.stringify(found)}`);
-    }
-  }
-  for (const row of ledger.rows.filter((candidate) => candidate.verdict === 'violation')) {
-    for (const violation of row.violations) {
-      if (!anchorInside(violation.anchor, files)) {
-        throw new Error(`${name}: a violation of ${ruleName(row)} is anchored outside the surface at ${JSON.stringify(violation.anchor)}; a finding with no surface line to blame is anchored at the pull request`);
-      }
-    }
-  }
 }
 
 export function merge(ledgers) {

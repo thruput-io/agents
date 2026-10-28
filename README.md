@@ -17,11 +17,7 @@ The build runs the same steps as the pull request check. Install its tools with 
 
 ## Installation
 
-Install as an [AgentPlugins](https://agentplugins.pages.dev/) plugin:
-
-```bash
-npx --yes @agentplugins/cli add thruput-io/agents
-```
+This repository is an [Agent Plugins](https://agent-plugins.org/specification) v1.0.0 plugin: `plugin.json` at the root and skills under `skills/`.
 
 ## License
 

@@ -1,25 +1,20 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseDiff, ours as written, SITE } from './lib.mjs';
+import { ours as written, SITE } from './lib.mjs';
+import { changedFiles } from './domain/diff.ts';
+import { BuildPolicies, PostedThread, PullRequestResponse, ThreadsResponse } from './domain/azure.ts';
 import { run } from './shell.mjs';
 
 export const KIND = 'azure-devops';
-const PULL_REQUEST_URL = /^https:\/\/dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+)\/pullrequest\/(\d+)/;
 const HOST_SIDE_OF = { head: 'right', base: 'left' };
 const VOTE_OF = { approve: 'approve', 'request-changes': 'wait-for-author' };
 const PRIOR = / probes at ([0-9a-f]{40})\b/;
 
 const organization = (host) => `https://dev.azure.com/${host.organization}`;
-const az = (...args) => JSON.parse(run('az', [...args, '--output', 'json']));
+const az = (schema, ...args) => schema.parse(JSON.parse(run('az', [...args, '--output', 'json'])));
 export const routeParameters = (host, threadId) => ['--route-parameters', `project=${host.project}`, `repositoryId=${host.repository}`, `pullRequestId=${host.id}`, ...(threadId === undefined ? [] : [`threadId=${threadId}`])];
-const invoke = (host, args, threadId) => az('devops', 'invoke', '--organization', organization(host), '--area', 'git', '--resource', 'pullRequestThreads',
+const invoke = (schema, host, args, threadId) => az(schema, 'devops', 'invoke', '--organization', organization(host), '--area', 'git', '--resource', 'pullRequestThreads',
   ...routeParameters(host, threadId), '--api-version', '7.1', ...args);
-
-export function locate(target) {
-  const match = PULL_REQUEST_URL.exec(target);
-  if (match === null) return undefined;
-  return { kind: KIND, organization: match[1], project: match[2], repository: match[3], id: Number(match[4]) };
-}
 
 const onLines = (raw) => raw.threadContext !== null && raw.threadContext !== undefined && raw.threadContext.filePath !== null;
 const firstComment = (raw) => raw.comments[0]?.content ?? '';
@@ -57,15 +52,14 @@ export function priorOf(rawThreads) {
 }
 
 export function resolve(host, workdir) {
-  const pr = az('repos', 'pr', 'show', '--id', String(host.id), '--organization', organization(host));
-  const headCommit = pr.lastMergeSourceCommit.commitId;
-  const build = az('repos', 'pr', 'policy', 'list', '--id', String(host.id), '--organization', organization(host))
-    .filter((policy) => policy.configuration.isBlocking && policy.configuration.type.displayName === 'Build');
+  const pr = az(PullRequestResponse, 'repos', 'pr', 'show', '--id', String(host.id), '--organization', organization(host));
+  const headCommit = pr.headCommit;
+  const build = az(BuildPolicies, 'repos', 'pr', 'policy', 'list', '--id', String(host.id), '--organization', organization(host));
   const blocked = [
     ...build.filter((policy) => policy.status !== 'approved').map((policy) => `the blocking Build policy is ${policy.status}`),
     ...(pr.mergeStatus === 'conflicts' ? ['the pull request has merge conflicts'] : []),
   ];
-  const raw = invoke(host, []).value;
+  const raw = invoke(ThreadsResponse, host, []);
   const prior = priorOf(raw);
   const threads = prior === undefined ? [] : raw.filter((candidate) => onLines(candidate) && ours(candidate)).map(thread);
   const repository = join(workdir, 'repository');
@@ -81,14 +75,14 @@ export function resolve(host, workdir) {
   let ready;
   const repo = () => { ready ??= fetched(); return ready; };
   return {
-    pullRequest: { host, author: pr.createdBy.uniqueName, description: pr.description ?? '' },
+    pullRequest: { host, author: pr.author, description: pr.description },
     headCommit,
     blocked,
     prior,
     refused: refusedOf(raw, headCommit),
     threads,
     diff: () => repo()('diff', '--no-color', repo()('merge-base', 'review/target', headCommit).trim(), headCommit),
-    changedSince: (priorHead) => new Map(parseDiff(repo()('diff', '--no-color', priorHead, headCommit)).map((file) => [file.path, file.added])),
+    changedSince: (priorHead) => new Map(changedFiles(repo()('diff', '--no-color', priorHead, headCommit)).map((file) => [file.path, file.added])),
     checkout: (dir) => {
       mkdirSync(dir, { recursive: true });
       const tarball = `${dir}.tar`;
@@ -119,7 +113,7 @@ function send(host, workdir, name, body, args) {
   mkdirSync(join(workdir, 'post'), { recursive: true });
   const file = join(workdir, 'post', `${name}.json`);
   writeFileSync(file, `${JSON.stringify(body, null, 2)}\n`);
-  return invoke(host, ['--http-method', args.method, '--in-file', file], args.threadId);
+  return invoke(PostedThread, host, ['--http-method', args.method, '--in-file', file], args.threadId);
 }
 
 export function refuse(host, headCommit, reasons, workdir) {
@@ -128,14 +122,14 @@ export function refuse(host, headCommit, reasons, workdir) {
 }
 
 export function post(host, outcome, ledgerTable, workdir) {
-  const before = invoke(host, []).value;
+  const before = invoke(ThreadsResponse, host, []);
   const left = unposted(outcome, before);
-  const threads = left.inline.map((finding, index) => send(host, workdir, `thread-${String(index + 1).padStart(3, '0')}`, threadPayload(finding), { method: 'POST' }).id);
+  left.inline.forEach((finding, index) => send(host, workdir, `thread-${String(index + 1).padStart(3, '0')}`, threadPayload(finding), { method: 'POST' }));
   const summary = left.summary ? send(host, workdir, 'summary', text(`${outcome.summary}\n\n${ledgerTable}`), { method: 'POST' }).id : undefined;
   for (const id of left.settle) send(host, workdir, `settle-${id}`, { status: 'fixed' }, { method: 'PATCH', threadId: id });
   for (const id of outcome.reopen) send(host, workdir, `reopen-${id}`, { status: 'active' }, { method: 'PATCH', threadId: id });
   const stale = staleRefusals(before);
   for (const id of stale) send(host, workdir, `refusal-${id}`, { status: 'fixed' }, { method: 'PATCH', threadId: id });
   run('az', ['repos', 'pr', 'set-vote', '--id', String(host.id), '--vote', VOTE_OF[outcome.verdict], '--organization', organization(host), '--output', 'json']);
-  return { summaryThread: summary ?? 'already posted', inline: threads.length, alreadyPosted: outcome.inline.length - threads.length, settled: left.settle.length, reopened: outcome.reopen.length, refusalsClosed: stale.length, vote: VOTE_OF[outcome.verdict] };
+  return { review: `https://dev.azure.com/${host.organization}/${host.project}/_git/${host.repository}/pullrequest/${host.id}`, posted: summary !== undefined, inline: outcome.inline.length, settled: outcome.settle.length, reopened: outcome.reopen.length };
 }

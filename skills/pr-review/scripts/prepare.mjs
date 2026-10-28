@@ -3,9 +3,14 @@ import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  parseDiff, threadRanges, wholeSurface, narrowSurface, isText, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
-  instructions, complete, numbered, fragments, removedLines, tooLarge, FILE_TOO_LARGE,
+  threadRanges, wholeSurface, narrowSurface, isText, partition, kindOf, checkKinds, rulebook,
+  instructions, numbered, fragments, removedLines, tooLarge, FILE_TOO_LARGE,
 } from './lib.mjs';
+import { changedFiles } from './domain/diff.ts';
+import { TargetSchema } from './domain/host.ts';
+import { IndexSchema, withText } from './domain/ruleset.ts';
+import { PrepareSchema, PreconditionsSchema } from './domain/controller.ts';
+import { AgentInstructionsSchema, ChangeSetSchema, ThreadsSchema } from './domain/contracts.g.ts';
 import { run } from './shell.mjs';
 import * as github from './github.mjs';
 import * as azureDevOps from './azure-devops.mjs';
@@ -16,14 +21,11 @@ const skill = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const [target, workdirArg] = process.argv.slice(2);
 if (workdirArg === undefined) throw new Error('usage: node prepare.mjs <pull-request-url | repository@base..head> <workdir>');
 
-const validate = (schema, file) => run('npx', ['--yes', '@sourcemeta/jsonschema@17.0.0', 'validate', join(skill, 'schemas', schema), file, '--resolve', join(skill, 'schemas')]);
 const yaml = (name) => JSON.parse(run('npx', ['--yes', 'js-yaml@4.1.0', join(skill, 'rules', name)]));
-const schema = (name) => JSON.parse(readFileSync(join(skill, 'schemas', name), 'utf8'));
 const jsYaml = createRequire(run('npx', ['--yes', '--package', 'js-yaml@4.1.0', '-c', 'command -v js-yaml']).trim())('js-yaml');
 
-const located = ADAPTERS.map((adapter) => ({ adapter, host: adapter.locate(target) })).find(({ host }) => host !== undefined);
-if (located === undefined) throw new Error(`${target} is not a pull request URL this skill knows, nor a repository@base..head range`);
-const { adapter, host } = located;
+const host = TargetSchema.parse(target);
+const adapter = ADAPTERS.find((candidate) => candidate.KIND === host.kind);
 
 const workdir = resolve(workdirArg);
 mkdirSync(join(workdir, 'instructions'), { recursive: true });
@@ -35,19 +37,20 @@ const write = (name, document) => {
 };
 
 const change = adapter.resolve(host, workdir);
-const { pullRequest, headCommit } = change;
+const { pullRequest, headCommit, threads } = PrepareSchema.parse(change);
+const preconditions = PreconditionsSchema.parse(change);
 write('pull-request.json', pullRequest);
-if (change.blocked.length > 0) {
-  const where = change.refused ?? adapter.refuse(host, headCommit, change.blocked, workdir);
-  throw new Error(`${change.blocked.join('; ')}. A changes-requested verdict ${change.refused === undefined ? 'was posted' : 'had been posted'} (${where}); no review was prepared.`);
+if (preconditions.blocked.length > 0) {
+  const where = preconditions.refused ?? adapter.refuse(host, headCommit, preconditions.blocked, workdir);
+  throw new Error(`${preconditions.blocked.join('; ')}. A changes-requested verdict ${preconditions.refused === undefined ? 'was posted' : 'had been posted'} (${where}); no review was prepared.`);
 }
 
-const changeSet = { headCommit, files: parseDiff(change.diff()) };
-validate('review/change-set.schema.json', write('change-set.json', changeSet));
-validate('review/threads.schema.json', write('threads.json', { threads: change.threads }));
-const surface = change.prior === undefined ? wholeSurface(changeSet) : narrowSurface(changeSet, change.changedSince(change.prior), threadRanges(change.threads));
+const changeSet = { headCommit, files: changedFiles(change.diff()) };
+write('change-set.json', ChangeSetSchema.parse(changeSet));
+write('threads.json', ThreadsSchema.parse({ threads }));
+const surface = preconditions.prior === undefined ? wholeSurface(changeSet) : narrowSurface(changeSet, change.changedSince(preconditions.prior), threadRanges(threads));
 if (surface.files.length === 0) {
-  throw new Error(`nothing to review: no line of the change set changed since the prior review at ${change.prior}, and no thread of ours is open or was resolved by the author`);
+  throw new Error(`nothing to review: no line of the change set changed since the prior review at ${preconditions.prior}, and no thread of ours is open or was resolved by the author`);
 }
 
 const snapshot = join(workdir, 'snapshot');
@@ -56,8 +59,8 @@ const paths = readdirSync(snapshot, { recursive: true }).map(String).filter((pat
 const linesAtHead = (path) => (paths.includes(path) && isText(readFileSync(join(snapshot, path), 'latin1')) ? numbered(readFileSync(join(snapshot, path), 'utf8')) : {});
 const oversized = tooLarge(changeSet.files.map((file) => ({ path: file.path, lines: Object.keys(linesAtHead(file.path)).length })));
 if (oversized.length > 0) {
-  const where = change.refused ?? adapter.refuse(host, headCommit, oversized, workdir);
-  throw new Error(`${oversized.join('; ')}. A changes-requested verdict ${change.refused === undefined ? 'was posted' : 'had been posted'} (${where}); no review was prepared.`);
+  const where = preconditions.refused ?? adapter.refuse(host, headCommit, oversized, workdir);
+  throw new Error(`${oversized.join('; ')}. A changes-requested verdict ${preconditions.refused === undefined ? 'was posted' : 'had been posted'} (${where}); no review was prepared.`);
 }
 const files = surface.files.map((file) => {
   const hunks = changeSet.files.find((candidate) => candidate.path === file.path).removed;
@@ -73,34 +76,33 @@ const context = {
   report: (name) => `node "${join(skill, 'scripts', 'check.mjs')}" "${join(workdir, 'instructions', `${name}.yaml`)}"`,
 };
 
-const index = JSON.parse(readFileSync(join(skill, 'references', 'agent-rules-books-search-index.json'), 'utf8'));
+const entries = IndexSchema.parse(JSON.parse(readFileSync(join(skill, 'references', 'agent-rules-books-search-index.json'), 'utf8')));
 const texts = new Map();
-for (const entry of index) {
-  const response = await fetch(rawUrl(entry.canonical_url));
-  if (!response.ok) throw new Error(`the ruleset ${entry.canonical_url} could not be read: HTTP ${response.status}`);
-  texts.set(entry.canonical_url, await response.text());
+for (const entry of entries) {
+  const response = await fetch(entry.rawUrl);
+  if (!response.ok) throw new Error(`the ruleset ${entry.url} could not be read: HTTP ${response.status}`);
+  texts.set(entry.url, await response.text());
 }
+const rulesetsRead = entries.map((entry) => withText(entry, texts.get(entry.url)));
 
 const groups = partition(rules.filter((rule) => rule.id !== FILE_TOO_LARGE));
 checkKinds(groups.map((group) => group.group));
 const probes = instructions(
   context,
   groups.map((group) => ({ name: group.name, kind: kindOf(group.group), rulebook: rulebook(group.rules, governance) })),
-  rulesets(index, texts),
+  rulesetsRead,
 );
 for (const probe of probes) {
   const file = join(workdir, 'instructions', `${probe.name}.yaml`);
-  const schemaPath = `review/instructions/${probe.document.kind}.schema.json`;
-  writeFileSync(file, jsYaml.dump(complete(schema, schemaPath, probe.document), { lineWidth: -1, noRefs: true }));
-  validate(schemaPath, file);
+  writeFileSync(file, jsYaml.dump(AgentInstructionsSchema.parse(probe.document), { lineWidth: -1, noRefs: true }));
 }
 
 const count = (files, side) => files.reduce((sum, file) => sum + file[side].reduce((n, range) => n + range.end - range.start + 1, 0), 0);
 const summary = {
   host: host.kind,
   headCommit,
-  since: change.prior ?? null,
-  threadsOfOurs: change.threads.length,
+  since: preconditions.prior ?? null,
+  threadsOfOurs: threads.length,
   changeSet: { files: changeSet.files.length, added: count(changeSet.files, 'added'), removed: count(changeSet.files, 'removed') },
   surface: { files: surface.files.length, added: count(surface.files, 'added'), removed: count(surface.files, 'removed') },
   repository: paths.length,
