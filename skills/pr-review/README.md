@@ -27,10 +27,17 @@ Set in the environment:
 - A sub agent writes its ledger to the path given in its data, and returns.
 - The main agent decides, from the returns, whether a sub agent needs to run again.
 
+## Controllers
+
+Each actor has one controller, and it exposes only that actor's methods.
+
+- **Main agent controller.** `prepare(url, workdir)`, `dispatch(workdir)`, `submit(ledger)`, and a ledger factory the main agent can call on its own, so it can solve I/O problems itself.
+- **Sub agent controller.** One write method, for its own ledger only. It is created with the workspace path it was given.
+
 ## Ledger
 
-- The ledger is a sibling folder of the workspace. Nothing reads or writes it by path. It is reached only through functions.
-- The main agent creates it through a factory and holds a read-only view of it.
+- The ledger is a sibling folder of the workspace. Nothing reads or writes it by path. It is reached only through the controllers.
+- The main agent creates the ledger through its factory and holds a read-only view of it.
 - Each sub agent is given a write method for its own ledger only. It knows nothing of the file system beyond its workspace path.
 - `submit(ledger)` takes the ledger object.
 
