@@ -4,9 +4,10 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   threadRanges, wholeSurface, narrowSurface, isText, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
-  instructions, complete, numbered, fragments, removedLines, tooLarge, FILE_TOO_LARGE,
+  instructions, numbered, fragments, removedLines, tooLarge, FILE_TOO_LARGE,
 } from './lib.mjs';
 import { changedFiles } from './domain/diff.ts';
+import { AgentInstructionsSchema, ChangeSetSchema, ThreadsSchema } from './domain/contracts.g.ts';
 import { run } from './shell.mjs';
 import * as github from './github.mjs';
 import * as azureDevOps from './azure-devops.mjs';
@@ -17,9 +18,7 @@ const skill = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const [target, workdirArg] = process.argv.slice(2);
 if (workdirArg === undefined) throw new Error('usage: node prepare.mjs <pull-request-url | repository@base..head> <workdir>');
 
-const validate = (schema, file) => run('npx', ['--yes', '@sourcemeta/jsonschema@17.0.0', 'validate', join(skill, 'schemas', schema), file, '--resolve', join(skill, 'schemas')]);
 const yaml = (name) => JSON.parse(run('npx', ['--yes', 'js-yaml@4.1.0', join(skill, 'rules', name)]));
-const schema = (name) => JSON.parse(readFileSync(join(skill, 'schemas', name), 'utf8'));
 const jsYaml = createRequire(run('npx', ['--yes', '--package', 'js-yaml@4.1.0', '-c', 'command -v js-yaml']).trim())('js-yaml');
 
 const located = ADAPTERS.map((adapter) => ({ adapter, host: adapter.locate(target) })).find(({ host }) => host !== undefined);
@@ -44,8 +43,8 @@ if (change.blocked.length > 0) {
 }
 
 const changeSet = { headCommit, files: changedFiles(change.diff()) };
-validate('review/change-set.schema.json', write('change-set.json', changeSet));
-validate('review/threads.schema.json', write('threads.json', { threads: change.threads }));
+write('change-set.json', ChangeSetSchema.parse(changeSet));
+write('threads.json', ThreadsSchema.parse({ threads: change.threads }));
 const surface = change.prior === undefined ? wholeSurface(changeSet) : narrowSurface(changeSet, change.changedSince(change.prior), threadRanges(change.threads));
 if (surface.files.length === 0) {
   throw new Error(`nothing to review: no line of the change set changed since the prior review at ${change.prior}, and no thread of ours is open or was resolved by the author`);
@@ -91,9 +90,7 @@ const probes = instructions(
 );
 for (const probe of probes) {
   const file = join(workdir, 'instructions', `${probe.name}.yaml`);
-  const schemaPath = `review/instructions/${probe.document.kind}.schema.json`;
-  writeFileSync(file, jsYaml.dump(complete(schema, schemaPath, probe.document), { lineWidth: -1, noRefs: true }));
-  validate(schemaPath, file);
+  writeFileSync(file, jsYaml.dump(AgentInstructionsSchema.parse(probe.document), { lineWidth: -1, noRefs: true }));
 }
 
 const count = (files, side) => files.reduce((sum, file) => sum + file[side].reduce((n, range) => n + range.end - range.start + 1, 0), 0);

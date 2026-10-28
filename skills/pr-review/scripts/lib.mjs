@@ -171,43 +171,6 @@ export function span(lines) {
   return { start: Math.min(...numbers), end: Math.max(...numbers) };
 }
 
-const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-
-function resolve(read, name, ref) {
-  const [path, pointer = ''] = ref.split('#');
-  const target = path === '' ? name : new URL(path, `file:///${name}`).pathname.slice(1);
-  return { name: target, schema: pointer.split('/').filter(Boolean).reduce((node, key) => node[key], read(target)) };
-}
-
-function fixed(read, name, schema) {
-  const target = schema.$ref === undefined ? undefined : resolve(read, name, schema.$ref);
-  const referenced = target === undefined ? [] : fixed(read, target.name, target.schema);
-  const own = Object.entries(schema.properties ?? {}).filter(([, property]) => 'const' in property).map(([property, { const: value }]) => [property, value]);
-  const inherited = (schema.allOf ?? []).flatMap((branch) => fixed(read, name, branch));
-  return [...referenced, ...inherited, ...own];
-}
-
-export function complete(read, name, document, schema = read(name)) {
-  let completed = document;
-  if (schema.$ref !== undefined) {
-    const target = resolve(read, name, schema.$ref);
-    completed = complete(read, target.name, completed, target.schema);
-  }
-  if (Array.isArray(completed)) return schema.items === undefined ? completed : completed.map((item) => complete(read, name, item, schema.items));
-  if (typeof completed !== 'object' || completed === null) return completed;
-  if (schema.oneOf !== undefined) {
-    const belongs = schema.oneOf.filter((branch) => fixed(read, name, branch).every(([property, value]) => !(property in completed) || same(completed[property], value)));
-    if (belongs.length !== 1) throw new Error(`${name}: the document belongs to ${belongs.length} of the ${schema.oneOf.length} branches, so what its schema says cannot be told`);
-    completed = complete(read, name, completed, belongs[0]);
-  }
-  for (const branch of schema.allOf ?? []) {
-    completed = complete(read, name, completed, branch);
-  }
-  const properties = schema.properties ?? {};
-  const own = Object.entries(completed).map(([property, value]) => [property, property in properties ? complete(read, name, value, properties[property]) : value]);
-  return Object.fromEntries([...fixed(read, name, schema), ...own]);
-}
-
 export const FILE_LINES = 200;
 export const FILE_TOO_LARGE = 'File too large';
 

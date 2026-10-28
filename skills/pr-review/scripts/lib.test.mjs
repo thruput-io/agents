@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
-  instructions, complete, numbered, fragments, span, removedLines, settled, merge, verdict, table, citation, message, alreadyOpen,
+  instructions, numbered, fragments, span, removedLines, settled, merge, verdict, table, citation, message, alreadyOpen,
   outcome, ours, tooLarge, FILE_TOO_LARGE, FILE_LINES, isTest, CELL, SITE,
 } from './lib.mjs';
 
@@ -164,27 +164,6 @@ test('numbered lists the lines of a file by their number from 1, a final newline
   assert.deepEqual(Object.keys(numbered('x\n'.repeat(12))).at(-1), '12');
 });
 
-test('complete adds what a schema says itself, at every level: the constants of its own properties, of referenced schemas via $ref or allOf, of the one branch the document belongs to, and of what its properties and items refer to', () => {
-  const schemas = {
-    'review/base.schema.json': { properties: { instructions: { const: ['do instructions'] } } },
-    'review/any.schema.json': { allOf: [{ $ref: 'base.schema.json' }], properties: { steps: { const: ['first', 'second'] } }, oneOf: [{ $ref: 'kinds/a.schema.json' }, { $ref: 'kinds/b.schema.json' }] },
-    'review/kinds/a.schema.json': { $ref: '../base.schema.json', properties: { task: { const: 'do a' }, kind: { const: 'a' }, part: { $ref: '../part.schema.json' } } },
-    'review/kinds/b.schema.json': { $ref: '../base.schema.json', properties: { task: { const: 'do b' }, kind: { const: 'b' }, part: { $ref: '../part.schema.json' }, items: { type: 'array', items: { $ref: '../part.schema.json#/$defs/Item' } } } },
-    'review/part.schema.json': { properties: { note: { const: 'read me' }, value: { type: 'string' } }, $defs: { Item: { properties: { tag: { const: 't' }, n: { type: 'integer' } } } } },
-  };
-  const read = (name) => schemas[name];
-  assert.deepEqual(
-    complete(read, 'review/any.schema.json', { kind: 'b', part: { value: 'x' }, items: [{ n: 1 }, { n: 2 }] }),
-    { instructions: ['do instructions'], steps: ['first', 'second'], task: 'do b', kind: 'b', part: { note: 'read me', value: 'x' }, items: [{ tag: 't', n: 1 }, { tag: 't', n: 2 }] },
-  );
-  assert.deepEqual(
-    complete(read, 'review/kinds/a.schema.json', { kind: 'a', part: { value: 'x' } }),
-    { instructions: ['do instructions'], task: 'do a', kind: 'a', part: { note: 'read me', value: 'x' } },
-  );
-  assert.deepEqual(complete(read, 'review/any.schema.json', { kind: 'a' }), { instructions: ['do instructions'], steps: ['first', 'second'], task: 'do a', kind: 'a' });
-  assert.throws(() => complete(read, 'review/any.schema.json', { kind: 'c' }), /belongs to 0 of the 2 branches/);
-  assert.throws(() => complete(read, 'review/any.schema.json', {}), /belongs to 2 of the 2 branches/);
-});
 
 test('fragments cuts a file into context and surface fragments in order, head first, then the removed hunks as base fragments', () => {
   const numberedLines = numbered('a\nb\nc\nd\n');
