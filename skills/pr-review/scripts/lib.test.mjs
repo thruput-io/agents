@@ -94,12 +94,12 @@ const governance = {
   ],
 };
 
-test('rulebook hands a probe its rules with their principles and every glossary term those cite', () => {
-  const own = [{ id: 'A', parent: 'P', body: 'Do [[Rule term]].' }, { id: 'B', parent: 'P', body: 'Do.' }];
+test('rulebook hands a probe its rules, their principles and the whole glossary', () => {
+  const own = [{ id: 'A', parent: 'P', body: 'Do.' }, { id: 'B', parent: 'P', body: 'Do.' }];
   assert.deepEqual(rulebook(own, governance), {
     rules: own,
     principles: [governance.principles[0]],
-    definitions: governance.definitions.slice(0, 4),
+    definitions: governance.definitions,
   });
 });
 

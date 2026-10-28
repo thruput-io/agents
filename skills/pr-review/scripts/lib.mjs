@@ -72,20 +72,7 @@ export function checkKinds(groups) {
   if (absent.length > 0) throw new Error(`no rule is in the group ${absent.join(', ')}, which a kind of probe is tied to: the group was renamed or removed`);
 }
 
-const CITATION = /\[\[([^\]]+)\]\]/g;
-
 const unique = (items) => [...new Set(items)];
-const texts = (value) => {
-  if (typeof value === 'string') return [value];
-  if (value !== null && typeof value === 'object') return Object.values(value).flatMap(texts);
-  return [];
-};
-const named = (entry) => unique([
-  ...texts(entry).flatMap((text) => [...text.matchAll(CITATION)].map((match) => match[1])),
-  ...(entry.closedEnumerationOf ?? []),
-  ...(entry.openEnumerationOf ?? []),
-]);
-
 function parents(children, entries, level) {
   return unique(children.map((child) => child.parent)).map((id) => {
     const parent = entries.find((entry) => entry.id === id);
@@ -95,17 +82,7 @@ function parents(children, entries, level) {
 }
 
 export function rulebook(rules, governance) {
-  const principles = parents(rules, governance.principles, 'principle');
-  const glossary = new Map(governance.definitions.map((definition) => [definition.id, definition]));
-  const cited = new Set();
-  const unread = [...rules, ...principles];
-  while (unread.length > 0) {
-    for (const id of named(unread.shift()).filter((candidate) => glossary.has(candidate) && !cited.has(candidate))) {
-      cited.add(id);
-      unread.push(glossary.get(id));
-    }
-  }
-  return { rules, principles, definitions: governance.definitions.filter((definition) => cited.has(definition.id)) };
+  return { rules, principles: parents(rules, governance.principles, 'principle'), definitions: governance.definitions };
 }
 
 export const isText = (text) => !text.includes('\0');
