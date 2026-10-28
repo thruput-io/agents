@@ -9,7 +9,6 @@ import {
 import { changedFiles } from './domain/diff.ts';
 import { TargetSchema } from './domain/host.ts';
 import { IndexSchema, withText } from './domain/ruleset.ts';
-import { GovernanceSchema } from './domain/governance.ts';
 import { PrepareSchema, PreconditionsSchema } from './domain/controller.ts';
 import { AgentInstructionsSchema, ChangeSetSchema, ThreadsSchema } from './domain/contracts.g.ts';
 import { run } from './shell.mjs';
@@ -68,8 +67,8 @@ const files = surface.files.map((file) => {
   return { path: file.path, fragments: fragments(linesAtHead(file.path), file.added, removedLines(hunks, file.removed)) };
 }).filter((file) => file.fragments.length > 0);
 
-const governance = GovernanceSchema.parse({ rules: yaml('Rules.yaml'), principles: yaml('Principles.yaml'), definitions: yaml('Definitions.yaml') });
-const { rules } = governance;
+const { rules } = yaml('Rules.yaml');
+const governance = { principles: yaml('Principles.yaml').principles, definitions: yaml('Definitions.yaml').definitions };
 const context = {
   review: { pullRequest, headCommit, files },
   checkout: snapshot,
