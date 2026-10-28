@@ -124,12 +124,12 @@ export function refuse(host, headCommit, reasons, workdir) {
 export function post(host, outcome, ledgerTable, workdir) {
   const before = invoke(ThreadsResponse, host, []);
   const left = unposted(outcome, before);
-  const threads = left.inline.map((finding, index) => send(host, workdir, `thread-${String(index + 1).padStart(3, '0')}`, threadPayload(finding), { method: 'POST' }).id);
+  left.inline.forEach((finding, index) => send(host, workdir, `thread-${String(index + 1).padStart(3, '0')}`, threadPayload(finding), { method: 'POST' }));
   const summary = left.summary ? send(host, workdir, 'summary', text(`${outcome.summary}\n\n${ledgerTable}`), { method: 'POST' }).id : undefined;
   for (const id of left.settle) send(host, workdir, `settle-${id}`, { status: 'fixed' }, { method: 'PATCH', threadId: id });
   for (const id of outcome.reopen) send(host, workdir, `reopen-${id}`, { status: 'active' }, { method: 'PATCH', threadId: id });
   const stale = staleRefusals(before);
   for (const id of stale) send(host, workdir, `refusal-${id}`, { status: 'fixed' }, { method: 'PATCH', threadId: id });
   run('az', ['repos', 'pr', 'set-vote', '--id', String(host.id), '--vote', VOTE_OF[outcome.verdict], '--organization', organization(host), '--output', 'json']);
-  return { summaryThread: summary ?? 'already posted', inline: threads.length, alreadyPosted: outcome.inline.length - threads.length, settled: left.settle.length, reopened: outcome.reopen.length, refusalsClosed: stale.length, vote: VOTE_OF[outcome.verdict] };
+  return { review: `https://dev.azure.com/${host.organization}/${host.project}/_git/${host.repository}/pullrequest/${host.id}`, posted: summary !== undefined, inline: outcome.inline.length, settled: outcome.settle.length, reopened: outcome.reopen.length };
 }

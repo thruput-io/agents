@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { merge, outcome, table } from './lib.mjs';
 import { check, yaml } from './check.mjs';
+import { ReportSchema } from './domain/controller.ts';
 import { LedgerSchema, OutcomeSchema } from './domain/contracts.g.ts';
 import * as github from './github.mjs';
 import * as azureDevOps from './azure-devops.mjs';
@@ -36,5 +37,5 @@ const decided = OutcomeSchema.parse(outcome(entries, read(join(workdir, 'threads
 const outcomeFile = join(workdir, 'outcome.json');
 writeFileSync(outcomeFile, `${JSON.stringify(decided, null, 2)}\n`);
 
-const posted = adapter.post(pullRequest.host, decided, ledgerTable, workdir);
-console.log(JSON.stringify({ verdict: decided.verdict, rows: merged.rows.length, ...posted }, null, 2));
+const report = ReportSchema.parse(adapter.post(pullRequest.host, decided, ledgerTable, workdir));
+console.log(JSON.stringify({ verdict: decided.verdict, rows: merged.rows.length, ...report }, null, 2));

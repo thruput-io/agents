@@ -38,5 +38,5 @@ export function rendered(outcome, ledgerTable) {
 export function post(host, outcome, ledgerTable, workdir) {
   const file = join(workdir, 'review.md');
   writeFileSync(file, rendered(outcome, ledgerTable));
-  return { review: file, inline: outcome.inline.length };
+  return { review: file, posted: true, inline: outcome.inline.length, settled: 0, reopened: 0 };
 }
