@@ -19,7 +19,7 @@ Set in the environment:
 |---|---|---|---|
 | `prepare(url, workdir)` | Main agent | Target URL and the workdir the agent chose | Immutable PR object |
 | `dispatch(workdir)` | Main agent | Workdir | One return per sub agent, once it finishes |
-| `submit(ledger)` | Main agent | Ledger location (the directory holding the sub agents' ledgers) | The posted review |
+| `submit(ledger)` | Main agent | The ledger object from the factory | The posted review |
 
 - `dispatch` spawns one sub agent per probe. Each sub agent receives its instructions and its data, and it has no channel back to the main agent beyond its return.
 - The instructions are hard-coded constants from the schema, which the generated code already holds.
@@ -27,9 +27,16 @@ Set in the environment:
 - A sub agent writes its ledger to the path given in its data, and returns.
 - The main agent decides, from the returns, whether a sub agent needs to run again.
 
+## Ledger
+
+- The ledger is a sibling folder of the workspace. Nothing reads or writes it by path. It is reached only through functions.
+- The main agent creates it through a factory and holds a read-only view of it.
+- Each sub agent is given a write method for its own ledger only. It knows nothing of the file system beyond its workspace path.
+- `submit(ledger)` takes the ledger object.
+
 ## Flow
 
 1. **Prepare.** The main agent chooses the workdir, reasons about prerequisites, and calls `prepare(url, workdir)`.
 2. **Dispatch.** The main agent calls `dispatch(workdir)`. Sub agents run and return.
 3. **Re-dispatch, if needed.** The main agent decides from the returns whether any sub agent must run again.
-4. **Submit.** The main agent calls `submit(ledger)` with the ledger location.
+4. **Submit.** The main agent calls `submit(ledger)` with the ledger object.
