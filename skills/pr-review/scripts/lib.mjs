@@ -110,19 +110,6 @@ export function rulebook(rules, governance) {
 
 export const isText = (text) => !text.includes('\0');
 
-export function rawUrl(canonicalUrl) {
-  const file = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/.exec(canonicalUrl);
-  if (file === null) throw new Error(`${canonicalUrl} is not a file on github.com`);
-  return `https://raw.githubusercontent.com/${file[1]}/${file[2]}/${file[3]}`;
-}
-
-export function rulesets(index, texts) {
-  return index.map((entry) => {
-    if (!texts.has(entry.canonical_url)) throw new Error(`the ruleset ${entry.canonical_url} was not read`);
-    return { url: entry.canonical_url, title: entry.title, focus: entry.focus, whenToUse: entry.when_to_use, text: texts.get(entry.canonical_url) };
-  });
-}
-
 const LOOKS_BEYOND_THE_CHANGE = ['reuse', 'dead-code'];
 
 export function instructions(context, probes, handedRulesets) {

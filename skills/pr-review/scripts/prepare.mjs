@@ -3,11 +3,12 @@ import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  threadRanges, wholeSurface, narrowSurface, isText, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
+  threadRanges, wholeSurface, narrowSurface, isText, partition, kindOf, checkKinds, rulebook,
   instructions, numbered, fragments, removedLines, tooLarge, FILE_TOO_LARGE,
 } from './lib.mjs';
 import { changedFiles } from './domain/diff.ts';
 import { TargetSchema } from './domain/host.ts';
+import { IndexSchema, withText } from './domain/ruleset.ts';
 import { AgentInstructionsSchema, ChangeSetSchema, ThreadsSchema } from './domain/contracts.g.ts';
 import { run } from './shell.mjs';
 import * as github from './github.mjs';
@@ -73,20 +74,21 @@ const context = {
   report: (name) => `node "${join(skill, 'scripts', 'check.mjs')}" "${join(workdir, 'instructions', `${name}.yaml`)}"`,
 };
 
-const index = JSON.parse(readFileSync(join(skill, 'references', 'agent-rules-books-search-index.json'), 'utf8'));
+const entries = IndexSchema.parse(JSON.parse(readFileSync(join(skill, 'references', 'agent-rules-books-search-index.json'), 'utf8')));
 const texts = new Map();
-for (const entry of index) {
-  const response = await fetch(rawUrl(entry.canonical_url));
-  if (!response.ok) throw new Error(`the ruleset ${entry.canonical_url} could not be read: HTTP ${response.status}`);
-  texts.set(entry.canonical_url, await response.text());
+for (const entry of entries) {
+  const response = await fetch(entry.rawUrl);
+  if (!response.ok) throw new Error(`the ruleset ${entry.url} could not be read: HTTP ${response.status}`);
+  texts.set(entry.url, await response.text());
 }
+const rulesetsRead = entries.map((entry) => withText(entry, texts.get(entry.url)));
 
 const groups = partition(rules.filter((rule) => rule.id !== FILE_TOO_LARGE));
 checkKinds(groups.map((group) => group.group));
 const probes = instructions(
   context,
   groups.map((group) => ({ name: group.name, kind: kindOf(group.group), rulebook: rulebook(group.rules, governance) })),
-  rulesets(index, texts),
+  rulesetsRead,
 );
 for (const probe of probes) {
   const file = join(workdir, 'instructions', `${probe.name}.yaml`);

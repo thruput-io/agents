@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
+  intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, rulebook,
   instructions, numbered, fragments, span, removedLines, settled, merge, verdict, table, citation, message, alreadyOpen,
   outcome, ours, tooLarge, FILE_TOO_LARGE, FILE_LINES, isTest, CELL, SITE,
 } from './lib.mjs';
@@ -107,19 +107,6 @@ test('rulebook refuses a parent that is not declared', () => {
   assert.throws(() => rulebook([{ id: 'A', parent: 'Missing', body: 'Do.' }], governance), /principle Missing/);
 });
 
-test('rawUrl is where the text of a file is read, from its canonical URL on the host', () => {
-  assert.equal(rawUrl('https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md'), 'https://raw.githubusercontent.com/ciembor/agent-rules-books/main/ddd/ddd.md');
-  assert.throws(() => rawUrl('https://books.example/ddd.md'), /is not a file on github.com/);
-});
-
-test('rulesets folds the index and the text read for each entry into what the context probe is handed', () => {
-  const index = [{ id: 'ddd', title: 'Domain-Driven Design', author: 'Eric Evans', focus: 'Domain Modeling', when_to_use: 'Strategic modeling.', review_checklist: 'Guard aggregates.', tree_url: 'https://books.example/ddd', canonical_url: 'https://books.example/ddd.md' }];
-  assert.deepEqual(rulesets(index, new Map([['https://books.example/ddd.md', '# Rules']])), [
-    { url: 'https://books.example/ddd.md', title: 'Domain-Driven Design', focus: 'Domain Modeling', whenToUse: 'Strategic modeling.', text: '# Rules' },
-  ]);
-  assert.throws(() => rulesets(index, new Map()), /ddd\.md was not read/);
-});
-
 test('instructions hands every probe the review with its ledger file and its report command, a rule probe its rulebook, the probes that look beyond the change the checkout, and the context probe the rulesets', () => {
   const context = {
     review: { headCommit: H, files: [] },
@@ -163,7 +150,6 @@ test('numbered lists the lines of a file by their number from 1, a final newline
   assert.deepEqual(numbered(''), {});
   assert.deepEqual(Object.keys(numbered('x\n'.repeat(12))).at(-1), '12');
 });
-
 
 test('fragments cuts a file into context and surface fragments in order, head first, then the removed hunks as base fragments', () => {
   const numberedLines = numbered('a\nb\nc\nd\n');
@@ -234,7 +220,6 @@ test('settled lists the open threads of ours that no finding of this review carr
   ];
   assert.deepEqual(settled([{ document, ledger }], threads).map((thread) => thread.id), [2, 3]);
 });
-
 
 test('outcome is host-neutral: the verdict, a summary that names the site, every fresh inline finding with its anchor, the threads to settle, and the threads to reopen', () => {
   const open = { id: 'o', path: 'p', side: 'head', lines: { start: 3, end: 3 }, state: 'open', body: `earlier breaks ${citeP}` };
