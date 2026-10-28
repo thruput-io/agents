@@ -10,6 +10,7 @@ import { changedFiles } from './domain/diff.ts';
 import { TargetSchema } from './domain/host.ts';
 import { IndexSchema, withText } from './domain/ruleset.ts';
 import { GovernanceSchema } from './domain/governance.ts';
+import { PrepareSchema, PreconditionsSchema } from './domain/controller.ts';
 import { AgentInstructionsSchema, ChangeSetSchema, ThreadsSchema } from './domain/contracts.g.ts';
 import { run } from './shell.mjs';
 import * as github from './github.mjs';
@@ -37,19 +38,20 @@ const write = (name, document) => {
 };
 
 const change = adapter.resolve(host, workdir);
-const { pullRequest, headCommit } = change;
+const { pullRequest, headCommit, threads } = PrepareSchema.parse(change);
+const preconditions = PreconditionsSchema.parse(change);
 write('pull-request.json', pullRequest);
-if (change.blocked.length > 0) {
-  const where = change.refused ?? adapter.refuse(host, headCommit, change.blocked, workdir);
-  throw new Error(`${change.blocked.join('; ')}. A changes-requested verdict ${change.refused === undefined ? 'was posted' : 'had been posted'} (${where}); no review was prepared.`);
+if (preconditions.blocked.length > 0) {
+  const where = preconditions.refused ?? adapter.refuse(host, headCommit, preconditions.blocked, workdir);
+  throw new Error(`${preconditions.blocked.join('; ')}. A changes-requested verdict ${preconditions.refused === undefined ? 'was posted' : 'had been posted'} (${where}); no review was prepared.`);
 }
 
 const changeSet = { headCommit, files: changedFiles(change.diff()) };
 write('change-set.json', ChangeSetSchema.parse(changeSet));
-write('threads.json', ThreadsSchema.parse({ threads: change.threads }));
-const surface = change.prior === undefined ? wholeSurface(changeSet) : narrowSurface(changeSet, change.changedSince(change.prior), threadRanges(change.threads));
+write('threads.json', ThreadsSchema.parse({ threads }));
+const surface = preconditions.prior === undefined ? wholeSurface(changeSet) : narrowSurface(changeSet, change.changedSince(preconditions.prior), threadRanges(threads));
 if (surface.files.length === 0) {
-  throw new Error(`nothing to review: no line of the change set changed since the prior review at ${change.prior}, and no thread of ours is open or was resolved by the author`);
+  throw new Error(`nothing to review: no line of the change set changed since the prior review at ${preconditions.prior}, and no thread of ours is open or was resolved by the author`);
 }
 
 const snapshot = join(workdir, 'snapshot');
@@ -58,8 +60,8 @@ const paths = readdirSync(snapshot, { recursive: true }).map(String).filter((pat
 const linesAtHead = (path) => (paths.includes(path) && isText(readFileSync(join(snapshot, path), 'latin1')) ? numbered(readFileSync(join(snapshot, path), 'utf8')) : {});
 const oversized = tooLarge(changeSet.files.map((file) => ({ path: file.path, lines: Object.keys(linesAtHead(file.path)).length })));
 if (oversized.length > 0) {
-  const where = change.refused ?? adapter.refuse(host, headCommit, oversized, workdir);
-  throw new Error(`${oversized.join('; ')}. A changes-requested verdict ${change.refused === undefined ? 'was posted' : 'had been posted'} (${where}); no review was prepared.`);
+  const where = preconditions.refused ?? adapter.refuse(host, headCommit, oversized, workdir);
+  throw new Error(`${oversized.join('; ')}. A changes-requested verdict ${preconditions.refused === undefined ? 'was posted' : 'had been posted'} (${where}); no review was prepared.`);
 }
 const files = surface.files.map((file) => {
   const hunks = changeSet.files.find((candidate) => candidate.path === file.path).removed;
@@ -100,8 +102,8 @@ const count = (files, side) => files.reduce((sum, file) => sum + file[side].redu
 const summary = {
   host: host.kind,
   headCommit,
-  since: change.prior ?? null,
-  threadsOfOurs: change.threads.length,
+  since: preconditions.prior ?? null,
+  threadsOfOurs: threads.length,
   changeSet: { files: changeSet.files.length, added: count(changeSet.files, 'added'), removed: count(changeSet.files, 'removed') },
   surface: { files: surface.files.length, added: count(surface.files, 'added'), removed: count(surface.files, 'removed') },
   repository: paths.length,
