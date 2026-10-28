@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ours as written, SITE } from './lib.mjs';
 import { changedFiles } from './domain/diff.ts';
+import { BuildPolicies, PostedThread, PullRequestResponse, ThreadsResponse } from './domain/azure.ts';
 import { run } from './shell.mjs';
 
 export const KIND = 'azure-devops';
@@ -10,9 +11,9 @@ const VOTE_OF = { approve: 'approve', 'request-changes': 'wait-for-author' };
 const PRIOR = / probes at ([0-9a-f]{40})\b/;
 
 const organization = (host) => `https://dev.azure.com/${host.organization}`;
-const az = (...args) => JSON.parse(run('az', [...args, '--output', 'json']));
+const az = (schema, ...args) => schema.parse(JSON.parse(run('az', [...args, '--output', 'json'])));
 export const routeParameters = (host, threadId) => ['--route-parameters', `project=${host.project}`, `repositoryId=${host.repository}`, `pullRequestId=${host.id}`, ...(threadId === undefined ? [] : [`threadId=${threadId}`])];
-const invoke = (host, args, threadId) => az('devops', 'invoke', '--organization', organization(host), '--area', 'git', '--resource', 'pullRequestThreads',
+const invoke = (schema, host, args, threadId) => az(schema, 'devops', 'invoke', '--organization', organization(host), '--area', 'git', '--resource', 'pullRequestThreads',
   ...routeParameters(host, threadId), '--api-version', '7.1', ...args);
 
 const onLines = (raw) => raw.threadContext !== null && raw.threadContext !== undefined && raw.threadContext.filePath !== null;
@@ -51,15 +52,14 @@ export function priorOf(rawThreads) {
 }
 
 export function resolve(host, workdir) {
-  const pr = az('repos', 'pr', 'show', '--id', String(host.id), '--organization', organization(host));
-  const headCommit = pr.lastMergeSourceCommit.commitId;
-  const build = az('repos', 'pr', 'policy', 'list', '--id', String(host.id), '--organization', organization(host))
-    .filter((policy) => policy.configuration.isBlocking && policy.configuration.type.displayName === 'Build');
+  const pr = az(PullRequestResponse, 'repos', 'pr', 'show', '--id', String(host.id), '--organization', organization(host));
+  const headCommit = pr.headCommit;
+  const build = az(BuildPolicies, 'repos', 'pr', 'policy', 'list', '--id', String(host.id), '--organization', organization(host));
   const blocked = [
     ...build.filter((policy) => policy.status !== 'approved').map((policy) => `the blocking Build policy is ${policy.status}`),
     ...(pr.mergeStatus === 'conflicts' ? ['the pull request has merge conflicts'] : []),
   ];
-  const raw = invoke(host, []).value;
+  const raw = invoke(ThreadsResponse, host, []);
   const prior = priorOf(raw);
   const threads = prior === undefined ? [] : raw.filter((candidate) => onLines(candidate) && ours(candidate)).map(thread);
   const repository = join(workdir, 'repository');
@@ -75,7 +75,7 @@ export function resolve(host, workdir) {
   let ready;
   const repo = () => { ready ??= fetched(); return ready; };
   return {
-    pullRequest: { host, author: pr.createdBy.uniqueName, description: pr.description ?? '' },
+    pullRequest: { host, author: pr.author, description: pr.description },
     headCommit,
     blocked,
     prior,
@@ -113,7 +113,7 @@ function send(host, workdir, name, body, args) {
   mkdirSync(join(workdir, 'post'), { recursive: true });
   const file = join(workdir, 'post', `${name}.json`);
   writeFileSync(file, `${JSON.stringify(body, null, 2)}\n`);
-  return invoke(host, ['--http-method', args.method, '--in-file', file], args.threadId);
+  return invoke(PostedThread, host, ['--http-method', args.method, '--in-file', file], args.threadId);
 }
 
 export function refuse(host, headCommit, reasons, workdir) {
@@ -122,7 +122,7 @@ export function refuse(host, headCommit, reasons, workdir) {
 }
 
 export function post(host, outcome, ledgerTable, workdir) {
-  const before = invoke(host, []).value;
+  const before = invoke(ThreadsResponse, host, []);
   const left = unposted(outcome, before);
   const threads = left.inline.map((finding, index) => send(host, workdir, `thread-${String(index + 1).padStart(3, '0')}`, threadPayload(finding), { method: 'POST' }).id);
   const summary = left.summary ? send(host, workdir, 'summary', text(`${outcome.summary}\n\n${ledgerTable}`), { method: 'POST' }).id : undefined;
