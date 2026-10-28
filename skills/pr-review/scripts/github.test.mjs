@@ -1,13 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { locate, thread, comment, payload, refusedIn, postedAt, KIND } from './github.mjs';
+import { thread, comment, payload, refusedIn, postedAt, KIND } from './github.mjs';
 import { SITE } from './lib.mjs';
-
-test('locate reads a GitHub pull request URL and nothing else', () => {
-  assert.deepEqual(locate('https://github.com/thruput-io/agents/pull/14'), { kind: KIND, owner: 'thruput-io', repository: 'agents', number: 14 });
-  assert.equal(locate('https://dev.azure.com/o/p/_git/r/pullrequest/1'), undefined);
-  assert.equal(locate('.@main..HEAD'), undefined);
-});
 
 test('thread folds a review thread into the one shape: side, lines, and whether the author resolved it', () => {
   const node = (fields) => ({ id: 'T', path: 'a.sh', line: 9, startLine: 8, diffSide: 'RIGHT', isResolved: false, resolvedBy: null, comments: { nodes: [{ body: 'b' }] }, ...fields });

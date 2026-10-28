@@ -5,7 +5,6 @@ import { parseHunks } from './domain/diff.ts';
 import { run } from './shell.mjs';
 
 export const KIND = 'github';
-const PULL_REQUEST_URL = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/;
 const SIDE_OF = { RIGHT: 'head', LEFT: 'base' };
 const HOST_SIDE_OF = { head: 'RIGHT', base: 'LEFT' };
 const EVENT_OF = { approve: 'APPROVE', 'request-changes': 'REQUEST_CHANGES' };
@@ -20,12 +19,6 @@ function paginate(path) {
     items.push(...batch);
     if (batch.length < 100) return items;
   }
-}
-
-export function locate(target) {
-  const match = PULL_REQUEST_URL.exec(target);
-  if (match === null) return undefined;
-  return { kind: KIND, owner: match[1], repository: match[2], number: Number(match[3]) };
 }
 
 export function thread(node, author) {

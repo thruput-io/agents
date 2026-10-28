@@ -5,7 +5,6 @@ import { changedFiles } from './domain/diff.ts';
 import { run } from './shell.mjs';
 
 export const KIND = 'azure-devops';
-const PULL_REQUEST_URL = /^https:\/\/dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+)\/pullrequest\/(\d+)/;
 const HOST_SIDE_OF = { head: 'right', base: 'left' };
 const VOTE_OF = { approve: 'approve', 'request-changes': 'wait-for-author' };
 const PRIOR = / probes at ([0-9a-f]{40})\b/;
@@ -15,12 +14,6 @@ const az = (...args) => JSON.parse(run('az', [...args, '--output', 'json']));
 export const routeParameters = (host, threadId) => ['--route-parameters', `project=${host.project}`, `repositoryId=${host.repository}`, `pullRequestId=${host.id}`, ...(threadId === undefined ? [] : [`threadId=${threadId}`])];
 const invoke = (host, args, threadId) => az('devops', 'invoke', '--organization', organization(host), '--area', 'git', '--resource', 'pullRequestThreads',
   ...routeParameters(host, threadId), '--api-version', '7.1', ...args);
-
-export function locate(target) {
-  const match = PULL_REQUEST_URL.exec(target);
-  if (match === null) return undefined;
-  return { kind: KIND, organization: match[1], project: match[2], repository: match[3], id: Number(match[4]) };
-}
 
 const onLines = (raw) => raw.threadContext !== null && raw.threadContext !== undefined && raw.threadContext.filePath !== null;
 const firstComment = (raw) => raw.comments[0]?.content ?? '';

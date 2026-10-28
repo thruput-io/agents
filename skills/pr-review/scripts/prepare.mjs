@@ -7,6 +7,7 @@ import {
   instructions, numbered, fragments, removedLines, tooLarge, FILE_TOO_LARGE,
 } from './lib.mjs';
 import { changedFiles } from './domain/diff.ts';
+import { TargetSchema } from './domain/host.ts';
 import { AgentInstructionsSchema, ChangeSetSchema, ThreadsSchema } from './domain/contracts.g.ts';
 import { run } from './shell.mjs';
 import * as github from './github.mjs';
@@ -21,9 +22,8 @@ if (workdirArg === undefined) throw new Error('usage: node prepare.mjs <pull-req
 const yaml = (name) => JSON.parse(run('npx', ['--yes', 'js-yaml@4.1.0', join(skill, 'rules', name)]));
 const jsYaml = createRequire(run('npx', ['--yes', '--package', 'js-yaml@4.1.0', '-c', 'command -v js-yaml']).trim())('js-yaml');
 
-const located = ADAPTERS.map((adapter) => ({ adapter, host: adapter.locate(target) })).find(({ host }) => host !== undefined);
-if (located === undefined) throw new Error(`${target} is not a pull request URL this skill knows, nor a repository@base..head range`);
-const { adapter, host } = located;
+const host = TargetSchema.parse(target);
+const adapter = ADAPTERS.find((candidate) => candidate.KIND === host.kind);
 
 const workdir = resolve(workdirArg);
 mkdirSync(join(workdir, 'instructions'), { recursive: true });

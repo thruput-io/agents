@@ -1,15 +1,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join, resolve as absolute } from 'node:path';
+import { join } from 'node:path';
 import { run } from './shell.mjs';
 
 export const KIND = 'git';
-const RANGE = /^(.+)@([^.]+(?:\.[^.]+)*)\.\.([^.].*)$/;
-
-export function locate(target) {
-  const match = RANGE.exec(target);
-  if (match === null) return undefined;
-  return { kind: KIND, repository: absolute(match[1]), base: match[2], head: match[3] };
-}
 
 export function resolve(host) {
   const git = (...args) => run('git', ['-C', host.repository, ...args]);
