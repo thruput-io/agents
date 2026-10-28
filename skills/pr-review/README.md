@@ -19,7 +19,7 @@ Set in the environment:
 |---|---|---|---|
 | `prepare(url, workdir)` | Main agent | Target URL and the workdir the agent chose | Immutable PR object |
 | `dispatch(workdir)` | Main agent | Workdir | One return per sub agent, once it finishes |
-| `submit()` | Main agent | None | The posted review |
+| `submit(ledger)` | Main agent | Ledger location (the directory holding the sub agents' ledgers) | The posted review |
 
 - `dispatch` spawns one sub agent per probe. Each sub agent receives its instructions and its data, and it has no channel back to the main agent beyond its return.
 - The instructions are hard-coded constants from the schema, which the generated code already holds.
@@ -32,4 +32,4 @@ Set in the environment:
 1. **Prepare.** The main agent chooses the workdir, reasons about prerequisites, and calls `prepare(url, workdir)`.
 2. **Dispatch.** The main agent calls `dispatch(workdir)`. Sub agents run and return.
 3. **Re-dispatch, if needed.** The main agent decides from the returns whether any sub agent must run again.
-4. **Submit.** The main agent calls `submit()`.
+4. **Submit.** The main agent calls `submit(ledger)` with the ledger location.
