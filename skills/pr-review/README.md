@@ -19,7 +19,7 @@ Set in the environment:
 |---|---|---|---|
 | `prepare(url, workdir)` | Main agent | Target URL and the workdir the agent chose | Immutable PR object |
 | `dispatch(workdir)` | Main agent | Workdir | One return per sub agent, once it finishes |
-| `submit(ledger)` | Main agent | The ledger object from the factory | The posted review |
+| `MainAgentLedger.submit()` | Main agent | None: the ledger is already bound to its path and pull request | The posted review |
 
 - `dispatch` spawns one sub agent per probe. Each sub agent receives its instructions and its data, and it has no channel back to the main agent beyond its return.
 - The instructions are hard-coded constants from the schema, which the generated code already holds.
@@ -27,23 +27,31 @@ Set in the environment:
 - A sub agent writes its ledger to the path given in its data, and returns.
 - The main agent decides, from the returns, whether a sub agent needs to run again.
 
+## Classes
+
+- `CodeUnderReview` (interface). The canonical pull request: `surface()`, `fragments()`, `threads()`. Threads are for the main agent only; sub agents see only the surface.
+- `CodeUnderReviewFactory.from(url)` and `CodeUnderReviewFactory.from(url, token)`. Connect to the host and return a concrete `CodeUnderReview`.
+- Concrete, immutable: `GithubPullRequest`, `AzureMergeRequest`, `GitDiff`.
+- `CodeUnderReviewSnapshot` wraps a `CodeUnderReview` and adds `snapShot`.
+- `Rulebook`: iterable rules. `Instructions` holds `Instructions.Prose`.
+- `Ledger(path, pr)`, with one type per actor: `MainAgentLedger` (with `submit()`), and one per rule kind such as `DeadCodeSubAgentLedger` and `XxxSubAgentLedger`. Each sub agent ledger has `report(XxxCodeViolation)`.
+
 ## Controllers
 
 Each actor has one controller, and it exposes only that actor's methods.
 
-- **Main agent controller.** `prepare(url, workdir)`, `dispatch(workdir)`, `submit(ledger)`, and a ledger factory the main agent can call on its own, so it can solve I/O problems itself.
-- **Sub agent controller.** One write method, for its own ledger only. It is created with the workspace path it was given.
+- **Main agent controller.** `prepare(url, workdir)`, `dispatch(workdir)`, and a ledger factory the main agent can call on its own, so it can solve I/O problems itself.
+- **Sub agent controller.** One write method for its own ledger only. It is created with the workspace path it was given.
 
 ## Ledger
 
-- The ledger is a sibling folder of the workspace. Nothing reads or writes it by path. It is reached only through the controllers.
+- The ledger is a sibling folder of the workspace. Nothing reads or writes it by path. It is reached only through the controllers and classes above.
 - The main agent creates the ledger through its factory and holds a read-only view of it.
 - Each sub agent is given a write method for its own ledger only. It knows nothing of the file system beyond its workspace path.
-- `submit(ledger)` takes the ledger object.
 
 ## Flow
 
 1. **Prepare.** The main agent chooses the workdir, reasons about prerequisites, and calls `prepare(url, workdir)`.
 2. **Dispatch.** The main agent calls `dispatch(workdir)`. Sub agents run and return.
 3. **Re-dispatch, if needed.** The main agent decides from the returns whether any sub agent must run again.
-4. **Submit.** The main agent calls `submit(ledger)` with the ledger object.
+4. **Submit.** The main agent calls `MainAgentLedger.submit()`.
