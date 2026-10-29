@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   parseDiff, parseHunks, intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
   instructions, complete, numbered, fragments, span, removedLines, settled, anchorInside, checkLedger, merge, verdict, table, citation, message, alreadyOpen,
-  outcome, ours, tooLarge, FILE_TOO_LARGE, FILE_LINES, isTest, CELL, SITE,
+  outcome, ours, tooLarge, FILE_TOO_LARGE, FILE_LINES, isTest, isLock, isDoc, CELL, SITE,
 } from './lib.mjs';
 
 const diff = [
@@ -372,7 +372,7 @@ test('removedLines cuts the removed lines the surface keeps out of the hunks tha
   assert.throws(() => removedLines(hunks, [{ start: 20, end: 20 }]), /no removed hunk holds lines 20-20/);
 });
 
-test('tooLarge names every changed production file over the limit as a reason to refuse the review, skipping test files', () => {
+test('tooLarge names every changed production file over the limit as a reason to refuse the review, skipping tests, lockfiles, and docs', () => {
   assert.deepEqual(tooLarge([
     { path: 'a.cs', lines: 201 },
     { path: 'b.cs', lines: 200 },
@@ -380,6 +380,9 @@ test('tooLarge names every changed production file over the limit as a reason to
     { path: 'a.test.cs', lines: 350 },
     { path: 'tests/OrderTests.cs', lines: 300 },
     { path: 'src/App.Tests/ServiceTests.cs', lines: 250 },
+    { path: 'poetry.lock', lines: 3404 },
+    { path: 'package-lock.json', lines: 5000 },
+    { path: 'README.md', lines: 500 },
   ]), ['a.cs is 201 lines long, which breaks File too large']);
   assert.deepEqual(tooLarge([]), []);
   assert.equal(FILE_LINES, 200);
@@ -399,4 +402,27 @@ test('isTest identifies test files and directories while ignoring production cod
   assert.equal(isTest('latest.js'), false);
   assert.equal(isTest('attest.ts'), false);
   assert.equal(isTest('service.cs'), false);
+});
+
+test('isLock identifies lock files while ignoring production code', () => {
+  assert.equal(isLock('poetry.lock'), true);
+  assert.equal(isLock('sub/poetry.lock'), true);
+  assert.equal(isLock('package-lock.json'), true);
+  assert.equal(isLock('pnpm-lock.yaml'), true);
+  assert.equal(isLock('yarn.lock'), true);
+  assert.equal(isLock('Cargo.lock'), true);
+  assert.equal(isLock('Pipfile.lock'), true);
+  assert.equal(isLock('packages.lock.json'), true);
+  assert.equal(isLock('go.sum'), true);
+  assert.equal(isLock('clock.py'), false);
+  assert.equal(isLock('lock.py'), false);
+  assert.equal(isLock('service.cs'), false);
+});
+
+test('isDoc identifies documentation files while ignoring production code', () => {
+  assert.equal(isDoc('README.md'), true);
+  assert.equal(isDoc('docs/architecture.md'), true);
+  assert.equal(isDoc('LICENSE'), true);
+  assert.equal(isDoc('guide.rst'), true);
+  assert.equal(isDoc('service.py'), false);
 });
