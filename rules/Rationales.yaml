@@ -43,7 +43,7 @@ rationales:
     body: |
       Name each test after the behaviour it pins, so the tests read as the specification.
 - id: One concern, one owner
-  parent: Single Source of Truth
+  parent: Easy to Change
   body: |
     Edsger Dijkstra named separation of concerns the only reliable way to order one's thoughts ([EWD447](https://www.cs.utexas.edu/~EWD/transcriptions/EWD04xx/EWD447.html)); David Parnas made it structural: each module hides one decision likely to change. When a behaviour has one owner in one layer, changing it touches one place and one set of tests. Scattering it saves minutes today and costs a hunt, and a missed copy, on every future change.
   solutions:
@@ -56,6 +56,17 @@ rationales:
   - marker: SHOULD
     body: |
       Keep concerns separate where merging them would save lines; the lines saved are paid back on every later change.
+- id: Polymorphism over conditionals
+  parent: Easy to Change
+  body: |
+    Repeated `if`/`else` or `switch` [[Branching logic]] scatters knowledge of variants across every caller: adding a variant means hunting down and editing every conditional. Bertrand Meyer's [Open/Closed Principle](https://www.eiffel.org/doc/eiffel/ET-_Open_Closed_Principle) resolves this by keeping modules open for extension and closed for modification—new behaviour arrives as a new implementation of an [[Interface]], not a new branch in existing callers. Craig Larman's GRASP Polymorphism and Martin Fowler's [Replace Conditional with Polymorphism](https://refactoring.com/catalog/replaceConditionalWithPolymorphism.html) assign the varying behaviour to the type for which it varies, while [Tell, Don't Ask](https://martinfowler.com/bliki/TellDontAsk.html) keeps callers from querying a [[Domain object]]'s state to decide on its behalf. Decisions about which variant to run, which [[Feature]] to wire, or how to assemble optional parts belong once at the [[Perimeter]]—inside a [[Factory]], [[Feature]], or [[Builder]]—so core domain and application logic executes linearly through polymorphic contracts.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Select the polymorphic implementation once at the [[Perimeter]] in a [[Factory]], [[Feature]], or [[Builder]], and pass the behaviour inward through an [[Interface]].
+  - marker: SHOULD
+    body: |
+      Tell a [[Domain object]] what action to perform through a [[Domain method]] rather than querying its state to branch in the caller.
 - id: The Practical Test Pyramid
   parent: Shift Left
   body: |
@@ -228,14 +239,19 @@ rationales:
   - marker: SHOULD
     body: |
       Shape every unit of code, a file, a type, a function, to be read in one sitting by a reader who has not seen it before.
-- id: The compiler writes for the machine
+- id: Premature optimization and Jackson's rules
   parent: Code Is Written for People
   body: |
-    What the machine executes is the compiler's output, not the author's text. Knuth asked that we stop "imagining that our main task is to instruct a computer what to do" and "concentrate rather on explaining to human beings what we want a computer to do" ([Literate Programming, 1984](https://doi.org/10.1093/comjnl/27.2.97)); Abelson and Sussman put it as "programs must be written for people to read, and only incidentally for machines to execute" ([SICP, preface](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/6515/sicp.zip/full-text/book/book-Z-H-7.html)). Code bent toward the machine, the clever trick, the hand-unrolled loop, the premature micro-optimisation, buys little the compiler would not have bought, and sells the reader: "premature optimization is the root of all evil", and the critical three percent is found by measurement, "only after that code has been identified" ([Knuth, Computing Surveys 1974, p. 268](https://www.gwern.net/doc/cs/algorithm/1974-knuth.pdf)).
+    What the machine executes is the compiler's output, not the author's text. Donald Knuth asked that we stop "imagining that our main task is to instruct a computer what to do" and "concentrate rather on explaining to human beings what we want a computer to do" ([Literate Programming, 1984](https://doi.org/10.1093/comjnl/27.2.97)); Abelson and Sussman put it as "programs must be written for people to read, and only incidentally for machines to execute" ([SICP, preface](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/6515/sicp.zip/full-text/book/book-Z-H-7.html)). Knuth warned that "we should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil. Yet we should not pass up our opportunities in that critical 3%"—and that critical three percent is found by measurement, "only after that code has been identified" ([Computing Surveys 1974, p. 268](https://www.gwern.net/doc/cs/algorithm/1974-knuth.pdf)). Michael A. Jackson codified the discipline in two rules ([Principles of Program Design, 1975](https://en.wikipedia.org/wiki/Program_optimization#When_to_optimize)): Rule 1 is "Don't do it"; Rule 2 (for experts only) is "Don't do it yet—that is, not until you have a perfectly clear and unoptimized solution." A clear, well-decomposed architecture is the prerequisite to profiling: you cannot isolate or replace a bottleneck in tangled code.
   solutions:
   - marker: SHOULD
     body: |
-      Measure before optimising, and optimise only the code the measurement names.
+      Measure before optimising, and optimise only the bottleneck the measurement names.
+- id: Amdahl's Law and the I/O-bound reality
+  parent: Simplicity
+  body: |
+    Gene Amdahl's law ([AFIPS 1967](https://en.wikipedia.org/wiki/Amdahl%27s_law)) bounds the speedup of any system by the fraction of time spent in the part being improved. In enterprise software, execution time is dominated by I/O—database queries, filesystem access, and [[Calls over the network]] taking milliseconds to hundreds of milliseconds—while [[In-memory operation]]s execute in nanoseconds, representing promilles of the total latency budget. Micro-optimising [[In-memory operation]]s yields near-zero system return while trading away [[Readability]] and [[Maintainability]]; real [[Performance]] gains come from eliminating redundant I/O and batching [[Calls over the network]].
+  solutions:
   - marker: SHOULD
     body: |
       Group [[Calls over the network]] together and minimize round-trips.
