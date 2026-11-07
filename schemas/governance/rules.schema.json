@@ -27,6 +27,9 @@
         "id": {
           "$ref": "#/$defs/RuleId"
         },
+        "body": {
+          "$ref": "#/$defs/DefinedProse"
+        },
         "parent": {
           "$ref": "principles.schema.json#/$defs/PrincipleId"
         },
@@ -38,8 +41,29 @@
         },
         "group": {
           "$ref": "#/$defs/Group"
+        },
+        "smells": {
+          "$ref": "#/$defs/Smells"
         }
       }
+    },
+    "Smells": {
+      "description": "Code smells that indicate this rule is being violated",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/DefinedProse"
+      }
+    },
+    "DefinedProse": {
+      "description": "Markdown text citing at least one glossary definition in [[Id]] brackets",
+      "$ref": "definitions.schema.json#/$defs/Prose",
+      "$dynamicRef": "#CitedDefinition",
+      "pattern": "^[^\\[]*(?:\\[[^\\[][^\\[]*)*\\[\\[[^\\[\\]]*[^\\[\\]\\s][^\\[\\]]*\\]\\][^\\[]*(?:(?:\\[\\[[^\\[\\]]*[^\\[\\]\\s][^\\[\\]]*\\]\\]|\\[[^\\[])[^\\[]*)*\\[?$"
+    },
+    "CitedDefinition": {
+      "description": "Prose that cites at least one declared definition id. Accepts any prose on its own; the build binds the dynamic anchor to the pattern of every declared definition id",
+      "$dynamicAnchor": "CitedDefinition"
     },
     "RuleId": {
       "$ref": "id.schema.json"
@@ -58,7 +82,7 @@
           "marker": "MUST",
           "group": "Example group",
           "parent": "Example principle",
-          "body": "Name the bad code the example rule forbids."
+          "body": "Name the [[Bad Code]] the example rule forbids."
         }
       ]
     }

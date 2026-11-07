@@ -25,6 +25,9 @@
         },
         "parent": {
           "$ref": "rationales.schema.json#/$defs/RationaleId"
+        },
+        "solutions": {
+          "$ref": "rationales.schema.json#/$defs/Solutions"
         }
       }
     },
