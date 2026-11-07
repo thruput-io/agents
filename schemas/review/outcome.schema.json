@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/outcome.schema.json",
   "title": "Outcome",
-  "description": "What a review decided, in the one shape every host's adapter posts from: the verdict, the summary, each fresh finding on lines, the threads that are fixed, and the threads the author resolved that are not",
+  "description": "What a review decided: the verdict, the summary, each fresh finding on lines, the threads that are fixed, and the threads the author resolved that are not",
   "type": "object",
   "required": [
     "headCommit",
@@ -14,7 +14,7 @@
   ],
   "properties": {
     "headCommit": {
-      "$ref": "change-set.schema.json#/$defs/Commit"
+      "$ref": "surface.schema.json#/$defs/HeadCommit"
     },
     "verdict": {
       "$ref": "#/$defs/ReviewVerdict"
@@ -66,7 +66,7 @@
       ],
       "properties": {
         "path": {
-          "$ref": "change-set.schema.json#/$defs/Path"
+          "$ref": "surface.schema.json#/$defs/Path"
         },
         "side": {
           "$ref": "lines.schema.json#/$defs/Side"

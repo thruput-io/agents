@@ -3,27 +3,39 @@
   "$id": "https://thruput.se/agents/schemas/review/instructions/rules.schema.json",
   "$ref": "../agent-instructions.schema.json",
   "title": "Rules instructions",
-  "description": "The instructions of a probe of the rules: its task, the review, and those rules",
+  "description": "The instructions of a probe of a [[Ruleset]]: its task, the [[Change]], the [[Surface]], and that [[Ruleset]]",
   "type": "object",
   "required": [
     "task",
     "kind",
-    "review",
-    "rulebook"
+    "change",
+    "surface",
+    "ruleset"
   ],
   "properties": {
     "task": {
-      "description": "What this probe does, said to the probe itself",
-      "const": "Probe the pull request in review against every rule in rulebook.rules and write one row per rule to the file named in review.ledger. Work from this document alone"
+      "$ref": "#/$defs/RulesTask"
     },
     "kind": {
+      "$ref": "#/$defs/RulesKind"
+    },
+    "change": {
+      "$ref": "../change.schema.json"
+    },
+    "surface": {
+      "$ref": "../surface.schema.json"
+    },
+    "ruleset": {
+      "$ref": "../ruleset.schema.json"
+    }
+  },
+  "$defs": {
+    "RulesTask": {
+      "description": "What this probe does, said to the probe itself",
+      "const": "Probe the pull request in review against every rule in ruleset.rules and report one row per rule. Work from this document alone"
+    },
+    "RulesKind": {
       "const": "rules"
-    },
-    "review": {
-      "$ref": "../review.schema.json"
-    },
-    "rulebook": {
-      "$ref": "../rulebook.schema.json"
     }
   },
   "examples": [
@@ -35,22 +47,22 @@
         "Read every entry of review.files in full. An entry is one changed file as its fragments in order: context fragments, which stand around the change, and surface fragments, which the change added on side head or removed on side base; each line stands under its number",
         "Give each rule your task names, in order, one verdict on the change: violation, clean, or not-applicable. clean means you looked and found nothing; evidence says what you looked at. not-applicable means the rule cannot apply to what is under review; evidence says why",
         "Anchor every violation on lines of one surface fragment of review.files, copied as they stand: {\"kind\": \"surface\", \"path\": the file's path, \"side\": the fragment's side, \"lines\": {\"<number>\": \"<text>\"}}. Lines of a context fragment are not an anchor. Where no surface line is to blame, anchor at the pull request: {\"kind\": \"pull-request\"}",
-        "Write your rows as JSON to the file named in review.ledger: {\"headCommit\": review.headCommit, \"rows\": [one row per rule your task names, in order]}. A row is {\"rule\": the rule's id, \"examined\": [what you opened], \"verdict\": \"violation\", \"clean\" or \"not-applicable\", \"evidence\": what the verdict rests on}. A row on a rule of a ruleset carries \"bookRule\": {\"ruleset\": the ruleset's url, \"heading\": the rule's heading} in place of \"rule\". A violation row also carries \"violations\": [{\"observation\": what the code does wrong, worded to complete '<observation> breaks <principle>' and naming no rule or principle, \"anchor\": its anchor}]",
-        "Run the command in review.report. It checks your file exactly as the review will. Fix what it reports and run it again until it passes. Then reply with the path of your file, and only that"
+        "Build one row per rule your task names, in order: {\"rule\": the rule's id, \"examined\": [what you opened], \"verdict\": \"violation\", \"clean\" or \"not-applicable\", \"evidence\": what the verdict rests on}. A row on a rule of a ruleset carries \"bookRule\": {\"ruleset\": the ruleset's url, \"heading\": the rule's heading} in place of \"rule\". A violation row also carries \"violations\": [{\"observation\": what the code does wrong, worded to complete '<observation> breaks <principle>' and naming no rule or principle, \"anchor\": its anchor}]",
+        "Report your rows for review.headCommit. If any row is rejected, fix what is reported and report again until your rows pass"
       ],
-      "task": "Probe the pull request in review against every rule in rulebook.rules and write one row per rule to the file named in review.ledger. Work from this document alone",
+      "task": "Probe the pull request in review against every rule in ruleset.rules and report one row per rule. Work from this document alone",
       "kind": "rules",
-      "review": {
-        "pullRequest": {
-          "host": {
-            "kind": "github",
-            "owner": "thruput-io",
-            "repository": "agents",
-            "number": 12
-          },
-          "author": "agent-rasmus[bot]",
-          "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
+      "change": {
+        "host": {
+          "kind": "github",
+          "owner": "thruput-io",
+          "repository": "agents",
+          "number": 12
         },
+        "author": "agent-rasmus[bot]",
+        "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
+      },
+      "surface": {
         "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
         "files": [
           {
@@ -78,11 +90,9 @@
               }
             ]
           }
-        ],
-        "ledger": "$WORKDIR/ledger/11-behavior-failure-handling.json",
-        "report": "node \"$SKILL_DIR/scripts/check.mjs\" \"$WORKDIR/instructions/11-behavior-failure-handling.yaml\""
+        ]
       },
-      "rulebook": {
+      "ruleset": {
         "instructions": "Apply each rule with its [[term]]s as definitions defines them. When the application of a rule is in doubt, its parent in principles decides",
         "rules": [
           {

@@ -3,37 +3,47 @@
   "$id": "https://thruput.se/agents/schemas/review/instructions/context.schema.json",
   "$ref": "../agent-instructions.schema.json",
   "title": "Context instructions",
-  "description": "The instructions of the context probe, whose rules come from outside our rules: its task, the review, and rulesets in the place of a rulebook",
+  "description": "The instructions of the context probe, whose rules come from outside our rules: its task, the [[Change]], the [[Surface]], and external rulebooks in the place of a [[Ruleset]]",
   "type": "object",
   "required": [
     "task",
     "kind",
-    "review",
+    "change",
+    "surface",
     "rulesets"
   ],
   "properties": {
     "task": {
-      "description": "What this probe does, said to the probe itself",
-      "const": "Work from this document alone. Select from rulesets the one whose focus and whenToUse match what the pull request changes. Read its text in full, pick the three rules in it most relevant to the change set, and probe the pull request in review against those three. Write three rows to the file named in review.ledger, each on a bookRule: the url of the ruleset you selected and the heading of the rule in its text"
+      "$ref": "#/$defs/ContextTask"
     },
     "kind": {
-      "const": "context"
+      "$ref": "#/$defs/ContextKind"
     },
-    "review": {
-      "$ref": "../review.schema.json"
+    "change": {
+      "$ref": "../change.schema.json"
+    },
+    "surface": {
+      "$ref": "../surface.schema.json"
     },
     "rulesets": {
-      "description": "The rulesets from outside our rules, each read once by the reviewing context and handed over whole. The probe selects the one whose focus matches the change",
+      "description": "The external rulebooks from outside our rules, each read once by the reviewing context and handed over whole. The probe selects the one whose focus matches the [[Change]]",
       "type": "array",
       "minItems": 1,
       "items": {
-        "$ref": "#/$defs/Ruleset"
+        "$ref": "#/$defs/Rulebook"
       }
     }
   },
   "$defs": {
-    "Ruleset": {
-      "description": "One ruleset from outside our rules: what it is for, and its rules in full",
+    "ContextTask": {
+      "description": "What this probe does, said to the probe itself",
+      "const": "Work from this document alone. Select from rulesets the ruleset whose focus and whenToUse match what the pull request changes. Read its text in full, pick the three rules in it most relevant to the change set, and probe the pull request in review against those three. Report three rows, each on a bookRule: the url of the ruleset you selected and the heading of the rule in its text"
+    },
+    "ContextKind": {
+      "const": "context"
+    },
+    "Rulebook": {
+      "description": "One external rulebook from outside our rules: what it is for, and its rules in full",
       "type": "object",
       "required": [
         "url",
@@ -91,22 +101,22 @@
         "Read every entry of review.files in full. An entry is one changed file as its fragments in order: context fragments, which stand around the change, and surface fragments, which the change added on side head or removed on side base; each line stands under its number",
         "Give each rule your task names, in order, one verdict on the change: violation, clean, or not-applicable. clean means you looked and found nothing; evidence says what you looked at. not-applicable means the rule cannot apply to what is under review; evidence says why",
         "Anchor every violation on lines of one surface fragment of review.files, copied as they stand: {\"kind\": \"surface\", \"path\": the file's path, \"side\": the fragment's side, \"lines\": {\"<number>\": \"<text>\"}}. Lines of a context fragment are not an anchor. Where no surface line is to blame, anchor at the pull request: {\"kind\": \"pull-request\"}",
-        "Write your rows as JSON to the file named in review.ledger: {\"headCommit\": review.headCommit, \"rows\": [one row per rule your task names, in order]}. A row is {\"rule\": the rule's id, \"examined\": [what you opened], \"verdict\": \"violation\", \"clean\" or \"not-applicable\", \"evidence\": what the verdict rests on}. A row on a rule of a ruleset carries \"bookRule\": {\"ruleset\": the ruleset's url, \"heading\": the rule's heading} in place of \"rule\". A violation row also carries \"violations\": [{\"observation\": what the code does wrong, worded to complete '<observation> breaks <principle>' and naming no rule or principle, \"anchor\": its anchor}]",
-        "Run the command in review.report. It checks your file exactly as the review will. Fix what it reports and run it again until it passes. Then reply with the path of your file, and only that"
+        "Build one row per rule your task names, in order: {\"rule\": the rule's id, \"examined\": [what you opened], \"verdict\": \"violation\", \"clean\" or \"not-applicable\", \"evidence\": what the verdict rests on}. A row on a rule of a ruleset carries \"bookRule\": {\"ruleset\": the ruleset's url, \"heading\": the rule's heading} in place of \"rule\". A violation row also carries \"violations\": [{\"observation\": what the code does wrong, worded to complete '<observation> breaks <principle>' and naming no rule or principle, \"anchor\": its anchor}]",
+        "Report your rows for review.headCommit. If any row is rejected, fix what is reported and report again until your rows pass"
       ],
-      "task": "Work from this document alone. Select from rulesets the one whose focus and whenToUse match what the pull request changes. Read its text in full, pick the three rules in it most relevant to the change set, and probe the pull request in review against those three. Write three rows to the file named in review.ledger, each on a bookRule: the url of the ruleset you selected and the heading of the rule in its text",
+      "task": "Work from this document alone. Select from rulesets the ruleset whose focus and whenToUse match what the pull request changes. Read its text in full, pick the three rules in it most relevant to the change set, and probe the pull request in review against those three. Report three rows, each on a bookRule: the url of the ruleset you selected and the heading of the rule in its text",
       "kind": "context",
-      "review": {
-        "pullRequest": {
-          "host": {
-            "kind": "github",
-            "owner": "thruput-io",
-            "repository": "agents",
-            "number": 12
-          },
-          "author": "agent-rasmus[bot]",
-          "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
+      "change": {
+        "host": {
+          "kind": "github",
+          "owner": "thruput-io",
+          "repository": "agents",
+          "number": 12
         },
+        "author": "agent-rasmus[bot]",
+        "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
+      },
+      "surface": {
         "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
         "files": [
           {
@@ -134,9 +144,7 @@
               }
             ]
           }
-        ],
-        "ledger": "$WORKDIR/ledger/24-context.json",
-        "report": "node \"$SKILL_DIR/scripts/check.mjs\" \"$WORKDIR/instructions/24-context.yaml\""
+        ]
       },
       "rulesets": [
         {

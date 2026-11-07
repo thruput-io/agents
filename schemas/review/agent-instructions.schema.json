@@ -9,6 +9,11 @@
   ],
   "properties": {
     "instructions": {
+      "$ref": "#/$defs/InstructionsProse"
+    }
+  },
+  "$defs": {
+    "InstructionsProse": {
       "description": "How every probe works, step by step, said to the probe itself",
       "const": [
         "You are one probe of a pull request review. This document holds everything you need; nobody will answer questions. Work through these steps and finish",
@@ -17,8 +22,8 @@
         "Read every entry of review.files in full. An entry is one changed file as its fragments in order: context fragments, which stand around the change, and surface fragments, which the change added on side head or removed on side base; each line stands under its number",
         "Give each rule your task names, in order, one verdict on the change: violation, clean, or not-applicable. clean means you looked and found nothing; evidence says what you looked at. not-applicable means the rule cannot apply to what is under review; evidence says why",
         "Anchor every violation on lines of one surface fragment of review.files, copied as they stand: {\"kind\": \"surface\", \"path\": the file's path, \"side\": the fragment's side, \"lines\": {\"<number>\": \"<text>\"}}. Lines of a context fragment are not an anchor. Where no surface line is to blame, anchor at the pull request: {\"kind\": \"pull-request\"}",
-        "Write your rows as JSON to the file named in review.ledger: {\"headCommit\": review.headCommit, \"rows\": [one row per rule your task names, in order]}. A row is {\"rule\": the rule's id, \"examined\": [what you opened], \"verdict\": \"violation\", \"clean\" or \"not-applicable\", \"evidence\": what the verdict rests on}. A row on a rule of a ruleset carries \"bookRule\": {\"ruleset\": the ruleset's url, \"heading\": the rule's heading} in place of \"rule\". A violation row also carries \"violations\": [{\"observation\": what the code does wrong, worded to complete '<observation> breaks <principle>' and naming no rule or principle, \"anchor\": its anchor}]",
-        "Run the command in review.report. It checks your file exactly as the review will. Fix what it reports and run it again until it passes. Then reply with the path of your file, and only that"
+        "Build one row per rule your task names, in order: {\"rule\": the rule's id, \"examined\": [what you opened], \"verdict\": \"violation\", \"clean\" or \"not-applicable\", \"evidence\": what the verdict rests on}. A row on a rule of a ruleset carries \"bookRule\": {\"ruleset\": the ruleset's url, \"heading\": the rule's heading} in place of \"rule\". A violation row also carries \"violations\": [{\"observation\": what the code does wrong, worded to complete '<observation> breaks <principle>' and naming no rule or principle, \"anchor\": its anchor}]",
+        "Report your rows for review.headCommit. If any row is rejected, fix what is reported and report again until your rows pass"
       ]
     }
   },
@@ -31,8 +36,8 @@
         "Read every entry of review.files in full. An entry is one changed file as its fragments in order: context fragments, which stand around the change, and surface fragments, which the change added on side head or removed on side base; each line stands under its number",
         "Give each rule your task names, in order, one verdict on the change: violation, clean, or not-applicable. clean means you looked and found nothing; evidence says what you looked at. not-applicable means the rule cannot apply to what is under review; evidence says why",
         "Anchor every violation on lines of one surface fragment of review.files, copied as they stand: {\"kind\": \"surface\", \"path\": the file's path, \"side\": the fragment's side, \"lines\": {\"<number>\": \"<text>\"}}. Lines of a context fragment are not an anchor. Where no surface line is to blame, anchor at the pull request: {\"kind\": \"pull-request\"}",
-        "Write your rows as JSON to the file named in review.ledger: {\"headCommit\": review.headCommit, \"rows\": [one row per rule your task names, in order]}. A row is {\"rule\": the rule's id, \"examined\": [what you opened], \"verdict\": \"violation\", \"clean\" or \"not-applicable\", \"evidence\": what the verdict rests on}. A row on a rule of a ruleset carries \"bookRule\": {\"ruleset\": the ruleset's url, \"heading\": the rule's heading} in place of \"rule\". A violation row also carries \"violations\": [{\"observation\": what the code does wrong, worded to complete '<observation> breaks <principle>' and naming no rule or principle, \"anchor\": its anchor}]",
-        "Run the command in review.report. It checks your file exactly as the review will. Fix what it reports and run it again until it passes. Then reply with the path of your file, and only that"
+        "Build one row per rule your task names, in order: {\"rule\": the rule's id, \"examined\": [what you opened], \"verdict\": \"violation\", \"clean\" or \"not-applicable\", \"evidence\": what the verdict rests on}. A row on a rule of a ruleset carries \"bookRule\": {\"ruleset\": the ruleset's url, \"heading\": the rule's heading} in place of \"rule\". A violation row also carries \"violations\": [{\"observation\": what the code does wrong, worded to complete '<observation> breaks <principle>' and naming no rule or principle, \"anchor\": its anchor}]",
+        "Report your rows for review.headCommit. If any row is rejected, fix what is reported and report again until your rows pass"
       ]
     }
   ]

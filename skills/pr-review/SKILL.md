@@ -1,44 +1,40 @@
 ---
+
 name: pr-review
-description: Reviews a GitHub or Azure DevOps Pull Request against the thruput-io rules in this repository's `rules/Rules.yaml`, published at https://thruput.se/agents/, and posts the review as inline comments on the correct lines. Distinct from the built-in `/review` skill in that it (a) probes the rules in subagents, one per rule group, (b) cites each violation by the rule's id and published URL, and (c) groups all inline comments into one review where the host allows it, rather than posting N individual comments. Trigger when the user provides a PR URL or asks for a rules-driven PR review.
+description: Reviews a GitHub or Azure DevOps pull request, or a change in a plain git repository, against the thruput-io rules bundled with this skill (published at https://thruput.se/agents/), and posts one review with inline comments on the correct lines. Probes every rule in boxed subagents via controllers, so the reviewing agent never decides a verdict, cites each violation by rule and published URL, and groups comments into one review where the host allows. Use when the user gives a PR URL or asks for a rules-driven PR review.
+compatibility: Requires node and tar. GitHub needs gh; Azure DevOps needs az with the azure-devops extension and git; a plain repository needs git. Network access to raw.githubusercontent.com/ciembor/agent-rules-books.
 ---
 
-# PR Review Skill
+# PR Review Instructions
 
-Read [`CODE_REVIEW.md`](CODE_REVIEW.md) and follow it. It is the source of truth for both what to review and how to execute the review. Two scripts do the parts a model must not be trusted with: `scripts/prepare.mjs` resolves the pull request once, downloads the repository at the head commit, computes the change set and the lines under review, reads the changed files once and hands each as fragments, and writes one instructions file per probe; `scripts/check.mjs` is the command each probe runs on its own ledger, and applies every check the review will; `scripts/review.mjs` runs the same checks on every ledger, refuses any that does not answer its instructions row for row, then builds and posts the review from the ledgers alone.
+Operate `MainAgentController` (`scripts/domain/controller.ts`) as the orchestrating main agent and `SubAgentController` (`scripts/domain/sub-agent-controller.ts`) inside each boxed probe subagent.
 
-The rules it serves are the entries of [`rules/Rules.yaml`](rules/Rules.yaml); the `[[term]]`s they name are defined in [`rules/Definitions.yaml`](rules/Definitions.yaml), and their parents in [`rules/Principles.yaml`](rules/Principles.yaml). `prepare.mjs` reads them, once, from `${CLAUDE_SKILL_DIR}/rules/`: the rules this skill was installed with, linked into the skill from this repository's `rules/`. A violation is posted as breaking the principle its rule protects, linked to that principle's anchor on https://thruput.se/agents/.
+## Operating Boundaries
 
-It dispatches one subagent per instructions file, as [`CODE_REVIEW.md` step 2](CODE_REVIEW.md#2-probe) sets out. What a subagent does is fixed by constants in the schema of that file, `instructions` for every probe and `task` for each kind, which every file carries; `prepare.mjs` populates the rest, so there is no prompt to write and no schema to hand over. The file and one fixed message are the only channel to a probe: the reviewing context never adds to it, so what a probe is told is the same on every run. Every subagent is the plugin's `probe` agent, defined in [`agents/probe.md`](../../agents/probe.md): it loads no CLAUDE.md, so nothing but its file tells it what to do. It runs on the cheapest model available; the context subagent is dispatched on the most capable one. What crosses between the reviewing context, a probe, and the review is shaped by the schemas published under `https://thruput.se/agents/schemas/review/`: the change set, the fragments a changed file is handed as, the instructions a probe receives, the ledger its rows go into, and each violation in it. Validate against them rather than reading a shape off this prose.
+- **Do not pre-examine inputs before calling `prepare`.** Pass `<url>` and `<workdir>` directly to `MainAgentController` without first inspecting the pull request, diff, repository files, or rules. Only inspect, adjust, or test `<workdir>` or `<url>` (with `git`, `gh`, or `az`) if `prepare` fails and you need to diagnose the problem.
+- **Do not read or modify review artifacts in `<workdir>`.** Files written inside `<workdir>` and its sibling `ledger` directory exist only as a write-only audit log and are never read back to produce the review.
+- **Do not evaluate rules, decide verdicts, or author review comments in the main agent.** Each subagent receives its boxed `SubAgentController` and reports rows via `controller.report(rows)`; when the last subagent reports valid rows, the review outcome is computed and submitted automatically.
 
-The escalation index is bundled under `references/`; `prepare.mjs` downloads every ruleset it names, once, and hands them to the escalation probe.
+## 1. Main Agent — Prepare
 
-The host is folded at the perimeter: one adapter per host beside the scripts, `scripts/github.mjs`, `scripts/azure-devops.mjs`, and `scripts/git.mjs`, each written against the host's published API description under [`references/hosts/`](references/hosts/). Nothing else in the skill names a host. The cheat sheets under `references/` describe the hosts for a reader; the scripts do not read them.
+1. Instantiate the controller with `MainAgentController.withRunner(runner)` (or `MainAgentController.create()`).
+2. Choose a workspace path `<workdir>` suited to your environment, wrap it with `Workdir.from(workdir)`, and call `controller.prepare(url, workdir)` with `<url>`.
+3. Handle the returned `PrepareResult`:
+   - **`{ success: false, error: { kind: 'invalid-target', error } }`** (or `Workdir.from` failure): Diagnose the failure—fix `<workdir>`, normalize `<url>`, or test `<url>` with `git`, `gh`, or `az`—and call `prepare` again.
+   - **`{ success: false, error: { kind: 'refused' | 'too-large' | 'already-reviewed', ... } }`**: Report the refusal or status message to the user and stop.
+   - **`{ success: true, data }`**: Proceed immediately to Step 2.
 
-## Requirements
+## 2. Main Agent — Dispatch
 
-- `node` and `tar`; the scripts fetch their other tools with `npx`.
-- For a GitHub pull request, `gh`; for an Azure DevOps pull request, `az` with the `azure-devops` extension and `git`; for a change in a plain repository, `git`. Each is used as it stands in the environment.
-- The rules: `rules/` in the skill, links to this repository's rules and what they rest on, up to the axioms, which resolve on macOS and Linux.
-- Network access to `raw.githubusercontent.com/ciembor/agent-rules-books`, from which `prepare.mjs` downloads the escalation rulesets.
+1. Call `controller.dispatch(workdir)` to run all pending probes (you may inspect read-only progress via `controller.ledger(workdir)`).
+2. Handle the returned `DispatchResult`:
+   - **`{ kind: 'submitted', outcome, ledger, location }`**: All probes reported and the review has been submitted. Report `outcome` and `location` to the user and stop.
+   - **`{ kind: 'pending', remaining }`**: One or more probes timed out before reporting. Call `controller.dispatch(workdir)` again (up to **2 retries**) so only the `remaining` probes run. If still `'pending'` after 2 retries, stop and report `remaining` to the user.
 
-## Files
+## 3. Boxed Subagent — Probe & Report
 
-- `CODE_REVIEW.md` — the review process.
-- `scripts/prepare.mjs`, `scripts/review.mjs` — the two commands the process runs; `scripts/check.mjs` the command a probe runs on its ledger, which `review.mjs` reuses; `scripts/lib.mjs` holds their host-neutral logic and `scripts/github.mjs`, `scripts/azure-devops.mjs`, `scripts/git.mjs` the adapters, each tested beside it.
-- `references/hosts/` — the hosts' published API descriptions the adapters are written against: GitHub's REST OpenAPI description and GraphQL schema, Azure DevOps' Git and Policy specifications. Refresh with:
+Each subagent receives a `SubAgentController` instance (`sub`) and has no write access to the review outcome:
 
-      curl -sSL -o references/hosts/github.openapi.json https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json
-      curl -sSL -o references/hosts/github.graphql https://docs.github.com/public/fpt/schema.docs.graphql
-      curl -sSL -o references/hosts/azure-devops-git.json https://raw.githubusercontent.com/MicrosoftDocs/vsts-rest-api-specs/master/specification/git/7.1/git.json
-      curl -sSL -o references/hosts/azure-devops-policy.json https://raw.githubusercontent.com/MicrosoftDocs/vsts-rest-api-specs/master/specification/policy/7.1/policy.json
-
-- `rules/`, `schemas/` — this repository's rules and schemas, linked into the skill.
-- `https://thruput.se/agents/schemas/review/` — the shapes the process passes around, from this repository's `schemas/review/`: the change set, the fragments, the review, the rulebook, the instructions for each kind of probe, the threads, the outcome, the ledger, and the violation.
-- `references/agent-rules-books-INDEX.md`, `references/agent-rules-books-search-index.json` — escalation index, byte-for-byte mirrors of the handbook's `references/`. Refresh with:
-
-      for f in agent-rules-books-INDEX.md agent-rules-books-search-index.json; do
-        gh api "repos/thruput-io/handbook/contents/references/$f" --jq '.content' | base64 -d > "references/$f"
-      done
-
-- `references/gh-cheat-sheet.md`, `references/az-cheat-sheet.md` — host cheat sheets for filing review comments and interacting with GitHub and Azure DevOps PRs.
+1. Read `sub.instructions()` (`prose()` and `task()`), `sub.change()` (`title` and `description`), `sub.codeUnderReview()` (`surface()`, `fragments()`, `threads()`, `host()`), `sub.rules()` (`rulebook` or `rulesets`), and `sub.workdir()` (when `reuse` or `dead-code` requires searching the snapshot at `sub.workdir().snapshotDirectory()`).
+2. Evaluate every assigned rule (or 3 rules from one selected ruleset for `context`) and call `sub.report(rows)`.
+3. If `sub.report(rows)` returns `{ success: false, error }`, fix the reported schema or surface-anchor validation error and call `sub.report(rows)` again until `{ success: true }` is returned.

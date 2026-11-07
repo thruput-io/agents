@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/violation.schema.json",
   "title": "Violation",
-  "description": "One finding of the rule in whose ledger row it sits: the observation of what is wrong, and where it is reported. It carries no reference of its own: the row names the rule once, and the reporting script renders the comment as '{observation} breaks {principle name}', the principle being the parent of that rule",
+  "description": "One finding of the rule in whose ledger row it sits: the observation of what is wrong, and where it is reported. It carries no reference of its own: the row names the rule once, and the comment is rendered as '{observation} breaks {principle name}', the principle being the parent of that rule",
   "type": "object",
   "required": [
     "observation",
@@ -18,7 +18,7 @@
   },
   "$defs": {
     "Observation": {
-      "description": "What the code does wrong, briefly, worded as the subject of the sentence the reporting script completes: '{observation} breaks {principle name}'. It names no rule and no principle, by name, id, link, or wording, and it says what is wrong, not how to fix it",
+      "description": "What the code does wrong, briefly, worded as the subject of the sentence '{observation} breaks {principle name}'. It names no rule and no principle, by name, id, link, or wording, and it says what is wrong, not how to fix it",
       "type": "string",
       "minLength": 1
     },
@@ -47,7 +47,7 @@
           "const": "surface"
         },
         "path": {
-          "$ref": "change-set.schema.json#/$defs/Path"
+          "$ref": "surface.schema.json#/$defs/Path"
         },
         "side": {
           "$ref": "lines.schema.json#/$defs/Side"
@@ -84,7 +84,7 @@
       }
     },
     {
-      "observation": "Writing a new diff parser where parseDiff in skills/pr-review/scripts/lib.mjs already serves",
+      "observation": "Writing a new URL parser where the platform URL class already serves",
       "anchor": {
         "kind": "pull-request"
       }

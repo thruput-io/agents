@@ -1,0 +1,36 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
+	"files": {
+		"includes": ["**", "!references", "!!rules", "!!schemas"]
+	},
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true,
+		"root": "../.."
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "all",
+			"correctness": {
+				"noNodejsModules": "off",
+				"noProcessGlobal": "off",
+				"useQwikValidLexicalScope": "off"
+			},
+			"style": {
+				"noRestrictedTypes": {
+					"level": "error",
+					"options": {
+						"types": {
+							"unknown": "Use a specific contract or domain type instead of unknown."
+						}
+					}
+				}
+			}
+		}
+	},
+	"formatter": {
+		"enabled": true
+	}
+}

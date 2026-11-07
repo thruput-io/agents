@@ -1,0 +1,129 @@
+import { readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { parse } from "yaml";
+import { z } from "zod";
+import {
+	type AgentInstructions,
+	AgentInstructionsSchema,
+	type Change,
+	type Checkout,
+	DefinitionSchema,
+	type Rulebook as ExternalRulebook,
+	PrincipleSchema,
+	RuleSchema,
+	type Surface,
+} from "./contracts.g.ts";
+import { instructions } from "./instructions.ts";
+import { nonnull } from "./nullish.ts";
+import {
+	checkKinds,
+	kindOf,
+	partition,
+	Rulebook,
+	rulebook,
+} from "./rulebook.ts";
+import { FILE_TOO_LARGE, IndexSchema, withText } from "./ruleset.ts";
+import type { ProbeDocument } from "./sub-agent-controller.ts";
+
+export interface NamedProbe {
+	readonly name: string;
+	readonly probe: ProbeDocument;
+	readonly auditDocument: AgentInstructions;
+}
+
+const SKILL_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+
+const RulesFileSchema = z.object({
+	rules: z.array(RuleSchema).readonly(),
+});
+const PrinciplesFileSchema = z.object({
+	principles: z.array(PrincipleSchema).readonly(),
+});
+const DefinitionsFileSchema = z.object({
+	definitions: z.array(DefinitionSchema).readonly(),
+});
+
+const parseYaml = <T>(name: string, schema: z.ZodType<T>): T =>
+	schema.parse(parse(readFileSync(join(SKILL_DIR, "rules", name), "utf8")));
+
+function loadBundledRuleGroups(): readonly {
+	readonly name: string;
+	readonly kind: "rules" | "reuse" | "dead-code";
+	readonly rulebook: Rulebook;
+}[] {
+	const { rules } = parseYaml("Rules.yaml", RulesFileSchema);
+	const { principles } = parseYaml("Principles.yaml", PrinciplesFileSchema);
+	const { definitions } = parseYaml("Definitions.yaml", DefinitionsFileSchema);
+	const groups = partition(rules.filter((rule) => rule.id !== FILE_TOO_LARGE));
+	checkKinds(groups.map((group) => group.group));
+	return groups.map((group) => ({
+		name: group.name,
+		kind: kindOf(group.group),
+		rulebook: nonnull(
+			Rulebook.from(rulebook(group.rules, { principles, definitions })).data,
+		),
+	}));
+}
+
+function loadBundledRulesets(): Promise<readonly ExternalRulebook[]> {
+	const indexFile = join(
+		SKILL_DIR,
+		"references",
+		"agent-rules-books-search-index.json",
+	);
+	const entries = IndexSchema.parse(
+		JSON.parse(readFileSync(indexFile, "utf8")),
+	);
+	return Promise.all(
+		entries.map(async (entry) => {
+			const response = await fetch(entry.rawUrl);
+			if (!response.ok) {
+				throw new Error(
+					`the ruleset ${entry.url} could not be read: HTTP ${response.status}`,
+				);
+			}
+			return withText(entry, await response.text());
+		}),
+	);
+}
+
+const toAgentInstructions = (probe: ProbeDocument): AgentInstructions => {
+	if (probe.kind === "context") {
+		return AgentInstructionsSchema.parse({
+			instructions: probe.instructions,
+			task: probe.task,
+			kind: probe.kind,
+			change: probe.change,
+			surface: probe.surface,
+			rulesets: [...probe.rulesets],
+		});
+	}
+	return AgentInstructionsSchema.parse({
+		instructions: probe.instructions,
+		task: probe.task,
+		kind: probe.kind,
+		change: probe.change,
+		surface: probe.surface,
+		ruleset: probe.rulebook.toRuleset(),
+		...(probe.checkout === undefined ? {} : { checkout: probe.checkout }),
+	});
+};
+
+export async function loadBundledProbes(
+	change: Change,
+	surface: Surface,
+	checkout: Checkout,
+): Promise<readonly NamedProbe[]> {
+	const groups = loadBundledRuleGroups();
+	const rulesets = await loadBundledRulesets();
+	const built = instructions({ change, surface, checkout }, groups, rulesets);
+	return built.map((entry) => {
+		const probe = entry.document as ProbeDocument;
+		return {
+			name: entry.name,
+			probe,
+			auditDocument: toAgentInstructions(probe),
+		};
+	});
+}
