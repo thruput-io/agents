@@ -622,3 +622,27 @@ definitions:
 - id: Access to HTTP
   specification: |
     Accessing an HTTP or HTTPS endpoint.
+- id: Head commit
+  specification: |
+    The commit a review of a [[Change]] is anchored to. Every file read and every inline comment resolves against it.
+- id: Checkout
+  specification: |
+    The [[Head commit]] checked out with a clean working tree. A checkout at any other commit is not a checkout of the [[Change]].
+- id: Surface
+  specification: |
+    The code a [[Violation]] may be reported against, identified by file and line numbers on the left (base) and right (head): changes carrying an unresolved comment, changes carrying a comment the author has resolved since the prior review, and changes new since the prior review (on a first review, the whole [[Change]]).
+- id: Full context
+  specification: |
+    The [[Surface]] together with every changed file in full, the call sites of changed public symbols, and the covering [[Verification code]]. Context is what a [[Verdict]] is reached from, never what a [[Violation]] is reported against.
+- id: Ruleset
+  specification: |
+    A subset or grouping of [[Rule]]s evaluated together as a unit.
+- id: Violation
+  specification: |
+    A finding that code on the [[Surface]] breaks a [[Rule]].
+- id: Verdict
+  specification: |
+    The result of evaluating against a [[Rule]] or [[Ruleset]]: [[Violation]] or non-violation.
+- id: Ledger
+  specification: |
+    The list across the sum of [[Ruleset]]s providing reassurance that every [[Rule]] was reviewed: one row per [[Rule]], recording [[Evidence]] of what was examined and whether [[Violation]]s were found or not found.

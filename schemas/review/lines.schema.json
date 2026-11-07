@@ -11,6 +11,9 @@
       "$ref": "#/$defs/RemovedLines"
     },
     {
+      "$ref": "#/$defs/ChangedFile"
+    },
+    {
       "$ref": "#/$defs/Side"
     }
   ],
@@ -78,6 +81,33 @@
           "$ref": "#/$defs/RemovedContent"
         }
       }
+    },
+    "ChangedFile": {
+      "description": "One file touched at the [[Head commit]]: the line ranges added on the right (head) and the lines removed on the left (base) with their text",
+      "type": "object",
+      "required": [
+        "path",
+        "added",
+        "removed"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "surface.schema.json#/$defs/Path"
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LineRange"
+          }
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RemovedLines"
+          }
+        }
+      },
+      "additionalProperties": false
     }
   },
   "examples": [

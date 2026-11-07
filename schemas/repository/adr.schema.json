@@ -49,7 +49,7 @@
       "format": "date"
     },
     "Context": {
-      "description": "The forces and circumstances that called for the decision",
+      "description": "The forces and circumstances that called for the decision, kept as short and on point as possible and omitting any detail not strictly necessary to understand why the decision was taken",
       "$ref": "../governance/definitions.schema.json#/$defs/Prose"
     },
     "Decisions": {
@@ -61,7 +61,7 @@
       }
     },
     "Decision": {
-      "description": "One decision",
+      "description": "One decision, stated as briefly and directly as possible without detail that is not part of the decision itself",
       "$ref": "../governance/definitions.schema.json#/$defs/Prose"
     },
     "SingleDecision": {

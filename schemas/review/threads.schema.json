@@ -33,7 +33,7 @@
           "$ref": "#/$defs/ThreadId"
         },
         "path": {
-          "$ref": "change-set.schema.json#/$defs/Path"
+          "$ref": "surface.schema.json#/$defs/Path"
         },
         "side": {
           "$ref": "lines.schema.json#/$defs/Side"
@@ -51,7 +51,7 @@
       "additionalProperties": false
     },
     "ThreadId": {
-      "description": "The thread, by the identifier its host gave it; the host's adapter is the only reader",
+      "description": "The thread, by the identifier its host gave it",
       "type": "string",
       "minLength": 1
     },
