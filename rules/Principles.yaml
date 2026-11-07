@@ -104,9 +104,13 @@ principles:
   body: |
     A behaviour ships with its [[Signal]]; if we cannot see it, it is not shipped.
 - id: Don't Repeat Yourself
-  parent: Code is a liability, not an asset
+  parent: Convention over invention
   body: |
     Every piece of knowledge must have a single, unambiguous, authoritative representation within a system ([The Pragmatic Programmer, Tip 15](https://pragprog.com/tips/)).
+- id: Replace conditional with polymorphism
+  parent: Polymorphism over conditionals
+  body: |
+    Resolve variant selection and optional assembly once at the [[Perimeter]] through a [[Factory]], [[Feature]], or [[Builder]], and execute domain and application logic through polymorphic [[Domain object]]s without conditional [[Branching logic]].
 - id: Contract First
   parent: Agree at the boundary
   body: |
@@ -114,16 +118,16 @@ principles:
 - id: Less is more
   parent: Read far more than written
   body: |
-    A file is small enough to be read whole, so that a reader unfamiliar with it sees what it does without holding more than one screen in mind.
-- id: Performance is never bought with less readable code
-  parent: The compiler writes for the machine
+    A [[Component]] is small enough to be read whole, so that a reader unfamiliar with it sees what it does without holding more than one screen in mind.
+- id: Make it work, make it right, make it fast
+  parent: Premature optimization and Jackson's rules
   body: |
-    Speed comes from a measured hot spot and a better algorithm, never from obscuring the code; an optimisation that costs readability is undone.
-- id: Code without calls over the network humans cannot optimize
-  parent: The compiler writes for the machine
-  body: |
-    Code without [[Calls over the network]] humans cannot optimize.
+    Deliver working behaviour in small slices first, structure the code clearly for the reader second, and optimise only measured bottlenecks last ([Kent Beck](https://wiki.c2.com/?MakeItWorkMakeItRightMakeItFast)); speed is never bought with less readable code.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Reduce scope, split the [[Pull request]] into several smaller ones, and ship a working slice.
 - id: Iterations over calls over the network is bad design
-  parent: The compiler writes for the machine
+  parent: Amdahl's Law and the I/O-bound reality
   body: |
     Iterations over [[Calls over the network]] is bad design.
