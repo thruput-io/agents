@@ -39,6 +39,9 @@ import { isNullOrEmpty } from "./nullish.ts";
 import type { SnapshotDirectory } from "./snapshot-directory.ts";
 import { hydrateSnapshot } from "./snapshot-hydration.ts";
 
+const azureTokenOf = (token: AccessToken): AccessToken =>
+	token.isPat() ? token.toBasic() : token;
+
 export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 	readonly #review: AzureMergeRequest;
 	readonly #token: AccessToken | null;
@@ -51,24 +54,30 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 		const envToken = AccessToken.from(AZURE_DEVOPS_EXT_PAT ?? "");
 		return new AzureDevOpsAdapter(
 			review,
-			envToken.success ? envToken.data : null,
+			envToken.success ? azureTokenOf(envToken.data) : null,
 		);
 	}
 	static fromWithToken(
 		review: AzureMergeRequest,
 		token: AccessToken,
 	): AzureDevOpsAdapter {
-		return new AzureDevOpsAdapter(review, token);
+		return new AzureDevOpsAdapter(review, azureTokenOf(token));
 	}
 	host(): AzureDevOps {
 		return this.#review.host();
 	}
 	async resolve(snapshotDir: SnapshotDirectory): Promise<AdapterResolution> {
 		const host = this.host();
-		const { pr, evaluations, rawThreads } = await fetchAzurePullRequestState(
-			host,
-			this.#token,
-		);
+		const state = await fetchAzurePullRequestState(host, this.#token);
+		if (!state.ok) {
+			return {
+				kind: "host-error",
+				host,
+				status: state.status,
+				reason: state.reason,
+			};
+		}
+		const { pr, evaluations, rawThreads } = state;
 		const headCommit = headCommitOf(pr);
 		const change = changeOf(host, pr);
 		const existingRefusal = refusedOf(rawThreads, headCommit);

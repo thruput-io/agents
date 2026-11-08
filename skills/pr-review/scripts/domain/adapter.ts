@@ -36,6 +36,12 @@ export type AdapterResolution =
 			readonly headCommit: HeadCommit;
 			readonly reason: Summary;
 			readonly location: Summary;
+	  }
+	| {
+			readonly kind: "host-error";
+			readonly host: Host;
+			readonly status: number;
+			readonly reason: Summary;
 	  };
 
 export interface RemotePullRequest {

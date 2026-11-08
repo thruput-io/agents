@@ -1,3 +1,4 @@
+import { HttpResponse, http } from "msw";
 import {
 	getPullRequestReviewersCreatePullRequestReviewerMockHandler,
 	getPullRequestReviewersCreatePullRequestReviewerResponseMock,
@@ -16,6 +17,17 @@ import {
 import { nonnull } from "../domain/nullish.ts";
 import { SITE } from "../domain/rulebook.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
+
+export function createForbiddenHtmlAzureHandler() {
+	return http.get(
+		"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/pullrequests/:pullRequestId",
+		() =>
+			new HttpResponse("\r\n\r\n<!DOCTYPE html><html>Forbidden</html>", {
+				status: 403,
+				headers: { "content-type": "text/html; charset=utf-8" },
+			}),
+	);
+}
 
 export function createRejectedAzurePolicyHandler() {
 	const baseEval = nonnull(getEvaluationsListResponseMock()[0]);

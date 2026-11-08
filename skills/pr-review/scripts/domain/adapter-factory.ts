@@ -11,7 +11,7 @@ import { GitAdapter } from "./git-adapter.ts";
 import { GitHubAdapter } from "./github-adapter.ts";
 import { TargetSchema } from "./host.ts";
 
-const unauthenticatedSchema = TargetSchema.pipe(
+const defaultSchema = TargetSchema.pipe(
 	z.union([
 		GithubPullRequest.Schema.transform(
 			(review): HostAdapter => GitHubAdapter.from(review),
@@ -23,7 +23,7 @@ const unauthenticatedSchema = TargetSchema.pipe(
 	]),
 );
 
-const authenticatedSchema = (token: AccessToken) =>
+const withTokenSchema = (token: AccessToken) =>
 	TargetSchema.pipe(
 		z.union([
 			GithubPullRequest.Schema.transform(
@@ -41,12 +41,12 @@ const authenticatedSchema = (token: AccessToken) =>
 
 export const HostAdapterFactory = {
 	from(url: string): z.ZodSafeParseResult<HostAdapter> {
-		return unauthenticatedSchema.safeParse(url);
+		return defaultSchema.safeParse(url);
 	},
 	fromWithToken(
 		url: string,
 		token: AccessToken,
 	): z.ZodSafeParseResult<HostAdapter> {
-		return authenticatedSchema(token).safeParse(url);
+		return withTokenSchema(token).safeParse(url);
 	},
 } as const;

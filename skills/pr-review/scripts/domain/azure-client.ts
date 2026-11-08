@@ -23,6 +23,7 @@ import {
 	SummarySchema,
 	type ThreadId,
 } from "./contracts.g.ts";
+import { hostErrorReason, isJsonResponse } from "./json-fetch.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 
 const API_VERSION = { "api-version": "7.1" } as const;
@@ -31,7 +32,9 @@ const POLICY_VERSION = "7.1-preview.1";
 const requestInitOf = (
 	token: AccessToken | null,
 ): { readonly headers: Readonly<Record<string, string>> } =>
-	isNullOrEmpty(token) ? { headers: {} } : token.requestInit();
+	isNullOrEmpty(token)
+		? { headers: { accept: "application/json" } }
+		: token.requestInit();
 
 export async function setAzureThreadStatus(
 	host: AzureDevOps,
@@ -115,14 +118,23 @@ export async function listAzureThreads(
 	return res.data;
 }
 
+export type AzurePullRequestState =
+	| {
+			readonly ok: true;
+			readonly pr: GitPullRequest;
+			readonly evaluations: readonly PolicyEvaluationRecord[];
+			readonly rawThreads: readonly GitPullRequestCommentThread[];
+	  }
+	| {
+			readonly ok: false;
+			readonly status: number;
+			readonly reason: Summary;
+	  };
+
 export async function fetchAzurePullRequestState(
 	host: AzureDevOps,
 	token: AccessToken | null,
-): Promise<{
-	readonly pr: GitPullRequest;
-	readonly evaluations: readonly PolicyEvaluationRecord[];
-	readonly rawThreads: readonly GitPullRequestCommentThread[];
-}> {
+): Promise<AzurePullRequestState> {
 	const init = requestInitOf(token);
 	const prRes = await pullRequestsGetPullRequest(
 		host.organization,
@@ -132,8 +144,20 @@ export async function fetchAzurePullRequestState(
 		API_VERSION,
 		init,
 	);
+	if (!isJsonResponse(prRes)) {
+		return {
+			ok: false,
+			status: prRes.status,
+			reason: hostErrorReason(
+				"Azure DevOps",
+				"AZURE_DEVOPS_EXT_PAT",
+				prRes,
+				token,
+			),
+		};
+	}
 	const pr = prRes.data;
-	const [evalRes, rawThreads] = await Promise.all([
+	const [evalRes, threadsRes] = await Promise.all([
 		evaluationsList(
 			host.organization,
 			host.project,
@@ -143,7 +167,32 @@ export async function fetchAzurePullRequestState(
 			},
 			init,
 		),
-		listAzureThreads(host, token),
+		pullRequestThreadsList(
+			host.organization,
+			host.project,
+			host.repository,
+			host.id,
+			API_VERSION,
+			init,
+		),
 	]);
-	return { pr, evaluations: evalRes.data, rawThreads };
+	const failed = [evalRes, threadsRes].find((res) => !isJsonResponse(res));
+	if (failed) {
+		return {
+			ok: false,
+			status: failed.status,
+			reason: hostErrorReason(
+				"Azure DevOps",
+				"AZURE_DEVOPS_EXT_PAT",
+				failed,
+				token,
+			),
+		};
+	}
+	return {
+		ok: true,
+		pr,
+		evaluations: evalRes.data,
+		rawThreads: threadsRes.data,
+	};
 }

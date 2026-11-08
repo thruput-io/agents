@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { nonnull } from "../domain/nullish.ts";
@@ -12,6 +12,7 @@ export interface ScenarioRepo {
 	readonly headCommitV2: string;
 	readonly gitTarget: string;
 	readonly gitLargeTarget: string;
+	readonly gitLargeDiffTarget: string;
 	readonly githubTarget: string;
 	readonly azureTarget: string;
 	readonly workdirFor: (label: string) => Workdir;
@@ -72,7 +73,7 @@ export function createScenarioRepo(): ScenarioRepo {
 
 	git(["checkout", "--quiet", "-b", "feature-large"]);
 	const manyLines = Array.from(
-		{ length: 205 },
+		{ length: 1005 },
 		(_, idx) => `export const line${idx} = ${idx};`,
 	).join("\n");
 	writeFileSync(join(repoDir, "large-prod.ts"), `${manyLines}\n`, "utf8");
@@ -88,6 +89,20 @@ export function createScenarioRepo(): ScenarioRepo {
 	]);
 	git(["commit", "--quiet", "-m", "Oversized change"]);
 
+	git(["checkout", "--quiet", "main"]);
+	git(["checkout", "--quiet", "-b", "feature-large-diff"]);
+	const mediumLines = Array.from(
+		{ length: 550 },
+		(_, idx) => `export const item${idx} = ${idx};`,
+	).join("\n");
+	mkdirSync(join(repoDir, "docs"), { recursive: true });
+	writeFileSync(join(repoDir, "part-a.ts"), `${mediumLines}\n`, "utf8");
+	writeFileSync(join(repoDir, "part-b.ts"), `${mediumLines}\n`, "utf8");
+	writeFileSync(join(repoDir, "part-c.ts"), `${mediumLines}\n`, "utf8");
+	writeFileSync(join(repoDir, "docs/spec.yaml"), `${manyLines}\n`, "utf8");
+	git(["add", "part-a.ts", "part-b.ts", "part-c.ts", "docs/spec.yaml"]);
+	git(["commit", "--quiet", "-m", "Oversized total diff"]);
+
 	git(["checkout", "--quiet", "feature"]);
 
 	return {
@@ -97,6 +112,7 @@ export function createScenarioRepo(): ScenarioRepo {
 		headCommitV2,
 		gitTarget: `${repoDir}@main..feature`,
 		gitLargeTarget: `${repoDir}@main..feature-large`,
+		gitLargeDiffTarget: `${repoDir}@main..feature-large-diff`,
 		githubTarget: "https://github.com/octocat/hello-world/pull/42",
 		azureTarget: "https://dev.azure.com/org/proj/_git/repo/pullrequest/42",
 		workdirFor: (label: string) =>

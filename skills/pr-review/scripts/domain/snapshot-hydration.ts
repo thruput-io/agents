@@ -12,7 +12,7 @@ import { changedFiles } from "./diff.ts";
 import { fragments, numbered, removedLines } from "./fragments.ts";
 import { isNullOrEmpty, nonnull } from "./nullish.ts";
 import { CodeUnderReviewSnapshot } from "./review-snapshot.ts";
-import { FILE_LINES, isDoc, isLock, isTest, tooLarge } from "./ruleset.ts";
+import { oversizedFiles, tooLarge } from "./ruleset.ts";
 import type { SnapshotDirectory } from "./snapshot-directory.ts";
 import { narrowSurface, threadRanges, wholeSurface } from "./surface.ts";
 
@@ -80,6 +80,10 @@ export async function hydrateSnapshot(
 	const fileCounts = files.map((file) => ({
 		path: file.path,
 		lines: Object.keys(nonnull(linesByPath.get(file.path))).length,
+		added: file.added.reduce(
+			(sum, range) => sum + range.end - range.start + 1,
+			0,
+		),
 	}));
 	const oversizedReasons = tooLarge(fileCounts);
 	if (oversizedReasons.length > 0) {
@@ -87,17 +91,10 @@ export async function hydrateSnapshot(
 		const location = isNullOrEmpty(remote.existingRefusal)
 			? await refuse(remote.headCommit, reason)
 			: remote.existingRefusal;
-		const oversizedFiles = fileCounts
-			.filter(
-				(file) =>
-					!(isTest(file.path) || isLock(file.path) || isDoc(file.path)) &&
-					file.lines > FILE_LINES,
-			)
-			.map((file) => file.path);
 		return {
 			kind: "too-large",
 			headCommit: remote.headCommit,
-			files: oversizedFiles,
+			files: oversizedFiles(fileCounts),
 			location,
 		};
 	}

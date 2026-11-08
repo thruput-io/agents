@@ -6,10 +6,12 @@ import {
 	type DispatchResult,
 	MainAgentController,
 } from "../domain/controller.ts";
+import { jsonFetch } from "../domain/json-fetch.ts";
 import { nonnull } from "../domain/nullish.ts";
 import {
 	createAzureAlreadyReviewedHandler,
 	createAzureExistingRefusalHandler,
+	createForbiddenHtmlAzureHandler,
 	createRejectedAzurePolicyHandler,
 } from "./azure-mocks.ts";
 import {
@@ -18,6 +20,7 @@ import {
 } from "./azure-rereview-mocks.ts";
 import {
 	createFailedGitHubChecksHandler,
+	createForbiddenHtmlGitHubHandler,
 	createGitHubAlreadyReviewedHandler,
 	createGitHubExistingRefusalHandler,
 	createInProgressGitHubChecksHandlers,
@@ -226,6 +229,24 @@ it("MainAgentController returns typed errors for invalid-target, too-large, alre
 		["large-prod.ts"],
 	);
 
+	const tooLargeDiff = await noop.prepare(
+		repo.gitLargeDiffTarget,
+		repo.workdirFor("err-large-diff"),
+	);
+	assert.equal(tooLargeDiff.success, false);
+	assert.equal(tooLargeDiff.error.kind, "too-large");
+	const diffError = tooLargeDiff.error as Extract<
+		typeof tooLargeDiff.error,
+		{ kind: "too-large" }
+	>;
+	assert.deepEqual(diffError.files, ["part-a.ts", "part-b.ts", "part-c.ts"]);
+	assert.equal(
+		diffError.location.includes(
+			"pull request is too large. It cannot be kept focused and reviewable as required, and commenting on it would start an endless loop",
+		),
+		true,
+	);
+
 	mockServer.use(createGitHubAlreadyReviewedHandler(repo.headCommit));
 	const ghAlready = await noop.prepareWithToken(
 		repo.githubTarget,
@@ -309,18 +330,64 @@ it("MainAgentController returns typed errors for invalid-target, too-large, alre
 		nonnull(postedRefusals[0]).includes("check check did not succeed"),
 		true,
 	);
+
+	mockServer.use(
+		createForbiddenHtmlAzureHandler(),
+		createForbiddenHtmlGitHubHandler(),
+	);
+	const azHtml403 = await noop.prepareWithToken(
+		repo.azureTarget,
+		repo.workdirFor("err-az-403-html"),
+		scenarioToken,
+	);
+	assert.equal(azHtml403.success, false);
+	assert.equal(azHtml403.error.kind, "host-error");
+	const azHostError = azHtml403.error as Extract<
+		typeof azHtml403.error,
+		{ kind: "host-error" }
+	>;
+	assert.equal(azHostError.status, 403);
+	assert.equal(
+		azHostError.reason.includes("Azure DevOps returned HTTP 403"),
+		true,
+	);
+
+	const ghHtml403 = await noop.prepare(
+		repo.githubTarget,
+		repo.workdirFor("err-gh-403-html"),
+	);
+	assert.equal(ghHtml403.success, false);
+	assert.equal(ghHtml403.error.kind, "host-error");
+	const ghHostError = ghHtml403.error as Extract<
+		typeof ghHtml403.error,
+		{ kind: "host-error" }
+	>;
+	assert.equal(ghHostError.status, 403);
+	assert.equal(ghHostError.reason.includes("GitHub returned HTTP 403"), true);
+	const rawHtmlRes = await jsonFetch<{
+		readonly data: Record<string, string>;
+		readonly status: number;
+		readonly headers: Headers;
+	}>("https://api.github.com/repos/octocat/hello-world/pulls/42", {
+		method: "GET",
+		headers: new Headers({ "x-test": "1" }),
+	});
+	assert.equal(rawHtmlRes.status, 403);
+	assert.deepEqual(rawHtmlRes.data, {});
 });
 
-it("MainAgentController.prepare reads GH_TOKEN and AZURE_DEVOPS_EXT_PAT from process.env and omits Authorization when unset", async () => {
+it("MainAgentController.prepare reads GH_TOKEN and AZURE_DEVOPS_EXT_PAT from process.env, formats headers per host, and sends accept: application/json", async () => {
 	const noop = MainAgentController.create();
 	const seenHeaders: Array<{
 		readonly host: string;
 		readonly auth: string | null;
+		readonly accept: string | null;
 	}> = [];
 	const onRequest = ({ request }: { readonly request: Request }) => {
 		seenHeaders.push({
 			host: new URL(request.url).host,
 			auth: request.headers.get("authorization"),
+			accept: request.headers.get("accept"),
 		});
 	};
 	mockServer.events.on("request:start", onRequest);
@@ -340,16 +407,25 @@ it("MainAgentController.prepare reads GH_TOKEN and AZURE_DEVOPS_EXT_PAT from pro
 		);
 		assert.equal(azWithToken.success, true);
 
+		const expectedAzAuth = `Basic ${Buffer.from(":env-az-pat", "utf8").toString("base64")}`;
 		assert.equal(
 			seenHeaders
 				.filter((entry) => entry.host === "api.github.com")
-				.every((entry) => entry.auth === "Bearer env-gh-token"),
+				.every(
+					(entry) =>
+						entry.auth === "Bearer env-gh-token" &&
+						entry.accept === "application/json",
+				),
 			true,
 		);
 		assert.equal(
 			seenHeaders
 				.filter((entry) => entry.host === "dev.azure.com")
-				.every((entry) => entry.auth === "Bearer env-az-pat"),
+				.every(
+					(entry) =>
+						entry.auth === expectedAzAuth &&
+						entry.accept === "application/json",
+				),
 			true,
 		);
 
@@ -370,6 +446,12 @@ it("MainAgentController.prepare reads GH_TOKEN and AZURE_DEVOPS_EXT_PAT from pro
 		assert.equal(azWithoutToken.success, true);
 		assert.equal(
 			seenHeaders.every((entry) => entry.auth === null),
+			true,
+		);
+		assert.equal(
+			seenHeaders
+				.filter((entry) => entry.host === "dev.azure.com")
+				.every((entry) => entry.accept === "application/json"),
 			true,
 		);
 	} finally {

@@ -6,6 +6,7 @@ import {
 	GitDiff,
 	GithubPullRequest,
 } from "./code-under-review.ts";
+import { hostErrorReason, isJsonResponse } from "./json-fetch.ts";
 import {
 	CodeUnderReviewFactory,
 	CodeUnderReviewSnapshot,
@@ -13,17 +14,55 @@ import {
 } from "./review-snapshot.ts";
 import { SnapshotDirectory } from "./snapshot-directory.ts";
 
-it("AccessToken parses a non-empty token, builds authorization headers, and compares by value", () => {
+it("AccessToken senses bearer, basic, and pat tokens, converts formats, and sets JSON accept headers", () => {
 	const first = AccessToken.from("ghp_secret");
-	const second = AccessToken.from("ghp_secret");
+	const second = AccessToken.from("Bearer ghp_secret");
 	const other = AccessToken.from("ghp_other");
+	const jwt = AccessToken.from("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig");
+	const pat = AccessToken.from("azdo-raw-pat");
+	const basicColon = AccessToken.from(":azdo-raw-pat");
+	const basicHeader = AccessToken.from(
+		`Basic ${Buffer.from(":azdo-raw-pat", "utf8").toString("base64")}`,
+	);
 	assert.equal(first.success, true);
 	assert.equal(second.success, true);
 	assert.equal(other.success, true);
+	assert.equal(jwt.success, true);
+	assert.equal(pat.success, true);
+	assert.equal(basicColon.success, true);
+	assert.equal(basicHeader.success, true);
+
+	assert.equal(first.data.kind(), "bearer");
+	assert.equal(first.data.isBearer(), true);
+	assert.equal(first.data.isBasic(), false);
+	assert.equal(first.data.isPat(), false);
+	assert.equal(jwt.data.isBearer(), true);
+
+	assert.equal(pat.data.kind(), "pat");
+	assert.equal(pat.data.isPat(), true);
+	assert.equal(pat.data.toBasic().isBasic(), true);
+	assert.equal(pat.data.toBasic().equals(basicColon.data), true);
+	assert.equal(basicColon.data.equals(basicHeader.data), true);
+	assert.equal(
+		basicColon.data.toBearer().authorizationHeader(),
+		"Bearer azdo-raw-pat",
+	);
+	assert.equal(
+		pat.data.toBearer().authorizationHeader(),
+		"Bearer azdo-raw-pat",
+	);
+	assert.equal(
+		first.data.toBasic().authorizationHeader(),
+		`Basic ${Buffer.from(":ghp_secret", "utf8").toString("base64")}`,
+	);
+
 	assert.equal(first.data.equals(second.data), true);
 	assert.equal(first.data.equals(other.data), false);
 	assert.deepEqual(first.data.requestInit(), {
-		headers: { authorization: "Bearer ghp_secret" },
+		headers: {
+			accept: "application/json",
+			authorization: "Bearer ghp_secret",
+		},
 	});
 	assert.deepEqual(
 		first.data.requestInitWithHeaders({ accept: "text/plain" }),
@@ -35,6 +74,35 @@ it("AccessToken parses a non-empty token, builds authorization headers, and comp
 		},
 	);
 	assert.equal(AccessToken.from("").success, false);
+	assert.equal(AccessToken.from("Bearer ").success, false);
+});
+
+it("isJsonResponse and hostErrorReason classify HTTP responses and format authentication diagnostics", () => {
+	const jsonHeaders = new Headers({ "content-type": "application/json" });
+	const htmlHeaders = new Headers({
+		"content-type": "text/html; charset=utf-8",
+	});
+	assert.equal(isJsonResponse({ status: 200, headers: jsonHeaders }), true);
+	assert.equal(isJsonResponse({ status: 203, headers: htmlHeaders }), false);
+	assert.equal(isJsonResponse({ status: 403, headers: htmlHeaders }), false);
+	assert.equal(
+		hostErrorReason(
+			"Azure DevOps",
+			"AZURE_DEVOPS_EXT_PAT",
+			{ status: 403, headers: htmlHeaders },
+			null,
+		).includes("authentication required"),
+		true,
+	);
+	assert.equal(
+		hostErrorReason(
+			"Azure DevOps",
+			"AZURE_DEVOPS_EXT_PAT",
+			{ status: 500, headers: jsonHeaders },
+			null,
+		),
+		"Azure DevOps returned HTTP 500 (application/json).",
+	);
 });
 
 it("SnapshotDirectory parses a non-empty path and compares by value", () => {

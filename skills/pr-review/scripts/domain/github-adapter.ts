@@ -33,12 +33,16 @@ import {
 	fetchGitHubThreads,
 	settleAndReopenGitHubThreads,
 } from "./github-threads.ts";
+import { hostErrorReason, isJsonResponse } from "./json-fetch.ts";
 import { table } from "./ledger-table.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 import type { SnapshotDirectory } from "./snapshot-directory.ts";
 import { hydrateSnapshot } from "./snapshot-hydration.ts";
 
 const GRAPHQL_URL = "https://api.github.com/graphql";
+
+const githubTokenOf = (token: AccessToken): AccessToken =>
+	token.isBasic() ? token : token.toBearer();
 
 export class GitHubAdapter implements HostAdapter<GitHub> {
 	readonly #review: GithubPullRequest;
@@ -50,20 +54,23 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 	static from(review: GithubPullRequest): GitHubAdapter {
 		const { GH_TOKEN } = process.env;
 		const envToken = AccessToken.from(GH_TOKEN ?? "");
-		return new GitHubAdapter(review, envToken.success ? envToken.data : null);
+		return new GitHubAdapter(
+			review,
+			envToken.success ? githubTokenOf(envToken.data) : null,
+		);
 	}
 	static fromWithToken(
 		review: GithubPullRequest,
 		token: AccessToken,
 	): GitHubAdapter {
-		return new GitHubAdapter(review, token);
+		return new GitHubAdapter(review, githubTokenOf(token));
 	}
 	host(): GitHub {
 		return this.#review.host();
 	}
 	#requestInit(): { readonly headers: Readonly<Record<string, string>> } {
 		return isNullOrEmpty(this.#token)
-			? { headers: {} }
+			? { headers: { accept: "application/json" } }
 			: this.#token.requestInit();
 	}
 	async #refuse(headCommit: HeadCommit, reason: Summary): Promise<Summary> {
@@ -86,6 +93,14 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 			host.number,
 			init,
 		);
+		if (!isJsonResponse(prRes)) {
+			return {
+				kind: "host-error",
+				host,
+				status: prRes.status,
+				reason: hostErrorReason("GitHub", "GH_TOKEN", prRes, this.#token),
+			};
+		}
 		const pr = prRes.data as PullRequest;
 		const headCommit = headCommitOf(pr);
 		const change = changeOf(host, pr);
@@ -93,6 +108,15 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 			checksListForRef(host.owner, host.repository, headCommit, {}, init),
 			pullsListReviews(host.owner, host.repository, host.number, {}, init),
 		]);
+		const failed = [checksRes, reviewsRes].find((res) => !isJsonResponse(res));
+		if (failed) {
+			return {
+				kind: "host-error",
+				host,
+				status: failed.status,
+				reason: hostErrorReason("GitHub", "GH_TOKEN", failed, this.#token),
+			};
+		}
 		const reviews = reviewsRes.data;
 		const already = postedAt(reviews, headCommit);
 		if (!isNullOrEmpty(already)) {

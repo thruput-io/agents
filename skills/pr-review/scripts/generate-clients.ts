@@ -11,6 +11,11 @@ type JsonValue =
 
 const UTF8_BOM = /^\uFEFF/u;
 
+const MUTATOR = {
+	path: "./scripts/domain/json-fetch.ts",
+	name: "jsonFetch",
+} as const;
+
 const prepareSpec = (source: string, generated: string): string => {
 	const raw = readFileSync(source, "utf8").replace(UTF8_BOM, "");
 	const cleaned = JSON.parse(raw, (key, value: JsonValue) =>
@@ -34,6 +39,7 @@ await generate({
 		mode: "single",
 		baseUrl: "https://api.github.com",
 		override: {
+			mutator: MUTATOR,
 			contentType: {
 				exclude: [""],
 			},
@@ -73,6 +79,7 @@ await generate({
 		mode: "single",
 		baseUrl: "https://dev.azure.com",
 		override: {
+			mutator: MUTATOR,
 			mock: {
 				exactOptional: true,
 				required: true,
@@ -109,6 +116,7 @@ await generate({
 		mode: "single",
 		baseUrl: "https://dev.azure.com",
 		override: {
+			mutator: MUTATOR,
 			mock: {
 				exactOptional: true,
 				required: true,

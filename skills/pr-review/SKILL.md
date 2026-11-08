@@ -18,9 +18,10 @@ Operate `MainAgentController` (`scripts/domain/controller.ts`) as the orchestrat
 ## 1. Main Agent — Prepare
 
 1. Instantiate the controller with `MainAgentController.withRunner(runner)` (or `MainAgentController.create()`).
-2. Choose a workspace path `<workdir>` suited to your environment, wrap it with `Workdir.from(workdir)`, and call `controller.prepare(url, workdir)` with `<url>`.
+2. Choose a workspace path `<workdir>` suited to your environment, wrap it with `Workdir.from(workdir)`, and call `controller.prepare(url, workdir)` with `<url>` (or, if a token was explicitly provided, wrap it with `AccessToken.from(rawToken)` from `scripts/domain/access-token.ts` and call `controller.prepareWithToken(url, workdir, token.data)`).
 3. Handle the returned `PrepareResult`:
-   - **`{ success: false, error: { kind: 'invalid-target', error } }`** (or `Workdir.from` failure): Diagnose the failure—fix `<workdir>`, normalize `<url>`, or test `<url>` with `git`, `gh`, or `az`—and call `prepare` again.
+   - **`{ success: false, error: { kind: 'invalid-target', error } }`** (or `Workdir.from` / `AccessToken.from` failure): Diagnose the failure—fix `<workdir>`, normalize `<url>`, or test `<url>` with `git`, `gh`, or `az`—and call `prepare` or `prepareWithToken` again.
+   - **`{ success: false, error: { kind: 'host-error', host, status, reason } }`**: If access was rejected (e.g. `403`, `401`, or `203`) and no token was explicitly passed yet, you may—if permitted by your assigned permissions and instructions—instantiate `AccessToken.from(rawToken)` and retry with `controller.prepareWithToken(url, workdir, token.data)`; otherwise report `host`, `status`, and `reason` to the user and stop.
    - **`{ success: false, error: { kind: 'refused' | 'too-large' | 'already-reviewed', ... } }`**: Report the refusal or status message to the user and stop.
    - **`{ success: true, data }`**: Proceed immediately to Step 2.
 

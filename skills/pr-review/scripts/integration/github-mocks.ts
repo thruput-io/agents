@@ -63,6 +63,17 @@ export function createFailedGitHubChecksHandler(name: string) {
 	});
 }
 
+export function createForbiddenHtmlGitHubHandler() {
+	return http.get(
+		"https://api.github.com/repos/:owner/:repo/pulls/:pull_number",
+		() =>
+			new HttpResponse("<!DOCTYPE html><html>Forbidden</html>", {
+				status: 403,
+				headers: { "content-type": "text/html; charset=utf-8" },
+			}),
+	);
+}
+
 export function createInProgressGitHubChecksHandlers(
 	name: string,
 	postedReviews: string[],
