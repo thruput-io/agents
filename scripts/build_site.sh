@@ -13,8 +13,10 @@ npx --yes @sourcemeta/jsonschema@17.0.0 validate \
   "build/site/_data/release.yml" --resolve "$PROJECT_ROOT/schemas"
 
 BUNDLE_GEMFILE="$PROJECT_ROOT/Gemfile" bundle exec jekyll build --source "build/site" --destination "build/_site"
-npx --yes --package vnu-jar@26.10.12 vnu --verbose "build/_site"
+npx --yes --package vnu-jar@26.10.12 vnu --skip-non-html --also-check-css --also-check-svg --verbose "build/_site"
 lychee  --verbose\
         --no-progress\
         --include-fragments\
-        --root-dir "build/_site"
+        --extensions html,css,json\
+        --root-dir "build/_site"\
+        "build/_site"
