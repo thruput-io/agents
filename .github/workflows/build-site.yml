@@ -51,6 +51,7 @@ jobs:
           args: >-
             --verbose
             --no-progress
+            --offline
             --include-fragments
             --extensions html,css,json
             --root-dir '${{ env.PROJECT_ROOT }}/_site'
