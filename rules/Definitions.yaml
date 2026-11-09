@@ -84,12 +84,12 @@ definitions:
     A type in the domain layer that models a business concept and upholds its own invariants: [[Immutable]], created only through its [[Validating path of creation]], and operated on only through other domain objects.
 - id: Encapsulated type
   specification: |
-    A [[Class]] into which one or more [[Raw value]]s are folded at the [[Perimeter]], named for what the values mean rather than for their shape, with a single [[Validating path of creation]], and [[Immutable]]. Inside our code it is never collapsed back into raw values; it becomes another type only through a verified conversion, and at an outbound [[Perimeter]] a contract of the type folds it into the [[Foreign shape]]. Kept opaque, no code depends on its internal representation.
+    A [[Class]] into which one or more [[Primitive]]s are folded at the [[Perimeter]], named for what the values mean rather than for their shape, with a single [[Validating path of creation]], and [[Immutable]]. Inside our code it is never collapsed back into [[Primitive]]s; it becomes another type only through a verified conversion, and at an outbound [[Perimeter]] a contract of the type folds it into the [[Foreign shape]]. Kept opaque, no code depends on its internal representation.
   openEnumerationOf:
   - Domain primitive
 - id: Domain primitive
   specification: |
-    The special case where a single [[Raw value]] is wrapped.
+    The special case where a single [[Primitive]] is wrapped.
 - id: Loose type
   specification: |
     The shape of a variable, defined so loosely that it admits [[Illegal state]]s by design, the opposite of [[Make illegal states unrepresentable]]. Its looseness shows in the type's cardinality, which every field and every open choice multiplies while the legal states stay few.
@@ -410,9 +410,6 @@ definitions:
 - id: Runtime check
   specification: |
     A check on a value while the program runs, for a condition a type or a [[Static code analysis]] could have rejected before it ran.
-- id: Raw value
-  specification: |
-    A value carried by a [[Primitive]], with no meaning of its own.
 - id: Foreign shape
   specification: |
     The form in which [[Code We Cannot Control]] represents a value.
@@ -519,12 +516,9 @@ definitions:
 - id: Raw collection
   specification: |
     A plain list, set, or map exposed directly, so callers can change it without going through its owner.
-- id: Anonymous data type
-  specification: |
-    A type with no bounded context outside of a [[Perimeter]], including language literals and built-in scalar types (such as integers, strings, or booleans) as well as general-purpose value types (such as `Money`, `Date`, or `Span`).
 - id: Primitive
   specification: |
-    In this context, any [[Anonymous data type]]: a type with no bounded context outside of a [[Perimeter]], whether a built-in language literal or a general-purpose value type such as `Money`, `Date`, or `Span`.
+    A type—or a value of such a type—with no bounded context. All language literals and built-in scalars (such as integers, strings, or booleans) automatically fall into this category, along with general-purpose value types (such as `Money`, `Date`, or `Span`) that carry no domain-specific [[Invariant]]s.
 - id: Layer
   specification: |
     A horizontal slice of an architecture that groups code with the same responsibility and depends only in one declared direction.

@@ -161,9 +161,9 @@ rules:
   group: Types
   parent: No Primitive Obsession
   body: |
-    Wrap a [[Raw value]] in its [[Domain primitive]] before it crosses any [[Interface]] of ours.
+    Wrap a [[Primitive]] in its [[Domain primitive]] before it crosses any [[Interface]] of ours.
   smells:
-  - A [[Raw value]] in a domain [[Signature]].
+  - A [[Primitive]] in a domain [[Signature]].
 - id: Exhaustive matching
   marker: MUST
   group: Domain Model
@@ -203,7 +203,7 @@ rules:
   body: |
     Access a [[Domain object]] only through methods that accept and return [[Domain object]]s, the [[Validating factory]] at the [[Perimeter]] excepted.
   smells:
-  - An [[Anonymous data type]] or [[Primitive]] in the [[Interface]] of a [[Component]] outside of a [[Perimeter]].
+  - A [[Primitive]] in the [[Interface]] of a [[Component]] outside of a [[Perimeter]].
 - id: Domain operations
   marker: MUST
   group: Domain Model
