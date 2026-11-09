@@ -353,7 +353,7 @@ rules:
   group: Tests
   parent: No grey tests
   body: |
-    Include more than one [[Subject under test]] or test the composition of objects within a [[Unit test]] or a [[Narrow integration test]].
+    Include more than one [[Subject under test]] in a [[Unit test]], [[Narrow integration test]], or [[Integration test]], or test the composition of objects within a [[Unit test]] or a [[Narrow integration test]].
 - id: No test case coupling
   marker: MUST NOT
   group: Tests
