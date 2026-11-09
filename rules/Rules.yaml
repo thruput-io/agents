@@ -114,7 +114,7 @@ rules:
   smells:
   - A [[Production code]] [[Component]] longer than 200 lines.
   - A [[Function]] or [[Public method]] with more than 3 parameters.
-  - An [[Interface]] with more than 4 [[Public method]]s.
+  - An [[Interface]] with more than 4 [[Public method]]s, not counting [[Overload]]s or convenience methods.
 - id: Validating factory
   marker: MUST
   group: Types
@@ -176,14 +176,14 @@ rules:
   parent: Make illegal states unrepresentable
   body: |
     Route every state change of an [[Aggregate]] through a [[Domain method]] that re-establishes its [[Invariant]]s.
-  smells:
-  - An exposed [[Setter]] or [[Raw collection]] on an [[Aggregate]].
 - id: No mutators
   marker: MUST NOT
   group: Domain Model
   parent: Immutable by default
   body: |
     Expose a [[Setter]] or any operation that changes a [[Domain object]] in place. A change returns a new [[Instance]] that passes the [[Validating path of creation]] again.
+  smells:
+  - An exposed [[Setter]] or [[Raw collection]] on an [[Aggregate]].
 - id: No unwrapping
   marker: MUST NOT
   group: Domain Model
@@ -202,6 +202,8 @@ rules:
   parent: Make illegal states unrepresentable
   body: |
     Access a [[Domain object]] only through methods that accept and return [[Domain object]]s, the [[Validating factory]] at the [[Perimeter]] excepted.
+  smells:
+  - An [[Anonymous data type]] or [[Primitive]] in the [[Interface]] of a [[Component]] outside of a [[Perimeter]].
 - id: Domain operations
   marker: MUST
   group: Domain Model
@@ -233,10 +235,10 @@ rules:
   group: Domain Model
   parent: Separation of Concerns
   body: |
-    Isolate [[Domain object]] representations in their own [[Component]] (folder, module, or project) separated from transport [[Foreign shape]]s and [[Framework]] code, with no dependencies on other [[Component]]s in the project, using [[Interface]] abstractions that hide concerns of technical character.
+    Isolate [[Domain object]] representations in their own [[Module]] separated from transport [[Foreign shape]]s and [[Framework]] code, with no dependencies on other [[Module]]s in the project, using [[Interface]] abstractions that hide concerns of technical character.
   smells:
-  - "[[Domain object]]s placed in the same [[Component]] (folder, module, or project) as transport [[Foreign shape]]s or [[Framework]] code."
-  - A [[Domain object]] or domain [[Component]] that references or depends on other [[Component]]s in the project, a [[Framework]], or transport [[Foreign shape]]s.
+  - "[[Domain object]]s placed in the same [[Module]] as transport [[Foreign shape]]s or [[Framework]] code."
+  - A [[Domain object]] or domain [[Module]] that references or depends on other [[Module]]s in the project, a [[Framework]], or transport [[Foreign shape]]s.
   - An [[Interface]] in the domain [[Layer]] that exposes technical concerns rather than hiding them behind domain concepts.
 - id: No primitive leakage
   marker: MUST
@@ -279,7 +281,7 @@ rules:
   group: Failure Handling
   parent: Fail fast
   body: |
-    Discard a command's non-zero [[Exit status]] so that a failure passes as success.
+    Discard or ignore a failed [[Exit status]], error return value, or faulted operation so that a failure passes as success.
 - id: No discarded diagnostics
   marker: MUST NOT
   group: Failure Handling
@@ -297,7 +299,7 @@ rules:
   group: Failure Handling
   parent: Fail fast
   body: |
-    Proceed with stale, partial, or assumed input after the step that produces it failed with a non-zero [[Exit status]] or [[Exception]]; report and stop.
+    Proceed with stale, partial, or assumed input after the step that produces it failed with a failed [[Exit status]] or [[Exception]]; report and stop.
 - id: Linear deterministic code
   marker: MUST NOT
   group: Failure Handling
@@ -315,13 +317,13 @@ rules:
   group: Tests
   parent: Never trust a test you haven't seen fail
   body: |
-    Write [[Test]]s that discard return values just to increase [[Code coverage]].
+    Write [[Test]]s that discard return values, or make [[Assertion]]s on generalizations such as the presence or type of the asserted value, just to increase [[Code coverage]].
 - id: Assert values
   marker: MUST
   group: Tests
   parent: F.I.R.S.T.
   body: |
-    Make an [[Assertion]] on the actual returned values — not merely that no error occurred.
+    Make an [[Assertion]] on the actual returned values — not merely that no error occurred, or on generalizations such as the presence or type of the asserted value.
 - id: Add tests for new code
   marker: MUST
   group: Tests

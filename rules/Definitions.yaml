@@ -476,7 +476,7 @@ definitions:
     The operation a language runs to create and initialise a new instance of a type.
 - id: Module
   specification: |
-    Alias for [[Component]].
+    A [[Component]] that forms a namespace and, where the language supports it, a compile-time dependency boundary—such as a project or assembly in C#, a package in Go, a crate in Rust, or a module in Java or TypeScript—that decides which of its parts are visible outside it and which other modules it may reference.
 - id: Signature
   specification: |
     The declared parameter types and return type of a function or method.
@@ -519,9 +519,12 @@ definitions:
 - id: Raw collection
   specification: |
     A plain list, set, or map exposed directly, so callers can change it without going through its owner.
+- id: Anonymous data type
+  specification: |
+    A type with no bounded context outside of a [[Perimeter]], including language literals and built-in scalar types (such as integers, strings, or booleans) as well as general-purpose value types (such as `Money`, `Date`, or `Span`).
 - id: Primitive
   specification: |
-    A built-in general-purpose type of a language, such as an integer, string, or boolean.
+    In this context, any [[Anonymous data type]]: a type with no bounded context outside of a [[Perimeter]], whether a built-in language literal or a general-purpose value type such as `Money`, `Date`, or `Span`.
 - id: Layer
   specification: |
     A horizontal slice of an architecture that groups code with the same responsibility and depends only in one declared direction.
@@ -545,7 +548,7 @@ definitions:
     A second way of doing the same work, tried when the first one fails.
 - id: Exit status
   specification: |
-    The number a process returns when it ends; zero means success, anything else failure.
+    The outcome returned by a process, command, or operation indicating whether it succeeded or failed, such as a process exit code, an error return value, or a faulted task.
 - id: Error output
   specification: |
     The separate output stream a program writes its error messages and diagnostics to.
