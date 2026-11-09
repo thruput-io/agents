@@ -179,13 +179,13 @@ definitions:
     Catching a defect by analysing the code before it runs, with a linter or another static tool.
 - id: Unit test
   specification: |
-    Catching a defect by exercising one [[Component]] in-process, without an [[External dependency]].
+    Catching a defect by exercising one [[Subject under test]] in-process, without an [[External dependency]].
 - id: Narrow integration test
   specification: |
-    A [[Unit test]] without the in-process requirement: one [[Component]] exercised against a real instance of the [[External dependency]] it talks to, such as a repository against a database in a container ([Martin Fowler, IntegrationTest](https://martinfowler.com/bliki/IntegrationTest.html)).
+    A [[Unit test]] without the in-process requirement: one [[Subject under test]] exercised against a real instance of the [[External dependency]] it talks to, such as a repository against a database in a container ([Martin Fowler, IntegrationTest](https://martinfowler.com/bliki/IntegrationTest.html)).
 - id: Integration test
   specification: |
-    A [[Test]] running the shipped [[Runtime artifact]] and testing it through its public [[API]]s using [[Black-box testing]], with [[External dependency]] instances emulated via their official containers, or second-best containers as production-like as possible.
+    A [[Test]] of one [[Subject under test]]—the shipped [[Runtime artifact]]—running and tested through its public [[API]]s using [[Black-box testing]], with [[External dependency]] instances emulated via their official containers, or second-best containers as production-like as possible.
 - id: End-to-end test
   specification: |
     Catching a defect by exercising fully deployed services in a running staging environment.
