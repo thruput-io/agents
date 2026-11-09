@@ -185,7 +185,7 @@ definitions:
     A [[Unit test]] without the in-process requirement: one [[Component]] exercised against a real instance of the [[External dependency]] it talks to, such as a repository against a database in a container ([Martin Fowler, IntegrationTest](https://martinfowler.com/bliki/IntegrationTest.html)).
 - id: Integration test
   specification: |
-    Catching a defect by testing the shipped [[Runtime artifact]] through its public [[API]]s using [[Black-box testing]], mimicking all [[External system]]s primarily via containers.
+    A [[Test]] running the shipped [[Runtime artifact]] and testing it through its public [[API]]s using [[Black-box testing]], with [[External dependency]] instances emulated via their official containers, or second-best containers as production-like as possible.
 - id: End-to-end test
   specification: |
     Catching a defect by exercising fully deployed services in a running staging environment.
