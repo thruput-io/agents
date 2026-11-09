@@ -16,7 +16,7 @@ rules:
   group: Purpose
   parent: Code as a Subset of the Purpose
   body: |
-    Trace every part of the change to the part of the stated [[Purpose]] it solves.
+    Trace every part of the [[Change]] to the part of the stated [[Purpose]] it solves.
 - id: Nothing beyond the Purpose
   marker: MUST NOT
   group: Purpose
@@ -26,9 +26,27 @@ rules:
 - id: No speculative portability
   marker: MUST NOT
   group: Purpose
-  parent: Fail fast
+  parent: You aren't gonna need it
   body: |
     Add platform, shell, or environment [[Compatibility branch]]es for [[Environment]]s the task does not run in.
+- id: Keep pull requests small
+  marker: MUST
+  group: Purpose
+  parent: Make it work, make it right, make it fast
+  body: |
+    Keep every [[Pull request]] small enough to merge quickly without diverging from the main branch.
+  smells:
+  - A [[Pull request]] larger than 400 lines.
+- id: Make it work first
+  marker: MUST
+  group: Purpose
+  parent: Make it work, make it right, make it fast
+  body: |
+    Deliver working behaviour for the stated [[Purpose]] before refactoring structure or optimising [[Performance]].
+  smells:
+  - Using [[Feature toggle]]s instead of shipping a small working slice.
+  - Preparations for future extensions of a [[Component]] not already laid out in a well-researched plan.
+  - A [[Pull request]] more than 3 days old that is still not merged.
 - id: No platform feature where reuse serves
   marker: MUST NOT
   group: Reuse
@@ -64,31 +82,39 @@ rules:
   group: Reuse
   parent: Choose boring technology
   body: |
-    Adopt existing code only where it is stable, documented, and maintained by several active contributors.
+    Adopt existing code only where it is a [[Maintained library or framework]] that is stable, documented, and maintained by several active contributors.
 - id: No second representation
   marker: MUST NOT
   group: Reuse
   parent: Don't Repeat Yourself
   body: |
-    Add a second [[Representation]] of knowledge the codebase already holds; a copy that must be kept in step with its original is the smell.
+    Add a second [[Representation]] of knowledge the codebase already holds.
+  smells:
+  - A copy of a [[Representation]] that must be kept in step with its original.
 - id: Consistent with the codebase
   marker: MUST
   group: Conventions
   parent: Convention Over Novelty
   body: |
-    Follow the [[Surrounding code]] where no [[Demonstrable standard]] decides the question; a second way of doing the same thing is the smell.
+    Follow the [[Surrounding code]] where no [[Demonstrable standard]] decides the question.
+  smells:
+  - A second way of doing the same thing in the [[Surrounding code]].
 - id: Demonstrable, not recalled
   marker: MUST
   group: Conventions
   parent: Convention Over Novelty
   body: |
     Point at a [[Demonstrable standard]] whenever you invoke a standard as justification. Novel work is not required to cite a standard it does not have.
-- id: File too large
-  marker: MUST NOT
+- id: Single-purpose components
+  marker: MUST
   group: Conventions
   parent: Less is more
   body: |
-    Keep a [[Production code]] file longer than 200 lines; a file that long holds more than one concern.
+    Decompose [[Production code]] into small, single-purpose [[Component]]s.
+  smells:
+  - A [[Production code]] [[Component]] longer than 200 lines.
+  - A [[Function]] or [[Public method]] with more than 3 parameters.
+  - An [[Interface]] with more than 4 [[Public method]]s, not counting [[Overload]]s or convenience methods.
 - id: Validating factory
   marker: MUST
   group: Types
@@ -113,24 +139,31 @@ rules:
   parent: Make illegal states unrepresentable
   body: |
     Enumerate the legal alternatives as a closed [[Sum type]] rather than a [[Product type]] of optional fields.
-- id: Enums for domain states
+- id: Closed enumerations
   marker: MUST
   group: Types
   parent: Make illegal states unrepresentable
   body: |
-    Name every legal state with a closed [[Enum]]; a boolean or free-form string for a state is the smell.
+    Model every legal domain state as a closed enumeration of [[Encapsulated type]]s with belonging [[Domain method]]s and possible transitions.
+  smells:
+  - A boolean, free-form string, or [[Pure enum]] representing a domain state.
+  - "[[Branching]] outside of a [[Perimeter]] fold."
 - id: Compile-time optionality
   marker: MUST
   group: Types
   parent: Make illegal states unrepresentable
   body: |
-    Make absence an explicit case the [[Compiler]] forces every caller to handle; a [[Runtime check]] for absence is the smell.
+    Make absence an explicit case the [[Compiler]] forces every caller to handle.
+  smells:
+  - A [[Runtime check]] for absence.
 - id: Wrap primitives
   marker: MUST
   group: Types
   parent: No Primitive Obsession
   body: |
-    Wrap a [[Raw value]] in its [[Domain primitive]] before it crosses any interface of ours; a raw value in a domain [[Signature]] is the smell.
+    Wrap a [[Primitive]] in its [[Domain primitive]] before it crosses any [[Interface]] of ours.
+  smells:
+  - A [[Primitive]] in a domain [[Signature]].
 - id: Exhaustive matching
   marker: MUST
   group: Domain Model
@@ -142,13 +175,15 @@ rules:
   group: Domain Model
   parent: Make illegal states unrepresentable
   body: |
-    Route every state change of an [[Aggregate]] through a [[Domain method]] that re-establishes its [[Invariant]]s; an exposed [[Setter]] or [[Raw collection]] is the smell.
+    Route every state change of an [[Aggregate]] through a [[Domain method]] that re-establishes its [[Invariant]]s.
 - id: No mutators
   marker: MUST NOT
   group: Domain Model
   parent: Immutable by default
   body: |
     Expose a [[Setter]] or any operation that changes a [[Domain object]] in place. A change returns a new [[Instance]] that passes the [[Validating path of creation]] again.
+  smells:
+  - An exposed [[Setter]] or [[Raw collection]] on an [[Aggregate]].
 - id: No unwrapping
   marker: MUST NOT
   group: Domain Model
@@ -167,18 +202,44 @@ rules:
   parent: Make illegal states unrepresentable
   body: |
     Access a [[Domain object]] only through methods that accept and return [[Domain object]]s, the [[Validating factory]] at the [[Perimeter]] excepted.
+  smells:
+  - A [[Primitive]] in the [[Interface]] of a [[Component]] outside of a [[Perimeter]].
 - id: Domain operations
   marker: MUST
   group: Domain Model
   parent: Make illegal states unrepresentable
   body: |
     Perform comparison, addition, subtraction, or any other domain operation via [[Domain method]]s.
+- id: Branching belongs at the perimeter
+  marker: MUST
+  group: Domain Model
+  parent: Replace conditional with polymorphism
+  body: |
+    Use a [[Factory]] with [[Inheritance]], a [[Feature]], a [[Strategy]], or a [[Builder]] instead of a boolean or [[Pure enum]].
+  smells:
+  - "[[Branching]] outside of a [[Perimeter]] fold."
+- id: Tell, don't ask
+  marker: MUST NOT
+  group: Domain Model
+  parent: Replace conditional with polymorphism
+  body: |
+    Query a [[Domain object]]'s state to decide how to act upon it instead of invoking a [[Domain method]] on it.
 - id: Respect layering
   marker: MUST NOT
   group: Domain Model
   parent: Separation of Concerns
   body: |
     Import or call against the [[Dependency direction]] the architecture declares: from a [[Layer]] into the layer above it, or skipping a layer.
+- id: Domain separated from transport and framework
+  marker: MUST
+  group: Domain Model
+  parent: Separation of Concerns
+  body: |
+    Isolate [[Domain object]] representations in their own [[Module]] separated from transport [[Foreign shape]]s and [[Framework]] code, with no dependencies on other [[Module]]s in the project, using [[Interface]] abstractions that hide concerns of technical character.
+  smells:
+  - "[[Domain object]]s placed in the same [[Module]] as transport [[Foreign shape]]s or [[Framework]] code."
+  - A [[Domain object]] or domain [[Module]] that references or depends on other [[Module]]s in the project, a [[Framework]], or transport [[Foreign shape]]s.
+  - An [[Interface]] in the domain [[Layer]] that exposes technical concerns rather than hiding them behind domain concepts.
 - id: No primitive leakage
   marker: MUST
   group: Domain Model
@@ -220,7 +281,7 @@ rules:
   group: Failure Handling
   parent: Fail fast
   body: |
-    Discard a command's non-zero [[Exit status]] so that a failure passes as success.
+    Discard or ignore a failed [[Exit status]], error return value, or faulted operation so that a failure passes as success.
 - id: No discarded diagnostics
   marker: MUST NOT
   group: Failure Handling
@@ -238,31 +299,31 @@ rules:
   group: Failure Handling
   parent: Fail fast
   body: |
-    Proceed with stale, partial, or assumed input after the step that produces it failed; report and stop.
+    Proceed with stale, partial, or assumed input after the step that produces it failed with a failed [[Exit status]] or [[Exception]]; report and stop.
 - id: Linear deterministic code
   marker: MUST NOT
   group: Failure Handling
   parent: Fail fast
   body: |
-    Write test, build, or configuration code that contains [[Branching logic]] or fallback [[Default value]]s, such as, but not limited to, `if` statements, `switch`/`case` expressions, or defaulted values.
+    Write test, build, or configuration code that contains [[Branching logic]] or fallback [[Default value]]s, such as, but not limited to, `if` [[Statement]]s, `switch`/`case` expressions, or defaulted values.
 - id: No muted tests
   marker: MUST NOT
   group: Tests
   parent: Test-Driven Development
   body: |
-    Mute or skip [[Test]]s.
+    Leave a [[Muted test]] or skip [[Test]]s.
 - id: No coverage-only tests
   marker: MUST NOT
   group: Tests
   parent: Never trust a test you haven't seen fail
   body: |
-    Write [[Test]]s that discard return values just to increase [[Code coverage]].
+    Write [[Test]]s that discard return values, or make [[Assertion]]s on generalizations such as the presence or type of the asserted value, just to increase [[Code coverage]].
 - id: Assert values
   marker: MUST
   group: Tests
   parent: F.I.R.S.T.
   body: |
-    Make an [[Assertion]] on the actual returned values — not merely that no error occurred.
+    Make an [[Assertion]] on the actual returned values — not merely that no error occurred, or on generalizations such as the presence or type of the asserted value.
 - id: Add tests for new code
   marker: MUST
   group: Tests
@@ -292,7 +353,7 @@ rules:
   group: Tests
   parent: No grey tests
   body: |
-    Include more than one [[Subject under test]] or test the composition of objects within a [[Unit test]] or a [[Narrow integration test]].
+    Include more than one [[Subject under test]] in a [[Unit test]], [[Narrow integration test]], or [[Integration test]], or test the composition of objects within a [[Unit test]] or a [[Narrow integration test]].
 - id: No test case coupling
   marker: MUST NOT
   group: Tests
@@ -304,7 +365,7 @@ rules:
   group: Tests
   parent: No grey tests
   body: |
-    Test the shipped [[Runtime artifact]] through its public [[API]]s, as a black box.
+    Test the shipped [[Runtime artifact]] through its public [[API]]s using [[Black-box testing]].
 - id: Test setup leaves production code alone
   marker: MUST NOT
   group: Toolchain & Environment
@@ -316,19 +377,19 @@ rules:
   group: Toolchain & Environment
   parent: The Toolchain Is the Guardrail
   body: |
-    Change global or project-wide [[Lint rule]]s, except in a pull request that contains only that change.
+    Change global or project-wide [[Lint rule]]s, except in a [[Pull request]] that contains only that [[Change]].
 - id: No global quality changes
   marker: MUST NOT
   group: Toolchain & Environment
   parent: The Toolchain Is the Guardrail
   body: |
-    Change global or project-wide [[Quality]] standards, except in a pull request that contains only that change.
+    Change global or project-wide [[Quality]] standards, except in a [[Pull request]] that contains only that [[Change]].
 - id: No local disabling of lint rules
   marker: MUST NOT
   group: Toolchain & Environment
-  parent: Push tests down the pyramid
+  parent: The Toolchain Is the Guardrail
   body: |
-    Disable a [[Lint rule]] locally, by a comment, a [[Pragma]], or alike. An exception the team accepts is expressed globally, by a file filter in the lint configuration or alike.
+    Disable a [[Lint rule]] locally, by a comment, a [[Pragma]], or alike. An exception the team accepts is expressed globally, by a [[File]] filter in the lint configuration or alike.
 - id: No check the type system makes
   marker: MUST NOT
   group: Test Pyramid
@@ -374,7 +435,7 @@ rules:
 - id: Strict presets
   marker: MUST
   group: Toolchain & Environment
-  parent: Push tests down the pyramid
+  parent: The Toolchain Is the Guardrail
   body: |
     Use the strictest possible [[Preset]]s on linting and style.
 - id: No optionality
@@ -386,7 +447,7 @@ rules:
 - id: Prefer APIs without optionality
   marker: MUST
   group: Contracts
-  parent: Fold at Perimeter
+  parent: Avoid optionality
   body: |
     Choose, among [[Code We Cannot Control]] that meets the need, an [[API]] without [[Optional parameter]]s over one with them.
 - id: Overload per option combination
@@ -406,19 +467,22 @@ rules:
   group: Contracts
   parent: Prepare reader for evolving producer
   body: |
-    Accept input that carries properties you do not know, and ignore them.
+    Accept a [[Foreign shape]] that carries properties you do not know, and ignore them.
 - id: Generic parameters, specific returns
   marker: MUST
   group: Contracts
   parent: Prepare reader for evolving producer
   body: |
-    Declare the most generic [[Parameter type]]s and the most specific [[Return type]] a method can honour.
+    Declare the most generic [[Parameter type]]s and the most specific [[Return type]] a [[Public method]] can honour.
 - id: Shapes live in the contract
   marker: MUST
   group: Contracts
   parent: Contract First
   body: |
-    Define a shape that crosses a boundary in the [[Contract]] and derive the code on both sides from it; a shape defined only in code, or a change to a shape that leaves the contract unchanged, is the smell.
+    Define a shape that crosses a boundary in the [[Contract]] and derive the code on both sides from it.
+  smells:
+  - A shape that crosses a boundary defined only in code without a [[Contract]].
+  - A [[Change]] to a boundary shape that leaves the [[Contract]] unchanged.
 - id: No unstated standard
   marker: MUST NOT
   group: Conventions
@@ -430,7 +494,7 @@ rules:
   group: Toolchain & Environment
   parent: Infrastructure as Code
   body: |
-    Keep clone, build, and test of the entire stack to one documented command.
+    Keep clone, build, and [[Test]] of the entire [[Environment]] to one documented command.
 - id: No manual environment setup
   marker: MUST NOT
   group: Toolchain & Environment
@@ -442,22 +506,24 @@ rules:
   group: Toolchain & Environment
   parent: Infrastructure as Code
   body: |
-    Script a procedure the second time it is performed; a manual procedure written down to be repeated is the smell.
+    Script a procedure for [[Automation]] the second time it is performed.
+  smells:
+  - A manual procedure written down to be repeated instead of scripted for [[Automation]].
 - id: Ship with telemetry
   marker: MUST
   group: Toolchain & Environment
   parent: Own the Runtime
   body: |
-    Add the [[Signal]] in the change that adds the behaviour it shows.
+    Add the [[Signal]] in the [[Change]] that adds the behaviour it shows.
 - id: No iteration over calls over the network
   marker: MUST NOT
   group: Performance
   parent: Iterations over calls over the network is bad design
   body: |
     Iterate over [[Calls over the network]].
-- id: No performance claim without measurement or IO reduction
+- id: No performance motivations on in-memory operations
   marker: MUST NOT
   group: Performance
-  parent: Code without calls over the network humans cannot optimize
+  parent: Make it work, make it right, make it fast
   body: |
-    Attribute any code changes to performance without it is reducing [[Calls over the network]] or having a named measurement as [[Evidence]].
+    Motivate any [[Change]] by [[Performance]] on [[In-memory operation]]s; a performance change reduces [[Calls over the network]] or addresses a bottleneck proven by a named measurement as [[Evidence]].

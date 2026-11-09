@@ -25,6 +25,7 @@ import {
 } from "./rulebook.ts";
 import { FILE_TOO_LARGE, IndexSchema, withText } from "./ruleset.ts";
 import type { ProbeDocument } from "./sub-agent-controller.ts";
+import type { PersistedAudit } from "./workdir.ts";
 
 export interface NamedProbe {
 	readonly name: string;
@@ -126,4 +127,36 @@ export async function loadBundledProbes(
 			auditDocument: toAgentInstructions(probe),
 		};
 	});
+}
+
+const fromAuditDocument = (document: AgentInstructions): ProbeDocument => {
+	if (document.kind === "context") {
+		return {
+			instructions: document.instructions,
+			task: document.task,
+			kind: document.kind,
+			change: document.change,
+			surface: document.surface,
+			rulesets: document.rulesets,
+		};
+	}
+	return {
+		instructions: document.instructions,
+		task: document.task,
+		kind: document.kind,
+		change: document.change,
+		surface: document.surface,
+		rulebook: nonnull(Rulebook.from(document.ruleset).data),
+		...(document.kind === "rules" ? {} : { checkout: document.checkout }),
+	};
+};
+
+export function loadPersistedProbes(
+	audits: readonly PersistedAudit[],
+): readonly NamedProbe[] {
+	return audits.map(({ name, document }) => ({
+		name,
+		probe: fromAuditDocument(document),
+		auditDocument: document,
+	}));
 }

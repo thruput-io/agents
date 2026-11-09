@@ -2,8 +2,9 @@
 set -euo pipefail
 
 PROJECT_ROOT=$(dirname "$(realpath "$0")")
+cd "$PROJECT_ROOT"
+rm -rf build
+mkdir build
 export PROJECT_ROOT
-rm -rf "$PROJECT_ROOT/build"
-mkdir "$PROJECT_ROOT/build"
 "$PROJECT_ROOT/scripts/verify.sh"
 "$PROJECT_ROOT/scripts/build_site.sh"

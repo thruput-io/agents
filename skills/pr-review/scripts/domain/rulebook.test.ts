@@ -78,14 +78,14 @@ it("rulebook hands a probe its rules, their principles and the whole glossary, a
 			marker: "MUST" as const,
 			group: "G1",
 			parent: "P",
-			body: "Do.",
+			body: "Do [[Rule term]].",
 		},
 		{
 			id: "B",
 			marker: "MUST" as const,
 			group: "G1",
 			parent: "P",
-			body: "Do.",
+			body: "Do [[Rule term]].",
 		},
 	];
 	assert.deepEqual(rulebook(own, governance), {
@@ -104,7 +104,7 @@ it("rulebook hands a probe its rules, their principles and the whole glossary, a
 						marker: "MUST",
 						group: "G1",
 						parent: "Missing",
-						body: "Do.",
+						body: "Do [[Rule term]].",
 					},
 				],
 				governance,

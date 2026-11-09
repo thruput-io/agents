@@ -4,13 +4,18 @@ import type { AdapterResolution, HostAdapter } from "./adapter.ts";
 import { HostAdapterFactory } from "./adapter-factory.ts";
 import type { CodeUnderReview } from "./code-under-review.ts";
 import type { Ledger, Outcome } from "./contracts.g.ts";
+import { runMainAgentCli } from "./controller-cli.ts";
 import {
 	type CoordinatedProbeSpec,
 	coordinateLedgers,
 	type MainAgentLedger,
 } from "./main-agent-ledger.ts";
 import { isNullOrEmpty, nonnull } from "./nullish.ts";
-import { loadBundledProbes, type NamedProbe } from "./probe-loader.ts";
+import {
+	loadBundledProbes,
+	loadPersistedProbes,
+	type NamedProbe,
+} from "./probe-loader.ts";
 import { SubAgentController } from "./sub-agent-controller.ts";
 import type { Workdir } from "./workdir.ts";
 
@@ -43,6 +48,8 @@ export type DispatchResult =
 
 interface PreparedSession {
 	readonly adapter: HostAdapter;
+	readonly pullRequest: CodeUnderReview;
+	readonly probes: readonly NamedProbe[];
 	readonly mainLedger: MainAgentLedger;
 	readonly controllers: ReadonlyMap<string, SubAgentController>;
 }
@@ -70,7 +77,7 @@ export class MainAgentController {
 		adapter: HostAdapter,
 		pullRequest: CodeUnderReview,
 		probes: readonly NamedProbe[],
-	): void {
+	): PreparedSession {
 		const specs = probes.map(({ name, probe }): CoordinatedProbeSpec => {
 			if (probe.kind === "context") {
 				return { name, kind: "context", probe };
@@ -84,18 +91,44 @@ export class MainAgentController {
 		);
 		const controllers = new Map<string, SubAgentController>();
 		for (const [index, entry] of probes.entries()) {
-			workdir.writeAudit(entry.name, entry.auditDocument);
 			const baseLedger = nonnull(ledgers[index]);
 			controllers.set(
 				entry.name,
 				SubAgentController.withLedger(workdir, baseLedger, entry.probe),
 			);
 		}
-		this.#sessions.set(workdir.toString(), {
+		const session: PreparedSession = {
 			adapter,
+			pullRequest,
+			probes,
 			mainLedger,
 			controllers,
-		});
+		};
+		this.#sessions.set(workdir.toString(), session);
+		return session;
+	}
+
+	#sessionFor(workdir: Workdir): PreparedSession {
+		const existing = this.#sessions.get(workdir.toString());
+		if (!isNullOrEmpty(existing)) {
+			const diskUpdated = existing.mainLedger
+				.pending()
+				.some(
+					(name) => !isNullOrEmpty(workdir.ledgerDirectory().readSlice(name)),
+				);
+			return diskUpdated
+				? this.#bind(
+						workdir,
+						existing.adapter,
+						existing.pullRequest,
+						existing.probes,
+					)
+				: existing;
+		}
+		const persisted = workdir.ledgerDirectory().readPullRequest();
+		const { pullRequest, adapter } = HostAdapterFactory.rehydrate(persisted);
+		const probes = loadPersistedProbes(workdir.readAudits());
+		return this.#bind(workdir, adapter, pullRequest, probes);
 	}
 
 	async #prepareWith(
@@ -123,6 +156,15 @@ export class MainAgentController {
 			surface,
 			workdir.snapshotDirectory().toString(),
 		);
+		workdir.ledgerDirectory().writePullRequest({
+			change: resolved.change,
+			surface,
+			fragments: [...resolved.snapshot.fragments()],
+			threads: resolved.snapshot.threads(),
+		});
+		for (const entry of probes) {
+			workdir.writeAudit(entry.name, entry.auditDocument);
+		}
 		this.#bind(workdir, parsedAdapter.data, resolved.snapshot, probes);
 		return { success: true, data: resolved };
 	}
@@ -143,23 +185,24 @@ export class MainAgentController {
 	}
 
 	ledger(workdir: Workdir): MainAgentLedger {
-		return nonnull(this.#sessions.get(workdir.toString())).mainLedger;
+		return this.#sessionFor(workdir).mainLedger;
 	}
 
 	async dispatch(workdir: Workdir): Promise<DispatchResult> {
-		const session = nonnull(this.#sessions.get(workdir.toString()));
+		const session = this.#sessionFor(workdir);
 		for (const name of session.mainLedger.pending()) {
 			await this.#runner(name, nonnull(session.controllers.get(name)));
 		}
-		const submittedOutcome = session.mainLedger.submittedOutcome();
+		const refreshed = this.#sessionFor(workdir);
+		const submittedOutcome = refreshed.mainLedger.submittedOutcome();
 		if (isNullOrEmpty(submittedOutcome)) {
 			return {
 				kind: "pending",
-				remaining: session.mainLedger.pending(),
+				remaining: refreshed.mainLedger.pending(),
 			};
 		}
-		const submittedLedger = nonnull(session.mainLedger.submittedLedger());
-		const location = await session.adapter.post(
+		const submittedLedger = nonnull(refreshed.mainLedger.submittedLedger());
+		const location = await refreshed.adapter.post(
 			submittedOutcome,
 			submittedLedger,
 		);
@@ -170,4 +213,22 @@ export class MainAgentController {
 			location,
 		};
 	}
+
+	dispatchWithToken(
+		workdir: Workdir,
+		token: AccessToken,
+	): Promise<DispatchResult> {
+		const persisted = workdir.ledgerDirectory().readPullRequest();
+		const { pullRequest, adapter } = HostAdapterFactory.rehydrateWithToken(
+			persisted,
+			token,
+		);
+		const probes = loadPersistedProbes(workdir.readAudits());
+		this.#bind(workdir, adapter, pullRequest, probes);
+		return this.dispatch(workdir);
+	}
+}
+
+if (import.meta.main) {
+	await runMainAgentCli(MainAgentController.create(), process.argv.slice(2));
 }

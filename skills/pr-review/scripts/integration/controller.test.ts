@@ -8,6 +8,7 @@ import {
 } from "../domain/controller.ts";
 import { jsonFetch } from "../domain/json-fetch.ts";
 import { nonnull } from "../domain/nullish.ts";
+import { SubAgentController } from "../domain/sub-agent-controller.ts";
 import {
 	createAzureAlreadyReviewedHandler,
 	createAzureExistingRefusalHandler,
@@ -457,4 +458,38 @@ it("MainAgentController.prepare reads GH_TOKEN and AZURE_DEVOPS_EXT_PAT from pro
 	} finally {
 		mockServer.events.removeListener("request:start", onRequest);
 	}
+});
+
+it("MainAgentController and SubAgentController.forWorkdir coordinate a full review across separate instances via disk persistence", async () => {
+	const azureWd = repo.workdirFor("rehydrated-azure");
+	const prepController = MainAgentController.create();
+	const prepResult = await prepController.prepareWithToken(
+		repo.azureTarget,
+		azureWd,
+		scenarioToken,
+	);
+	assert.equal(prepResult.success, true);
+
+	const statusController = MainAgentController.create();
+	const pendingProbes = statusController.ledger(azureWd).pending();
+	assert.equal(pendingProbes.length > 0, true);
+
+	const partialDispatch = await MainAgentController.create().dispatchWithToken(
+		azureWd,
+		scenarioToken,
+	);
+	assert.equal(partialDispatch.kind, "pending");
+
+	for (const probeName of pendingProbes) {
+		const sub = SubAgentController.forWorkdir(azureWd, probeName);
+		reportForProbe(sub);
+	}
+
+	const dispatchController = MainAgentController.create();
+	const submitted = await dispatchController.dispatchWithToken(
+		azureWd,
+		scenarioToken,
+	);
+	assert.equal(submitted.kind, "submitted");
+	assert.equal(submitted.outcome.verdict, "request-changes");
 });

@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test as it } from "node:test";
 import { MainAgentController } from "./controller.ts";
+import { runMainAgentCli } from "./controller-cli.ts";
 import { LedgerDirectory } from "./ledger-directory.ts";
 import { nonnull } from "./nullish.ts";
 import { CodeUnderReviewFactory } from "./review-snapshot.ts";
 import { Rulebook } from "./rulebook.ts";
+import { runSubAgentCli } from "./sub-agent-cli.ts";
 import { SubAgentController } from "./sub-agent-controller.ts";
 import { RulesSubAgentLedger } from "./sub-agent-ledger.ts";
 import { Workdir } from "./workdir.ts";
@@ -158,4 +163,84 @@ it("SubAgentController exposes instructions, change, rules, codeUnderReview, and
 	const invalidPrep = await mainController.prepare("not-a-url", workdir.data);
 	assert.equal(invalidPrep.success, false);
 	assert.equal(invalidPrep.error.kind, "invalid-target");
+});
+
+it("SubAgentController.forWorkdir rehydrates a probe from disk and coordinates slices across separate instances", () => {
+	const tempRoot = mkdtempSync(join(tmpdir(), "controller-rehydrate-"));
+	const workdir = Workdir.from(join(tempRoot, "workspace"));
+	assert.equal(workdir.success, true);
+	const rb = sampleRulebook();
+	workdir.data.ledgerDirectory().writePullRequest({
+		change: sampleChange,
+		surface: { headCommit: H, files: sampleSurface },
+		fragments: sampleFile.fragments,
+		threads: { threads: [] },
+	});
+	workdir.data.writeAudit("01-purpose", {
+		instructions: SubAgentController.forProbe(
+			workdir.data,
+			nonnull(
+				CodeUnderReviewFactory.from(
+					"https://github.com/thruput-io/agents/pull/14",
+				).data,
+			),
+			{
+				kind: "rules",
+				change: sampleChange,
+				surface: { headCommit: H, files: sampleSurface },
+				rulebook: rb,
+			},
+		)
+			.instructions()
+			.prose(),
+		task: "Probe the pull request in review against every rule in ruleset.rules and report one row per rule. Work from this document alone",
+		kind: "rules",
+		change: sampleChange,
+		surface: { headCommit: H, files: sampleSurface },
+		ruleset: rb.toRuleset(),
+	});
+	const rehydratedSub = SubAgentController.forWorkdir(
+		workdir.data,
+		"01-purpose",
+	);
+	assert.deepEqual(rehydratedSub.change(), sampleChange);
+	assert.deepEqual(rehydratedSub.codeUnderReview().surface(), sampleSurface);
+	const reportResult = rehydratedSub.report([
+		{
+			rule: "Stated purpose",
+			examined: ["a.ts"],
+			verdict: "clean",
+			evidence: "stated",
+		},
+	]);
+	assert.equal(reportResult.success, true);
+	assert.equal(reportResult.data.kind, "submitted");
+
+	const freshMain = MainAgentController.create();
+	const mainLedger = freshMain.ledger(workdir.data);
+	assert.deepEqual(mainLedger.pending(), []);
+	assert.deepEqual(mainLedger.completed(), ["01-purpose"]);
+	assert.equal(mainLedger.submittedOutcome()?.verdict, "approve");
+
+	runSubAgentCli(SubAgentController.forWorkdir, [
+		"inspect",
+		workdir.data.toString(),
+		"01-purpose",
+	]);
+	runSubAgentCli(SubAgentController.forWorkdir, [
+		"report",
+		workdir.data.toString(),
+		"01-purpose",
+		JSON.stringify([
+			{
+				rule: "Stated purpose",
+				examined: ["a.ts"],
+				verdict: "clean",
+				evidence: "stated",
+			},
+		]),
+	]);
+	runMainAgentCli(freshMain, ["status", workdir.data.toString()]);
+
+	rmSync(tempRoot, { recursive: true, force: true });
 });

@@ -8,7 +8,7 @@
 		"knip:fix": "knip --fix",
 		"lint": "biome check --error-on-warnings",
 		"lint:fix": "biome check --write --unsafe",
-		"fix": "npm run knip:fix && npm run lint:fix && npm run verify",
+		"fix": "npm run codegen && npm run knip:fix && npm run lint:fix && npm run verify",
 		"typecheck": "tsc --noEmit",
 		"test": "node --test 'scripts/**/*.test.ts'",
 		"verify": "npm run codegen && npm run knip && npm run lint && npm run typecheck && npm test"

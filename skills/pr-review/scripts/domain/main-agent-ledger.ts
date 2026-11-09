@@ -10,7 +10,7 @@ import type {
 import type { ContextProbe, RulesProbe } from "./ledger.ts";
 import type { LedgerDirectory } from "./ledger-directory.ts";
 import { merge } from "./ledger-table.ts";
-import { nonnull } from "./nullish.ts";
+import { isNullOrEmpty, nonnull } from "./nullish.ts";
 import { outcome } from "./outcome.ts";
 import type { CitationRule } from "./rulebook.ts";
 import {
@@ -119,6 +119,31 @@ export function coordinateLedgers(
 		string,
 		{ readonly ledger: Ledger; readonly outcome: Outcome }
 	>();
+	const settleIfComplete = (): {
+		readonly ledger: Ledger;
+		readonly outcome: Outcome;
+	} | null => {
+		if (recorded.size < specs.length) {
+			return null;
+		}
+		const entries = specs.map((entry, idx) => ({
+			document: entry.probe,
+			ledger: nonnull(recorded.get(idx)),
+		}));
+		const merged = merge(entries.map((entry) => entry.ledger));
+		const finalOutcome = outcome(entries, pullRequest.threads().threads);
+		const result = { ledger: merged, outcome: finalOutcome };
+		submitted.set("submitted", result);
+		return result;
+	};
+	for (const [index, spec] of specs.entries()) {
+		const existing = directory.readSlice(spec.name);
+		if (!isNullOrEmpty(existing)) {
+			recorded.set(index, existing);
+			completed.add(spec.name);
+		}
+	}
+	settleIfComplete();
 	const mainLedger = MainAgentLedger.from(directory, pullRequest, {
 		probeNames: specs.map((spec) => spec.name),
 		completed,
@@ -129,20 +154,14 @@ export function coordinateLedgers(
 			directory.writeSlice(spec.name, ledger);
 			recorded.set(index, ledger);
 			completed.add(spec.name);
-			if (recorded.size < specs.length) {
+			const settled = settleIfComplete();
+			if (isNullOrEmpty(settled)) {
 				return { kind: "recorded", ledger };
 			}
-			const entries = specs.map((entry, idx) => ({
-				document: entry.probe,
-				ledger: nonnull(recorded.get(idx)),
-			}));
-			const merged = merge(entries.map((entry) => entry.ledger));
-			const finalOutcome = outcome(entries, pullRequest.threads().threads);
-			submitted.set("submitted", { ledger: merged, outcome: finalOutcome });
 			return {
 				kind: "submitted",
-				ledger: merged,
-				outcome: finalOutcome,
+				ledger: settled.ledger,
+				outcome: settled.outcome,
 			};
 		};
 		if (spec.kind === "context") {

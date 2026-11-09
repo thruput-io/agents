@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import { HostAdapterFactory } from "./adapter-factory.ts";
 import type { CodeUnderReview } from "./code-under-review.ts";
 import type {
 	Change,
@@ -17,7 +18,14 @@ import type {
 	Surface,
 } from "./contracts.g.ts";
 import { Instructions } from "./instructions.ts";
+import {
+	type CoordinatedProbeSpec,
+	coordinateLedgers,
+} from "./main-agent-ledger.ts";
+import { nonnull } from "./nullish.ts";
+import { loadPersistedProbes } from "./probe-loader.ts";
 import type { Rulebook } from "./rulebook.ts";
+import { runSubAgentCli } from "./sub-agent-cli.ts";
 import {
 	ContextSubAgentLedger,
 	DeadCodeSubAgentLedger,
@@ -128,6 +136,37 @@ export class SubAgentController {
 		});
 	}
 
+	static forWorkdir(workdir: Workdir, name: Checkout): SubAgentController {
+		const persisted = workdir.ledgerDirectory().readPullRequest();
+		const { pullRequest } = HostAdapterFactory.rehydrate(persisted);
+		const probes = loadPersistedProbes(workdir.readAudits());
+		const specs = probes.map((entry): CoordinatedProbeSpec => {
+			if (entry.probe.kind === "context") {
+				return { name: entry.name, kind: "context", probe: entry.probe };
+			}
+			return {
+				name: entry.name,
+				kind: entry.probe.kind,
+				probe: entry.probe,
+			};
+		});
+		const { ledgers } = coordinateLedgers(
+			workdir.ledgerDirectory(),
+			pullRequest,
+			specs,
+		);
+		const index = probes.findIndex((entry) => entry.name === name);
+		if (index < 0) {
+			throw new Error(`Unknown probe: ${name}`);
+		}
+		const target = nonnull(probes[index]);
+		return SubAgentController.withLedger(
+			workdir,
+			nonnull(ledgers[index]),
+			target.probe,
+		);
+	}
+
 	workdir(): Workdir {
 		return this.#workdir;
 	}
@@ -151,4 +190,8 @@ export class SubAgentController {
 	report(rows: readonly Row[]): z.ZodSafeParseResult<LedgerSubmission> {
 		return this.#ledger.report(rows);
 	}
+}
+
+if (import.meta.main) {
+	runSubAgentCli(SubAgentController.forWorkdir, process.argv.slice(2));
 }

@@ -4,12 +4,15 @@ import type { HostAdapter } from "./adapter.ts";
 import { AzureDevOpsAdapter } from "./azure-adapter.ts";
 import {
 	AzureMergeRequest,
+	type CodeUnderReview,
 	GitDiff,
 	GithubPullRequest,
 } from "./code-under-review.ts";
 import { GitAdapter } from "./git-adapter.ts";
 import { GitHubAdapter } from "./github-adapter.ts";
 import { TargetSchema } from "./host.ts";
+import type { PersistedPullRequest } from "./ledger-directory.ts";
+import { nonnull } from "./nullish.ts";
 
 const defaultSchema = TargetSchema.pipe(
 	z.union([
@@ -48,5 +51,70 @@ export const HostAdapterFactory = {
 		token: AccessToken,
 	): z.ZodSafeParseResult<HostAdapter> {
 		return withTokenSchema(token).safeParse(url);
+	},
+	rehydrate(persisted: PersistedPullRequest): {
+		readonly pullRequest: CodeUnderReview;
+		readonly adapter: HostAdapter;
+	} {
+		const { host } = persisted.change;
+		if (host.kind === "github") {
+			const pullRequest = nonnull(GithubPullRequest.from(host).data).withReview(
+				persisted.surface.files,
+				persisted.fragments,
+				persisted.threads,
+			);
+			return { pullRequest, adapter: GitHubAdapter.from(pullRequest) };
+		}
+		if (host.kind === "azure-devops") {
+			const pullRequest = nonnull(AzureMergeRequest.from(host).data).withReview(
+				persisted.surface.files,
+				persisted.fragments,
+				persisted.threads,
+			);
+			return { pullRequest, adapter: AzureDevOpsAdapter.from(pullRequest) };
+		}
+		const pullRequest = nonnull(GitDiff.from(host).data).withReview(
+			persisted.surface.files,
+			persisted.fragments,
+			persisted.threads,
+		);
+		return { pullRequest, adapter: GitAdapter.from(pullRequest) };
+	},
+	rehydrateWithToken(
+		persisted: PersistedPullRequest,
+		token: AccessToken,
+	): {
+		readonly pullRequest: CodeUnderReview;
+		readonly adapter: HostAdapter;
+	} {
+		const { host } = persisted.change;
+		if (host.kind === "github") {
+			const pullRequest = nonnull(GithubPullRequest.from(host).data).withReview(
+				persisted.surface.files,
+				persisted.fragments,
+				persisted.threads,
+			);
+			return {
+				pullRequest,
+				adapter: GitHubAdapter.fromWithToken(pullRequest, token),
+			};
+		}
+		if (host.kind === "azure-devops") {
+			const pullRequest = nonnull(AzureMergeRequest.from(host).data).withReview(
+				persisted.surface.files,
+				persisted.fragments,
+				persisted.threads,
+			);
+			return {
+				pullRequest,
+				adapter: AzureDevOpsAdapter.fromWithToken(pullRequest, token),
+			};
+		}
+		const pullRequest = nonnull(GitDiff.from(host).data).withReview(
+			persisted.surface.files,
+			persisted.fragments,
+			persisted.threads,
+		);
+		return { pullRequest, adapter: GitAdapter.from(pullRequest) };
 	},
 } as const;
