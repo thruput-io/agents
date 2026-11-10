@@ -6,20 +6,28 @@ import {
 	type Checkout,
 	type ContextInstructions,
 	type ContextKind,
+	type ContextPermissions,
+	ContextPermissionsSchema,
 	type ContextTask,
 	ContextTaskSchema,
 	type DeadCodeInstructions,
 	type DeadCodeKind,
+	type DeadCodePermissions,
+	DeadCodePermissionsSchema,
 	type DeadCodeTask,
 	DeadCodeTaskSchema,
 	type InstructionsProse,
 	type ReuseInstructions,
 	type ReuseKind,
+	type ReusePermissions,
+	ReusePermissionsSchema,
 	type ReuseTask,
 	ReuseTaskSchema,
 	RULEBOOK_PROBE_KINDS,
 	type RulesInstructions,
 	type RulesKind,
+	type RulesPermissions,
+	RulesPermissionsSchema,
 	type RulesTask,
 	RulesTaskSchema,
 	type Surface,
@@ -32,6 +40,11 @@ type ProbeKind =
 	| ContextKind
 	| AgentInstructions["kind"];
 type Task = RulesTask | DeadCodeTask | ReuseTask | ContextTask;
+export type ProbePermissions =
+	| RulesPermissions
+	| DeadCodePermissions
+	| ReusePermissions
+	| ContextPermissions;
 
 const TASK_BY_KIND: {
 	readonly rules: RulesInstructions["task"];
@@ -45,23 +58,48 @@ const TASK_BY_KIND: {
 	context: ContextTaskSchema.parse(undefined),
 };
 
+const PERMISSIONS_BY_KIND: {
+	readonly rules: RulesInstructions["permissions"];
+	readonly "dead-code": DeadCodeInstructions["permissions"];
+	readonly reuse: ReuseInstructions["permissions"];
+	readonly context: ContextInstructions["permissions"];
+} = {
+	rules: RulesPermissionsSchema.parse(undefined),
+	"dead-code": DeadCodePermissionsSchema.parse(undefined),
+	reuse: ReusePermissionsSchema.parse(undefined),
+	context: ContextPermissionsSchema.parse(undefined),
+};
+
 export class Instructions {
 	static readonly Prose: AgentInstructionsBase["instructions"] =
 		AgentInstructionsBaseSchema.parse({}).instructions;
 	readonly #prose: InstructionsProse;
 	readonly #task: Task;
-	private constructor(prose: InstructionsProse, task: Task) {
+	readonly #permissions: ProbePermissions;
+	private constructor(
+		prose: InstructionsProse,
+		task: Task,
+		permissions: ProbePermissions,
+	) {
 		this.#prose = prose;
 		this.#task = task;
+		this.#permissions = permissions;
 	}
 	static forKind(kind: ProbeKind): Instructions {
-		return new Instructions(Instructions.Prose, TASK_BY_KIND[kind]);
+		return new Instructions(
+			Instructions.Prose,
+			TASK_BY_KIND[kind],
+			PERMISSIONS_BY_KIND[kind],
+		);
 	}
 	prose(): InstructionsProse {
 		return this.#prose;
 	}
 	task(): Task {
 		return this.#task;
+	}
+	permissions(): ProbePermissions {
+		return this.#permissions;
 	}
 }
 
@@ -86,6 +124,7 @@ export function instructions<RulebookSlice, RulesetEntry>(
 			document: {
 				instructions: Instructions.Prose,
 				task: TASK_BY_KIND[probe.kind],
+				permissions: PERMISSIONS_BY_KIND[probe.kind],
 				kind: probe.kind,
 				change: context.change,
 				surface: context.surface,
@@ -98,6 +137,7 @@ export function instructions<RulebookSlice, RulesetEntry>(
 			document: {
 				instructions: Instructions.Prose,
 				task: TASK_BY_KIND.context,
+				permissions: PERMISSIONS_BY_KIND.context,
 				kind: "context" as const,
 				change: context.change,
 				surface: context.surface,

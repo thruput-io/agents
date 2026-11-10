@@ -120,15 +120,17 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 		const host = this.host();
 		const rawThreads = await listAzureThreads(host, this.#token);
 		const pending = unposted(outcome, rawThreads);
-		for (const finding of pending.inline) {
-			await createAzureThread(host, this.#token, threadPayload(finding));
-		}
-		for (const id of pending.settle) {
-			await setAzureThreadStatus(host, this.#token, id, "closed");
-		}
-		for (const id of outcome.reopen) {
-			await setAzureThreadStatus(host, this.#token, id, "active");
-		}
+		await Promise.all([
+			...pending.inline.map((finding) =>
+				createAzureThread(host, this.#token, threadPayload(finding)),
+			),
+			...pending.settle.map((id) =>
+				setAzureThreadStatus(host, this.#token, id, "closed"),
+			),
+			...outcome.reopen.map((id) =>
+				setAzureThreadStatus(host, this.#token, id, "active"),
+			),
+		]);
 		const summaryId = pending.summary
 			? await createAzureThread(
 					host,

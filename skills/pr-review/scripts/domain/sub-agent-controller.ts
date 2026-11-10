@@ -1,19 +1,25 @@
-import type { z } from "zod";
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { z } from "zod";
 import { HostAdapterFactory } from "./adapter-factory.ts";
 import type { CodeUnderReview } from "./code-under-review.ts";
 import type {
 	Change,
 	Checkout,
 	ContextKind,
+	ContextPermissions,
 	ContextTask,
 	DeadCodeKind,
+	DeadCodePermissions,
 	DeadCodeTask,
 	Rulebook as ExternalRulebook,
 	InstructionsProse,
 	ReuseKind,
+	ReusePermissions,
 	ReuseTask,
 	Row,
 	RulesKind,
+	RulesPermissions,
 	RulesTask,
 	Surface,
 } from "./contracts.g.ts";
@@ -22,10 +28,14 @@ import {
 	type CoordinatedProbeSpec,
 	coordinateLedgers,
 } from "./main-agent-ledger.ts";
-import { nonnull } from "./nullish.ts";
+import { isNullOrEmpty, nonnull } from "./nullish.ts";
 import { loadPersistedProbes } from "./probe-loader.ts";
 import type { Rulebook } from "./rulebook.ts";
-import { runSubAgentCli } from "./sub-agent-cli.ts";
+import {
+	type AckStatus,
+	runSubAgentCli,
+	SUBAGENT_DEADLINE_MS,
+} from "./sub-agent-cli.ts";
 import {
 	ContextSubAgentLedger,
 	DeadCodeSubAgentLedger,
@@ -34,12 +44,28 @@ import {
 	RulesSubAgentLedger,
 	type SubAgentLedger,
 } from "./sub-agent-ledger.ts";
-import type { Workdir } from "./workdir.ts";
+import { Workdir } from "./workdir.ts";
+
+export const isCliEntrypoint = (metaUrl: string): boolean => {
+	const entryArg = process.argv[1];
+	if (isNullOrEmpty(entryArg)) {
+		return false;
+	}
+	try {
+		return realpathSync(fileURLToPath(metaUrl)) === realpathSync(entryArg);
+	} catch {
+		return false;
+	}
+};
 
 export type ProbeDocument =
 	| {
 			readonly instructions?: InstructionsProse;
 			readonly task?: RulesTask | ReuseTask | DeadCodeTask;
+			readonly permissions?:
+				| RulesPermissions
+				| ReusePermissions
+				| DeadCodePermissions;
 			readonly kind: RulesKind | ReuseKind | DeadCodeKind;
 			readonly change: Change;
 			readonly surface: Surface;
@@ -49,6 +75,7 @@ export type ProbeDocument =
 	| {
 			readonly instructions?: InstructionsProse;
 			readonly task?: ContextTask;
+			readonly permissions?: ContextPermissions;
 			readonly kind: ContextKind;
 			readonly change: Change;
 			readonly surface: Surface;
@@ -74,7 +101,17 @@ interface SubAgentControllerInit {
 	readonly instructions: Instructions;
 	readonly change: Change;
 	readonly rules: ProbeRules;
+	readonly name?: string | undefined;
+	readonly now?: (() => number) | undefined;
 }
+
+const customFailure = (
+	path: string,
+	message: string,
+): z.ZodSafeParseResult<LedgerSubmission> =>
+	z
+		.custom<LedgerSubmission>(() => false, { path: [path], message })
+		.safeParse(null);
 
 export class SubAgentController {
 	readonly #workdir: Workdir;
@@ -82,6 +119,9 @@ export class SubAgentController {
 	readonly #instructions: Instructions;
 	readonly #change: Change;
 	readonly #rules: ProbeRules;
+	readonly #name: string | undefined;
+	readonly #now: () => number;
+	#acknowledgedAt: number | null = null;
 
 	private constructor(init: SubAgentControllerInit) {
 		this.#workdir = init.workdir;
@@ -89,6 +129,8 @@ export class SubAgentController {
 		this.#instructions = init.instructions;
 		this.#change = init.change;
 		this.#rules = init.rules;
+		this.#name = init.name;
+		this.#now = init.now ?? Date.now;
 	}
 
 	static from(
@@ -122,6 +164,7 @@ export class SubAgentController {
 		workdir: Workdir,
 		ledger: SubAgentLedger,
 		probe: ProbeDocument,
+		options?: { readonly name?: string; readonly now?: () => number },
 	): SubAgentController {
 		const rules: ProbeRules =
 			probe.kind === "context"
@@ -133,10 +176,16 @@ export class SubAgentController {
 			instructions: Instructions.forKind(probe.kind),
 			change: probe.change,
 			rules,
+			name: options?.name,
+			now: options?.now,
 		});
 	}
 
-	static forWorkdir(workdir: Workdir, name: Checkout): SubAgentController {
+	static forWorkdir(
+		workdir: Workdir,
+		name: Checkout,
+		now: () => number = Date.now,
+	): SubAgentController {
 		const persisted = workdir.ledgerDirectory().readPullRequest();
 		const { pullRequest } = HostAdapterFactory.rehydrate(persisted);
 		const probes = loadPersistedProbes(workdir.readAudits());
@@ -164,7 +213,20 @@ export class SubAgentController {
 			workdir,
 			nonnull(ledgers[index]),
 			target.probe,
+			{ name, now },
 		);
+	}
+
+	static forSession(
+		sessionOrWorkdir: Checkout,
+		name: Checkout,
+		now: () => number = Date.now,
+	): SubAgentController {
+		const parsed = Workdir.fromSession(sessionOrWorkdir);
+		if (!parsed.success) {
+			throw new Error(z.prettifyError(parsed.error));
+		}
+		return SubAgentController.forWorkdir(parsed.data, name, now);
 	}
 
 	workdir(): Workdir {
@@ -187,11 +249,41 @@ export class SubAgentController {
 		return this.#rules;
 	}
 
+	ack(): AckStatus {
+		const acknowledgedAt = this.#now();
+		this.#acknowledgedAt = acknowledgedAt;
+		if (!isNullOrEmpty(this.#name)) {
+			this.#workdir.ledgerDirectory().writeAck(this.#name, acknowledgedAt);
+		}
+		return {
+			acknowledgedAt,
+			deadlineMs: SUBAGENT_DEADLINE_MS,
+			permissions: this.#instructions.permissions(),
+		};
+	}
+
 	report(rows: readonly Row[]): z.ZodSafeParseResult<LedgerSubmission> {
+		const ackTime =
+			this.#acknowledgedAt ??
+			(isNullOrEmpty(this.#name)
+				? null
+				: this.#workdir.ledgerDirectory().readAck(this.#name));
+		if (isNullOrEmpty(ackTime)) {
+			return customFailure(
+				"ack",
+				"Probe must acknowledge instructions via ack before reporting",
+			);
+		}
+		if (this.#now() - ackTime > SUBAGENT_DEADLINE_MS) {
+			return customFailure(
+				"deadline",
+				`Probe exceeded the 5-minute (${SUBAGENT_DEADLINE_MS}ms) reporting deadline`,
+			);
+		}
 		return this.#ledger.report(rows);
 	}
 }
 
-if (import.meta.main) {
-	runSubAgentCli(SubAgentController.forWorkdir, process.argv.slice(2));
+if (import.meta.main || isCliEntrypoint(import.meta.url)) {
+	runSubAgentCli(SubAgentController.forSession, process.argv.slice(2));
 }

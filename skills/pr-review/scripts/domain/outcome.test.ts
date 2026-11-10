@@ -21,9 +21,17 @@ const files = [
 			{
 				kind: "surface" as const,
 				side: "head" as const,
-				lines: { "3": "x3", "4": "x4", "7": "x7" },
+				lines: [
+					{ idToReportViolationOn: 3, text: "x3" },
+					{ idToReportViolationOn: 4, text: "x4" },
+					{ idToReportViolationOn: 7, text: "x7" },
+				],
 			},
-			{ kind: "surface" as const, side: "base" as const, lines: { "9": "y9" } },
+			{
+				kind: "surface" as const,
+				side: "base" as const,
+				lines: [{ idToReportViolationOn: 9, text: "y9" }],
+			},
 		],
 	},
 ];
@@ -37,11 +45,10 @@ const lines = (path: string, start: number, end: number, side: Side) => {
 			.find((candidate) => candidate.path === path)
 			?.fragments.find((f) => f.kind === "surface" && f.side === side),
 	);
-	const slice = Object.fromEntries(
-		Array.from({ length: end - start + 1 }, (_, i) => [
-			String(start + i),
-			nonnull(fragment.lines[String(start + i) as keyof typeof fragment.lines]),
-		]),
+	const slice = Array.from({ length: end - start + 1 }, (_, i) =>
+		nonnull(
+			fragment.lines.find((line) => line.idToReportViolationOn === start + i),
+		),
 	);
 	return { kind: "surface" as const, path, side, lines: slice };
 };
@@ -166,7 +173,10 @@ it("settled lists the open threads that no finding of this review carries any mo
 			kind: "surface",
 			path: "a.sh",
 			side: "head",
-			lines: { "3": "c", "4": "d" },
+			lines: [
+				{ idToReportViolationOn: 3, text: "c" },
+				{ idToReportViolationOn: 4, text: "d" },
+			],
 		},
 	};
 	const row: Row = {

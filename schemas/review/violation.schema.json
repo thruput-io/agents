@@ -53,7 +53,7 @@
           "$ref": "lines.schema.json#/$defs/Side"
         },
         "lines": {
-          "$ref": "lines.schema.json#/$defs/NumberedLines"
+          "$ref": "lines.schema.json#/$defs/SurfaceLines"
         }
       },
       "additionalProperties": false
@@ -78,9 +78,12 @@
         "kind": "surface",
         "path": "scripts/verify.sh",
         "side": "head",
-        "lines": {
-          "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
-        }
+        "lines": [
+          {
+            "idToReportViolationOn": 21,
+            "text": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
+          }
+        ]
       }
     },
     {

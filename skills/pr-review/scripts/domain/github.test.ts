@@ -17,6 +17,7 @@ import {
 	isReviewableThreadNode,
 	RESOLVE_REVIEW_THREAD_MUTATION,
 	REVIEW_THREADS_QUERY,
+	settleAndReopenGitHubThreads,
 	ThreadsPage,
 	thread,
 	UNRESOLVE_REVIEW_THREAD_MUTATION,
@@ -258,4 +259,24 @@ it("refusedIn, postedAt, and priorOf inspect GitHub review records", () => {
 	assert.equal(postedAt([review], SHA_A), review.html_url);
 	assert.equal(postedAt([review], SHA_B), null);
 	assert.equal(priorOf([refusal, review]), SHA_A);
+});
+
+it("settleAndReopenGitHubThreads dispatches thread mutations concurrently without waiting sequentially", async () => {
+	let inFlight = 0;
+	let maxInFlight = 0;
+	const fakeClient = {
+		rawRequest: async () => {
+			inFlight += 1;
+			maxInFlight = Math.max(maxInFlight, inFlight);
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			inFlight -= 1;
+			return { data: {} };
+		},
+	};
+	await settleAndReopenGitHubThreads(
+		fakeClient as unknown as Parameters<typeof settleAndReopenGitHubThreads>[0],
+		["T1", "T2"],
+		["T3"],
+	);
+	assert.equal(maxInFlight, 3);
 });

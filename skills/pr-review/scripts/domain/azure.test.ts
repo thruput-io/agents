@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { test as it } from "node:test";
+import { fileURLToPath } from "node:url";
 import {
 	artifactIdOf,
 	blockingBuildPolicies,
@@ -275,4 +278,14 @@ it("unposted keeps only inline findings and summary not yet carried on the pull 
 	assert.equal(all.inline.length, 2);
 	assert.equal(all.summary, true);
 	assert.deepEqual(all.settle, []);
+});
+
+const SEQUENTIAL_FOR_AWAIT_RE = /for\s*\([^)]+\)\s*\{\s*await\b/u;
+
+it("AzureDevOpsAdapter.post dispatches thread network requests concurrently via Promise.all with no sequential await-in-for-loop", () => {
+	const adapterSource = readFileSync(
+		join(dirname(fileURLToPath(import.meta.url)), "azure-adapter.ts"),
+		"utf8",
+	);
+	assert.equal(SEQUENTIAL_FOR_AWAIT_RE.test(adapterSource), false);
 });

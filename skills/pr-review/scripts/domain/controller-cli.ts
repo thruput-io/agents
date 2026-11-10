@@ -4,6 +4,7 @@ import type { AdapterResolution } from "./adapter.ts";
 import type { Ledger, Outcome } from "./contracts.g.ts";
 import type { MainAgentLedger } from "./main-agent-ledger.ts";
 import { isNullOrEmpty } from "./nullish.ts";
+import { subAgentHelpPayload } from "./sub-agent-cli.ts";
 import { Workdir } from "./workdir.ts";
 
 type ReadyReview = Extract<AdapterResolution, { readonly kind: "ready" }>;
@@ -44,18 +45,53 @@ const writeJson = (payload: object): void => {
 	process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
 };
 
+const failCli = (message?: string): number => {
+	if (!isNullOrEmpty(message)) {
+		process.stderr.write(message);
+	}
+	process.exitCode = 1;
+	return 1;
+};
+
+const writePrepared = (
+	workdir: Workdir,
+	result: ReadyReview,
+	pending: readonly string[],
+): number => {
+	const warning = workdir.warning();
+	writeJson({
+		success: true,
+		session: workdir.sessionToken(),
+		headCommit: result.headCommit,
+		change: result.change,
+		pending,
+		...(isNullOrEmpty(warning) ? {} : { warning }),
+	});
+	return 0;
+};
+
 export async function runMainAgentCli(
 	controller: MainAgentCliDriver,
 	args: readonly string[],
-): Promise<void> {
+): Promise<number> {
 	const [command, firstArg, secondArg, thirdArg] = args;
+	if (command === "-h" || command === "--help") {
+		writeJson({
+			usage: [
+				"node controller.ts -h | --help",
+				"node controller.ts prepare <url> <workdir> [<token>]",
+				"node controller.ts status <workdir>",
+				"node controller.ts dispatch <workdir> [<token>]",
+			],
+			subAgentController: subAgentHelpPayload(),
+		});
+		return 0;
+	}
 	if (command === "prepare") {
 		if (isNullOrEmpty(firstArg) || isNullOrEmpty(secondArg)) {
-			process.stderr.write(
+			return failCli(
 				"Usage: node controller.ts prepare <url> <workdir> [<token>]\n",
 			);
-			process.exitCode = 1;
-			return;
 		}
 		const parsedWorkdir = Workdir.from(secondArg);
 		if (!parsedWorkdir.success) {
@@ -66,8 +102,7 @@ export async function runMainAgentCli(
 					message: z.prettifyError(parsedWorkdir.error),
 				},
 			});
-			process.exitCode = 1;
-			return;
+			return failCli();
 		}
 		if (!isNullOrEmpty(thirdArg)) {
 			const parsedToken = AccessToken.from(thirdArg);
@@ -79,8 +114,7 @@ export async function runMainAgentCli(
 						message: z.prettifyError(parsedToken.error),
 					},
 				});
-				process.exitCode = 1;
-				return;
+				return failCli();
 			}
 			const result = await controller.prepareWithToken(
 				firstArg,
@@ -89,36 +123,30 @@ export async function runMainAgentCli(
 			);
 			if (!result.success) {
 				writeJson(result);
-				return;
+				return 0;
 			}
-			writeJson({
-				success: true,
-				headCommit: result.data.headCommit,
-				change: result.data.change,
-				pending: controller.ledger(parsedWorkdir.data).pending(),
-			});
-			return;
+			return writePrepared(
+				parsedWorkdir.data,
+				result.data,
+				controller.ledger(parsedWorkdir.data).pending(),
+			);
 		}
 		const result = await controller.prepare(firstArg, parsedWorkdir.data);
 		if (!result.success) {
 			writeJson(result);
-			return;
+			return 0;
 		}
-		writeJson({
-			success: true,
-			headCommit: result.data.headCommit,
-			change: result.data.change,
-			pending: controller.ledger(parsedWorkdir.data).pending(),
-		});
-		return;
+		return writePrepared(
+			parsedWorkdir.data,
+			result.data,
+			controller.ledger(parsedWorkdir.data).pending(),
+		);
 	}
 	if (command === "dispatch" || command === "status") {
 		if (isNullOrEmpty(firstArg)) {
-			process.stderr.write(
+			return failCli(
 				"Usage: node controller.ts <dispatch|status> <workdir> [<token>]\n",
 			);
-			process.exitCode = 1;
-			return;
 		}
 		const parsedWorkdir = Workdir.from(firstArg);
 		if (!parsedWorkdir.success) {
@@ -126,8 +154,7 @@ export async function runMainAgentCli(
 				success: false,
 				error: z.prettifyError(parsedWorkdir.error),
 			});
-			process.exitCode = 1;
-			return;
+			return failCli();
 		}
 		if (command === "status") {
 			const ledger = controller.ledger(parsedWorkdir.data);
@@ -136,7 +163,7 @@ export async function runMainAgentCli(
 				completed: ledger.completed(),
 				submittedOutcome: ledger.submittedOutcome(),
 			});
-			return;
+			return 0;
 		}
 		if (!isNullOrEmpty(secondArg)) {
 			const parsedToken = AccessToken.from(secondArg);
@@ -145,22 +172,18 @@ export async function runMainAgentCli(
 					success: false,
 					error: z.prettifyError(parsedToken.error),
 				});
-				process.exitCode = 1;
-				return;
+				return failCli();
 			}
 			const dispatched = await controller.dispatchWithToken(
 				parsedWorkdir.data,
 				parsedToken.data,
 			);
 			writeJson(dispatched);
-			return;
+			return 0;
 		}
 		const dispatched = await controller.dispatch(parsedWorkdir.data);
 		writeJson(dispatched);
-		return;
+		return 0;
 	}
-	process.stderr.write(
-		"Usage: node controller.ts <prepare|dispatch|status> ...\n",
-	);
-	process.exitCode = 1;
+	return failCli("Usage: node controller.ts <prepare|dispatch|status> ...\n");
 }

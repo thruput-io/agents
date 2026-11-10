@@ -3,13 +3,17 @@ import type { CodeUnderReview } from "./code-under-review.ts";
 import type {
 	ChangedFile,
 	HeadCommit,
-	NumberedLines,
 	Path,
 	Summary,
 	SurfaceFile,
 } from "./contracts.g.ts";
 import { changedFiles } from "./diff.ts";
-import { fragments, numbered, removedLines } from "./fragments.ts";
+import {
+	fragments,
+	type NumberedLines,
+	numbered,
+	removedLines,
+} from "./fragments.ts";
 import { isNullOrEmpty, nonnull } from "./nullish.ts";
 import { CodeUnderReviewSnapshot } from "./review-snapshot.ts";
 import { oversizedFiles, tooLarge } from "./ruleset.ts";

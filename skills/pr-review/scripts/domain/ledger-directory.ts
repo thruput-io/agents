@@ -25,6 +25,10 @@ const PersistedPullRequestSchema = z.object({
 	threads: ThreadsSchema,
 });
 
+const AckFileSchema = z.object({
+	acknowledgedAt: z.number().int().nonnegative(),
+});
+
 export interface PersistedPullRequest {
 	readonly change: Change;
 	readonly surface: Surface;
@@ -60,6 +64,24 @@ export class LedgerDirectory {
 		return PersistedPullRequestSchema.parse(
 			JSON.parse(readFileSync(join(this.#path, PULL_REQUEST_FILE), "utf-8")),
 		);
+	}
+
+	writeAck(name: string, acknowledgedAt: number): void {
+		mkdirSync(this.#path, { recursive: true });
+		writeFileSync(
+			join(this.#path, `${name}.ack.json`),
+			JSON.stringify({ acknowledgedAt }, null, 2),
+			"utf-8",
+		);
+	}
+
+	readAck(name: string): number | null {
+		const ackPath = join(this.#path, `${name}.ack.json`);
+		if (!existsSync(ackPath)) {
+			return null;
+		}
+		return AckFileSchema.parse(JSON.parse(readFileSync(ackPath, "utf-8")))
+			.acknowledgedAt;
 	}
 
 	writeSlice(name: string, ledger: Ledger): void {

@@ -8,6 +8,7 @@ import type { SubAgentController } from "../domain/sub-agent-controller.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
 
 export const reportForProbe = (sub: SubAgentController): void => {
+	sub.ack();
 	const rules = sub.rules();
 	const handlers = {
 		rulebook: () => {
@@ -54,7 +55,9 @@ export const reportForProbe = (sub: SubAgentController): void => {
 								kind: "surface",
 								path: "service.ts",
 								side: "head",
-								lines: { 2: "export const y = 2;" },
+								lines: [
+									{ idToReportViolationOn: 2, text: "export const y = 2;" },
+								],
 							},
 						},
 					],
@@ -69,6 +72,7 @@ export const reportForProbe = (sub: SubAgentController): void => {
 };
 
 export const reportForReReviewProbe = (sub: SubAgentController): void => {
+	sub.ack();
 	const rules = sub.rules();
 	if (rules.kind === "rulesets") {
 		const first = nonnull(rules.rulesets[0]);
@@ -109,7 +113,9 @@ export const reportForReReviewProbe = (sub: SubAgentController): void => {
 									kind: "surface" as const,
 									path: "helper.ts",
 									side: "head" as const,
-									lines: { 1: "export const z = 4;" },
+									lines: [
+										{ idToReportViolationOn: 1, text: "export const z = 4;" },
+									],
 								},
 							},
 						],

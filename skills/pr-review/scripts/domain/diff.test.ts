@@ -216,22 +216,51 @@ it("fragments cuts a file into context and surface fragments in order, head firs
 			[{ start: 7, end: 8, content: "x\ny" }],
 		),
 		[
-			{ kind: "context", lines: { 1: "a" } },
-			{ kind: "surface", side: "head", lines: { 2: "b", 3: "c" } },
-			{ kind: "context", lines: { 4: "d" } },
-			{ kind: "surface", side: "base", lines: { 7: "x", 8: "y" } },
+			{ kind: "context", lines: ["a"] },
+			{
+				kind: "surface",
+				side: "head",
+				lines: [
+					{ idToReportViolationOn: 2, text: "b" },
+					{ idToReportViolationOn: 3, text: "c" },
+				],
+			},
+			{ kind: "context", lines: ["d"] },
+			{
+				kind: "surface",
+				side: "base",
+				lines: [
+					{ idToReportViolationOn: 7, text: "x" },
+					{ idToReportViolationOn: 8, text: "y" },
+				],
+			},
 		],
 	);
 	assert.deepEqual(fragments({}, [], [{ start: 1, end: 1, content: "gone" }]), [
-		{ kind: "surface", side: "base", lines: { 1: "gone" } },
+		{
+			kind: "surface",
+			side: "base",
+			lines: [{ idToReportViolationOn: 1, text: "gone" }],
+		},
 	]);
 	assert.deepEqual(fragments(numbered("a\n"), [{ start: 1, end: 1 }], []), [
-		{ kind: "surface", side: "head", lines: { 1: "a" } },
+		{
+			kind: "surface",
+			side: "head",
+			lines: [{ idToReportViolationOn: 1, text: "a" }],
+		},
 	]);
 });
 
 it("span is the first and last line an anchor or a fragment covers", () => {
-	assert.deepEqual(span({ 3: "c", 4: "d", 10: "j" }), { start: 3, end: 10 });
+	assert.deepEqual(
+		span([
+			{ idToReportViolationOn: 3, text: "c" },
+			{ idToReportViolationOn: 4, text: "d" },
+			{ idToReportViolationOn: 10, text: "j" },
+		]),
+		{ start: 3, end: 10 },
+	);
 });
 
 it("removedLines cuts the removed lines the surface keeps out of the hunks that carry their text", () => {

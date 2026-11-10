@@ -16,7 +16,7 @@ import {
 	loadPersistedProbes,
 	type NamedProbe,
 } from "./probe-loader.ts";
-import { SubAgentController } from "./sub-agent-controller.ts";
+import { isCliEntrypoint, SubAgentController } from "./sub-agent-controller.ts";
 import type { Workdir } from "./workdir.ts";
 
 export type ProbeRunner = (
@@ -94,7 +94,9 @@ export class MainAgentController {
 			const baseLedger = nonnull(ledgers[index]);
 			controllers.set(
 				entry.name,
-				SubAgentController.withLedger(workdir, baseLedger, entry.probe),
+				SubAgentController.withLedger(workdir, baseLedger, entry.probe, {
+					name: entry.name,
+				}),
 			);
 		}
 		const session: PreparedSession = {
@@ -229,6 +231,6 @@ export class MainAgentController {
 	}
 }
 
-if (import.meta.main) {
+if (import.meta.main || isCliEntrypoint(import.meta.url)) {
 	await runMainAgentCli(MainAgentController.create(), process.argv.slice(2));
 }

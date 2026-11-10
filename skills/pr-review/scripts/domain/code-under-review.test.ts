@@ -220,11 +220,21 @@ it("CodeUnderReviewSnapshot wraps a CodeUnderReview and exposes its SnapshotDire
 			{
 				path: "a.ts",
 				fragments: [
-					{ kind: "surface", side: "head", lines: { "1": "const a = 1;" } },
+					{
+						kind: "surface",
+						side: "head",
+						lines: [{ idToReportViolationOn: 1, text: "const a = 1;" }],
+					},
 				],
 			},
 		],
-		[{ kind: "surface", side: "head", lines: { "1": "const a = 1;" } }],
+		[
+			{
+				kind: "surface",
+				side: "head",
+				lines: [{ idToReportViolationOn: 1, text: "const a = 1;" }],
+			},
+		],
 		{ threads: [] },
 	);
 	assert.equal(snapshot.snapShot.equals(dir.data), true);

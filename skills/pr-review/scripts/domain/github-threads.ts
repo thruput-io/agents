@@ -139,10 +139,12 @@ export async function settleAndReopenGitHubThreads(
 	settle: readonly ThreadId[],
 	reopen: readonly ThreadId[],
 ): Promise<void> {
-	for (const threadId of settle) {
-		await client.rawRequest(RESOLVE_REVIEW_THREAD_MUTATION, { threadId });
-	}
-	for (const threadId of reopen) {
-		await client.rawRequest(UNRESOLVE_REVIEW_THREAD_MUTATION, { threadId });
-	}
+	await Promise.all([
+		...settle.map((threadId) =>
+			client.rawRequest(RESOLVE_REVIEW_THREAD_MUTATION, { threadId }),
+		),
+		...reopen.map((threadId) =>
+			client.rawRequest(UNRESOLVE_REVIEW_THREAD_MUTATION, { threadId }),
+		),
+	]);
 }

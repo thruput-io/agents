@@ -39,7 +39,7 @@ const surfaceAnchorInside = (
 	files: readonly SurfaceFile[],
 ): boolean => {
 	const matchedFile = files.find((candidate) => candidate.path === anchor.path);
-	const copied = Object.entries(anchor.lines);
+	const copied = anchor.lines;
 	return (
 		!isNullOrEmpty(matchedFile) &&
 		copied.length > 0 &&
@@ -47,8 +47,13 @@ const surfaceAnchorInside = (
 			(fragment) =>
 				fragment.kind === "surface" &&
 				fragment.side === anchor.side &&
-				copied.every(
-					([numberText, lineText]) => fragment.lines[numberText] === lineText,
+				copied.every((anchorLine) =>
+					fragment.lines.some(
+						(surfaceLine) =>
+							surfaceLine.idToReportViolationOn ===
+								anchorLine.idToReportViolationOn &&
+							surfaceLine.text === anchorLine.text,
+					),
 				),
 		)
 	);

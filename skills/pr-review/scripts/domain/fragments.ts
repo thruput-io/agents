@@ -2,14 +2,15 @@ import type {
 	ContextFragment,
 	Fragment,
 	LineNumber,
-	LineNumberName,
 	LineRange,
 	LineText,
-	NumberedLines,
 	RemovedLines,
 	SurfaceFragment,
+	SurfaceLine,
 } from "./contracts.g.ts";
 import { isNullOrEmpty } from "./nullish.ts";
+
+export type NumberedLines = Readonly<Record<string, LineText>>;
 
 export function numbered(text: string): NumberedLines {
 	const rawLines = text.split("\n");
@@ -17,10 +18,7 @@ export function numbered(text: string): NumberedLines {
 		? rawLines.slice(0, -1)
 		: rawLines;
 	return Object.fromEntries(
-		lines.map((line, index): [LineNumberName, LineText] => [
-			String(index + 1),
-			line,
-		]),
+		lines.map((line, index): [string, LineText] => [String(index + 1), line]),
 	);
 }
 
@@ -37,30 +35,41 @@ export function fragments(
 	const headFragments: (SurfaceFragment | ContextFragment)[] = [];
 	for (const [numberText, text] of Object.entries(lines)) {
 		const lineNumber: LineNumber = Number(numberText);
-		const kind = isInsideRanges(added, lineNumber) ? "surface" : "context";
+		const isSurface = isInsideRanges(added, lineNumber);
 		const previous = headFragments.at(-1);
-		const lineEntry = { [lineNumber]: text };
-		if (!isNullOrEmpty(previous) && previous.kind === kind) {
+		if (isSurface) {
+			const surfaceLine: SurfaceLine = {
+				idToReportViolationOn: lineNumber,
+				text,
+			};
+			if (!isNullOrEmpty(previous) && previous.kind === "surface") {
+				headFragments.splice(-1, 1, {
+					...previous,
+					lines: [...previous.lines, surfaceLine],
+				});
+			} else {
+				headFragments.push({
+					kind: "surface",
+					side: "head",
+					lines: [surfaceLine],
+				});
+			}
+		} else if (!isNullOrEmpty(previous) && previous.kind === "context") {
 			headFragments.splice(-1, 1, {
 				...previous,
-				lines: { ...previous.lines, ...lineEntry },
+				lines: [...previous.lines, text],
 			});
 		} else {
-			headFragments.push(
-				kind === "surface"
-					? { kind, side: "head", lines: lineEntry }
-					: { kind, lines: lineEntry },
-			);
+			headFragments.push({ kind: "context", lines: [text] });
 		}
 	}
 	const baseFragments: SurfaceFragment[] = removed.map((hunk) => ({
 		kind: "surface",
 		side: "base",
-		lines: Object.fromEntries(
-			hunk.content
-				.split("\n")
-				.map((lineText, index) => [hunk.start + index, lineText]),
-		),
+		lines: hunk.content.split("\n").map((lineText, index) => ({
+			idToReportViolationOn: hunk.start + index,
+			text: lineText,
+		})),
 	}));
 	return [...headFragments, ...baseFragments];
 }
@@ -88,7 +97,7 @@ export const removedLines = (
 		};
 	});
 
-export function span(lines: NumberedLines): LineRange {
-	const numbers = Object.keys(lines).map((key): LineNumber => Number(key));
+export function span(lines: readonly SurfaceLine[]): LineRange {
+	const numbers = lines.map((line): LineNumber => line.idToReportViolationOn);
 	return { start: Math.min(...numbers), end: Math.max(...numbers) };
 }

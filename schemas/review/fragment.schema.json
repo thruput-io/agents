@@ -28,7 +28,7 @@
           "$ref": "lines.schema.json#/$defs/Side"
         },
         "lines": {
-          "$ref": "lines.schema.json#/$defs/NumberedLines"
+          "$ref": "lines.schema.json#/$defs/SurfaceLines"
         }
       },
       "additionalProperties": false
@@ -45,7 +45,7 @@
           "const": "context"
         },
         "lines": {
-          "$ref": "lines.schema.json#/$defs/NumberedLines"
+          "$ref": "lines.schema.json#/$defs/ContextLines"
         }
       },
       "additionalProperties": false
@@ -55,15 +55,18 @@
     {
       "kind": "surface",
       "side": "head",
-      "lines": {
-        "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
-      }
+      "lines": [
+        {
+          "idToReportViolationOn": 21,
+          "text": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
+        }
+      ]
     },
     {
       "kind": "context",
-      "lines": {
-        "20": "npx --yes @sourcemeta/jsonschema@17.0.0 lint \"$PROJECT_ROOT/schemas\""
-      }
+      "lines": [
+        "npx --yes @sourcemeta/jsonschema@17.0.0 lint \"$PROJECT_ROOT/schemas\""
+      ]
     }
   ]
 }

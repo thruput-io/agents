@@ -94,6 +94,7 @@ const toAgentInstructions = (probe: ProbeDocument): AgentInstructions => {
 		return AgentInstructionsSchema.parse({
 			instructions: probe.instructions,
 			task: probe.task,
+			permissions: probe.permissions,
 			kind: probe.kind,
 			change: probe.change,
 			surface: probe.surface,
@@ -103,6 +104,7 @@ const toAgentInstructions = (probe: ProbeDocument): AgentInstructions => {
 	return AgentInstructionsSchema.parse({
 		instructions: probe.instructions,
 		task: probe.task,
+		permissions: probe.permissions,
 		kind: probe.kind,
 		change: probe.change,
 		surface: probe.surface,
@@ -134,6 +136,7 @@ const fromAuditDocument = (document: AgentInstructions): ProbeDocument => {
 		return {
 			instructions: document.instructions,
 			task: document.task,
+			permissions: document.permissions,
 			kind: document.kind,
 			change: document.change,
 			surface: document.surface,
@@ -143,6 +146,7 @@ const fromAuditDocument = (document: AgentInstructions): ProbeDocument => {
 	return {
 		instructions: document.instructions,
 		task: document.task,
+		permissions: document.permissions,
 		kind: document.kind,
 		change: document.change,
 		surface: document.surface,

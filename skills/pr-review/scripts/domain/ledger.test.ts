@@ -48,12 +48,12 @@ const PREFIX = { head: "L", base: "R" } as const;
 
 const text = (side: "head" | "base", n: number) => `${PREFIX[side]}${n}`;
 const run = (side: "head" | "base", from: number, to: number) =>
-	Object.fromEntries(
-		Array.from({ length: to - from + 1 }, (_, i) => [
-			from + i,
-			text(side, from + i),
-		]),
-	);
+	Array.from({ length: to - from + 1 }, (_, i) => ({
+		idToReportViolationOn: from + i,
+		text: text(side, from + i),
+	}));
+const contextRun = (side: "head" | "base", from: number, to: number) =>
+	Array.from({ length: to - from + 1 }, (_, i) => text(side, from + i));
 const files = [
 	{
 		path: "p",
@@ -63,7 +63,7 @@ const files = [
 				side: "head" as const,
 				lines: run("head", 1, 5),
 			},
-			{ kind: "context" as const, lines: run("head", 6, 8) },
+			{ kind: "context" as const, lines: contextRun("head", 6, 8) },
 			{
 				kind: "surface" as const,
 				side: "base" as const,
@@ -140,14 +140,19 @@ it("anchorInside accepts lines copied from one surface fragment on their side, a
 	assert.equal(anchorInside(lines("q", 1, 1, "head"), files), false);
 	assert.equal(
 		anchorInside(
-			{ kind: "surface", path: "p", side: "head", lines: { 3: "edited" } },
+			{
+				kind: "surface",
+				path: "p",
+				side: "head",
+				lines: [{ idToReportViolationOn: 3, text: "edited" }],
+			},
 			files,
 		),
 		false,
 	);
 	assert.equal(
 		anchorInside(
-			{ kind: "surface", path: "p", side: "head", lines: {} },
+			{ kind: "surface", path: "p", side: "head", lines: [] },
 			files,
 		),
 		false,

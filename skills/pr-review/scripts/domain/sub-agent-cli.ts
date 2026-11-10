@@ -14,6 +14,14 @@ import type { Rulebook } from "./rulebook.ts";
 import type { LedgerSubmission } from "./sub-agent-ledger.ts";
 import { Workdir } from "./workdir.ts";
 
+export const SUBAGENT_DEADLINE_MS = 300_000;
+
+export interface AckStatus {
+	readonly acknowledgedAt: number;
+	readonly deadlineMs: number;
+	readonly permissions: readonly string[];
+}
+
 type ProbeRules =
 	| { readonly kind: "rulebook"; readonly rulebook: Rulebook }
 	| {
@@ -27,6 +35,7 @@ export interface SubAgentCliTarget {
 	change: () => Change;
 	codeUnderReview: () => CodeUnderReview;
 	rules: () => ProbeRules;
+	ack: () => AckStatus;
 	report: (rows: readonly Row[]) => z.ZodSafeParseResult<LedgerSubmission>;
 }
 
@@ -34,41 +43,96 @@ const writeJson = (payload: object): void => {
 	process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
 };
 
+const failCli = (message?: string): number => {
+	if (!isNullOrEmpty(message)) {
+		process.stderr.write(message);
+	}
+	process.exitCode = 1;
+	return 1;
+};
+
 const readRowsInput = (arg: string): string =>
 	arg.trimStart().startsWith("[") || !existsSync(arg)
 		? arg
 		: readFileSync(arg, "utf-8");
 
+export const subAgentHelpPayload = () => ({
+	usage: [
+		"node sub-agent-controller.ts -h | --help",
+		"node sub-agent-controller.ts inspect <session> <probe>",
+		"node sub-agent-controller.ts ack <session> <probe>",
+		"node sub-agent-controller.ts report <session> <probe> '<rows-json>'",
+	],
+	deadlineMs: SUBAGENT_DEADLINE_MS,
+	rowSchemas: {
+		cleanOrNotApplicableRuleRow: {
+			rule: "<rule-id>",
+			examined: ["<path-or-artifact>"],
+			verdict: "clean | not-applicable",
+			evidence: "<why>",
+		},
+		violationRuleRow: {
+			rule: "<rule-id>",
+			examined: ["<path-or-artifact>"],
+			verdict: "violation",
+			evidence: "<why>",
+			violations: [
+				{
+					observation:
+						"<what the code does wrong, completing '<observation> breaks <principle>'>",
+					anchor: {
+						kind: "surface",
+						path: "<file-path>",
+						side: "head | base",
+						lines: [{ idToReportViolationOn: 1, text: "<exact line text>" }],
+					},
+				},
+			],
+		},
+		bookRuleRow: {
+			bookRule: { ruleset: "<ruleset-url>", heading: "<heading>" },
+			examined: ["<path-or-artifact>"],
+			verdict: "clean | not-applicable | violation",
+			evidence: "<why>",
+		},
+		pullRequestAnchor: {
+			kind: "pull-request",
+		},
+	},
+});
+
 export function runSubAgentCli(
-	forWorkdir: (workdir: Workdir, name: Checkout) => SubAgentCliTarget,
+	forSession: (session: Checkout, name: Checkout) => SubAgentCliTarget,
 	args: readonly string[],
-): void {
-	const [command, rawWorkdir, probeName, rawRows] = args;
+): number {
+	const [command, rawSession, probeName, rawRows] = args;
+	if (command === "-h" || command === "--help") {
+		writeJson(subAgentHelpPayload());
+		return 0;
+	}
 	if (
 		isNullOrEmpty(command) ||
-		isNullOrEmpty(rawWorkdir) ||
+		isNullOrEmpty(rawSession) ||
 		isNullOrEmpty(probeName)
 	) {
-		process.stderr.write(
-			"Usage: node sub-agent-controller.ts <inspect|report> <workdir> <probe> [<rows-json-or-file>]\n",
+		return failCli(
+			"Usage: node sub-agent-controller.ts <inspect|ack|report> <session> <probe> [<rows-json-or-file>]\n",
 		);
-		process.exitCode = 1;
-		return;
 	}
-	const parsedWorkdir = Workdir.from(rawWorkdir);
+	const parsedWorkdir = Workdir.fromSession(rawSession);
 	if (!parsedWorkdir.success) {
 		writeJson({
 			success: false,
 			error: z.prettifyError(parsedWorkdir.error),
 		});
-		process.exitCode = 1;
-		return;
+		return failCli();
 	}
-	const sub = forWorkdir(parsedWorkdir.data, probeName);
+	const sub = forSession(rawSession, probeName);
 	if (command === "inspect") {
 		const rules = sub.rules();
 		writeJson({
 			probe: probeName,
+			permissions: sub.instructions().permissions(),
 			instructions: sub.instructions().prose(),
 			task: sub.instructions().task(),
 			change: sub.change(),
@@ -79,7 +143,18 @@ export function runSubAgentCli(
 					: rules,
 			snapshotDirectory: sub.workdir().snapshotDirectory().toString(),
 		});
-		return;
+		return 0;
+	}
+	if (command === "ack") {
+		const ack = sub.ack();
+		writeJson({
+			success: true,
+			probe: probeName,
+			acknowledged: true,
+			deadlineMs: ack.deadlineMs,
+			permissions: ack.permissions,
+		});
+		return 0;
 	}
 	if (command === "report") {
 		if (isNullOrEmpty(rawRows)) {
@@ -87,8 +162,7 @@ export function runSubAgentCli(
 				success: false,
 				error: "Missing rows JSON argument or file path",
 			});
-			process.exitCode = 1;
-			return;
+			return failCli();
 		}
 		const parsedRows = z
 			.array(RowSchema)
@@ -98,8 +172,7 @@ export function runSubAgentCli(
 				success: false,
 				error: z.prettifyError(parsedRows.error),
 			});
-			process.exitCode = 1;
-			return;
+			return failCli();
 		}
 		const reported = sub.report(parsedRows.data);
 		if (!reported.success) {
@@ -107,8 +180,7 @@ export function runSubAgentCli(
 				success: false,
 				error: z.prettifyError(reported.error),
 			});
-			process.exitCode = 1;
-			return;
+			return failCli();
 		}
 		writeJson({
 			success: true,
@@ -116,8 +188,7 @@ export function runSubAgentCli(
 			headCommit: reported.data.ledger.headCommit,
 			rowCount: reported.data.ledger.rows.length,
 		});
-		return;
+		return 0;
 	}
-	process.stderr.write(`Unsupported command: ${command}\n`);
-	process.exitCode = 1;
+	return failCli(`Unsupported command: ${command}\n`);
 }

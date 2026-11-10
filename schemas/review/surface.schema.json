@@ -63,23 +63,29 @@
           "fragments": [
             {
               "kind": "context",
-              "lines": {
-                "20": "npx --yes @sourcemeta/jsonschema@17.0.0 lint \"$PROJECT_ROOT/schemas\""
-              }
+              "lines": [
+                "npx --yes @sourcemeta/jsonschema@17.0.0 lint \"$PROJECT_ROOT/schemas\""
+              ]
             },
             {
               "kind": "surface",
               "side": "head",
-              "lines": {
-                "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
-              }
+              "lines": [
+                {
+                  "idToReportViolationOn": 21,
+                  "text": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
+                }
+              ]
             },
             {
               "kind": "surface",
               "side": "base",
-              "lines": {
-                "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\""
-              }
+              "lines": [
+                {
+                  "idToReportViolationOn": 21,
+                  "text": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\""
+                }
+              ]
             }
           ]
         }

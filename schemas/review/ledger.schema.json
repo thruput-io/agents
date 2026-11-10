@@ -184,9 +184,12 @@
                 "kind": "surface",
                 "path": "scripts/verify.sh",
                 "side": "head",
-                "lines": {
-                  "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
-                }
+                "lines": [
+                  {
+                    "idToReportViolationOn": 21,
+                    "text": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
+                  }
+                ]
               }
             }
           ]

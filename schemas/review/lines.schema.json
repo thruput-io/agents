@@ -5,7 +5,10 @@
   "description": "Line-level domain shapes of a [[Change]]: consecutive numbered lines, line ranges, removed lines with their text at the base, and file side",
   "oneOf": [
     {
-      "$ref": "#/$defs/NumberedLines"
+      "$ref": "#/$defs/SurfaceLines"
+    },
+    {
+      "$ref": "#/$defs/ContextLines"
     },
     {
       "$ref": "#/$defs/RemovedLines"
@@ -18,14 +21,36 @@
     }
   ],
   "$defs": {
-    "NumberedLines": {
-      "description": "Consecutive lines, each under its number, the first line of a file being 1",
+    "SurfaceLine": {
+      "description": "One line of a surface fragment, with the identifier a violation reports on and its text",
       "type": "object",
-      "minProperties": 1,
-      "propertyNames": {
-        "$ref": "#/$defs/LineNumberName"
+      "required": [
+        "idToReportViolationOn",
+        "text"
+      ],
+      "properties": {
+        "idToReportViolationOn": {
+          "$ref": "#/$defs/LineNumber"
+        },
+        "text": {
+          "$ref": "#/$defs/LineText"
+        }
       },
-      "additionalProperties": {
+      "additionalProperties": false
+    },
+    "SurfaceLines": {
+      "description": "Consecutive lines of a surface fragment, each with its idToReportViolationOn and text",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/SurfaceLine"
+      }
+    },
+    "ContextLines": {
+      "description": "Consecutive lines around the change, without line numbers or identifiers",
+      "type": "array",
+      "minItems": 1,
+      "items": {
         "$ref": "#/$defs/LineText"
       }
     },
@@ -41,14 +66,10 @@
       "type": "integer",
       "minimum": 1
     },
-    "LineNumberName": {
-      "description": "A line number as the name of a property: a whole number from 1",
-      "type": "string",
-      "pattern": "^[1-9][0-9]*$"
-    },
     "LineText": {
       "description": "One line of a file, without its line break",
-      "type": "string"
+      "type": "string",
+      "pattern": "^[^\\r\\n]*$"
     },
     "LineRange": {
       "description": "Consecutive lines of one file, by their 1-based numbers, both ends included",
@@ -111,8 +132,11 @@
     }
   },
   "examples": [
-    {
-      "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\""
-    }
+    [
+      {
+        "idToReportViolationOn": 21,
+        "text": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\""
+      }
+    ]
   ]
 }

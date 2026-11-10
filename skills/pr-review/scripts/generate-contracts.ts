@@ -56,11 +56,8 @@ const customOverride =
 		if (!isNullOrEmpty(branches)) {
 			return `z.xor([${branches.map((branch) => parseSubschema(branch, refs)).join(", ")}])`;
 		}
-		if (
-			isRecord(schemaMap.propertyNames) &&
-			isRecord(schemaMap.additionalProperties)
-		) {
-			return `z.record(${parseSubschema(schemaMap.propertyNames, refs)}, ${parseSubschema(schemaMap.additionalProperties, refs)}).refine((record) => { const keys = Object.keys(record).map(Number).sort((left, right) => left - right); return keys.length >= 1 && keys.every((lineNumber, index) => index === 0 || lineNumber === (keys[index - 1] as number) + 1) && Object.values(record).every((lineText) => !lineText.includes('\\n') && !lineText.includes('\\r')); }, 'Expected consecutive single-line entries')`;
+		if (schemaName === "SurfaceLines" && !("__surfaceLines" in schemaMap)) {
+			return `${parseSubschema({ ...schemaMap, __surfaceLines: true }, refs)}.refine((lines) => lines.every((line, index) => index === 0 || line.idToReportViolationOn === (lines[index - 1]?.idToReportViolationOn ?? 0) + 1), 'Expected consecutive single-line entries')`;
 		}
 		if (isRecord(schemaMap.not) && Array.isArray(schemaMap.not.required)) {
 			const requiredChecks = schemaMap.not.required.map(
