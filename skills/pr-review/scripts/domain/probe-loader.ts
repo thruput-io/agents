@@ -91,7 +91,7 @@ function loadBundledRulesets(): Promise<readonly ExternalRulebook[]> {
 
 const toAgentInstructions = (probe: ProbeDocument): AgentInstructions => {
 	if (probe.kind === "context") {
-		return AgentInstructionsSchema.parse({
+		return AgentInstructionsSchema.decode({
 			instructions: probe.instructions,
 			task: probe.task,
 			permissions: probe.permissions,
@@ -101,15 +101,56 @@ const toAgentInstructions = (probe: ProbeDocument): AgentInstructions => {
 			rulesets: [...probe.rulesets],
 		});
 	}
-	return AgentInstructionsSchema.parse({
+	if (probe.kind === "rules") {
+		return AgentInstructionsSchema.decode({
+			instructions: probe.instructions,
+			task: probe.task as Extract<
+				z.input<typeof AgentInstructionsSchema>,
+				{ readonly kind: "rules" }
+			>["task"],
+			permissions: probe.permissions as Extract<
+				z.input<typeof AgentInstructionsSchema>,
+				{ readonly kind: "rules" }
+			>["permissions"],
+			kind: probe.kind,
+			change: probe.change,
+			surface: probe.surface,
+			ruleset: probe.rulebook.toRuleset(),
+		});
+	}
+	if (probe.kind === "dead-code") {
+		return AgentInstructionsSchema.decode({
+			instructions: probe.instructions,
+			task: probe.task as Extract<
+				z.input<typeof AgentInstructionsSchema>,
+				{ readonly kind: "dead-code" }
+			>["task"],
+			permissions: probe.permissions as Extract<
+				z.input<typeof AgentInstructionsSchema>,
+				{ readonly kind: "dead-code" }
+			>["permissions"],
+			kind: probe.kind,
+			change: probe.change,
+			surface: probe.surface,
+			ruleset: probe.rulebook.toRuleset(),
+			checkout: nonnull(probe.checkout),
+		});
+	}
+	return AgentInstructionsSchema.decode({
 		instructions: probe.instructions,
-		task: probe.task,
-		permissions: probe.permissions,
+		task: probe.task as Extract<
+			z.input<typeof AgentInstructionsSchema>,
+			{ readonly kind: "reuse" }
+		>["task"],
+		permissions: probe.permissions as Extract<
+			z.input<typeof AgentInstructionsSchema>,
+			{ readonly kind: "reuse" }
+		>["permissions"],
 		kind: probe.kind,
 		change: probe.change,
 		surface: probe.surface,
 		ruleset: probe.rulebook.toRuleset(),
-		...(probe.checkout === undefined ? {} : { checkout: probe.checkout }),
+		checkout: nonnull(probe.checkout),
 	});
 };
 

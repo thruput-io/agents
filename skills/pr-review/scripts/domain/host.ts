@@ -37,31 +37,37 @@ const AZURE_DEVOPS =
 const GIT_RANGE = /^(.+)@([^.]+(?:\.[^.]+)*)\.\.([^.].*)$/u;
 
 const toGitHub = (match: RegExpExecArray): GitHub => {
-	const kind: GitHubKind = GitHubKindSchema.parse("github");
-	const owner: Owner = OwnerSchema.parse(match[1]);
-	const repository: Repository = RepositorySchema.parse(match[2]);
-	const number: PullRequestNumber = PullRequestNumberSchema.parse(
+	const kind: GitHubKind = GitHubKindSchema.decode("github");
+	const owner: Owner = OwnerSchema.decode(nonEmptyString(match[1]));
+	const repository: Repository = RepositorySchema.decode(
+		nonEmptyString(match[2]),
+	);
+	const number: PullRequestNumber = PullRequestNumberSchema.decode(
 		Number(match[3]),
 	);
 	return { kind, owner, repository, number };
 };
 
 const toAzure = (match: RegExpExecArray): AzureDevOps => {
-	const kind: AzureDevOpsKind = AzureDevOpsKindSchema.parse("azure-devops");
-	const organization: Organization = OrganizationSchema.parse(match[1]);
-	const project: Project = ProjectSchema.parse(match[2]);
-	const repository: Repository = RepositorySchema.parse(match[3]);
-	const id: PullRequestId = PullRequestIdSchema.parse(Number(match[4]));
+	const kind: AzureDevOpsKind = AzureDevOpsKindSchema.decode("azure-devops");
+	const organization: Organization = OrganizationSchema.decode(
+		nonEmptyString(match[1]),
+	);
+	const project: Project = ProjectSchema.decode(nonEmptyString(match[2]));
+	const repository: Repository = RepositorySchema.decode(
+		nonEmptyString(match[3]),
+	);
+	const id: PullRequestId = PullRequestIdSchema.decode(Number(match[4]));
 	return { kind, organization, project, repository, id };
 };
 
 const toGit = (match: RegExpExecArray): Git => {
-	const kind: GitKind = GitKindSchema.parse("git");
-	const repository: RepositoryPath = RepositoryPathSchema.parse(
+	const kind: GitKind = GitKindSchema.decode("git");
+	const repository: RepositoryPath = RepositoryPathSchema.decode(
 		resolve(nonEmptyString(match[1])),
 	);
-	const base: Ref = RefSchema.parse(match[2]);
-	const head: Ref = RefSchema.parse(match[3]);
+	const base: Ref = RefSchema.decode(nonEmptyString(match[2]));
+	const head: Ref = RefSchema.decode(nonEmptyString(match[3]));
 	return { kind, repository, base, head };
 };
 

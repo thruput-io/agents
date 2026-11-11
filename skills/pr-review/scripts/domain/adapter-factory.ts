@@ -44,13 +44,13 @@ const withTokenSchema = (token: AccessToken) =>
 
 export const HostAdapterFactory = {
 	from(url: string): z.ZodSafeParseResult<HostAdapter> {
-		return defaultSchema.safeParse(url);
+		return defaultSchema.safeDecode(url);
 	},
 	fromWithToken(
 		url: string,
 		token: AccessToken,
 	): z.ZodSafeParseResult<HostAdapter> {
-		return withTokenSchema(token).safeParse(url);
+		return withTokenSchema(token).safeDecode(url);
 	},
 	rehydrate(persisted: PersistedPullRequest): {
 		readonly pullRequest: CodeUnderReview;

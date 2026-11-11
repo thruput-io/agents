@@ -1,6 +1,25 @@
-import { AccessToken } from "./access-token.ts";
-import type { AdapterResolution, HostAdapter } from "./adapter.ts";
 import {
+	type GitPullRequestCommentThread,
+	pullRequestReviewersCreatePullRequestReviewer,
+	pullRequestReviewersUpdatePullRequestReviewers,
+	pullRequestsGetPullRequest,
+	pullRequestThreadsCreate,
+	pullRequestThreadsList,
+	pullRequestThreadsUpdate,
+} from "../../clients/azure-git.g.ts";
+import { evaluationsList } from "../../clients/azure-policy.g.ts";
+import { AccessToken } from "./access-token.ts";
+import {
+	type AdapterResolution,
+	type HostAdapter,
+	hostErrorReason,
+	isJsonResponse,
+} from "./adapter.ts";
+import {
+	AzureCreatedThreadIdCodec,
+	AzureEvaluationsListCodec,
+	AzurePullRequestCodec,
+	artifactIdOf,
 	blockingBuildPolicies,
 	changeOf,
 	headCommitOf,
@@ -8,15 +27,15 @@ import {
 	remoteUrlOf,
 } from "./azure.ts";
 import {
-	castAzureVote,
-	createAzureThread,
-	fetchAzurePullRequestState,
-	listAzureThreads,
-	refuseAzurePullRequest,
-	setAzureThreadStatus,
-} from "./azure-client.ts";
-import { text, threadPayload } from "./azure-review.ts";
+	type AzureEditableThreadStatus,
+	refusalText,
+	text,
+	threadPayload,
+	threadStatusPayload,
+	votePayload,
+} from "./azure-review.ts";
 import {
+	AzureThreadsListCodec,
 	isOurThread,
 	onLines,
 	priorOf,
@@ -26,18 +45,30 @@ import {
 	unposted,
 } from "./azure-threads.ts";
 import type { AzureMergeRequest } from "./code-under-review.ts";
-import {
-	type AzureDevOps,
-	type Ledger,
-	type Outcome,
-	RefSchema,
-	type Summary,
-	SummarySchema,
+import type {
+	AzureDevOps,
+	HeadCommit,
+	Ledger,
+	Outcome,
+	Summary,
+	ThreadId,
 } from "./contracts.g.ts";
 import { table } from "./ledger-table.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 import type { SnapshotDirectory } from "./snapshot-directory.ts";
 import { hydrateSnapshot } from "./snapshot-hydration.ts";
+
+const API_VERSION = { "api-version": "7.1" } as const;
+const POLICY_VERSION = "7.1-preview.1";
+const AZURE_WRITE_SCOPES = [
+	"user_impersonation",
+	"vso.code_write",
+	"vso.code_full",
+	"vso.code_manage",
+] as const;
+
+const isWritePermitted = (res: { readonly status: number }): boolean =>
+	res.status >= 200 && res.status < 300 && res.status !== 203;
 
 const azureTokenOf = (token: AccessToken): AccessToken =>
 	token.isPat() ? token.toBasic() : token;
@@ -66,20 +97,109 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 	host(): AzureDevOps {
 		return this.#review.host();
 	}
+	#prArgs(): readonly [string, string, string, number] {
+		const { organization, project, repository, id } = this.host();
+		return [organization, project, repository, id];
+	}
+	#requestInit(): { readonly headers: Readonly<Record<string, string>> } {
+		return isNullOrEmpty(this.#token)
+			? { headers: { accept: "application/json" } }
+			: this.#token.requestInit();
+	}
+	#hostError(res: {
+		readonly status: number;
+		readonly headers: Headers;
+	}): AdapterResolution {
+		return {
+			kind: "host-error",
+			host: this.host(),
+			status: res.status,
+			reason: hostErrorReason(
+				"Azure DevOps",
+				"AZURE_DEVOPS_EXT_PAT",
+				res,
+				this.#token,
+			),
+		};
+	}
+	async #setStatus(tid: ThreadId, status: AzureEditableThreadStatus) {
+		await pullRequestThreadsUpdate(
+			...this.#prArgs(),
+			Number(tid),
+			threadStatusPayload(status),
+			API_VERSION,
+			this.#requestInit(),
+		);
+	}
+	async #createThread(payload: GitPullRequestCommentThread): Promise<Summary> {
+		const res = await pullRequestThreadsCreate(
+			...this.#prArgs(),
+			payload,
+			API_VERSION,
+			this.#requestInit(),
+		);
+		return AzureCreatedThreadIdCodec.decode(res.data);
+	}
+	async #castVote(verdict: Outcome["verdict"]): Promise<void> {
+		await pullRequestReviewersCreatePullRequestReviewer(
+			...this.#prArgs(),
+			"me",
+			votePayload(verdict),
+			API_VERSION,
+			this.#requestInit(),
+		);
+	}
+	async #refuse(headCommit: HeadCommit, reason: Summary): Promise<Summary> {
+		const threadId = await this.#createThread(refusalText(headCommit, reason));
+		await this.#castVote("request-changes");
+		return threadId;
+	}
 	async resolve(snapshotDir: SnapshotDirectory): Promise<AdapterResolution> {
 		const host = this.host();
-		const state = await fetchAzurePullRequestState(host, this.#token);
-		if (!state.ok) {
-			return {
-				kind: "host-error",
-				host,
-				status: state.status,
-				reason: state.reason,
-			};
+		if (
+			!(isNullOrEmpty(this.#token) || this.#token.hasScope(AZURE_WRITE_SCOPES))
+		) {
+			return this.#hostError({
+				status: 403,
+				headers: new Headers({ "content-type": "application/json" }),
+			});
 		}
-		const { pr, evaluations, rawThreads } = state;
+		const init = this.#requestInit();
+		const prRes = await pullRequestsGetPullRequest(
+			...this.#prArgs(),
+			API_VERSION,
+			init,
+		);
+		if (!isJsonResponse(prRes)) {
+			return this.#hostError(prRes);
+		}
+		const pr = AzurePullRequestCodec.decode(prRes.data);
+		const policyQuery = {
+			artifactId: artifactIdOf(host, pr),
+			"api-version": POLICY_VERSION,
+		};
+		const [evalRes, threadsRes, writeRes] = await Promise.all([
+			evaluationsList(host.organization, host.project, policyQuery, init),
+			pullRequestThreadsList(...this.#prArgs(), API_VERSION, init),
+			pullRequestReviewersUpdatePullRequestReviewers(
+				...this.#prArgs(),
+				[],
+				API_VERSION,
+				init,
+			),
+		]);
+		if (!isJsonResponse(evalRes)) {
+			return this.#hostError(evalRes);
+		}
+		if (!isJsonResponse(threadsRes)) {
+			return this.#hostError(threadsRes);
+		}
+		if (!isWritePermitted(writeRes)) {
+			return this.#hostError(writeRes);
+		}
+		const evaluations = AzureEvaluationsListCodec.decode(evalRes.data);
+		const rawThreads = AzureThreadsListCodec.decode(threadsRes.data);
 		const headCommit = headCommitOf(pr);
-		const change = changeOf(host, pr);
 		const existingRefusal = refusedOf(rawThreads, headCommit);
 		const reasons = refusalReasons(
 			pr.mergeStatus,
@@ -88,57 +208,51 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 		if (reasons.length > 0) {
 			const reason = reasons.join(", ");
 			const location = isNullOrEmpty(existingRefusal)
-				? await refuseAzurePullRequest(host, this.#token, headCommit, reason)
+				? await this.#refuse(headCommit, reason)
 				: existingRefusal;
 			return { kind: "refused", headCommit, reason, location };
 		}
 		await Promise.all(
-			staleRefusals(rawThreads).map((tid) =>
-				setAzureThreadStatus(host, this.#token, tid, "closed"),
-			),
+			staleRefusals(rawThreads).map((tid) => this.#setStatus(tid, "closed")),
 		);
 		return hydrateSnapshot(
 			this.#review,
 			snapshotDir,
 			{
 				remoteUrl: remoteUrlOf(host, pr),
-				baseRef: RefSchema.parse(pr.targetRefName ?? ""),
-				headRef: headCommit,
+				baseRef: pr.targetRefName ?? "",
+				headRef: pr.sourceRefName ?? headCommit,
 				headCommit,
-				change,
+				change: changeOf(host, pr),
 				priorCommit: priorOf(rawThreads),
 				threads: rawThreads
 					.filter((record) => onLines(record) && isOurThread(record))
 					.map(thread),
 				existingRefusal,
 			},
-			(commit, reason) =>
-				refuseAzurePullRequest(host, this.#token, commit, reason),
+			(commit, reason) => this.#refuse(commit, reason),
 		);
 	}
 	async post(outcome: Outcome, ledger: Ledger): Promise<Summary> {
-		const host = this.host();
-		const rawThreads = await listAzureThreads(host, this.#token);
+		const res = await pullRequestThreadsList(
+			...this.#prArgs(),
+			API_VERSION,
+			this.#requestInit(),
+		);
+		const rawThreads = isJsonResponse(res)
+			? AzureThreadsListCodec.decode(res.data)
+			: [];
 		const pending = unposted(outcome, rawThreads);
 		await Promise.all([
-			...pending.inline.map((finding) =>
-				createAzureThread(host, this.#token, threadPayload(finding)),
-			),
-			...pending.settle.map((id) =>
-				setAzureThreadStatus(host, this.#token, id, "closed"),
-			),
-			...outcome.reopen.map((id) =>
-				setAzureThreadStatus(host, this.#token, id, "active"),
-			),
+			...pending.inline.map((f) => this.#createThread(threadPayload(f))),
+			...pending.settle.map((id) => this.#setStatus(id, "closed")),
+			...outcome.reopen.map((id) => this.#setStatus(id, "active")),
 		]);
+		const body = text([outcome.summary, table(ledger)].join("\n\n"));
 		const summaryId = pending.summary
-			? await createAzureThread(
-					host,
-					this.#token,
-					text([outcome.summary, table(ledger)].join("\n\n")),
-				)
-			: SummarySchema.parse(String(host.id));
-		await castAzureVote(host, this.#token, outcome.verdict);
+			? await this.#createThread(body)
+			: String(this.host().id);
+		await this.#castVote(outcome.verdict);
 		return summaryId;
 	}
 }

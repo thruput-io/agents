@@ -38,7 +38,10 @@ const rejectionMessage = (
 	targetProbe: LedgerProbe,
 	raw: { readonly headCommit: string; readonly rows: readonly Row[] },
 ): string => {
-	const parsed = ledgerFor(targetProbe).safeParse(raw);
+	const parsed = ledgerFor(targetProbe).safeDecode({
+		headCommit: raw.headCommit,
+		rows: [...raw.rows],
+	});
 	return parsed.success ? "" : z.prettifyError(parsed.error);
 };
 
@@ -160,7 +163,7 @@ it("anchorInside accepts lines copied from one surface fragment on their side, a
 });
 
 it("the ledger schema accepts rows matching the rules in order", () => {
-	const parsed = ledgerFor(probe).parse({
+	const parsed = ledgerFor(probe).decode({
 		headCommit: H,
 		rows: [cleanRow("A"), cleanRow("B")],
 	});
@@ -209,14 +212,14 @@ it("the ledger schema rejects a violation anchored outside the surface", () => {
 		cleanRow("B"),
 	];
 	assert.equal(
-		ledgerFor(probe).parse({
+		ledgerFor(probe).decode({
 			headCommit: H,
 			rows: rows(lines("p", 2, 2, "head")),
 		}).rows.length,
 		2,
 	);
 	assert.equal(
-		ledgerFor(probe).parse({ headCommit: H, rows: rows(atPullRequest) }).rows
+		ledgerFor(probe).decode({ headCommit: H, rows: rows(atPullRequest) }).rows
 			.length,
 		2,
 	);
@@ -231,7 +234,7 @@ it("the ledger schema rejects a violation anchored outside the surface", () => {
 
 it("the ledger schema requires exactly three rows on rules of one ruleset the context probe was handed", () => {
 	assert.equal(
-		ledgerFor(contextProbe).parse({
+		ledgerFor(contextProbe).decode({
 			headCommit: H,
 			rows: [cleanBookRow("x"), cleanBookRow("y"), cleanBookRow("z")],
 		}).rows.length,

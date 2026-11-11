@@ -7,6 +7,7 @@ const BASIC_PREFIX = /^basic\s+(\S+)$/iu;
 const SCHEME_ONLY = /^(?:bearer|basic)$/iu;
 const JWT_PATTERN = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/u;
 const GITHUB_TOKEN_PATTERN = /^(?:gh[pousr]_|github_pat_)\S+$/u;
+const WHITESPACE_PATTERN = /\s+/u;
 
 const TokenSchema = z
 	.string()
@@ -45,6 +46,42 @@ function senseToken(raw: string): {
 	return { kind: "pat", credential: raw };
 }
 
+const JwtClaimsSchema = z.object({
+	scp: z.string().optional(),
+	roles: z.array(z.string()).optional(),
+});
+
+function parseJwtScopes(credential: string): readonly string[] | null {
+	if (!JWT_PATTERN.test(credential)) {
+		return null;
+	}
+	const payloadSegment = credential.split(".")[1];
+	if (!payloadSegment) {
+		return null;
+	}
+	try {
+		const raw = JSON.parse(
+			Buffer.from(payloadSegment, "base64url").toString("utf8"),
+		) as z.input<typeof JwtClaimsSchema>;
+		const claims = JwtClaimsSchema.safeDecode(raw);
+		if (!claims.success) {
+			return null;
+		}
+		if (typeof claims.data.scp === "string") {
+			return claims.data.scp
+				.trim()
+				.split(WHITESPACE_PATTERN)
+				.filter((scope) => scope.length > 0);
+		}
+		if (Array.isArray(claims.data.roles)) {
+			return claims.data.roles;
+		}
+		return null;
+	} catch {
+		return null;
+	}
+}
+
 export class AccessToken {
 	readonly #kind: AccessTokenKind;
 	readonly #credential: string;
@@ -56,7 +93,7 @@ export class AccessToken {
 		return TokenSchema.transform((value) => {
 			const sensed = senseToken(value);
 			return new AccessToken(sensed.kind, sensed.credential);
-		}).safeParse(raw);
+		}).safeDecode(raw);
 	}
 	kind(): AccessTokenKind {
 		return this.#kind;
@@ -69,6 +106,15 @@ export class AccessToken {
 	}
 	isPat(): boolean {
 		return this.#kind === "pat";
+	}
+	scopes(): readonly string[] | null {
+		return parseJwtScopes(this.#credential);
+	}
+	hasScope(accepted: readonly string[]): boolean {
+		const granted = this.scopes();
+		return (
+			granted === null || accepted.some((scope) => granted.includes(scope))
+		);
 	}
 	toBearer(): AccessToken {
 		if (this.#kind === "bearer") {

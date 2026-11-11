@@ -27,10 +27,10 @@ const index = [
 		canonical_url:
 			"https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md",
 	},
-];
+] as const;
 
 const firstEntry = (): IndexEntry =>
-	z.tuple([IndexSchema.element]).parse(index)[0];
+	z.tuple([IndexSchema.element]).decode([index[0]])[0];
 
 it("an index entry is read from its canonical GitHub file and fetched from its raw address", () => {
 	const entry = firstEntry();
@@ -47,7 +47,7 @@ it("an index entry is read from its canonical GitHub file and fetched from its r
 it("an index entry that is not a file on github.com is refused with the reason", () => {
 	const bad = [{ ...index[0], canonical_url: "https://books.example/ddd.md" }];
 	assert.throws(
-		() => IndexSchema.parse(bad),
+		() => IndexSchema.decode(bad),
 		(error: Error) =>
 			z
 				.prettifyError(error as z.ZodError)

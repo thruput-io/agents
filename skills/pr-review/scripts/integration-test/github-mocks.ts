@@ -15,6 +15,7 @@ import {
 	getPullsListReviewsMockHandler,
 	getPullsListReviewsResponseMock,
 } from "../../clients/github.g.ts";
+import { PullsCreateReviewBody } from "../../clients/github.zod.g.ts";
 import { nonnull } from "../domain/nullish.ts";
 import { SITE } from "../domain/rulebook.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
@@ -33,6 +34,7 @@ const emptyThreadConnection = () => ({
 const mockedGraphQlSchema = addMocksToSchema({
 	schema: executableGraphQlSchema,
 	mocks: {
+		PullRequest: () => ({ viewerCanUpdate: true }),
 		PullRequestReviewThreadConnection: emptyThreadConnection,
 	},
 });
@@ -74,6 +76,61 @@ export function createForbiddenHtmlGitHubHandler() {
 	);
 }
 
+export function createReadOnlyOAuthScopesGitHubHandler(repo: ScenarioRepo) {
+	const basePull = getPullsGetResponseMock({
+		number: 42,
+		mergeable_state: "clean",
+	});
+	return http.get(
+		"https://api.github.com/repos/:owner/:repo/pulls/:pull_number",
+		() =>
+			HttpResponse.json(
+				{
+					...basePull,
+					user: { ...basePull.user, login: "author@example.com" },
+					base: { ...basePull.base, ref: "main" },
+					head: {
+						...basePull.head,
+						ref: "feature",
+						sha: repo.headCommit,
+						repo: { ...nonnull(basePull.head.repo), clone_url: repo.repoDir },
+					},
+				},
+				{
+					status: 200,
+					headers: { "x-oauth-scopes": "read:org, gist" },
+				},
+			),
+	);
+}
+
+export function createReadOnlyViewerGitHubGraphQlHandler() {
+	return http.post("https://api.github.com/graphql", () =>
+		HttpResponse.json({
+			data: {
+				repository: {
+					pullRequest: {
+						viewerCanUpdate: false,
+						reviewThreads: {
+							pageInfo: { hasNextPage: false, endCursor: null },
+							nodes: [],
+						},
+					},
+				},
+			},
+		}),
+	);
+}
+
+export function createForbiddenGitHubGraphQlHandler() {
+	return http.post("https://api.github.com/graphql", () =>
+		HttpResponse.json(
+			{ message: "Resource not accessible by integration" },
+			{ status: 403 },
+		),
+	);
+}
+
 export function createInProgressGitHubChecksHandlers(
 	name: string,
 	postedReviews: string[],
@@ -89,11 +146,11 @@ export function createInProgressGitHubChecksHandlers(
 		http.post(
 			"https://api.github.com/repos/:owner/:repo/pulls/:pull_number/reviews",
 			async ({ request }) => {
-				const body = (await request.json()) as {
-					readonly event: string;
-					readonly body: string;
-				};
-				postedReviews.push(`${body.event}:${body.body}`);
+				const raw = (await request.json()) as Parameters<
+					typeof PullsCreateReviewBody.decode
+				>[0];
+				const body = PullsCreateReviewBody.decode(raw);
+				postedReviews.push(`${nonnull(body.event)}:${nonnull(body.body)}`);
 				return HttpResponse.json(
 					getPullsCreateReviewResponseMock({
 						html_url:

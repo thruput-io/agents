@@ -1,8 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
-import { AccessToken } from "../domain/access-token.ts";
-import { nonnull } from "../domain/nullish.ts";
 import { createAzureHandlers } from "./azure-mocks.ts";
 import { createGitHubHandlers } from "./github-mocks.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
@@ -25,4 +23,4 @@ export const resetHostMocks = (repo: ScenarioRepo): void => {
 	);
 };
 
-export const scenarioToken = nonnull(AccessToken.from("test-token").data);
+export const scenarioToken = "test-token";

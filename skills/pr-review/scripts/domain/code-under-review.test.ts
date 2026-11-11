@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { AccessToken } from "./access-token.ts";
+import { hasOAuthScope, hostErrorReason, isJsonResponse } from "./adapter.ts";
 import {
 	AzureMergeRequest,
 	GitDiff,
 	GithubPullRequest,
 } from "./code-under-review.ts";
-import { hostErrorReason, isJsonResponse } from "./json-fetch.ts";
+import { nonnull } from "./nullish.ts";
 import {
 	CodeUnderReviewFactory,
 	CodeUnderReviewSnapshot,
@@ -15,76 +16,94 @@ import {
 import { SnapshotDirectory } from "./snapshot-directory.ts";
 
 it("AccessToken senses bearer, basic, and pat tokens, converts formats, and sets JSON accept headers", () => {
-	const first = AccessToken.from("ghp_secret");
-	const second = AccessToken.from("Bearer ghp_secret");
-	const other = AccessToken.from("ghp_other");
-	const jwt = AccessToken.from("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig");
-	const pat = AccessToken.from("azdo-raw-pat");
-	const basicColon = AccessToken.from(":azdo-raw-pat");
-	const basicHeader = AccessToken.from(
+	const parseToken = (raw: string) => nonnull(AccessToken.from(raw).data);
+	const first = parseToken("ghp_secret");
+	const second = parseToken("Bearer ghp_secret");
+	const other = parseToken("ghp_other");
+	const jwt = parseToken("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig");
+	const pat = parseToken("azdo-raw-pat");
+	const basicColon = parseToken(":azdo-raw-pat");
+	const basicHeader = parseToken(
 		`Basic ${Buffer.from(":azdo-raw-pat", "utf8").toString("base64")}`,
 	);
-	assert.equal(first.success, true);
-	assert.equal(second.success, true);
-	assert.equal(other.success, true);
-	assert.equal(jwt.success, true);
-	assert.equal(pat.success, true);
-	assert.equal(basicColon.success, true);
-	assert.equal(basicHeader.success, true);
 
-	assert.equal(first.data.kind(), "bearer");
-	assert.equal(first.data.isBearer(), true);
-	assert.equal(first.data.isBasic(), false);
-	assert.equal(first.data.isPat(), false);
-	assert.equal(jwt.data.isBearer(), true);
+	assert.equal(first.kind(), "bearer");
+	assert.equal(first.isBearer(), true);
+	assert.equal(first.isBasic(), false);
+	assert.equal(first.isPat(), false);
+	assert.equal(jwt.isBearer(), true);
 
-	assert.equal(pat.data.kind(), "pat");
-	assert.equal(pat.data.isPat(), true);
-	assert.equal(pat.data.toBasic().isBasic(), true);
-	assert.equal(pat.data.toBasic().equals(basicColon.data), true);
-	assert.equal(basicColon.data.equals(basicHeader.data), true);
+	assert.equal(pat.kind(), "pat");
+	assert.equal(pat.isPat(), true);
+	assert.equal(pat.toBasic().isBasic(), true);
+	assert.equal(pat.toBasic().equals(basicColon), true);
+	assert.equal(basicColon.equals(basicHeader), true);
 	assert.equal(
-		basicColon.data.toBearer().authorizationHeader(),
+		basicColon.toBearer().authorizationHeader(),
 		"Bearer azdo-raw-pat",
 	);
+	assert.equal(pat.toBearer().authorizationHeader(), "Bearer azdo-raw-pat");
 	assert.equal(
-		pat.data.toBearer().authorizationHeader(),
-		"Bearer azdo-raw-pat",
-	);
-	assert.equal(
-		first.data.toBasic().authorizationHeader(),
+		first.toBasic().authorizationHeader(),
 		`Basic ${Buffer.from(":ghp_secret", "utf8").toString("base64")}`,
 	);
 
-	assert.equal(first.data.equals(second.data), true);
-	assert.equal(first.data.equals(other.data), false);
-	assert.deepEqual(first.data.requestInit(), {
+	assert.equal(first.equals(second), true);
+	assert.equal(first.equals(other), false);
+	assert.deepEqual(first.requestInit(), {
 		headers: {
 			accept: "application/json",
 			authorization: "Bearer ghp_secret",
 		},
 	});
-	assert.deepEqual(
-		first.data.requestInitWithHeaders({ accept: "text/plain" }),
-		{
-			headers: {
-				accept: "text/plain",
-				authorization: "Bearer ghp_secret",
-			},
+	assert.deepEqual(first.requestInitWithHeaders({ accept: "text/plain" }), {
+		headers: {
+			accept: "text/plain",
+			authorization: "Bearer ghp_secret",
 		},
-	);
+	});
 	assert.equal(AccessToken.from("").success, false);
 	assert.equal(AccessToken.from("Bearer ").success, false);
+
+	const makeJwt = (claims: unknown) =>
+		`eyJhbGciOiJIUzI1NiJ9.${Buffer.from(JSON.stringify(claims), "utf8").toString("base64url")}.sig`;
+	const scpJwt = parseToken(makeJwt({ scp: "vso.code_write vso.work" }));
+	const rolesJwt = parseToken(makeJwt({ roles: ["user_impersonation"] }));
+	const badJwt = parseToken("eyJhbGciOiJIUzI1NiJ9.not_json.sig");
+	const nonStringScpJwt = parseToken(makeJwt({ scp: 123 }));
+	assert.equal(first.scopes(), null);
+	assert.equal(first.hasScope(["repo"]), true);
+	assert.equal(jwt.scopes(), null);
+	assert.deepEqual(scpJwt.scopes(), ["vso.code_write", "vso.work"]);
+	assert.equal(scpJwt.hasScope(["vso.code_write"]), true);
+	assert.equal(scpJwt.hasScope(["vso.code_manage"]), false);
+	assert.deepEqual(rolesJwt.scopes(), ["user_impersonation"]);
+	assert.equal(rolesJwt.hasScope(["user_impersonation"]), true);
+	assert.equal(rolesJwt.hasScope(["vso.code_write"]), false);
+	assert.equal(badJwt.scopes(), null);
+	assert.equal(nonStringScpJwt.scopes(), null);
 });
 
-it("isJsonResponse and hostErrorReason classify HTTP responses and format authentication diagnostics", () => {
+it("isJsonResponse, hasOAuthScope, and hostErrorReason classify HTTP responses and format authentication diagnostics", () => {
 	const jsonHeaders = new Headers({ "content-type": "application/json" });
 	const htmlHeaders = new Headers({
 		"content-type": "text/html; charset=utf-8",
 	});
+	const scopeHeaders = (value: string) =>
+		new Headers({ "x-oauth-scopes": value });
 	assert.equal(isJsonResponse({ status: 200, headers: jsonHeaders }), true);
 	assert.equal(isJsonResponse({ status: 203, headers: htmlHeaders }), false);
 	assert.equal(isJsonResponse({ status: 403, headers: htmlHeaders }), false);
+	assert.equal(hasOAuthScope(jsonHeaders, ["repo", "public_repo"]), true);
+	assert.equal(
+		hasOAuthScope(scopeHeaders("read:org, repo"), ["repo", "public_repo"]),
+		true,
+	);
+	assert.equal(
+		hasOAuthScope(scopeHeaders("read:org, gist"), ["repo", "public_repo"]),
+		false,
+	);
+	assert.equal(hasOAuthScope(scopeHeaders(""), ["repo", "public_repo"]), false);
 	assert.equal(
 		hostErrorReason(
 			"Azure DevOps",

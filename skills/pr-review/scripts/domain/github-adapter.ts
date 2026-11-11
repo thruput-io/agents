@@ -1,26 +1,33 @@
 import { GraphQLClient } from "graphql-request";
 import {
 	checksListForRef,
-	type PullRequest,
-	type PullRequestReview,
 	pullsCreateReview,
 	pullsGet,
 	pullsListReviews,
 } from "../../clients/github.g.ts";
 import { AccessToken } from "./access-token.ts";
-import type { AdapterResolution, HostAdapter } from "./adapter.ts";
-import type { GithubPullRequest } from "./code-under-review.ts";
 import {
-	type GitHub,
-	type HeadCommit,
-	type Ledger,
-	type Outcome,
-	RefSchema,
-	type Summary,
+	type AdapterResolution,
+	type HostAdapter,
+	hasOAuthScope,
+	hostErrorReason,
+	isJsonResponse,
+} from "./adapter.ts";
+import type { GithubPullRequest } from "./code-under-review.ts";
+import type {
+	GitHub,
+	HeadCommit,
+	Ledger,
+	Outcome,
+	Summary,
 } from "./contracts.g.ts";
 import {
 	changeOf,
 	failedChecks,
+	GitHubCheckRunsCodec,
+	GitHubCreatedReviewCodec,
+	GitHubPullRequestCodec,
+	GitHubReviewsCodec,
 	headCommitOf,
 	postedAt,
 	priorOf,
@@ -33,7 +40,6 @@ import {
 	fetchGitHubThreads,
 	settleAndReopenGitHubThreads,
 } from "./github-threads.ts";
-import { hostErrorReason, isJsonResponse } from "./json-fetch.ts";
 import { table } from "./ledger-table.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 import type { SnapshotDirectory } from "./snapshot-directory.ts";
@@ -73,6 +79,17 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 			? { headers: { accept: "application/json" } }
 			: this.#token.requestInit();
 	}
+	#hostError(res: {
+		readonly status: number;
+		readonly headers: Headers;
+	}): AdapterResolution {
+		return {
+			kind: "host-error",
+			host: this.host(),
+			status: res.status,
+			reason: hostErrorReason("GitHub", "GH_TOKEN", res, this.#token),
+		};
+	}
 	async #refuse(headCommit: HeadCommit, reason: Summary): Promise<Summary> {
 		const host = this.host();
 		const created = await pullsCreateReview(
@@ -82,7 +99,7 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 			refusalPayload(headCommit, reason),
 			this.#requestInit(),
 		);
-		return (created.data as PullRequestReview).html_url;
+		return GitHubCreatedReviewCodec.decode(created.data).html_url;
 	}
 	async resolve(snapshotDir: SnapshotDirectory): Promise<AdapterResolution> {
 		const host = this.host();
@@ -94,68 +111,65 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 			init,
 		);
 		if (!isJsonResponse(prRes)) {
-			return {
-				kind: "host-error",
-				host,
-				status: prRes.status,
-				reason: hostErrorReason("GitHub", "GH_TOKEN", prRes, this.#token),
-			};
+			return this.#hostError(prRes);
 		}
-		const pr = prRes.data as PullRequest;
+		if (
+			!(
+				hasOAuthScope(prRes.headers, ["repo", "public_repo"]) &&
+				(this.#token?.hasScope(["repo", "public_repo"]) ?? true)
+			)
+		) {
+			return this.#hostError({ status: 403, headers: prRes.headers });
+		}
+		const pr = GitHubPullRequestCodec.decode(prRes.data);
 		const headCommit = headCommitOf(pr);
 		const change = changeOf(host, pr);
-		const [checksRes, reviewsRes] = await Promise.all([
+		const client = new GraphQLClient(GRAPHQL_URL, init);
+		const [checksRes, reviewsRes, threadsRes] = await Promise.all([
 			checksListForRef(host.owner, host.repository, headCommit, {}, init),
 			pullsListReviews(host.owner, host.repository, host.number, {}, init),
+			fetchGitHubThreads(client, host, change.author),
 		]);
-		const failed = [checksRes, reviewsRes].find((res) => !isJsonResponse(res));
-		if (failed) {
-			return {
-				kind: "host-error",
-				host,
-				status: failed.status,
-				reason: hostErrorReason("GitHub", "GH_TOKEN", failed, this.#token),
-			};
+		if (!isJsonResponse(checksRes)) {
+			return this.#hostError(checksRes);
 		}
-		const reviews = reviewsRes.data;
+		if (!isJsonResponse(reviewsRes)) {
+			return this.#hostError(reviewsRes);
+		}
+		if (!threadsRes.ok) {
+			return this.#hostError(threadsRes);
+		}
+		if (!threadsRes.viewerCanUpdate) {
+			return this.#hostError({ status: 403, headers: prRes.headers });
+		}
+		const reviews = GitHubReviewsCodec.decode(reviewsRes.data);
 		const already = postedAt(reviews, headCommit);
 		if (!isNullOrEmpty(already)) {
-			return {
-				kind: "already-reviewed",
-				headCommit,
-				location: already,
-			};
+			return { kind: "already-reviewed", headCommit, location: already };
 		}
 		const existingRefusal = refusedIn(reviews, headCommit);
 		const reasons = refusalReasons(
 			pr.mergeable_state,
-			failedChecks(checksRes.data.check_runs),
+			failedChecks(GitHubCheckRunsCodec.decode(checksRes.data)),
 		);
 		if (reasons.length > 0) {
 			const reason = reasons.join(", ");
 			const location = isNullOrEmpty(existingRefusal)
 				? await this.#refuse(headCommit, reason)
 				: existingRefusal;
-			return {
-				kind: "refused",
-				headCommit,
-				reason,
-				location,
-			};
+			return { kind: "refused", headCommit, reason, location };
 		}
-		const client = new GraphQLClient(GRAPHQL_URL, init);
-		const threads = await fetchGitHubThreads(client, host, change.author);
 		return hydrateSnapshot(
 			this.#review,
 			snapshotDir,
 			{
 				remoteUrl: remoteUrlOf(host, pr),
-				baseRef: RefSchema.parse(pr.base.ref),
+				baseRef: pr.base.ref,
 				headRef: headCommit,
 				headCommit,
 				change,
 				priorCommit: priorOf(reviews),
-				threads,
+				threads: threadsRes.threads,
 				existingRefusal,
 			},
 			(commit, reason) => this.#refuse(commit, reason),
@@ -171,9 +185,12 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 			{},
 			init,
 		);
-		const existingUrl = postedAt(reviewsRes.data, outcome.headCommit);
+		const reviews = isJsonResponse(reviewsRes)
+			? GitHubReviewsCodec.decode(reviewsRes.data)
+			: [];
+		const existingUrl = postedAt(reviews, outcome.headCommit);
 		const location = isNullOrEmpty(existingUrl)
-			? (
+			? GitHubCreatedReviewCodec.decode(
 					(
 						await pullsCreateReview(
 							host.owner,
@@ -182,7 +199,7 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 							payload(outcome, table(ledger)),
 							init,
 						)
-					).data as PullRequestReview
+					).data,
 				).html_url
 			: existingUrl;
 		const client = new GraphQLClient(GRAPHQL_URL, init);

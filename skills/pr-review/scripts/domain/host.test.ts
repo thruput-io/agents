@@ -12,11 +12,11 @@ it("a GitHub pull request URL is a GitHub host, and nothing else", () => {
 		number: 14,
 	};
 	assert.deepEqual(
-		TargetSchema.parse("https://github.com/thruput-io/agents/pull/14"),
+		TargetSchema.decode("https://github.com/thruput-io/agents/pull/14"),
 		host,
 	);
 	assert.deepEqual(
-		TargetSchema.parse(
+		TargetSchema.decode(
 			"https://github.com/thruput-io/agents/pull/14/files#diff-1",
 		),
 		host,
@@ -32,13 +32,13 @@ it("an Azure DevOps pull request URL is an Azure DevOps host, with or without a 
 		id: 57_121,
 	};
 	assert.deepEqual(
-		TargetSchema.parse(
+		TargetSchema.decode(
 			"https://dev.azure.com/NavistarCollection/NavistarProduction/_git/DS-DD-DataIntegration-Platform/pullrequest/57121",
 		),
 		host,
 	);
 	assert.deepEqual(
-		TargetSchema.parse(
+		TargetSchema.decode(
 			"https://dev.azure.com/NavistarCollection/NavistarProduction/_git/DS-DD-DataIntegration-Platform/pullrequest/57121?path=/a.cs",
 		),
 		host,
@@ -46,13 +46,13 @@ it("an Azure DevOps pull request URL is an Azure DevOps host, with or without a 
 });
 
 it("a repository path with two refs is a git host, its path made absolute", () => {
-	assert.deepEqual(TargetSchema.parse(".@main..HEAD"), {
+	assert.deepEqual(TargetSchema.decode(".@main..HEAD"), {
 		kind: "git",
 		repository: resolve("."),
 		base: "main",
 		head: "HEAD",
 	});
-	assert.deepEqual(TargetSchema.parse("/w/repo@origin/main..feature/x"), {
+	assert.deepEqual(TargetSchema.decode("/w/repo@origin/main..feature/x"), {
 		kind: "git",
 		repository: "/w/repo",
 		base: "origin/main",
@@ -62,7 +62,7 @@ it("a repository path with two refs is a git host, its path made absolute", () =
 
 it("a target that is none of these is refused with the reason", () => {
 	assert.throws(
-		() => TargetSchema.parse("https://example.com/x"),
+		() => TargetSchema.decode("https://example.com/x"),
 		(error: Error) =>
 			z
 				.prettifyError(error as z.ZodError)

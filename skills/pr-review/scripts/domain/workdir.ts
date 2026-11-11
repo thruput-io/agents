@@ -107,7 +107,7 @@ export class Workdir {
 		);
 
 	static from(raw: Checkout): z.ZodSafeParseResult<Workdir> {
-		return Workdir.Schema.safeParse(raw);
+		return Workdir.Schema.safeDecode(raw);
 	}
 
 	static fromSession(raw: string): z.ZodSafeParseResult<Workdir> {

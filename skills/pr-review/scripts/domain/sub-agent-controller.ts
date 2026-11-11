@@ -111,7 +111,7 @@ const customFailure = (
 ): z.ZodSafeParseResult<LedgerSubmission> =>
 	z
 		.custom<LedgerSubmission>(() => false, { path: [path], message })
-		.safeParse(null);
+		.safeDecode(null as never);
 
 export class SubAgentController {
 	readonly #workdir: Workdir;

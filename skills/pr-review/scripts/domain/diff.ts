@@ -105,7 +105,7 @@ const parseDiff = (text: string): ChangedFile[] =>
 		.flatMap(fileOfSection);
 
 export const changedFiles = (text: string): ChangedFile[] =>
-	z.array(ChangedFileSchema).parse(parseDiff(text));
+	z.array(ChangedFileSchema).decode(parseDiff(text));
 
 export const intersect = (
 	rangesA: readonly LineRange[],

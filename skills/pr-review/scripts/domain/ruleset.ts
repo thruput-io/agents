@@ -54,7 +54,7 @@ export const IndexSchema = z.array(
 export type IndexEntry = z.infer<typeof IndexSchema>[number];
 
 export const withText = (entry: IndexEntry, text: RulesetText): Rulebook =>
-	RulebookSchema.parse({ ...entry, text: RulesetTextSchema.parse(text) });
+	RulebookSchema.decode({ ...entry, text: RulesetTextSchema.decode(text) });
 
 export const FILE_LINES: LineNumber = 1000;
 export const DIFF_LINES: LineNumber = 1600;

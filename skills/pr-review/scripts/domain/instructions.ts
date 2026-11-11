@@ -52,10 +52,10 @@ const TASK_BY_KIND: {
 	readonly reuse: ReuseInstructions["task"];
 	readonly context: ContextInstructions["task"];
 } = {
-	rules: RulesTaskSchema.parse(undefined),
-	"dead-code": DeadCodeTaskSchema.parse(undefined),
-	reuse: ReuseTaskSchema.parse(undefined),
-	context: ContextTaskSchema.parse(undefined),
+	rules: RulesTaskSchema.decode(undefined),
+	"dead-code": DeadCodeTaskSchema.decode(undefined),
+	reuse: ReuseTaskSchema.decode(undefined),
+	context: ContextTaskSchema.decode(undefined),
 };
 
 const PERMISSIONS_BY_KIND: {
@@ -64,15 +64,15 @@ const PERMISSIONS_BY_KIND: {
 	readonly reuse: ReuseInstructions["permissions"];
 	readonly context: ContextInstructions["permissions"];
 } = {
-	rules: RulesPermissionsSchema.parse(undefined),
-	"dead-code": DeadCodePermissionsSchema.parse(undefined),
-	reuse: ReusePermissionsSchema.parse(undefined),
-	context: ContextPermissionsSchema.parse(undefined),
+	rules: RulesPermissionsSchema.decode(undefined),
+	"dead-code": DeadCodePermissionsSchema.decode(undefined),
+	reuse: ReusePermissionsSchema.decode(undefined),
+	context: ContextPermissionsSchema.decode(undefined),
 };
 
 export class Instructions {
 	static readonly Prose: AgentInstructionsBase["instructions"] =
-		AgentInstructionsBaseSchema.parse({}).instructions;
+		AgentInstructionsBaseSchema.decode({}).instructions;
 	readonly #prose: InstructionsProse;
 	readonly #task: Task;
 	readonly #permissions: ProbePermissions;

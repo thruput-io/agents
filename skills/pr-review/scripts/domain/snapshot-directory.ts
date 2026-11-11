@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
-import type { z } from "zod";
+import { z } from "zod";
 import { type Checkout, CheckoutSchema } from "./contracts.g.ts";
 
 export class SnapshotDirectory {
@@ -8,11 +8,18 @@ export class SnapshotDirectory {
 	private constructor(path: Checkout) {
 		this.#path = path;
 	}
-	static readonly Schema = CheckoutSchema.transform(
-		(path) => new SnapshotDirectory(path),
+	static readonly Schema = z.codec(
+		CheckoutSchema,
+		z.custom<SnapshotDirectory>(
+			(val): val is SnapshotDirectory => val instanceof SnapshotDirectory,
+		),
+		{
+			decode: (path) => new SnapshotDirectory(path),
+			encode: (dir) => dir.toString(),
+		},
 	);
 	static from(raw: Checkout): z.ZodSafeParseResult<SnapshotDirectory> {
-		return SnapshotDirectory.Schema.safeParse(raw);
+		return SnapshotDirectory.Schema.safeDecode(raw);
 	}
 	gitRaw(args: readonly string[]): string {
 		mkdirSync(this.#path, { recursive: true });

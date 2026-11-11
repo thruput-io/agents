@@ -33,21 +33,21 @@ export class GitAdapter implements HostAdapter<Git> {
 		snapshotDir.git(["fetch", "--quiet", "--no-tags", repository, base]);
 		const baseCommit = snapshotDir.git(["rev-parse", "FETCH_HEAD"]).trim();
 		snapshotDir.git(["fetch", "--quiet", "--no-tags", repository, head]);
-		const headCommit = HeadCommitSchema.parse(
+		const headCommit = HeadCommitSchema.decode(
 			snapshotDir.git(["rev-parse", "FETCH_HEAD"]).trim(),
 		);
 		const mergeBase = snapshotDir
 			.git(["merge-base", baseCommit, headCommit])
 			.trim();
-		const author = DeveloperSchema.parse(
+		const author = DeveloperSchema.decode(
 			snapshotDir.git(["log", "-1", "--format=%ae", headCommit]).trim(),
 		);
-		const description = PurposeSchema.parse(
+		const description = PurposeSchema.decode(
 			snapshotDir
 				.git(["log", "--format=%B", `${mergeBase}..${headCommit}`])
 				.trim(),
 		);
-		const change = ChangeSchema.parse({ host, author, description });
+		const change = ChangeSchema.decode({ host, author, description });
 		return hydrateSnapshot(
 			this.#review,
 			snapshotDir,

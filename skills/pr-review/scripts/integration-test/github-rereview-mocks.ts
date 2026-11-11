@@ -6,6 +6,7 @@ import {
 	getPullsListReviewsMockHandler,
 	getPullsListReviewsResponseMock,
 } from "../../clients/github.g.ts";
+import { PullsCreateReviewBody } from "../../clients/github.zod.g.ts";
 import { nonnull } from "../domain/nullish.ts";
 import { SITE } from "../domain/rulebook.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
@@ -37,6 +38,7 @@ export function createGitHubReReviewHandlers(
 		data: {
 			repository: {
 				pullRequest: {
+					viewerCanUpdate: true,
 					reviewThreads: {
 						pageInfo: { hasNextPage: true, endCursor: "cursor-page-2" },
 						nodes: [
@@ -74,6 +76,7 @@ export function createGitHubReReviewHandlers(
 		data: {
 			repository: {
 				pullRequest: {
+					viewerCanUpdate: true,
 					reviewThreads: {
 						pageInfo: { hasNextPage: false, endCursor: null },
 						nodes: [
@@ -127,8 +130,11 @@ export function createGitHubReReviewHandlers(
 		http.post(
 			"https://api.github.com/repos/:owner/:repo/pulls/:pull_number/reviews",
 			async ({ request }) => {
-				const body = (await request.json()) as { readonly body: string };
-				recorder.postedBodies.push(body.body);
+				const raw = (await request.json()) as Parameters<
+					typeof PullsCreateReviewBody.decode
+				>[0];
+				const body = PullsCreateReviewBody.decode(raw);
+				recorder.postedBodies.push(nonnull(body.body));
 				return HttpResponse.json(
 					getPullsCreateReviewResponseMock({
 						html_url:

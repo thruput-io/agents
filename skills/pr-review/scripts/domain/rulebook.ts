@@ -113,8 +113,8 @@ export function rulebook(
 	rules: readonly Rule[],
 	governance: z.input<typeof GovernanceSchema>,
 ): RulebookData {
-	const parsedRules = z.array(RuleSchema).parse(rules);
-	const parsedGovernance = GovernanceSchema.parse(governance);
+	const parsedRules = z.array(RuleSchema).decode([...rules]);
+	const parsedGovernance = GovernanceSchema.decode(governance);
 	const uniqueParents = [...new Set(parsedRules.map((child) => child.parent))];
 	const principles = uniqueParents.map((id) => {
 		const parent = parsedGovernance.principles.find((entry) => entry.id === id);
@@ -126,7 +126,7 @@ export function rulebook(
 		return parent;
 	});
 	return {
-		instructions: RulesetInstructionsSchema.parse(undefined),
+		instructions: RulesetInstructionsSchema.decode(undefined),
 		rules: parsedRules,
 		principles,
 		definitions: [...parsedGovernance.definitions],
@@ -138,11 +138,16 @@ export class Rulebook implements Iterable<Rule> {
 	private constructor(data: RulebookData) {
 		this.#data = data;
 	}
-	static readonly Schema = RulesetSchema.transform(
-		(data) => new Rulebook(data),
+	static readonly Schema = z.codec(
+		RulesetSchema,
+		z.custom<Rulebook>((val): val is Rulebook => val instanceof Rulebook),
+		{
+			decode: (data) => new Rulebook(data),
+			encode: (book) => book.toRuleset(),
+		},
 	);
 	static from(raw: z.input<typeof RulesetSchema>) {
-		return Rulebook.Schema.safeParse(raw);
+		return Rulebook.Schema.safeDecode(raw);
 	}
 	static slice(
 		rules: readonly Rule[],

@@ -43,12 +43,19 @@ export class LedgerDirectory {
 		this.#path = path;
 	}
 
-	static readonly Schema = CheckoutSchema.transform(
-		(path) => new LedgerDirectory(path),
+	static readonly Schema = z.codec(
+		CheckoutSchema,
+		z.custom<LedgerDirectory>(
+			(val): val is LedgerDirectory => val instanceof LedgerDirectory,
+		),
+		{
+			decode: (path) => new LedgerDirectory(path),
+			encode: (dir) => dir.toString(),
+		},
 	);
 
 	static from(raw: Checkout): z.ZodSafeParseResult<LedgerDirectory> {
-		return LedgerDirectory.Schema.safeParse(raw);
+		return LedgerDirectory.Schema.safeDecode(raw);
 	}
 
 	writePullRequest(pullRequest: PersistedPullRequest): void {

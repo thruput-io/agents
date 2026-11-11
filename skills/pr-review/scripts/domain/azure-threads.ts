@@ -1,17 +1,17 @@
-import type { GitPullRequestCommentThread } from "../../clients/azure-git.g.ts";
+import { z } from "zod";
+import {
+	CommentCommentType,
+	CommentThreadStatus,
+} from "../../clients/azure-git.g.ts";
+import { PullRequestThreadsListResponse } from "../../clients/azure-git.zod.g.ts";
 import {
 	type HeadCommit,
-	HeadCommitSchema,
-	LineRangeSchema,
 	type Outcome,
 	type Side,
-	SideSchema,
 	type Thread,
 	type ThreadId,
-	ThreadIdSchema,
 	ThreadSchema,
 	type ThreadState,
-	ThreadStateSchema,
 } from "./contracts.g.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 import { ours as written } from "./rulebook.ts";
@@ -22,45 +22,95 @@ const STATE_BY_STATUS: Readonly<Record<string, ThreadState>> = {
 	active: "open",
 	fixed: "resolved-by-author",
 };
+const STATUS_BY_STATE: Readonly<Record<ThreadState, CommentThreadStatus>> = {
+	open: CommentThreadStatus.active,
+	"resolved-by-author": CommentThreadStatus.fixed,
+	resolved: CommentThreadStatus.closed,
+};
+
+const AzureThreadTransportSchema =
+	PullRequestThreadsListResponse.shape.value.element;
+
+export const AzureThreadsListCodec = z.codec(
+	PullRequestThreadsListResponse,
+	z.array(AzureThreadTransportSchema),
+	{
+		decode: (wire) => wire.value,
+		encode: (value) => ({ count: value.length, value }),
+	},
+);
 
 export type AzureThreadRecord = Pick<
-	GitPullRequestCommentThread,
+	z.infer<typeof AzureThreadTransportSchema>,
 	"id" | "status" | "threadContext" | "comments"
 >;
 
 export const onLines = (
-	record: Pick<GitPullRequestCommentThread, "threadContext">,
+	record: Pick<AzureThreadRecord, "threadContext">,
 ): boolean => Boolean(record.threadContext?.filePath);
 
-const firstComment = (
-	record: Pick<GitPullRequestCommentThread, "comments">,
-): string => record.comments?.[0]?.content ?? "";
+const firstComment = (record: Pick<AzureThreadRecord, "comments">): string =>
+	record.comments?.[0]?.content ?? "";
 
 export const isOurThread = (
-	record: Pick<GitPullRequestCommentThread, "comments">,
+	record: Pick<AzureThreadRecord, "comments">,
 ): boolean => written(firstComment(record));
 
+export const AzureThreadCodec = z.codec(
+	AzureThreadTransportSchema,
+	ThreadSchema,
+	{
+		decode: (record) => {
+			const context = record.threadContext;
+			const side: Side = isNullOrEmpty(context?.rightFileEnd) ? "base" : "head";
+			const start =
+				side === "head" ? context?.rightFileStart : context?.leftFileStart;
+			const end =
+				(side === "head"
+					? context?.rightFileEnd?.line
+					: context?.leftFileEnd?.line) ?? 1;
+			return {
+				id: String(record.id ?? ""),
+				path: (context?.filePath ?? "").replace(LEADING_SLASH, ""),
+				side,
+				lines: { start: start?.line ?? end, end },
+				state: STATE_BY_STATUS[record.status ?? ""] ?? "resolved",
+				body: firstComment(record),
+			};
+		},
+		encode: (domainThread) => {
+			const startPosition = { line: domainThread.lines.start, offset: 1 };
+			const endPosition = { line: domainThread.lines.end, offset: 1 };
+			const threadContext =
+				domainThread.side === "head"
+					? {
+							filePath: `/${domainThread.path}`,
+							rightFileStart: startPosition,
+							rightFileEnd: endPosition,
+						}
+					: {
+							filePath: `/${domainThread.path}`,
+							leftFileStart: startPosition,
+							leftFileEnd: endPosition,
+						};
+			return {
+				id: Number(domainThread.id),
+				status: STATUS_BY_STATE[domainThread.state],
+				threadContext,
+				comments: [
+					{
+						parentCommentId: 0,
+						commentType: CommentCommentType.text,
+						content: domainThread.body,
+					},
+				],
+			};
+		},
+	},
+);
+
 export function thread(record: AzureThreadRecord): Thread {
-	const context = record.threadContext;
-	const side: Side = SideSchema.parse(
-		isNullOrEmpty(context?.rightFileEnd) ? "base" : "head",
-	);
-	const start =
-		side === "head" ? context?.rightFileStart : context?.leftFileStart;
-	const end =
-		(side === "head"
-			? context?.rightFileEnd?.line
-			: context?.leftFileEnd?.line) ?? 1;
-	return ThreadSchema.parse({
-		id: String(record.id ?? ""),
-		path: (context?.filePath ?? "").replace(LEADING_SLASH, ""),
-		side,
-		lines: LineRangeSchema.parse({ start: start?.line ?? end, end }),
-		state: ThreadStateSchema.parse(
-			STATE_BY_STATUS[record.status ?? ""] ?? "resolved",
-		),
-		body: firstComment(record),
-	});
+	return AzureThreadCodec.decode(record);
 }
 
 const pullRequestThreads = (rawThreads: readonly AzureThreadRecord[]) =>
@@ -73,7 +123,7 @@ export function refusedOf(
 	const found = pullRequestThreads(rawThreads).find((record) =>
 		firstComment(record).includes(`Not reviewed at ${headCommit} `),
 	);
-	return isNullOrEmpty(found) ? null : ThreadIdSchema.parse(String(found.id));
+	return isNullOrEmpty(found) ? null : String(found.id);
 }
 
 export const staleRefusals = (
@@ -85,18 +135,15 @@ export const staleRefusals = (
 				record.status === "active" &&
 				firstComment(record).includes("Not reviewed at "),
 		)
-		.map((record) => ThreadIdSchema.parse(String(record.id)));
+		.map((record) => String(record.id));
 
 export const priorOf = (
 	rawThreads: readonly AzureThreadRecord[],
-): HeadCommit | null => {
-	const raw =
-		pullRequestThreads(rawThreads)
-			.map((record) => PRIOR.exec(firstComment(record)))
-			.filter((match) => !isNullOrEmpty(match))
-			.at(-1)?.[1] ?? null;
-	return isNullOrEmpty(raw) ? null : HeadCommitSchema.parse(raw);
-};
+): HeadCommit | null =>
+	pullRequestThreads(rawThreads)
+		.map((record) => PRIOR.exec(firstComment(record)))
+		.filter((match) => !isNullOrEmpty(match))
+		.at(-1)?.[1] ?? null;
 
 export function unposted(
 	outcome: Outcome,

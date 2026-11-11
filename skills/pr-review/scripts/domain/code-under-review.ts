@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import { z } from "zod";
 import {
 	type AzureDevOps,
 	AzureDevOpsSchema,
@@ -34,11 +34,18 @@ export class GithubPullRequest implements CodeUnderReview {
 		this.#host = host;
 		this.#state = state;
 	}
-	static readonly Schema = GitHubSchema.transform(
-		(host) => new GithubPullRequest(host, EMPTY_REVIEW),
+	static readonly Schema = z.codec(
+		GitHubSchema,
+		z.custom<GithubPullRequest>(
+			(val): val is GithubPullRequest => val instanceof GithubPullRequest,
+		),
+		{
+			decode: (host) => new GithubPullRequest(host, EMPTY_REVIEW),
+			encode: (review) => review.host(),
+		},
 	);
 	static from(raw: GitHub): z.ZodSafeParseResult<GithubPullRequest> {
-		return GithubPullRequest.Schema.safeParse(raw);
+		return GithubPullRequest.Schema.safeDecode(raw);
 	}
 	host(): GitHub {
 		return this.#host;
@@ -64,11 +71,18 @@ export class AzureMergeRequest implements CodeUnderReview {
 		this.#host = host;
 		this.#state = state;
 	}
-	static readonly Schema = AzureDevOpsSchema.transform(
-		(host) => new AzureMergeRequest(host, EMPTY_REVIEW),
+	static readonly Schema = z.codec(
+		AzureDevOpsSchema,
+		z.custom<AzureMergeRequest>(
+			(val): val is AzureMergeRequest => val instanceof AzureMergeRequest,
+		),
+		{
+			decode: (host) => new AzureMergeRequest(host, EMPTY_REVIEW),
+			encode: (review) => review.host(),
+		},
 	);
 	static from(raw: AzureDevOps): z.ZodSafeParseResult<AzureMergeRequest> {
-		return AzureMergeRequest.Schema.safeParse(raw);
+		return AzureMergeRequest.Schema.safeDecode(raw);
 	}
 	host(): AzureDevOps {
 		return this.#host;
@@ -94,11 +108,16 @@ export class GitDiff implements CodeUnderReview {
 		this.#host = host;
 		this.#state = state;
 	}
-	static readonly Schema = GitSchema.transform(
-		(host) => new GitDiff(host, EMPTY_REVIEW),
+	static readonly Schema = z.codec(
+		GitSchema,
+		z.custom<GitDiff>((val): val is GitDiff => val instanceof GitDiff),
+		{
+			decode: (host) => new GitDiff(host, EMPTY_REVIEW),
+			encode: (review) => review.host(),
+		},
 	);
 	static from(raw: Git): z.ZodSafeParseResult<GitDiff> {
-		return GitDiff.Schema.safeParse(raw);
+		return GitDiff.Schema.safeDecode(raw);
 	}
 	host(): Git {
 		return this.#host;

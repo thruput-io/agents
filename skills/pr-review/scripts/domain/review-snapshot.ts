@@ -63,13 +63,13 @@ const FactorySchema = TargetSchema.pipe(HostReviewSchema);
 export class CodeUnderReviewFactory {
 	private constructor() {}
 	static from(url: string): z.ZodSafeParseResult<CodeUnderReview> {
-		return FactorySchema.safeParse(url);
+		return FactorySchema.safeDecode(url);
 	}
 	static fromWithToken(
 		url: string,
 		_token: AccessToken,
 	): z.ZodSafeParseResult<CodeUnderReview> {
-		return FactorySchema.safeParse(url);
+		return FactorySchema.safeDecode(url);
 	}
 }
 

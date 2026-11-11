@@ -1,20 +1,16 @@
-import type { GraphQLClient } from "graphql-request";
+import { ClientError, type GraphQLClient } from "graphql-request";
 import { z } from "zod";
 import {
 	type Developer,
 	DeveloperSchema,
 	type GitHub,
 	LineNumberSchema,
-	LineRangeSchema,
 	PathSchema,
-	SideSchema,
 	SummarySchema,
 	type Thread,
 	type ThreadId,
 	ThreadIdSchema,
-	ThreadSchema,
 	type ThreadState,
-	ThreadStateSchema,
 } from "./contracts.g.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 import { ours } from "./rulebook.ts";
@@ -25,6 +21,7 @@ export const REVIEW_THREADS_QUERY = `
 query ReviewThreads($owner: String!, $name: String!, $number: Int!, $after: String) {
   repository(owner: $owner, name: $name) {
     pullRequest(number: $number) {
+      viewerCanUpdate
       reviewThreads(first: 100, after: $after) {
         pageInfo { hasNextPage endCursor }
         nodes {
@@ -67,23 +64,41 @@ const ThreadNode = z.object({
 	}),
 });
 
-export const ThreadsPage = z
-	.object({
-		data: z.object({
-			repository: z.object({
-				pullRequest: z.object({
-					reviewThreads: z.object({
-						pageInfo: z.object({
-							hasNextPage: z.boolean(),
-							endCursor: SummarySchema.nullable(),
-						}),
-						nodes: z.array(ThreadNode),
-					}),
-				}),
+const ReviewThreadsConnectionSchema = z.object({
+	pageInfo: z.object({
+		hasNextPage: z.boolean(),
+		endCursor: SummarySchema.nullable(),
+	}),
+	nodes: z.array(ThreadNode),
+});
+
+const RawThreadsPageSchema = z.object({
+	data: z.object({
+		repository: z.object({
+			pullRequest: z.object({
+				viewerCanUpdate: z.boolean().optional(),
+				reviewThreads: ReviewThreadsConnectionSchema,
 			}),
 		}),
-	})
-	.transform((page) => page.data.repository.pullRequest.reviewThreads);
+	}),
+});
+
+export const ThreadsPage = z.codec(
+	RawThreadsPageSchema,
+	ReviewThreadsConnectionSchema,
+	{
+		decode: (page) => page.data.repository.pullRequest.reviewThreads,
+		encode: (reviewThreads) => ({
+			data: {
+				repository: {
+					pullRequest: {
+						reviewThreads,
+					},
+				},
+			},
+		}),
+	},
+);
 
 export type GitHubThreadNode = z.infer<typeof ThreadNode>;
 
@@ -92,46 +107,74 @@ export const isReviewableThreadNode = (node: GitHubThreadNode): boolean =>
 
 export function thread(node: GitHubThreadNode, author: Developer): Thread {
 	const end = node.line ?? 1;
-	const state: ThreadState = ThreadStateSchema.parse(
-		node.isResolved
-			? node.resolvedBy?.login === author
-				? "resolved-by-author"
-				: "resolved"
-			: "open",
-	);
-	return ThreadSchema.parse({
+	const state: ThreadState = node.isResolved
+		? node.resolvedBy?.login === author
+			? "resolved-by-author"
+			: "resolved"
+		: "open";
+	return {
 		id: node.id,
 		path: node.path,
-		side: SideSchema.parse(SIDE_OF[node.diffSide]),
-		lines: LineRangeSchema.parse({ start: node.startLine ?? end, end }),
+		side: SIDE_OF[node.diffSide],
+		lines: { start: node.startLine ?? end, end },
 		state,
 		body: node.comments.nodes[0]?.body ?? "",
-	});
+	};
 }
+
+export type FetchGitHubThreadsResult =
+	| {
+			readonly ok: true;
+			readonly viewerCanUpdate: boolean;
+			readonly threads: readonly Thread[];
+	  }
+	| {
+			readonly ok: false;
+			readonly status: number;
+			readonly headers: Headers;
+	  };
 
 export async function fetchGitHubThreads(
 	client: GraphQLClient,
 	host: GitHub,
 	author: Developer,
-): Promise<readonly Thread[]> {
+): Promise<FetchGitHubThreadsResult> {
 	const collected: Thread[] = [];
 	let after: string | null = null;
 	let hasNextPage = true;
+	let viewerCanUpdate = true;
 	while (hasNextPage) {
-		const response = await client.rawRequest(REVIEW_THREADS_QUERY, {
-			owner: host.owner,
-			name: host.repository,
-			number: host.number,
-			after,
-		});
-		const page = ThreadsPage.parse({ data: response.data });
-		for (const node of page.nodes.filter(isReviewableThreadNode)) {
-			collected.push(thread(node, author));
+		try {
+			const response = await client.rawRequest(REVIEW_THREADS_QUERY, {
+				owner: host.owner,
+				name: host.repository,
+				number: host.number,
+				after,
+			});
+			const rawData = response.data as z.input<
+				typeof RawThreadsPageSchema
+			>["data"];
+			if (rawData.repository.pullRequest.viewerCanUpdate === false) {
+				viewerCanUpdate = false;
+			}
+			const page = ThreadsPage.decode({ data: rawData });
+			for (const node of page.nodes.filter(isReviewableThreadNode)) {
+				collected.push(thread(node, author));
+			}
+			hasNextPage = page.pageInfo.hasNextPage;
+			after = page.pageInfo.endCursor;
+		} catch (error) {
+			if (error instanceof ClientError) {
+				return {
+					ok: false,
+					status: error.response.status,
+					headers: error.response.headers ?? new Headers(),
+				};
+			}
+			throw error;
 		}
-		hasNextPage = page.pageInfo.hasNextPage;
-		after = page.pageInfo.endCursor;
 	}
-	return collected;
+	return { ok: true, viewerCanUpdate, threads: collected };
 }
 
 export async function settleAndReopenGitHubThreads(

@@ -16,24 +16,16 @@ import {
 	loadPersistedProbes,
 	type NamedProbe,
 } from "./probe-loader.ts";
-import { isCliEntrypoint, SubAgentController } from "./sub-agent-controller.ts";
+import { isCliEntrypoint } from "./sub-agent-controller.ts";
 import type { Workdir } from "./workdir.ts";
 
-export type ProbeRunner = (
-	name: string,
-	controller: SubAgentController,
-) => Promise<void> | void;
-
-export type ReadyReview = Extract<
-	AdapterResolution,
-	{ readonly kind: "ready" }
->;
+type ReadyReview = Extract<AdapterResolution, { readonly kind: "ready" }>;
 
 export type PrepareError =
 	| { readonly kind: "invalid-target"; readonly error: z.ZodError }
 	| Exclude<AdapterResolution, { readonly kind: "ready" }>;
 
-export type PrepareResult =
+type PrepareResult =
 	| { readonly success: true; readonly data: ReadyReview }
 	| { readonly success: false; readonly error: PrepareError };
 
@@ -51,25 +43,15 @@ interface PreparedSession {
 	readonly pullRequest: CodeUnderReview;
 	readonly probes: readonly NamedProbe[];
 	readonly mainLedger: MainAgentLedger;
-	readonly controllers: ReadonlyMap<string, SubAgentController>;
 }
 
-const noopRunner: ProbeRunner = () => undefined;
-
 export class MainAgentController {
-	readonly #runner: ProbeRunner;
 	readonly #sessions = new Map<string, PreparedSession>();
 
-	private constructor(runner: ProbeRunner) {
-		this.#runner = runner;
-	}
+	private constructor() {}
 
 	static create(): MainAgentController {
-		return new MainAgentController(noopRunner);
-	}
-
-	static withRunner(runner: ProbeRunner): MainAgentController {
-		return new MainAgentController(runner);
+		return new MainAgentController();
 	}
 
 	#bind(
@@ -84,27 +66,16 @@ export class MainAgentController {
 			}
 			return { name, kind: probe.kind, probe };
 		});
-		const { ledgers, mainLedger } = coordinateLedgers(
+		const { mainLedger } = coordinateLedgers(
 			workdir.ledgerDirectory(),
 			pullRequest,
 			specs,
 		);
-		const controllers = new Map<string, SubAgentController>();
-		for (const [index, entry] of probes.entries()) {
-			const baseLedger = nonnull(ledgers[index]);
-			controllers.set(
-				entry.name,
-				SubAgentController.withLedger(workdir, baseLedger, entry.probe, {
-					name: entry.name,
-				}),
-			);
-		}
 		const session: PreparedSession = {
 			adapter,
 			pullRequest,
 			probes,
 			mainLedger,
-			controllers,
 		};
 		this.#sessions.set(workdir.toString(), session);
 		return session;
@@ -191,10 +162,6 @@ export class MainAgentController {
 	}
 
 	async dispatch(workdir: Workdir): Promise<DispatchResult> {
-		const session = this.#sessionFor(workdir);
-		for (const name of session.mainLedger.pending()) {
-			await this.#runner(name, nonnull(session.controllers.get(name)));
-		}
 		const refreshed = this.#sessionFor(workdir);
 		const submittedOutcome = refreshed.mainLedger.submittedOutcome();
 		if (isNullOrEmpty(submittedOutcome)) {

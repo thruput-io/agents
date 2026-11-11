@@ -54,6 +54,9 @@ export class ProbeLedger<Probe extends LedgerProbe> implements SubAgentLedger {
 	report(rows: readonly Row[]): z.ZodSafeParseResult<LedgerSubmission> {
 		return ledgerFor(this.#probe)
 			.transform(this.#onReport)
-			.safeParse({ headCommit: this.#probe.surface.headCommit, rows });
+			.safeDecode({
+				headCommit: this.#probe.surface.headCommit,
+				rows: [...rows],
+			});
 	}
 }
