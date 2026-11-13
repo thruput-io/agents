@@ -1,0 +1,7 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "thruput",
+  "version": "0.0.0",
+  "description": "Agentic workflows, engineering rules, and autonomous developer skills for Thruput",
+  "repository": "https://github.com/thruput-io/agents"
+}

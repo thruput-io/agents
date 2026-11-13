@@ -1,0 +1,339 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/review/sub-agent-controller.schema.json",
+  "title": "SubAgentController",
+  "description": "Sub-agent controller CLI arguments, return objects, and internal acknowledgment and ledger submission representations",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/SubAgentCommand"
+    },
+    {
+      "$ref": "#/$defs/AckRecord"
+    },
+    {
+      "$ref": "#/$defs/AckStatus"
+    },
+    {
+      "$ref": "#/$defs/AckResponse"
+    },
+    {
+      "$ref": "#/$defs/LedgerSubmission"
+    },
+    {
+      "$ref": "#/$defs/ReportResponse"
+    }
+  ],
+  "$defs": {
+    "EpochMs": {
+      "description": "Unix timestamp in milliseconds",
+      "type": "integer",
+      "minimum": 0
+    },
+    "DeadlineMs": {
+      "description": "Reporting deadline in milliseconds from acknowledgment (5 minutes)",
+      "const": 300000
+    },
+    "ToolPermission": {
+      "description": "One granted tool permission string",
+      "type": "string",
+      "minLength": 1
+    },
+    "InspectCommand": {
+      "description": "CLI arguments to sub-agent-controller.ts inspect <session> <probe>",
+      "type": "object",
+      "required": [
+        "command",
+        "session",
+        "probe"
+      ],
+      "properties": {
+        "command": {
+          "const": "inspect"
+        },
+        "session": {
+          "$ref": "controller.schema.json#/$defs/SessionToken"
+        },
+        "probe": {
+          "$ref": "controller.schema.json#/$defs/ProbeName"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AckCommand": {
+      "description": "CLI arguments to sub-agent-controller.ts ack <session> <probe> \"<dispatcher-message>\"",
+      "type": "object",
+      "required": [
+        "command",
+        "session",
+        "probe",
+        "message"
+      ],
+      "properties": {
+        "command": {
+          "const": "ack"
+        },
+        "session": {
+          "$ref": "controller.schema.json#/$defs/SessionToken"
+        },
+        "probe": {
+          "$ref": "controller.schema.json#/$defs/ProbeName"
+        },
+        "message": {
+          "$ref": "controller.schema.json#/$defs/BootstrapPrompt"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProbeReport": {
+      "description": "Container passed to sub-agent-controller.ts report holding one verdict row per rule in the order named by the probe's task",
+      "type": "object",
+      "required": [
+        "oneRowPerRuleInOrder"
+      ],
+      "properties": {
+        "oneRowPerRuleInOrder": {
+          "$ref": "ledger.schema.json#/$defs/Rows"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ReportCommand": {
+      "description": "CLI arguments to sub-agent-controller.ts report <session> <probe> '{\"oneRowPerRuleInOrder\": [...]}'",
+      "type": "object",
+      "required": [
+        "command",
+        "session",
+        "probe",
+        "report"
+      ],
+      "properties": {
+        "command": {
+          "const": "report"
+        },
+        "session": {
+          "$ref": "controller.schema.json#/$defs/SessionToken"
+        },
+        "probe": {
+          "$ref": "controller.schema.json#/$defs/ProbeName"
+        },
+        "report": {
+          "$ref": "#/$defs/ProbeReport"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SubAgentCommand": {
+      "description": "CLI command arguments accepted by sub-agent-controller.ts",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/InspectCommand"
+        },
+        {
+          "$ref": "#/$defs/AckCommand"
+        },
+        {
+          "$ref": "#/$defs/ReportCommand"
+        }
+      ]
+    },
+    "AckRecord": {
+      "description": "Acknowledgment timestamp persisted to <probe>.ack.json in the ledger directory",
+      "type": "object",
+      "required": [
+        "acknowledgedAt"
+      ],
+      "properties": {
+        "acknowledgedAt": {
+          "$ref": "#/$defs/EpochMs"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AckStatus": {
+      "description": "Internal acknowledgment state returned by SubAgentController.ack()",
+      "type": "object",
+      "required": [
+        "acknowledgedAt",
+        "deadlineMs",
+        "permissions"
+      ],
+      "properties": {
+        "acknowledgedAt": {
+          "$ref": "#/$defs/EpochMs"
+        },
+        "deadlineMs": {
+          "$ref": "#/$defs/DeadlineMs"
+        },
+        "permissions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/ToolPermission"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "AckSuccess": {
+      "description": "Returned by sub-agent-controller.ts ack when the dispatcher message is verified and the 5-minute deadline starts",
+      "type": "object",
+      "required": [
+        "success",
+        "probe",
+        "acknowledged",
+        "deadlineMs",
+        "permissions"
+      ],
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "probe": {
+          "$ref": "controller.schema.json#/$defs/ProbeName"
+        },
+        "acknowledged": {
+          "const": true
+        },
+        "deadlineMs": {
+          "$ref": "#/$defs/DeadlineMs"
+        },
+        "permissions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/ToolPermission"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SubAgentError": {
+      "description": "Returned by sub-agent-controller.ts when an argument, ack message, or ledger row is rejected",
+      "type": "object",
+      "required": [
+        "success",
+        "error"
+      ],
+      "properties": {
+        "success": {
+          "const": false
+        },
+        "error": {
+          "$ref": "controller.schema.json#/$defs/ErrorMessage"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AckResponse": {
+      "description": "CLI return object of sub-agent-controller.ts ack",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/AckSuccess"
+        },
+        {
+          "$ref": "#/$defs/SubAgentError"
+        }
+      ]
+    },
+    "LedgerRecorded": {
+      "description": "Internal submission state when a probe slice is recorded to disk and other probes are still pending",
+      "type": "object",
+      "required": [
+        "kind",
+        "ledger"
+      ],
+      "properties": {
+        "kind": {
+          "const": "recorded"
+        },
+        "ledger": {
+          "$ref": "ledger.schema.json"
+        }
+      },
+      "additionalProperties": false
+    },
+    "LedgerSubmitted": {
+      "description": "Internal submission state when the last pending probe reports and the merged ledger and outcome are finalized",
+      "type": "object",
+      "required": [
+        "kind",
+        "ledger",
+        "outcome"
+      ],
+      "properties": {
+        "kind": {
+          "const": "submitted"
+        },
+        "ledger": {
+          "$ref": "ledger.schema.json"
+        },
+        "outcome": {
+          "$ref": "controller.schema.json#/$defs/Outcome"
+        }
+      },
+      "additionalProperties": false
+    },
+    "LedgerSubmission": {
+      "description": "Internal return value of SubAgentController.report()",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/LedgerRecorded"
+        },
+        {
+          "$ref": "#/$defs/LedgerSubmitted"
+        }
+      ]
+    },
+    "ReportSuccess": {
+      "description": "Returned by sub-agent-controller.ts report when all rows for the probe slice pass validation and are recorded",
+      "type": "object",
+      "required": [
+        "success",
+        "kind",
+        "headCommit",
+        "rowCount"
+      ],
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "kind": {
+          "enum": [
+            "recorded",
+            "submitted"
+          ]
+        },
+        "headCommit": {
+          "$ref": "change.schema.json#/$defs/HeadCommit"
+        },
+        "rowCount": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "ReportResponse": {
+      "description": "CLI return object of sub-agent-controller.ts report",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ReportSuccess"
+        },
+        {
+          "$ref": "#/$defs/SubAgentError"
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "success": true,
+      "probe": "01-purpose",
+      "acknowledged": true,
+      "deadlineMs": 300000,
+      "permissions": [
+        "Bash(node *sub-agent-controller.ts*)"
+      ]
+    }
+  ]
+}

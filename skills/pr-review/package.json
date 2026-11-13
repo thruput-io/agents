@@ -1,0 +1,37 @@
+{
+	"name": "pr-review",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"codegen": "node scripts/generate-contracts.ts && node scripts/generate-clients.ts",
+		"knip": "knip",
+		"knip:fix": "knip --fix",
+		"lint": "biome check --error-on-warnings",
+		"lint:fix": "biome check --write --unsafe",
+		"fix": "npm run codegen && npm run knip:fix && npm run lint:fix && npm run verify",
+		"typecheck": "tsc --noEmit",
+		"test": "node --test 'scripts/**/*.test.ts'",
+		"verify": "npm run codegen && npm run knip && npm run lint && npm run typecheck && npm test"
+	},
+	"dependencies": {
+		"graphql": "16.15.0",
+		"graphql-request": "7.4.0",
+		"yaml": "2.9.1",
+		"zod": "4.6.7"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.6.4",
+		"@faker-js/faker": "10.6.0",
+		"@graphql-tools/mock": "10.1.3",
+		"@graphql-tools/schema": "11.0.8",
+		"@scalar/openapi-parser": "0.29.20",
+		"@tsconfig/node26": "26.0.1",
+		"@tsconfig/strictest": "2.0.8",
+		"@types/node": "24.19.2",
+		"json-schema-to-zod": "2.8.1",
+		"knip": "6.43.0",
+		"msw": "3.0.3",
+		"orval": "8.46.0",
+		"typescript": "7.0.2"
+	}
+}
