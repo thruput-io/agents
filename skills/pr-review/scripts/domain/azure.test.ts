@@ -12,7 +12,7 @@ import {
 	headCommitOf,
 	KIND,
 	refusalReasons,
-	remoteUrlOf,
+	targetCommitOf,
 } from "./azure.ts";
 import {
 	AzureInlineThreadCodec,
@@ -48,13 +48,15 @@ const HOST = {
 	id: 42,
 };
 
-it("headCommitOf, changeOf, artifactIdOf, and remoteUrlOf fold an Azure GitPullRequest into domain contracts", () => {
+it("headCommitOf, targetCommitOf, changeOf, and artifactIdOf fold an Azure GitPullRequest into domain contracts", () => {
 	const pr = {
 		lastMergeSourceCommit: { commitId: SHA_A },
+		lastMergeTargetCommit: { commitId: SHA_B },
 		createdBy: { uniqueName: "me@example.com" },
 		repository: {},
 	};
 	assert.equal(headCommitOf(pr), SHA_A);
+	assert.equal(targetCommitOf(pr), SHA_B);
 	assert.deepEqual(changeOf(HOST, pr), {
 		host: HOST,
 		author: "me@example.com",
@@ -63,10 +65,6 @@ it("headCommitOf, changeOf, artifactIdOf, and remoteUrlOf fold an Azure GitPullR
 	assert.equal(
 		artifactIdOf(HOST, pr),
 		"vstfs:///CodeReview/CodeReviewId/proj/42",
-	);
-	assert.equal(
-		remoteUrlOf(HOST, pr),
-		"https://dev.azure.com/org/proj/_git/repo",
 	);
 });
 

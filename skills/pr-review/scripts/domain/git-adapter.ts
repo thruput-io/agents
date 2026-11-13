@@ -12,8 +12,8 @@ import {
 } from "./contracts.g.ts";
 import { table } from "./ledger-table.ts";
 import { rendered } from "./review-snapshot.ts";
+import { buildReviewSnapshot } from "./review-snapshot-builder.ts";
 import type { SnapshotDirectory } from "./snapshot-directory.ts";
-import { hydrateSnapshot } from "./snapshot-hydration.ts";
 
 export class GitAdapter implements HostAdapter<Git> {
 	readonly #review: GitDiff;
@@ -29,16 +29,13 @@ export class GitAdapter implements HostAdapter<Git> {
 	resolve(snapshotDir: SnapshotDirectory): Promise<AdapterResolution> {
 		const host = this.host();
 		const { repository, base, head } = host;
-		snapshotDir.git(["init", "--quiet"]);
-		snapshotDir.git(["fetch", "--quiet", "--no-tags", repository, base]);
-		const baseCommit = snapshotDir.git(["rev-parse", "FETCH_HEAD"]).trim();
-		snapshotDir.git(["fetch", "--quiet", "--no-tags", repository, head]);
-		const headCommit = HeadCommitSchema.decode(
-			snapshotDir.git(["rev-parse", "FETCH_HEAD"]).trim(),
+		snapshotDir.clone(repository);
+		const baseCommit = snapshotDir.resolveRef(base);
+		const headCommit = HeadCommitSchema.decode(snapshotDir.resolveRef(head));
+		snapshotDir.git(["checkout", "--quiet", "--detach", headCommit]);
+		const mergeBase = HeadCommitSchema.decode(
+			snapshotDir.git(["merge-base", baseCommit, headCommit]).trim(),
 		);
-		const mergeBase = snapshotDir
-			.git(["merge-base", baseCommit, headCommit])
-			.trim();
 		const author = DeveloperSchema.decode(
 			snapshotDir.git(["log", "-1", "--format=%ae", headCommit]).trim(),
 		);
@@ -48,13 +45,11 @@ export class GitAdapter implements HostAdapter<Git> {
 				.trim(),
 		);
 		const change = ChangeSchema.decode({ host, author, description });
-		return hydrateSnapshot(
+		return buildReviewSnapshot(
 			this.#review,
 			snapshotDir,
 			{
-				remoteUrl: repository,
-				baseRef: base,
-				headRef: head,
+				baseCommit: mergeBase,
 				headCommit,
 				change,
 				priorCommit: null,

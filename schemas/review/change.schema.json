@@ -2,26 +2,43 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/review/change.schema.json",
   "title": "Change",
-  "description": "The [[Change]] under review, folded at the [[Perimeter]] as its host states it; a probe never fetches its metadata",
-  "type": "object",
-  "required": [
-    "host",
-    "author",
-    "description"
-  ],
-  "properties": {
-    "host": {
-      "$ref": "#/$defs/Host"
+  "description": "The [[Change]] under review, folded at the [[Perimeter]] as its host states it, together with the [[Surface]], fragments, diff lines, and prior review threads",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Change"
     },
-    "author": {
-      "$ref": "#/$defs/Developer"
+    {
+      "$ref": "#/$defs/ChangeSet"
     },
-    "description": {
-      "$ref": "#/$defs/Purpose"
+    {
+      "$ref": "#/$defs/Surface"
+    },
+    {
+      "$ref": "#/$defs/Threads"
     }
-  },
-  "additionalProperties": false,
+  ],
   "$defs": {
+    "Change": {
+      "description": "The [[Change]] under review, folded at the [[Perimeter]] as its host states it",
+      "type": "object",
+      "required": [
+        "host",
+        "author",
+        "description"
+      ],
+      "properties": {
+        "host": {
+          "$ref": "#/$defs/Host"
+        },
+        "author": {
+          "$ref": "#/$defs/Developer"
+        },
+        "description": {
+          "$ref": "#/$defs/Purpose"
+        }
+      },
+      "additionalProperties": false
+    },
     "Host": {
       "description": "Where the [[Change]] lives, by its coordinates on its host; or a plain git repository and the two refs that bound the change",
       "oneOf": [
@@ -67,7 +84,8 @@
         "number": {
           "$ref": "#/$defs/PullRequestNumber"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "AzureDevOps": {
       "description": "An Azure DevOps pull request",
@@ -95,7 +113,8 @@
         "id": {
           "$ref": "#/$defs/PullRequestId"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "Git": {
       "description": "A [[Change]] in a git repository with no host: everything between two refs",
@@ -119,7 +138,8 @@
         "head": {
           "$ref": "#/$defs/Ref"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "RepositoryPath": {
       "description": "A git repository, by its path on the machine the review runs on",
@@ -169,6 +189,310 @@
       "description": "An Azure DevOps pull request, by its id",
       "type": "integer",
       "minimum": 1
+    },
+    "HeadCommit": {
+      "description": "The [[Head commit]], named by its full SHA-1",
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "Path": {
+      "description": "A file on the [[Surface]], by its path relative to the repository root, with no leading separator",
+      "type": "string",
+      "pattern": "^[^/]"
+    },
+    "Side": {
+      "description": "Which numbering the lines use: head for the file at the head commit, base for the file at the base",
+      "enum": [
+        "head",
+        "base"
+      ]
+    },
+    "LineNumber": {
+      "description": "A line of a file, by its 1-based number",
+      "type": "integer",
+      "minimum": 1
+    },
+    "LineText": {
+      "description": "One line of a file, without its line break",
+      "type": "string",
+      "pattern": "^[^\\r\\n]*$"
+    },
+    "LineRange": {
+      "description": "Consecutive lines of one file, by their 1-based numbers, both ends included",
+      "type": "object",
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "$ref": "#/$defs/LineNumber"
+        },
+        "end": {
+          "$ref": "#/$defs/LineNumber"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RemovedContent": {
+      "description": "The text of removed lines as they stood at the base, one line of text per line removed",
+      "type": "string",
+      "minLength": 0
+    },
+    "RemovedLines": {
+      "description": "Consecutive lines the [[Change]] removes, with their text",
+      "type": "object",
+      "required": [
+        "start",
+        "end",
+        "content"
+      ],
+      "properties": {
+        "start": {
+          "$ref": "#/$defs/LineNumber"
+        },
+        "end": {
+          "$ref": "#/$defs/LineNumber"
+        },
+        "content": {
+          "$ref": "#/$defs/RemovedContent"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ChangedFile": {
+      "description": "One file touched at the [[Head commit]]: the line ranges added on the right (head) and the lines removed on the left (base) with their text",
+      "type": "object",
+      "required": [
+        "path",
+        "added",
+        "removed"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/Path"
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LineRange"
+          }
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RemovedLines"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ChangeSet": {
+      "description": "Every file the [[Change]] touches between base and head, with its added line ranges and removed lines",
+      "type": "object",
+      "required": [
+        "files"
+      ],
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ChangedFile"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SurfaceLine": {
+      "description": "One line of a surface fragment, with the identifier a violation reports on and its text",
+      "type": "object",
+      "required": [
+        "idToReportViolationOn",
+        "text"
+      ],
+      "properties": {
+        "idToReportViolationOn": {
+          "$ref": "#/$defs/LineNumber"
+        },
+        "text": {
+          "$ref": "#/$defs/LineText"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SurfaceLines": {
+      "description": "Consecutive lines of a surface fragment, each with its idToReportViolationOn and text",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/SurfaceLine"
+      }
+    },
+    "ContextLines": {
+      "description": "Consecutive lines around the change, without line numbers or identifiers",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/LineText"
+      }
+    },
+    "SurfaceFragment": {
+      "description": "Lines the change added, on side head and numbered in the file at the head commit, or removed, on side base and numbered in the file at the base. An anchor copies these lines as they stand",
+      "type": "object",
+      "required": [
+        "kind",
+        "side",
+        "lines"
+      ],
+      "properties": {
+        "kind": {
+          "const": "surface"
+        },
+        "side": {
+          "$ref": "#/$defs/Side"
+        },
+        "lines": {
+          "$ref": "#/$defs/SurfaceLines"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ContextFragment": {
+      "description": "Lines the change left as they were, handed so that a rule can be judged on the whole file; no violation anchors on them",
+      "type": "object",
+      "required": [
+        "kind",
+        "lines"
+      ],
+      "properties": {
+        "kind": {
+          "const": "context"
+        },
+        "lines": {
+          "$ref": "#/$defs/ContextLines"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Fragment": {
+      "description": "A run of consecutive lines of a file: a surface fragment, which the change added or removed and a violation may anchor on, or a context fragment, which stands around the change and no violation anchors on",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SurfaceFragment"
+        },
+        {
+          "$ref": "#/$defs/ContextFragment"
+        }
+      ]
+    },
+    "SurfaceFile": {
+      "description": "One file that has [[Surface]] lines, whole: its fragments in file order at the [[Head commit]], then the base-side surface fragments",
+      "type": "object",
+      "required": [
+        "path",
+        "fragments"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/Path"
+        },
+        "fragments": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Fragment"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Surface": {
+      "description": "The [[Surface]] at the [[Head commit]], resolved once and handed to every probe: each file with its surface fragments on the left (base) and right (head), which a [[Violation]] may anchor on, and context fragments around them",
+      "type": "object",
+      "required": [
+        "headCommit",
+        "files"
+      ],
+      "properties": {
+        "headCommit": {
+          "$ref": "#/$defs/HeadCommit"
+        },
+        "files": {
+          "description": "Every file that has [[Surface]] lines, whole: its fragments in file order at the [[Head commit]], then the base-side surface fragments",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SurfaceFile"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ThreadId": {
+      "description": "The thread, by the identifier its host gave it",
+      "type": "string",
+      "minLength": 1
+    },
+    "ThreadState": {
+      "description": "open: still to be answered; resolved-by-author: the author marked it done, so its lines are probed again; resolved: someone else closed it, so it is left alone",
+      "enum": [
+        "open",
+        "resolved-by-author",
+        "resolved"
+      ]
+    },
+    "ThreadBody": {
+      "description": "The first comment of the thread, which names the principle it cites",
+      "type": "string",
+      "minLength": 1
+    },
+    "Thread": {
+      "description": "One thread of ours on lines of the pull request",
+      "type": "object",
+      "required": [
+        "id",
+        "path",
+        "side",
+        "lines",
+        "state",
+        "body"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ThreadId"
+        },
+        "path": {
+          "$ref": "#/$defs/Path"
+        },
+        "side": {
+          "$ref": "#/$defs/Side"
+        },
+        "lines": {
+          "$ref": "#/$defs/LineRange"
+        },
+        "state": {
+          "$ref": "#/$defs/ThreadState"
+        },
+        "body": {
+          "$ref": "#/$defs/ThreadBody"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Threads": {
+      "description": "The threads this review left on the pull request before, in the one shape every host is folded into: where each sits, what it says, and whether it is open, resolved by the author, or resolved by someone else",
+      "type": "object",
+      "required": [
+        "threads"
+      ],
+      "properties": {
+        "threads": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Thread"
+          }
+        }
+      },
+      "additionalProperties": false
     }
   },
   "examples": [

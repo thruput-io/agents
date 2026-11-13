@@ -1,5 +1,6 @@
 import { HttpResponse, http } from "msw";
 import {
+	getItemsListMockHandler,
 	getPullRequestReviewersCreatePullRequestReviewerMockHandler,
 	getPullRequestReviewersCreatePullRequestReviewerResponseMock,
 	getPullRequestReviewersUpdatePullRequestReviewersMockHandler,
@@ -41,6 +42,55 @@ export function createForbiddenAzureWriteHandler() {
 						"TF401027: You need the Git 'PullRequestContribute' permission.",
 				},
 				{ status: 403 },
+			),
+	);
+}
+
+export function createForbiddenAzureItemsHandler() {
+	return http.get(
+		"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/items",
+		() =>
+			HttpResponse.json(
+				{
+					message:
+						"TF401019: The Git repository with name or identifier does not exist or you do not have permissions.",
+				},
+				{ status: 403 },
+			),
+	);
+}
+
+export function createUnwriteableAzurePullRequestHandler() {
+	return http.patch(
+		"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/pullRequests/:pullRequestId/reviewers",
+		() =>
+			HttpResponse.json(
+				{
+					$id: "1",
+					innerException: null,
+					message:
+						"TF401181: The pull request cannot be edited due to its state.",
+					typeName:
+						"Microsoft.TeamFoundation.Git.Server.GitPullRequestNotEditableException, Microsoft.TeamFoundation.Git.Server",
+					typeKey: "GitPullRequestNotEditableException",
+					errorCode: 0,
+					eventId: 3000,
+				},
+				{ status: 400 },
+			),
+	);
+}
+
+export function createFailedAzureThreadCreateHandler() {
+	return http.post(
+		"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/pullRequests/:pullRequestId/threads",
+		() =>
+			HttpResponse.json(
+				{
+					message:
+						"TF401181: The pull request cannot be edited due to its state.",
+				},
+				{ status: 400 },
 			),
 	);
 }
@@ -123,18 +173,28 @@ export function createAzureHandlers(repo: ScenarioRepo) {
 		getPullRequestsGetPullRequestMockHandler({
 			...baseAzure,
 			createdBy: { ...baseAzure.createdBy, uniqueName: "author@example.com" },
+			lastMergeTargetCommit: {
+				...baseAzure.lastMergeTargetCommit,
+				commitId: repo.baseCommit,
+			},
 			lastMergeSourceCommit: {
 				...baseAzure.lastMergeSourceCommit,
 				commitId: repo.headCommit,
 			},
 			repository: {
 				...baseAzureRepo,
-				remoteUrl: repo.repoDir,
 				project: {
 					...baseAzureRepo.project,
 					id: "00000000-0000-0000-0000-000000000000",
 				},
 			},
+		}),
+		getItemsListMockHandler(({ request }) => {
+			const url = new URL(request.url);
+			const version = nonnull(
+				url.searchParams.get("versionDescriptor.version"),
+			);
+			return repo.zipForCommit(version);
 		}),
 		getEvaluationsListMockHandler({
 			count: 1,

@@ -1,16 +1,10 @@
 import type { z } from "zod";
 import type { CodeUnderReview } from "./code-under-review.ts";
-import type { Ledger, Outcome, Row } from "./contracts.g.ts";
+import type { Ledger, LedgerSubmission, Row } from "./contracts.g.ts";
 import { type LedgerProbe, ledgerFor } from "./ledger.ts";
 import type { LedgerDirectory } from "./ledger-directory.ts";
 
-export type LedgerSubmission =
-	| { readonly kind: "recorded"; readonly ledger: Ledger }
-	| {
-			readonly kind: "submitted";
-			readonly ledger: Ledger;
-			readonly outcome: Outcome;
-	  };
+export type { LedgerSubmission } from "./contracts.g.ts";
 
 export interface SubAgentLedger {
 	path: () => LedgerDirectory;

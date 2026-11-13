@@ -6,7 +6,6 @@ import type {
 	Row,
 	Rule,
 	RuleHeading,
-	Verdict,
 } from "./contracts.g.ts";
 import { ruleName } from "./ledger.ts";
 import { nonnull } from "./nullish.ts";
@@ -21,7 +20,7 @@ export const merge = (ledgers: readonly Ledger[]): Ledger => ({
 });
 
 export const verdict = (ledger: {
-	readonly rows: readonly { readonly verdict: Verdict["verdict"] }[];
+	readonly rows: readonly { readonly verdict: Row["verdict"] }[];
 }): ReviewVerdict =>
 	ledger.rows.some((row) => row.verdict === "violation")
 		? "request-changes"

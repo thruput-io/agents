@@ -8,8 +8,10 @@ import { Workdir } from "../domain/workdir.ts";
 export interface ScenarioRepo {
 	readonly rootDir: string;
 	readonly repoDir: string;
+	readonly baseCommit: string;
 	readonly headCommit: string;
 	readonly headCommitV2: string;
+	readonly zipForCommit: (commit: string, prefix?: string) => Blob;
 	readonly gitTarget: string;
 	readonly gitLargeTarget: string;
 	readonly gitLargeDiffTarget: string;
@@ -41,6 +43,7 @@ export function createScenarioRepo(): ScenarioRepo {
 	writeFileSync(join(repoDir, "empty.txt"), "", "utf8");
 	git(["add", "service.ts", "empty.txt"]);
 	git(["commit", "--quiet", "-m", "Initial main commit"]);
+	const baseCommit = git(["rev-parse", "HEAD"]);
 
 	git(["checkout", "--quiet", "-b", "feature"]);
 	writeFileSync(
@@ -104,12 +107,23 @@ export function createScenarioRepo(): ScenarioRepo {
 	git(["commit", "--quiet", "-m", "Oversized total diff"]);
 
 	git(["checkout", "--quiet", "feature"]);
+	const zipForCommit = (commit: string, prefix = ""): Blob => {
+		const prefixArgs = prefix.length > 0 ? [`--prefix=${prefix}`] : [];
+		const bytes = execFileSync(
+			"git",
+			["archive", "--format=zip", ...prefixArgs, commit],
+			{ cwd: repoDir },
+		);
+		return new Blob([bytes], { type: "application/zip" });
+	};
 
 	return {
 		rootDir,
 		repoDir,
+		baseCommit,
 		headCommit,
 		headCommitV2,
+		zipForCommit,
 		gitTarget: `${repoDir}@main..feature`,
 		gitLargeTarget: `${repoDir}@main..feature-large`,
 		gitLargeDiffTarget: `${repoDir}@main..feature-large-diff`,

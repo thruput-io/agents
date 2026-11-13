@@ -1,9 +1,5 @@
 import { z } from "zod";
-import type {
-	CheckRun,
-	PullRequest,
-	PullRequestReview,
-} from "../../clients/github.g.ts";
+import type { CheckRun, PullRequestReview } from "../../clients/github.g.ts";
 import {
 	ChecksListForRefResponse,
 	PullsCreateReviewResponse,
@@ -11,13 +7,7 @@ import {
 	type PullsGetResponse as PullsGetResponseType,
 	PullsListReviewsResponse,
 } from "../../clients/github.zod.g.ts";
-import type {
-	Change,
-	GitHub,
-	HeadCommit,
-	RepositoryPath,
-	Summary,
-} from "./contracts.g.ts";
+import type { Change, GitHub, HeadCommit, Summary } from "./contracts.g.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 import { ours } from "./rulebook.ts";
 
@@ -79,16 +69,9 @@ export const changeOf = (
 	description: pullRequest.body ?? "",
 });
 
-export const remoteUrlOf = (
-	host: GitHub,
-	pullRequest: {
-		readonly head: {
-			readonly repo: Pick<PullRequest["head"]["repo"], "clone_url"> | null;
-		};
-	},
-): RepositoryPath =>
-	pullRequest.head.repo?.clone_url ??
-	`https://github.com/${host.owner}/${host.repository}.git`;
+export const baseCommitOf = (pullRequest: {
+	readonly base: { readonly sha: string };
+}): HeadCommit => pullRequest.base.sha;
 
 export const failedChecks = (
 	checks: readonly Pick<CheckRun, "name" | "conclusion">[],

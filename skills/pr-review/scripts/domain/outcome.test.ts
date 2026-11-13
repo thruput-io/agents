@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
-import type { Anchor, Ledger, Row, Side, Violation } from "./contracts.g.ts";
+import type { Ledger, Row, RuleRef, Violation } from "./contracts.g.ts";
 import { CELL, merge, table, verdict } from "./ledger-table.ts";
 import { nonnull } from "./nullish.ts";
 import { alreadyOpen, outcome, settled } from "./outcome.ts";
@@ -39,20 +39,6 @@ const contextProbe = {
 	review: { headCommit: H, files },
 	rulesets: [{ url: URL_DDD }],
 };
-const lines = (path: string, start: number, end: number, side: Side) => {
-	const fragment = nonnull(
-		files
-			.find((candidate) => candidate.path === path)
-			?.fragments.find((f) => f.kind === "surface" && f.side === side),
-	);
-	const slice = Array.from({ length: end - start + 1 }, (_, i) =>
-		nonnull(
-			fragment.lines.find((line) => line.idToReportViolationOn === start + i),
-		),
-	);
-	return { kind: "surface" as const, path, side, lines: slice };
-};
-const atPullRequest = { kind: "pull-request" as const };
 const cleanRow = (rule: string): Row => ({
 	rule,
 	examined: ["x"],
@@ -69,7 +55,6 @@ const violatedRow = (rule: string, violations: Violation[]): Row => ({
 const bookRule = (heading: string) => ({
 	ruleset: URL_DDD,
 	heading,
-	rule: "guard invariants",
 });
 const cleanBookRow = (heading: string): Row => ({
 	bookRule: bookRule(heading),
@@ -77,9 +62,13 @@ const cleanBookRow = (heading: string): Row => ({
 	verdict: "clean",
 	evidence: "e",
 });
-const violation = (anchor: Anchor): Violation => ({
+const violation = (
+	rule: RuleRef,
+	idToReportViolationOn?: number,
+): Violation => ({
+	rule,
+	...(idToReportViolationOn === undefined ? {} : { idToReportViolationOn }),
 	observation: "what is wrong",
-	anchor,
 });
 const citeP = `[P](${SITE}#p)`;
 const outcomeProbe = {
@@ -101,10 +90,7 @@ const violatedBookRow = (heading: string, violations: Violation[]): Row => ({
 const sampleLedger: Ledger = {
 	headCommit: H,
 	rows: [
-		violatedRow("A", [
-			violation(lines("p", 3, 3, "head")),
-			violation(atPullRequest),
-		]),
+		violatedRow("A", [violation("A", 3), violation("A")]),
 		{
 			rule: "B",
 			examined: ["x"],
@@ -115,7 +101,7 @@ const sampleLedger: Ledger = {
 };
 const contextLedger: Ledger = {
 	headCommit: H,
-	rows: [violatedBookRow("Book rule", [violation(lines("p", 9, 9, "base"))])],
+	rows: [violatedBookRow("Book rule", [violation(bookRule("Book rule"), 9)])],
 };
 const entries = [
 	{ document: outcomeProbe, ledger: sampleLedger },
@@ -150,34 +136,41 @@ it("alreadyOpen matches an open thread on the same line citing the same principl
 	const open = [
 		{ path: "p", lines: { start: 3, end: 3 }, body: `earlier breaks ${citeP}` },
 	];
+	assert.equal(alreadyOpen(violation("A", 3), citeP, open, files), true);
+	assert.equal(alreadyOpen(violation("A", 4), citeP, open, files), false);
 	assert.equal(
-		alreadyOpen(violation(lines("p", 3, 3, "head")), citeP, open),
-		true,
-	);
-	assert.equal(
-		alreadyOpen(violation(lines("p", 4, 4, "head")), citeP, open),
+		alreadyOpen(violation("A", 3), `[Q](${SITE}#q)`, open, files),
 		false,
 	);
-	assert.equal(
-		alreadyOpen(violation(lines("p", 3, 3, "head")), `[Q](${SITE}#q)`, open),
-		false,
-	);
-	assert.equal(alreadyOpen(violation(atPullRequest), citeP, open), false);
+	assert.equal(alreadyOpen(violation("A"), citeP, open, files), false);
 });
 
 it("settled lists the open threads that no finding of this review carries any more", () => {
-	const document = { rulebook: { rules: [{ id: "R", parent: "P" }] } };
-	const v: Violation = {
-		observation: "x",
-		anchor: {
-			kind: "surface",
-			path: "a.sh",
-			side: "head",
-			lines: [
-				{ idToReportViolationOn: 3, text: "c" },
-				{ idToReportViolationOn: 4, text: "d" },
+	const document = {
+		surface: {
+			headCommit: H,
+			files: [
+				{
+					path: "a.sh",
+					fragments: [
+						{
+							kind: "surface" as const,
+							side: "head" as const,
+							lines: [
+								{ idToReportViolationOn: 3, text: "c" },
+								{ idToReportViolationOn: 4, text: "d" },
+							],
+						},
+					],
+				},
 			],
 		},
+		rulebook: { rules: [{ id: "R", parent: "P" }] },
+	};
+	const v: Violation = {
+		rule: "R",
+		idToReportViolationOn: 4,
+		observation: "x",
 	};
 	const row: Row = {
 		rule: "R",

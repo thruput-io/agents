@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test as it } from "node:test";
 import { AccessToken } from "./access-token.ts";
 import { hasOAuthScope, hostErrorReason, isJsonResponse } from "./adapter.ts";
@@ -122,15 +125,41 @@ it("isJsonResponse, hasOAuthScope, and hostErrorReason classify HTTP responses a
 		),
 		"Azure DevOps returned HTTP 500 (application/json).",
 	);
+	assert.equal(
+		hostErrorReason(
+			"Azure DevOps",
+			"AZURE_DEVOPS_EXT_PAT",
+			{
+				status: 400,
+				headers: jsonHeaders,
+				data: {
+					message:
+						"TF401181: The pull request cannot be edited due to its state.",
+				},
+			},
+			null,
+		),
+		"Azure DevOps returned HTTP 400 (application/json): pull request is not writeable (TF401181: The pull request cannot be edited due to its state.). Review must halt.",
+	);
 });
 
-it("SnapshotDirectory parses a non-empty path and compares by value", () => {
+it("SnapshotDirectory parses a non-empty path, compares by value, and reads text files while ignoring missing or binary files", () => {
 	const dir = SnapshotDirectory.from("/tmp/work/snapshot");
 	const same = SnapshotDirectory.from("/tmp/work/snapshot");
 	assert.equal(dir.success, true);
 	assert.equal(same.success, true);
 	assert.equal(dir.data.equals(same.data), true);
 	assert.equal(SnapshotDirectory.from("").success, false);
+
+	const tempDir = mkdtempSync(join(tmpdir(), "snapshot-dir-test-"));
+	writeFileSync(join(tempDir, "hello.ts"), "const x = 1;\n", "utf8");
+	writeFileSync(join(tempDir, "bin.dat"), Buffer.from([0x00, 0x01, 0x02]));
+	const realSnap = SnapshotDirectory.from(tempDir);
+	assert.equal(realSnap.success, true);
+	assert.equal(realSnap.data.readTextFile("hello.ts"), "const x = 1;\n");
+	assert.equal(realSnap.data.readTextFile("missing.ts"), null);
+	assert.equal(realSnap.data.readTextFile("bin.dat"), null);
+	rmSync(tempDir, { recursive: true, force: true });
 });
 
 it("GithubPullRequest exposes its host, surface, fragments, and threads", () => {

@@ -1,0 +1,628 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/review/controller.schema.json",
+  "title": "Controller",
+  "description": "Main agent controller CLI arguments, return objects, review outcome, host error, and persisted pull request representation",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/ControllerCommand"
+    },
+    {
+      "$ref": "#/$defs/PrepareResponse"
+    },
+    {
+      "$ref": "#/$defs/ReviewStatus"
+    },
+    {
+      "$ref": "#/$defs/DispatchResult"
+    },
+    {
+      "$ref": "#/$defs/PersistedPullRequest"
+    }
+  ],
+  "$defs": {
+    "HostErrorKind": {
+      "const": "host-error"
+    },
+    "HttpStatusCode": {
+      "description": "The HTTP status code returned by the host",
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 599
+    },
+    "ErrorMessage": {
+      "description": "What failed when calling the host",
+      "type": "string",
+      "minLength": 1
+    },
+    "ErrorReason": {
+      "description": "Diagnostic detail explaining why the host rejected or failed the request",
+      "type": "string",
+      "minLength": 1
+    },
+    "HostError": {
+      "description": "A non-successful response from the host of the [[Change]] during prepare or dispatch, presented to the main agent",
+      "type": "object",
+      "required": [
+        "kind",
+        "host",
+        "status",
+        "message",
+        "reason"
+      ],
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/HostErrorKind"
+        },
+        "host": {
+          "$ref": "change.schema.json#/$defs/Host"
+        },
+        "status": {
+          "$ref": "#/$defs/HttpStatusCode"
+        },
+        "message": {
+          "$ref": "#/$defs/ErrorMessage"
+        },
+        "reason": {
+          "$ref": "#/$defs/ErrorReason"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ReviewVerdict": {
+      "description": "request-changes when any rule is violated, approve otherwise",
+      "enum": [
+        "approve",
+        "request-changes"
+      ]
+    },
+    "Summary": {
+      "description": "The text of the review itself: the verdict, the count of what was probed and found, and every finding that has no line to sit on",
+      "type": "string",
+      "minLength": 1
+    },
+    "InlineFinding": {
+      "description": "One new inline comment thread to post on lines of the pull request that no existing thread carries yet",
+      "type": "object",
+      "required": [
+        "path",
+        "side",
+        "lines",
+        "body"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "change.schema.json#/$defs/Path"
+        },
+        "side": {
+          "$ref": "change.schema.json#/$defs/Side"
+        },
+        "lines": {
+          "$ref": "change.schema.json#/$defs/LineRange"
+        },
+        "body": {
+          "$ref": "change.schema.json#/$defs/ThreadBody"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Outcome": {
+      "description": "What a review decided: the verdict, the summary, each fresh inline comment thread on lines, the threads that are fixed, and the threads the author resolved that are not",
+      "type": "object",
+      "required": [
+        "headCommit",
+        "verdict",
+        "summary",
+        "inline",
+        "settle",
+        "reopen"
+      ],
+      "properties": {
+        "headCommit": {
+          "$ref": "change.schema.json#/$defs/HeadCommit"
+        },
+        "verdict": {
+          "$ref": "#/$defs/ReviewVerdict"
+        },
+        "summary": {
+          "$ref": "#/$defs/Summary"
+        },
+        "inline": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/InlineFinding"
+          }
+        },
+        "settle": {
+          "type": "array",
+          "items": {
+            "$ref": "change.schema.json#/$defs/ThreadId"
+          }
+        },
+        "reopen": {
+          "type": "array",
+          "items": {
+            "$ref": "change.schema.json#/$defs/ThreadId"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "TargetUrl": {
+      "description": "A GitHub or Azure DevOps pull request URL, or a local git range <repo>@<base>..<head>",
+      "type": "string",
+      "minLength": 1
+    },
+    "RawToken": {
+      "description": "An explicit bearer, basic, or personal access token for the host",
+      "type": "string",
+      "minLength": 1
+    },
+    "SessionToken": {
+      "description": "Opaque session token encoding the workdir path for probe subagents",
+      "type": "string",
+      "pattern": "^pr-review-session:[A-Za-z0-9_-]+$"
+    },
+    "ProbeName": {
+      "description": "Identifier of a probe slice within the review session, such as 01-purpose or 12-context",
+      "type": "string",
+      "minLength": 1
+    },
+    "BootstrapPrompt": {
+      "description": "Exact dispatcher message passed to a probe subagent and verified on ack",
+      "type": "string",
+      "minLength": 1
+    },
+    "LocationUrl": {
+      "description": "URL or path where the review, refusal, or status comment was posted",
+      "type": "string",
+      "minLength": 1
+    },
+    "WarningMessage": {
+      "description": "Non-fatal operational warning such as a symlinked workdir",
+      "type": "string",
+      "minLength": 1
+    },
+    "PrepareCommand": {
+      "description": "CLI arguments to controller.ts prepare <url> <workdir> [<token>]",
+      "type": "object",
+      "required": [
+        "command",
+        "url",
+        "workdir"
+      ],
+      "properties": {
+        "command": {
+          "const": "prepare"
+        },
+        "url": {
+          "$ref": "#/$defs/TargetUrl"
+        },
+        "workdir": {
+          "$ref": "agent-instructions.schema.json#/$defs/Checkout"
+        },
+        "token": {
+          "$ref": "#/$defs/RawToken"
+        }
+      },
+      "additionalProperties": false
+    },
+    "StatusCommand": {
+      "description": "CLI arguments to controller.ts status <workdir>",
+      "type": "object",
+      "required": [
+        "command",
+        "workdir"
+      ],
+      "properties": {
+        "command": {
+          "const": "status"
+        },
+        "workdir": {
+          "$ref": "agent-instructions.schema.json#/$defs/Checkout"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DispatchCommand": {
+      "description": "CLI arguments to controller.ts dispatch <workdir> [<token>]",
+      "type": "object",
+      "required": [
+        "command",
+        "workdir"
+      ],
+      "properties": {
+        "command": {
+          "const": "dispatch"
+        },
+        "workdir": {
+          "$ref": "agent-instructions.schema.json#/$defs/Checkout"
+        },
+        "token": {
+          "$ref": "#/$defs/RawToken"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ControllerCommand": {
+      "description": "CLI command arguments accepted by controller.ts",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/PrepareCommand"
+        },
+        {
+          "$ref": "#/$defs/StatusCommand"
+        },
+        {
+          "$ref": "#/$defs/DispatchCommand"
+        }
+      ]
+    },
+    "BootstrapPrompts": {
+      "description": "Map of pending probe name to its exact bootstrap prompt",
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/ProbeName"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/BootstrapPrompt"
+      }
+    },
+    "ProbePermissions": {
+      "description": "Allowed tools for a probe subagent, determined by its probe kind",
+      "oneOf": [
+        {
+          "$ref": "agent-instructions.schema.json#/$defs/RulesPermissions"
+        },
+        {
+          "$ref": "agent-instructions.schema.json#/$defs/DeadCodePermissions"
+        },
+        {
+          "$ref": "agent-instructions.schema.json#/$defs/ReusePermissions"
+        }
+      ]
+    },
+    "ProbePermissionsMap": {
+      "description": "Map of pending probe name to the allowed tool permissions to pass when spawning its subagent",
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/ProbeName"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/ProbePermissions"
+      }
+    },
+    "PrepareReady": {
+      "description": "Returned by controller.ts prepare when the review session is ready and subagents should be spawned",
+      "type": "object",
+      "required": [
+        "success",
+        "session",
+        "pending",
+        "prompts",
+        "permissions"
+      ],
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "session": {
+          "$ref": "#/$defs/SessionToken"
+        },
+        "pending": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ProbeName"
+          }
+        },
+        "prompts": {
+          "$ref": "#/$defs/BootstrapPrompts"
+        },
+        "permissions": {
+          "$ref": "#/$defs/ProbePermissionsMap"
+        },
+        "warning": {
+          "$ref": "#/$defs/WarningMessage"
+        }
+      },
+      "additionalProperties": false
+    },
+    "InvalidInputError": {
+      "description": "Returned when prepare receives an invalid target URL, workdir, or token",
+      "type": "object",
+      "required": [
+        "kind",
+        "message"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "invalid-target",
+            "invalid-workdir",
+            "invalid-token"
+          ]
+        },
+        "message": {
+          "$ref": "#/$defs/ErrorMessage"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AlreadyReviewed": {
+      "description": "Returned when the head commit was already reviewed and no threads were resolved by the author",
+      "type": "object",
+      "required": [
+        "kind",
+        "headCommit",
+        "location"
+      ],
+      "properties": {
+        "kind": {
+          "const": "already-reviewed"
+        },
+        "headCommit": {
+          "$ref": "change.schema.json#/$defs/HeadCommit"
+        },
+        "location": {
+          "$ref": "#/$defs/LocationUrl"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TooLarge": {
+      "description": "Returned when changed production files or total added lines exceed the size limits",
+      "type": "object",
+      "required": [
+        "kind",
+        "headCommit",
+        "files",
+        "location"
+      ],
+      "properties": {
+        "kind": {
+          "const": "too-large"
+        },
+        "headCommit": {
+          "$ref": "change.schema.json#/$defs/HeadCommit"
+        },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "change.schema.json#/$defs/Path"
+          }
+        },
+        "location": {
+          "$ref": "#/$defs/LocationUrl"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Refused": {
+      "description": "Returned when the pull request is refused before probing (such as failing CI checks or empty surface)",
+      "type": "object",
+      "required": [
+        "kind",
+        "headCommit",
+        "reason",
+        "location"
+      ],
+      "properties": {
+        "kind": {
+          "const": "refused"
+        },
+        "headCommit": {
+          "$ref": "change.schema.json#/$defs/HeadCommit"
+        },
+        "reason": {
+          "$ref": "#/$defs/ErrorMessage"
+        },
+        "location": {
+          "$ref": "#/$defs/LocationUrl"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PrepareError": {
+      "description": "Structured error explaining why prepare did not proceed to probing",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/InvalidInputError"
+        },
+        {
+          "$ref": "#/$defs/AlreadyReviewed"
+        },
+        {
+          "$ref": "#/$defs/TooLarge"
+        },
+        {
+          "$ref": "#/$defs/Refused"
+        },
+        {
+          "$ref": "#/$defs/HostError"
+        }
+      ]
+    },
+    "PrepareFailure": {
+      "description": "Returned by controller.ts prepare when preparation does not proceed to probing",
+      "type": "object",
+      "required": [
+        "success",
+        "error"
+      ],
+      "properties": {
+        "success": {
+          "const": false
+        },
+        "error": {
+          "$ref": "#/$defs/PrepareError"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PrepareResponse": {
+      "description": "CLI return object of controller.ts prepare",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/PrepareReady"
+        },
+        {
+          "$ref": "#/$defs/PrepareFailure"
+        }
+      ]
+    },
+    "ReviewStatus": {
+      "description": "CLI return object of controller.ts status <workdir>: current probe acknowledgment and completion state",
+      "type": "object",
+      "required": [
+        "pending",
+        "acknowledged",
+        "unacknowledged",
+        "completed",
+        "submittedOutcome"
+      ],
+      "properties": {
+        "pending": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ProbeName"
+          }
+        },
+        "acknowledged": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ProbeName"
+          }
+        },
+        "unacknowledged": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ProbeName"
+          }
+        },
+        "completed": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ProbeName"
+          }
+        },
+        "submittedOutcome": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Outcome"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "DispatchPending": {
+      "description": "Returned by controller.ts dispatch when one or more probes have not yet reported",
+      "type": "object",
+      "required": [
+        "kind",
+        "remaining"
+      ],
+      "properties": {
+        "kind": {
+          "const": "pending"
+        },
+        "remaining": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/ProbeName"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "DispatchSubmitted": {
+      "description": "Returned by controller.ts dispatch when all probes reported and the review was posted to the host",
+      "type": "object",
+      "required": [
+        "kind",
+        "outcome",
+        "ledger",
+        "location"
+      ],
+      "properties": {
+        "kind": {
+          "const": "submitted"
+        },
+        "outcome": {
+          "$ref": "#/$defs/Outcome"
+        },
+        "ledger": {
+          "$ref": "ledger.schema.json"
+        },
+        "location": {
+          "$ref": "#/$defs/LocationUrl"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DispatchResult": {
+      "description": "Return object of controller.ts dispatch",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/DispatchPending"
+        },
+        {
+          "$ref": "#/$defs/DispatchSubmitted"
+        },
+        {
+          "$ref": "#/$defs/HostError"
+        }
+      ]
+    },
+    "PersistedPullRequest": {
+      "description": "The pull request state persisted to pull-request.json in the ledger directory by prepare and rehydrated by status, dispatch, and sub-agent-controller",
+      "type": "object",
+      "required": [
+        "change",
+        "surface",
+        "fragments",
+        "threads"
+      ],
+      "properties": {
+        "change": {
+          "$ref": "change.schema.json#/$defs/Change"
+        },
+        "surface": {
+          "$ref": "change.schema.json#/$defs/Surface"
+        },
+        "fragments": {
+          "type": "array",
+          "items": {
+            "$ref": "change.schema.json#/$defs/Fragment"
+          }
+        },
+        "threads": {
+          "$ref": "change.schema.json#/$defs/Threads"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "success": true,
+      "session": "pr-review-session:L3RtcC9wci1yZXZpZXctd29ya2Rpcg",
+      "pending": [
+        "01-purpose"
+      ],
+      "prompts": {
+        "01-purpose": "Run node /path/to/sub-agent-controller.ts inspect pr-review-session:L3RtcC9wci1yZXZpZXctd29ya2Rpcg 01-purpose and node /path/to/sub-agent-controller.ts ack pr-review-session:L3RtcC9wci1yZXZpZXctd29ya2Rpcg 01-purpose with this exact message as argument, message dispatcher on ack, then follow inspect output only."
+      },
+      "permissions": {
+        "01-purpose": [
+          "Bash(node *sub-agent-controller.ts*)"
+        ]
+      }
+    }
+  ]
+}

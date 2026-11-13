@@ -4,24 +4,29 @@ import {
 	pullsCreateReview,
 	pullsGet,
 	pullsListReviews,
+	reposDownloadZipballArchive,
 } from "../../clients/github.g.ts";
 import { AccessToken } from "./access-token.ts";
 import {
 	type AdapterResolution,
+	buildBinaryHostError,
+	buildHostError,
 	type HostAdapter,
 	hasOAuthScope,
-	hostErrorReason,
+	isBinaryResponse,
 	isJsonResponse,
 } from "./adapter.ts";
 import type { GithubPullRequest } from "./code-under-review.ts";
 import type {
 	GitHub,
 	HeadCommit,
+	HostError,
 	Ledger,
 	Outcome,
 	Summary,
 } from "./contracts.g.ts";
 import {
+	baseCommitOf,
 	changeOf,
 	failedChecks,
 	GitHubCheckRunsCodec,
@@ -33,7 +38,6 @@ import {
 	priorOf,
 	refusalReasons,
 	refusedIn,
-	remoteUrlOf,
 } from "./github.ts";
 import { payload, refusalPayload } from "./github-review.ts";
 import {
@@ -42,8 +46,11 @@ import {
 } from "./github-threads.ts";
 import { table } from "./ledger-table.ts";
 import { isNullOrEmpty } from "./nullish.ts";
-import type { SnapshotDirectory } from "./snapshot-directory.ts";
-import { hydrateSnapshot } from "./snapshot-hydration.ts";
+import { buildReviewSnapshot } from "./review-snapshot-builder.ts";
+import type {
+	CommitZipArchive,
+	SnapshotDirectory,
+} from "./snapshot-directory.ts";
 
 const GRAPHQL_URL = "https://api.github.com/graphql";
 
@@ -82,15 +89,14 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 	#hostError(res: {
 		readonly status: number;
 		readonly headers: Headers;
-	}): AdapterResolution {
-		return {
-			kind: "host-error",
-			host: this.host(),
-			status: res.status,
-			reason: hostErrorReason("GitHub", "GH_TOKEN", res, this.#token),
-		};
+		readonly data?: unknown;
+	}): HostError {
+		return buildHostError(this.host(), res, this.#token);
 	}
-	async #refuse(headCommit: HeadCommit, reason: Summary): Promise<Summary> {
+	async #refuse(
+		headCommit: HeadCommit,
+		reason: Summary,
+	): Promise<Summary | HostError> {
 		const host = this.host();
 		const created = await pullsCreateReview(
 			host.owner,
@@ -99,6 +105,9 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 			refusalPayload(headCommit, reason),
 			this.#requestInit(),
 		);
+		if (!isJsonResponse(created)) {
+			return this.#hostError(created);
+		}
 		return GitHubCreatedReviewCodec.decode(created.data).html_url;
 	}
 	async resolve(snapshotDir: SnapshotDirectory): Promise<AdapterResolution> {
@@ -119,7 +128,14 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 				(this.#token?.hasScope(["repo", "public_repo"]) ?? true)
 			)
 		) {
-			return this.#hostError({ status: 403, headers: prRes.headers });
+			return this.#hostError({
+				status: 403,
+				headers: prRes.headers,
+				data: {
+					message:
+						"Access token is missing required GitHub OAuth scope (repo or public_repo).",
+				},
+			});
 		}
 		const pr = GitHubPullRequestCodec.decode(prRes.data);
 		const headCommit = headCommitOf(pr);
@@ -140,7 +156,13 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 			return this.#hostError(threadsRes);
 		}
 		if (!threadsRes.viewerCanUpdate) {
-			return this.#hostError({ status: 403, headers: prRes.headers });
+			return this.#hostError({
+				status: 403,
+				headers: prRes.headers,
+				data: {
+					message: "Viewer does not have permission to update pull request.",
+				},
+			});
 		}
 		const reviews = GitHubReviewsCodec.decode(reviewsRes.data);
 		const already = postedAt(reviews, headCommit);
@@ -157,25 +179,55 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 			const location = isNullOrEmpty(existingRefusal)
 				? await this.#refuse(headCommit, reason)
 				: existingRefusal;
+			if (typeof location !== "string") {
+				return location;
+			}
 			return { kind: "refused", headCommit, reason, location };
 		}
-		return hydrateSnapshot(
+		const baseCommit = baseCommitOf(pr);
+		const priorCommit = priorOf(reviews);
+		const commitsToFetch = [
+			baseCommit,
+			...(isNullOrEmpty(priorCommit) ? [] : [priorCommit]),
+			headCommit,
+		];
+		const zipResponses = await Promise.all(
+			commitsToFetch.map(async (sha) => ({
+				sha,
+				res: await reposDownloadZipballArchive(
+					host.owner,
+					host.repository,
+					sha,
+					init,
+				),
+			})),
+		);
+		const failedZip = zipResponses.find(({ res }) => !isBinaryResponse(res));
+		if (!isNullOrEmpty(failedZip)) {
+			return buildBinaryHostError(host, failedZip.res, this.#token);
+		}
+		const zipArchives: CommitZipArchive[] = zipResponses.map(
+			({ sha, res }) => ({
+				sha,
+				zip: res.data,
+			}),
+		);
+		await snapshotDir.loadCommitZips(zipArchives, true);
+		return buildReviewSnapshot(
 			this.#review,
 			snapshotDir,
 			{
-				remoteUrl: remoteUrlOf(host, pr),
-				baseRef: pr.base.ref,
-				headRef: headCommit,
+				baseCommit,
 				headCommit,
 				change,
-				priorCommit: priorOf(reviews),
+				priorCommit,
 				threads: threadsRes.threads,
 				existingRefusal,
 			},
 			(commit, reason) => this.#refuse(commit, reason),
 		);
 	}
-	async post(outcome: Outcome, ledger: Ledger): Promise<Summary> {
+	async post(outcome: Outcome, ledger: Ledger): Promise<Summary | HostError> {
 		const host = this.host();
 		const init = this.#requestInit();
 		const reviewsRes = await pullsListReviews(
@@ -185,25 +237,34 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 			{},
 			init,
 		);
-		const reviews = isJsonResponse(reviewsRes)
-			? GitHubReviewsCodec.decode(reviewsRes.data)
-			: [];
+		if (!isJsonResponse(reviewsRes)) {
+			return this.#hostError(reviewsRes);
+		}
+		const reviews = GitHubReviewsCodec.decode(reviewsRes.data);
 		const existingUrl = postedAt(reviews, outcome.headCommit);
-		const location = isNullOrEmpty(existingUrl)
-			? GitHubCreatedReviewCodec.decode(
-					(
-						await pullsCreateReview(
-							host.owner,
-							host.repository,
-							host.number,
-							payload(outcome, table(ledger)),
-							init,
-						)
-					).data,
-				).html_url
-			: existingUrl;
+		let location = existingUrl;
+		if (isNullOrEmpty(location)) {
+			const createRes = await pullsCreateReview(
+				host.owner,
+				host.repository,
+				host.number,
+				payload(outcome, table(ledger)),
+				init,
+			);
+			if (!isJsonResponse(createRes)) {
+				return this.#hostError(createRes);
+			}
+			location = GitHubCreatedReviewCodec.decode(createRes.data).html_url;
+		}
 		const client = new GraphQLClient(GRAPHQL_URL, init);
-		await settleAndReopenGitHubThreads(client, outcome.settle, outcome.reopen);
+		const mutateRes = await settleAndReopenGitHubThreads(
+			client,
+			outcome.settle,
+			outcome.reopen,
+		);
+		if (!mutateRes.ok) {
+			return this.#hostError(mutateRes);
+		}
 		return location;
 	}
 }

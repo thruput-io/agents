@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { changedFiles, intersect, parseHunks, union } from "./diff.ts";
-import { fragments, numbered, removedLines, span } from "./fragments.ts";
+import { fragments, numbered, removedLines } from "./fragments.ts";
 import { narrowSurface, threadRanges, wholeSurface } from "./surface.ts";
 
 const H = "a".repeat(40);
@@ -250,17 +250,6 @@ it("fragments cuts a file into context and surface fragments in order, head firs
 			lines: [{ idToReportViolationOn: 1, text: "a" }],
 		},
 	]);
-});
-
-it("span is the first and last line an anchor or a fragment covers", () => {
-	assert.deepEqual(
-		span([
-			{ idToReportViolationOn: 3, text: "c" },
-			{ idToReportViolationOn: 4, text: "d" },
-			{ idToReportViolationOn: 10, text: "j" },
-		]),
-		{ start: 3, end: 10 },
-	);
 });
 
 it("removedLines cuts the removed lines the surface keeps out of the hunks that carry their text", () => {

@@ -8,6 +8,7 @@ import {
 	getPullsListReviewsResponseMock,
 } from "../../clients/github.g.ts";
 import {
+	baseCommitOf,
 	changeOf,
 	failedChecks,
 	GitHubCheckRunsCodec,
@@ -19,7 +20,6 @@ import {
 	priorOf,
 	refusalReasons,
 	refusedIn,
-	remoteUrlOf,
 } from "./github.ts";
 import {
 	comment,
@@ -51,10 +51,15 @@ const HOST = {
 	number: 14,
 };
 
-it("changeOf, headCommitOf, and remoteUrlOf fold a GitHub PullRequest into domain contracts", () => {
+it("changeOf, headCommitOf, and baseCommitOf fold a GitHub PullRequest into domain contracts", () => {
 	const basePull = getPullsGetResponseMock({ body: null });
 	const pr = {
 		...basePull,
+		base: {
+			...basePull.base,
+			sha: SHA_B,
+			ref: "main",
+		},
 		head: {
 			...basePull.head,
 			sha: SHA_A,
@@ -65,15 +70,12 @@ it("changeOf, headCommitOf, and remoteUrlOf fold a GitHub PullRequest into domai
 		body: null,
 	};
 	assert.equal(headCommitOf(pr), SHA_A);
+	assert.equal(baseCommitOf(pr), SHA_B);
 	assert.deepEqual(changeOf(HOST, pr), {
 		host: HOST,
 		author: "author",
 		description: "",
 	});
-	assert.equal(
-		remoteUrlOf(HOST, pr),
-		"https://github.com/octocat/hello-world.git",
-	);
 });
 
 it("failedChecks and refusalReasons report non-passing checks and merge conflicts", () => {

@@ -112,12 +112,11 @@ export function createGitHubReReviewHandlers(
 		getPullsGetMockHandler({
 			...basePull,
 			user: { ...basePull.user, login: "author@example.com" },
-			base: { ...basePull.base, ref: "main" },
+			base: { ...basePull.base, ref: "main", sha: repo.baseCommit },
 			head: {
 				...basePull.head,
 				ref: "feature-v2",
 				sha: repo.headCommitV2,
-				repo: { ...nonnull(basePull.head.repo), clone_url: repo.repoDir },
 			},
 		}),
 		getPullsListReviewsMockHandler([

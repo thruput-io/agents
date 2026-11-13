@@ -18,13 +18,38 @@ import {
 	type RulesKind,
 	type ThreadBody,
 } from "./contracts.g.ts";
-import { isNullOrEmpty } from "./nullish.ts";
+import { isNullOrEmpty, nonnull } from "./nullish.ts";
 
 export const SITE = "https://thruput.se/agents/";
 const APOSTROPHE = /'/gu;
 const NON_ALPHANUMERIC = /[^a-z0-9]+/gu;
 const EDGE_HYPHEN = /^-|-$/gu;
 const RENDERED = / breaks \[[^\]]+\]\([^)]+\)/u;
+const CITATION = /\[\[([^\]]+)\]\]/gu;
+
+const texts = (value: unknown): readonly string[] => {
+	if (typeof value === "string") {
+		return [value];
+	}
+	if (typeof value === "object" && !isNullOrEmpty(value)) {
+		return Object.values(value).flatMap(texts);
+	}
+	return [];
+};
+
+const named = (entry: {
+	readonly id: string;
+	readonly closedEnumerationOf?: readonly string[] | undefined;
+	readonly openEnumerationOf?: readonly string[] | undefined;
+}): readonly string[] => [
+	...new Set([
+		...texts(entry).flatMap((text) =>
+			[...text.matchAll(CITATION)].map((match) => nonnull(match[1])),
+		),
+		...(entry.closedEnumerationOf ?? []),
+		...(entry.openEnumerationOf ?? []),
+	]),
+];
 
 export const slug = (id: string): string =>
 	id
@@ -125,11 +150,31 @@ export function rulebook(
 		}
 		return parent;
 	});
+	const definitionsById = new Map(
+		parsedGovernance.definitions.map((definition) => [
+			definition.id,
+			definition,
+		]),
+	);
+	const cited = new Set(
+		[...parsedRules, ...principles]
+			.flatMap(named)
+			.filter((id) => definitionsById.has(id)),
+	);
+	for (const id of cited) {
+		for (const next of named(nonnull(definitionsById.get(id)))) {
+			if (definitionsById.has(next)) {
+				cited.add(next);
+			}
+		}
+	}
 	return {
 		instructions: RulesetInstructionsSchema.decode(undefined),
 		rules: parsedRules,
 		principles,
-		definitions: [...parsedGovernance.definitions],
+		definitions: parsedGovernance.definitions.filter((definition) =>
+			cited.has(definition.id),
+		),
 	};
 }
 

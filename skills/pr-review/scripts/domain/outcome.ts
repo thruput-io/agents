@@ -4,15 +4,16 @@ import type {
 	LineRange,
 	Outcome,
 	Path,
-	PullRequestAnchor,
 	Summary,
+	SurfaceFile,
 	ThreadBody,
 	ThreadId,
 	ThreadState,
 	Violation,
 } from "./contracts.g.ts";
-import { span } from "./fragments.ts";
+import { resolveSurfaceLine } from "./ledger.ts";
 import { merge, verdict } from "./ledger-table.ts";
+import { isNullOrEmpty } from "./nullish.ts";
 import { type CitationDocument, citation, message, SITE } from "./rulebook.ts";
 
 interface ThreadCandidate {
@@ -21,25 +22,35 @@ interface ThreadCandidate {
 	readonly body: ThreadBody;
 }
 
+interface SurfaceCarrier {
+	readonly surface?: { readonly files: readonly SurfaceFile[] };
+	readonly review?: { readonly files: readonly SurfaceFile[] };
+}
+
+const filesOf = (document: SurfaceCarrier): readonly SurfaceFile[] =>
+	document.surface?.files ?? document.review?.files ?? [];
+
 export function alreadyOpen(
 	violation: Violation,
 	cite: string,
 	threads: readonly ThreadCandidate[],
+	files: readonly SurfaceFile[],
 ): boolean {
-	const { anchor } = violation;
+	const resolved = resolveSurfaceLine(violation.idToReportViolationOn, files);
 	return (
-		anchor.kind !== "pull-request" &&
+		!isNullOrEmpty(resolved) &&
 		threads.some(
 			(thread) =>
-				thread.path === anchor.path &&
-				thread.lines.end === span(anchor.lines).end &&
+				thread.path === resolved.path &&
+				thread.lines.start <= resolved.line &&
+				resolved.line <= thread.lines.end &&
 				thread.body.includes(cite),
 		)
 	);
 }
 
 interface OutcomeEntry {
-	readonly document: CitationDocument;
+	readonly document: CitationDocument & SurfaceCarrier;
 	readonly ledger: Ledger;
 }
 
@@ -49,6 +60,7 @@ export function settled<ThreadItem extends ThreadCandidate>(
 ): ThreadItem[] {
 	const carried = new Set<ThreadItem>();
 	for (const { document, ledger } of entries) {
+		const files = filesOf(document);
 		for (const row of ledger.rows) {
 			if (row.verdict !== "violation") {
 				continue;
@@ -56,7 +68,7 @@ export function settled<ThreadItem extends ThreadCandidate>(
 			const cite = citation(document, row);
 			for (const violation of row.violations) {
 				for (const thread of threads.filter((candidate) =>
-					alreadyOpen(violation, cite, [candidate]),
+					alreadyOpen(violation, cite, [candidate], files),
 				)) {
 					carried.add(thread);
 				}
@@ -76,39 +88,41 @@ export function outcome<
 	const unsettledThreads = threads.filter(
 		(thread) => thread.state !== "resolved",
 	);
-	const findings = entries.flatMap(({ document, ledger: ownLedger }) =>
-		ownLedger.rows.flatMap((row) =>
+	const findings = entries.flatMap(({ document, ledger: ownLedger }) => {
+		const files = filesOf(document);
+		return ownLedger.rows.flatMap((row) =>
 			row.verdict === "violation"
 				? row.violations.map((violation) => ({
-						...violation,
+						resolved: resolveSurfaceLine(
+							violation.idToReportViolationOn,
+							files,
+						),
 						body: message(violation, citation(document, row)),
 						carried: alreadyOpen(
 							violation,
 							citation(document, row),
 							unsettledThreads,
+							files,
 						),
 					}))
 				: [],
-		),
-	);
+		);
+	});
 	const fresh = findings.filter((finding) => !finding.carried);
-	const inline: InlineFinding[] = fresh.flatMap(({ anchor, body }) =>
-		anchor.kind === "surface"
-			? [
+	const inline: InlineFinding[] = fresh.flatMap(({ resolved, body }) =>
+		isNullOrEmpty(resolved)
+			? []
+			: [
 					{
-						path: anchor.path,
-						side: anchor.side,
-						lines: span(anchor.lines),
+						path: resolved.path,
+						side: resolved.side,
+						lines: { start: resolved.line, end: resolved.line },
 						body,
 					},
-				]
-			: [],
+				],
 	);
-	const atPullRequest = fresh.filter(
-		(
-			finding,
-		): finding is typeof finding & { readonly anchor: PullRequestAnchor } =>
-			finding.anchor.kind === "pull-request",
+	const atPullRequest = fresh.filter((finding) =>
+		isNullOrEmpty(finding.resolved),
 	);
 	const decided = verdict(ledger);
 	const summary: Summary = [

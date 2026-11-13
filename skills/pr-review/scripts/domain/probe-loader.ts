@@ -2,19 +2,18 @@ import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
-import { z } from "zod";
+import type { z } from "zod";
 import {
 	type AgentInstructions,
-	AgentInstructionsSchema,
 	type Change,
 	type Checkout,
-	DefinitionSchema,
+	DefinitionsSchema,
 	type Rulebook as ExternalRulebook,
-	PrincipleSchema,
-	RuleSchema,
+	PrinciplesSchema,
+	RulesSchema,
 	type Surface,
 } from "./contracts.g.ts";
-import { instructions } from "./instructions.ts";
+import { Instructions, instructions } from "./instructions.ts";
 import { nonnull } from "./nullish.ts";
 import {
 	checkKinds,
@@ -35,16 +34,6 @@ export interface NamedProbe {
 
 const SKILL_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
-const RulesFileSchema = z.object({
-	rules: z.array(RuleSchema).readonly(),
-});
-const PrinciplesFileSchema = z.object({
-	principles: z.array(PrincipleSchema).readonly(),
-});
-const DefinitionsFileSchema = z.object({
-	definitions: z.array(DefinitionSchema).readonly(),
-});
-
 const parseYaml = <T>(name: string, schema: z.ZodType<T>): T =>
 	schema.parse(parse(readFileSync(join(SKILL_DIR, "rules", name), "utf8")));
 
@@ -53,9 +42,9 @@ function loadBundledRuleGroups(): readonly {
 	readonly kind: "rules" | "reuse" | "dead-code";
 	readonly rulebook: Rulebook;
 }[] {
-	const { rules } = parseYaml("Rules.yaml", RulesFileSchema);
-	const { principles } = parseYaml("Principles.yaml", PrinciplesFileSchema);
-	const { definitions } = parseYaml("Definitions.yaml", DefinitionsFileSchema);
+	const { rules } = parseYaml("Rules.yaml", RulesSchema);
+	const { principles } = parseYaml("Principles.yaml", PrinciplesSchema);
+	const { definitions } = parseYaml("Definitions.yaml", DefinitionsSchema);
 	const groups = partition(rules.filter((rule) => rule.id !== FILE_TOO_LARGE));
 	checkKinds(groups.map((group) => group.group));
 	return groups.map((group) => ({
@@ -89,69 +78,82 @@ function loadBundledRulesets(): Promise<readonly ExternalRulebook[]> {
 	);
 }
 
-const toAgentInstructions = (probe: ProbeDocument): AgentInstructions => {
+export const toAgentInstructions = (
+	probe: ProbeDocument,
+): AgentInstructions => {
+	const prose = probe.instructions ?? Instructions.Prose;
 	if (probe.kind === "context") {
-		return AgentInstructionsSchema.decode({
-			instructions: probe.instructions,
-			task: probe.task,
-			permissions: probe.permissions,
-			kind: probe.kind,
+		const spec = Instructions.forKind("context");
+		return {
+			instructions: prose,
+			task: spec.task() as Extract<
+				AgentInstructions,
+				{ readonly kind: "context" }
+			>["task"],
+			permissions: spec.permissions() as Extract<
+				AgentInstructions,
+				{ readonly kind: "context" }
+			>["permissions"],
+			kind: "context",
 			change: probe.change,
 			surface: probe.surface,
 			rulesets: [...probe.rulesets],
-		});
+		};
 	}
 	if (probe.kind === "rules") {
-		return AgentInstructionsSchema.decode({
-			instructions: probe.instructions,
-			task: probe.task as Extract<
-				z.input<typeof AgentInstructionsSchema>,
+		const spec = Instructions.forKind("rules");
+		return {
+			instructions: prose,
+			task: spec.task() as Extract<
+				AgentInstructions,
 				{ readonly kind: "rules" }
 			>["task"],
-			permissions: probe.permissions as Extract<
-				z.input<typeof AgentInstructionsSchema>,
+			permissions: spec.permissions() as Extract<
+				AgentInstructions,
 				{ readonly kind: "rules" }
 			>["permissions"],
-			kind: probe.kind,
+			kind: "rules",
 			change: probe.change,
 			surface: probe.surface,
 			ruleset: probe.rulebook.toRuleset(),
-		});
+		};
 	}
 	if (probe.kind === "dead-code") {
-		return AgentInstructionsSchema.decode({
-			instructions: probe.instructions,
-			task: probe.task as Extract<
-				z.input<typeof AgentInstructionsSchema>,
+		const spec = Instructions.forKind("dead-code");
+		return {
+			instructions: prose,
+			task: spec.task() as Extract<
+				AgentInstructions,
 				{ readonly kind: "dead-code" }
 			>["task"],
-			permissions: probe.permissions as Extract<
-				z.input<typeof AgentInstructionsSchema>,
+			permissions: spec.permissions() as Extract<
+				AgentInstructions,
 				{ readonly kind: "dead-code" }
 			>["permissions"],
-			kind: probe.kind,
+			kind: "dead-code",
 			change: probe.change,
 			surface: probe.surface,
 			ruleset: probe.rulebook.toRuleset(),
 			checkout: nonnull(probe.checkout),
-		});
+		};
 	}
-	return AgentInstructionsSchema.decode({
-		instructions: probe.instructions,
-		task: probe.task as Extract<
-			z.input<typeof AgentInstructionsSchema>,
+	const spec = Instructions.forKind("reuse");
+	return {
+		instructions: prose,
+		task: spec.task() as Extract<
+			AgentInstructions,
 			{ readonly kind: "reuse" }
 		>["task"],
-		permissions: probe.permissions as Extract<
-			z.input<typeof AgentInstructionsSchema>,
+		permissions: spec.permissions() as Extract<
+			AgentInstructions,
 			{ readonly kind: "reuse" }
 		>["permissions"],
-		kind: probe.kind,
+		kind: "reuse",
 		change: probe.change,
 		surface: probe.surface,
 		ruleset: probe.rulebook.toRuleset(),
 		checkout: nonnull(probe.checkout),
-	});
+	};
 };
 
 export async function loadBundledProbes(

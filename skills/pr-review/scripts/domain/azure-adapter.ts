@@ -1,5 +1,6 @@
 import {
 	type GitPullRequestCommentThread,
+	itemsList,
 	pullRequestReviewersCreatePullRequestReviewer,
 	pullRequestReviewersUpdatePullRequestReviewers,
 	pullRequestsGetPullRequest,
@@ -11,8 +12,10 @@ import { evaluationsList } from "../../clients/azure-policy.g.ts";
 import { AccessToken } from "./access-token.ts";
 import {
 	type AdapterResolution,
+	buildBinaryHostError,
+	buildHostError,
 	type HostAdapter,
-	hostErrorReason,
+	isBinaryResponse,
 	isJsonResponse,
 } from "./adapter.ts";
 import {
@@ -24,7 +27,7 @@ import {
 	changeOf,
 	headCommitOf,
 	refusalReasons,
-	remoteUrlOf,
+	targetCommitOf,
 } from "./azure.ts";
 import {
 	type AzureEditableThreadStatus,
@@ -48,6 +51,7 @@ import type { AzureMergeRequest } from "./code-under-review.ts";
 import type {
 	AzureDevOps,
 	HeadCommit,
+	HostError,
 	Ledger,
 	Outcome,
 	Summary,
@@ -55,8 +59,11 @@ import type {
 } from "./contracts.g.ts";
 import { table } from "./ledger-table.ts";
 import { isNullOrEmpty } from "./nullish.ts";
-import type { SnapshotDirectory } from "./snapshot-directory.ts";
-import { hydrateSnapshot } from "./snapshot-hydration.ts";
+import { buildReviewSnapshot } from "./review-snapshot-builder.ts";
+import type {
+	CommitZipArchive,
+	SnapshotDirectory,
+} from "./snapshot-directory.ts";
 
 const API_VERSION = { "api-version": "7.1" } as const;
 const POLICY_VERSION = "7.1-preview.1";
@@ -109,49 +116,59 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 	#hostError(res: {
 		readonly status: number;
 		readonly headers: Headers;
-	}): AdapterResolution {
-		return {
-			kind: "host-error",
-			host: this.host(),
-			status: res.status,
-			reason: hostErrorReason(
-				"Azure DevOps",
-				"AZURE_DEVOPS_EXT_PAT",
-				res,
-				this.#token,
-			),
-		};
+		readonly data?: unknown;
+	}): HostError {
+		return buildHostError(this.host(), res, this.#token);
 	}
-	async #setStatus(tid: ThreadId, status: AzureEditableThreadStatus) {
-		await pullRequestThreadsUpdate(
+	async #setStatus(
+		tid: ThreadId,
+		status: AzureEditableThreadStatus,
+	): Promise<HostError | null> {
+		const res = await pullRequestThreadsUpdate(
 			...this.#prArgs(),
 			Number(tid),
 			threadStatusPayload(status),
 			API_VERSION,
 			this.#requestInit(),
 		);
+		return isWritePermitted(res) ? null : this.#hostError(res);
 	}
-	async #createThread(payload: GitPullRequestCommentThread): Promise<Summary> {
+	async #createThread(
+		payload: GitPullRequestCommentThread,
+	): Promise<Summary | HostError> {
 		const res = await pullRequestThreadsCreate(
 			...this.#prArgs(),
 			payload,
 			API_VERSION,
 			this.#requestInit(),
 		);
+		if (!isJsonResponse(res)) {
+			return this.#hostError(res);
+		}
 		return AzureCreatedThreadIdCodec.decode(res.data);
 	}
-	async #castVote(verdict: Outcome["verdict"]): Promise<void> {
-		await pullRequestReviewersCreatePullRequestReviewer(
+	async #castVote(verdict: Outcome["verdict"]): Promise<HostError | null> {
+		const res = await pullRequestReviewersCreatePullRequestReviewer(
 			...this.#prArgs(),
 			"me",
 			votePayload(verdict),
 			API_VERSION,
 			this.#requestInit(),
 		);
+		return isWritePermitted(res) ? null : this.#hostError(res);
 	}
-	async #refuse(headCommit: HeadCommit, reason: Summary): Promise<Summary> {
+	async #refuse(
+		headCommit: HeadCommit,
+		reason: Summary,
+	): Promise<Summary | HostError> {
 		const threadId = await this.#createThread(refusalText(headCommit, reason));
-		await this.#castVote("request-changes");
+		if (typeof threadId !== "string") {
+			return threadId;
+		}
+		const voteErr = await this.#castVote("request-changes");
+		if (!isNullOrEmpty(voteErr)) {
+			return voteErr;
+		}
 		return threadId;
 	}
 	async resolve(snapshotDir: SnapshotDirectory): Promise<AdapterResolution> {
@@ -162,6 +179,10 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 			return this.#hostError({
 				status: 403,
 				headers: new Headers({ "content-type": "application/json" }),
+				data: {
+					message:
+						"Access token is missing required Azure DevOps write scope (vso.code_write).",
+				},
 			});
 		}
 		const init = this.#requestInit();
@@ -210,21 +231,64 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 			const location = isNullOrEmpty(existingRefusal)
 				? await this.#refuse(headCommit, reason)
 				: existingRefusal;
+			if (typeof location !== "string") {
+				return location;
+			}
 			return { kind: "refused", headCommit, reason, location };
 		}
-		await Promise.all(
+		const staleResults = await Promise.all(
 			staleRefusals(rawThreads).map((tid) => this.#setStatus(tid, "closed")),
 		);
-		return hydrateSnapshot(
+		const staleError = staleResults.find((err) => !isNullOrEmpty(err));
+		if (!isNullOrEmpty(staleError)) {
+			return staleError;
+		}
+		const baseCommit = targetCommitOf(pr);
+		const priorCommit = priorOf(rawThreads);
+		const commitsToFetch = [
+			baseCommit,
+			...(isNullOrEmpty(priorCommit) ? [] : [priorCommit]),
+			headCommit,
+		];
+		const zipResponses = await Promise.all(
+			commitsToFetch.map(async (sha) => ({
+				sha,
+				res: await itemsList(
+					host.organization,
+					host.project,
+					host.repository,
+					{
+						scopePath: "/",
+						recursionLevel: "full",
+						$format: "zip",
+						"versionDescriptor.version": sha,
+						"versionDescriptor.versionType": "commit",
+						zipForUnix: true,
+						...API_VERSION,
+					},
+					init,
+				),
+			})),
+		);
+		const failedZip = zipResponses.find(({ res }) => !isBinaryResponse(res));
+		if (!isNullOrEmpty(failedZip)) {
+			return buildBinaryHostError(host, failedZip.res, this.#token);
+		}
+		const zipArchives: CommitZipArchive[] = zipResponses.map(
+			({ sha, res }) => ({
+				sha,
+				zip: res.data,
+			}),
+		);
+		await snapshotDir.loadCommitZips(zipArchives, false);
+		return buildReviewSnapshot(
 			this.#review,
 			snapshotDir,
 			{
-				remoteUrl: remoteUrlOf(host, pr),
-				baseRef: pr.targetRefName ?? "",
-				headRef: pr.sourceRefName ?? headCommit,
+				baseCommit,
 				headCommit,
 				change: changeOf(host, pr),
-				priorCommit: priorOf(rawThreads),
+				priorCommit,
 				threads: rawThreads
 					.filter((record) => onLines(record) && isOurThread(record))
 					.map(thread),
@@ -233,26 +297,45 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 			(commit, reason) => this.#refuse(commit, reason),
 		);
 	}
-	async post(outcome: Outcome, ledger: Ledger): Promise<Summary> {
+	async post(outcome: Outcome, ledger: Ledger): Promise<Summary | HostError> {
 		const res = await pullRequestThreadsList(
 			...this.#prArgs(),
 			API_VERSION,
 			this.#requestInit(),
 		);
-		const rawThreads = isJsonResponse(res)
-			? AzureThreadsListCodec.decode(res.data)
-			: [];
+		if (!isJsonResponse(res)) {
+			return this.#hostError(res);
+		}
+		const rawThreads = AzureThreadsListCodec.decode(res.data);
 		const pending = unposted(outcome, rawThreads);
-		await Promise.all([
-			...pending.inline.map((f) => this.#createThread(threadPayload(f))),
+		const inlineResults = await Promise.all(
+			pending.inline.map((f) => this.#createThread(threadPayload(f))),
+		);
+		const inlineError = inlineResults.find(
+			(item): item is HostError => typeof item !== "string",
+		);
+		if (!isNullOrEmpty(inlineError)) {
+			return inlineError;
+		}
+		const statusResults = await Promise.all([
 			...pending.settle.map((id) => this.#setStatus(id, "closed")),
 			...outcome.reopen.map((id) => this.#setStatus(id, "active")),
 		]);
+		const statusError = statusResults.find((err) => !isNullOrEmpty(err));
+		if (!isNullOrEmpty(statusError)) {
+			return statusError;
+		}
 		const body = text([outcome.summary, table(ledger)].join("\n\n"));
 		const summaryId = pending.summary
 			? await this.#createThread(body)
 			: String(this.host().id);
-		await this.#castVote(outcome.verdict);
+		if (typeof summaryId !== "string") {
+			return summaryId;
+		}
+		const voteErr = await this.#castVote(outcome.verdict);
+		if (!isNullOrEmpty(voteErr)) {
+			return voteErr;
+		}
 		return summaryId;
 	}
 }

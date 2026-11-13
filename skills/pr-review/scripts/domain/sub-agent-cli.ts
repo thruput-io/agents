@@ -1,12 +1,19 @@
 import { existsSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import type { CodeUnderReview } from "./code-under-review.ts";
 import {
+	type AckResponse,
+	type AckStatus,
+	type AgentInstructions,
 	type Change,
 	type Checkout,
+	DeadlineMsSchema,
 	type Rulebook as ExternalRulebook,
+	type ReportResponse,
 	type Row,
-	RowSchema,
+	SubAgentCommandSchema,
 } from "./contracts.g.ts";
 import type { Instructions } from "./instructions.ts";
 import { isNullOrEmpty } from "./nullish.ts";
@@ -14,13 +21,19 @@ import type { Rulebook } from "./rulebook.ts";
 import type { LedgerSubmission } from "./sub-agent-ledger.ts";
 import { Workdir } from "./workdir.ts";
 
-export const SUBAGENT_DEADLINE_MS = 300_000;
+export type { AckStatus } from "./contracts.g.ts";
 
-export interface AckStatus {
-	readonly acknowledgedAt: number;
-	readonly deadlineMs: number;
-	readonly permissions: readonly string[];
-}
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const SUB_AGENT_CONTROLLER_PATH = resolve(
+	SCRIPT_DIR,
+	"sub-agent-controller.ts",
+);
+const REVIEW_SCHEMAS_DIR = resolve(SCRIPT_DIR, "../../../../schemas/review");
+
+export const SUBAGENT_DEADLINE_MS = DeadlineMsSchema.decode(undefined);
+
+export const bootstrapPrompt = (session: string, probeName: string): string =>
+	`Run node ${SUB_AGENT_CONTROLLER_PATH} inspect ${session} ${probeName} and node ${SUB_AGENT_CONTROLLER_PATH} ack ${session} ${probeName} with this exact message as argument, message dispatcher on ack, then follow inspect output only.`;
 
 type ProbeRules =
 	| { readonly kind: "rulebook"; readonly rulebook: Rulebook }
@@ -35,12 +48,13 @@ export interface SubAgentCliTarget {
 	change: () => Change;
 	codeUnderReview: () => CodeUnderReview;
 	rules: () => ProbeRules;
+	inspect: () => AgentInstructions;
 	ack: () => AckStatus;
 	report: (rows: readonly Row[]) => z.ZodSafeParseResult<LedgerSubmission>;
 }
 
 const writeJson = (payload: object): void => {
-	process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+	process.stdout.write(`${JSON.stringify(payload)}\n`);
 };
 
 const failCli = (message?: string): number => {
@@ -51,61 +65,75 @@ const failCli = (message?: string): number => {
 	return 1;
 };
 
-const readRowsInput = (arg: string): string =>
-	arg.trimStart().startsWith("[") || !existsSync(arg)
-		? arg
-		: readFileSync(arg, "utf-8");
+const readReportInput = (arg: string): unknown => {
+	const raw =
+		arg.trimStart().startsWith("{") || !existsSync(arg)
+			? arg
+			: readFileSync(arg, "utf-8");
+	return JSON.parse(raw) as unknown;
+};
 
-export const subAgentHelpPayload = () => ({
-	usage: [
-		"node sub-agent-controller.ts -h | --help",
-		"node sub-agent-controller.ts inspect <session> <probe>",
-		"node sub-agent-controller.ts ack <session> <probe>",
-		"node sub-agent-controller.ts report <session> <probe> '<rows-json>'",
-	],
-	deadlineMs: SUBAGENT_DEADLINE_MS,
-	rowSchemas: {
-		cleanOrNotApplicableRuleRow: {
-			rule: "<rule-id>",
-			examined: ["<path-or-artifact>"],
-			verdict: "clean | not-applicable",
-			evidence: "<why>",
+export const subAgentHelpPayload = () => {
+	const subAgentSchema = JSON.parse(
+		readFileSync(
+			resolve(REVIEW_SCHEMAS_DIR, "sub-agent-controller.schema.json"),
+			"utf8",
+		),
+	) as { readonly $defs: { readonly ProbeReport: unknown } };
+	const ledgerSchema = JSON.parse(
+		readFileSync(resolve(REVIEW_SCHEMAS_DIR, "ledger.schema.json"), "utf8"),
+	) as {
+		readonly $defs: {
+			readonly Violation: unknown;
+			readonly RuleViolationRow: unknown;
+			readonly RulePassRow: unknown;
+			readonly BookRuleViolationRow: unknown;
+			readonly BookRulePassRow: unknown;
+		};
+	};
+	return {
+		usage: [
+			"node sub-agent-controller.ts -h | --help",
+			"node sub-agent-controller.ts inspect <session> <probe>",
+			'node sub-agent-controller.ts ack <session> <probe> "<dispatcher-message>"',
+			"node sub-agent-controller.ts report <session> <probe> '{\"oneRowPerRuleInOrder\":[...]}'",
+		],
+		deadlineMs: SUBAGENT_DEADLINE_MS,
+		reportSchema: subAgentSchema.$defs.ProbeReport,
+		rowSchemas: {
+			Violation: ledgerSchema.$defs.Violation,
+			RuleViolationRow: ledgerSchema.$defs.RuleViolationRow,
+			RulePassRow: ledgerSchema.$defs.RulePassRow,
+			BookRuleViolationRow: ledgerSchema.$defs.BookRuleViolationRow,
+			BookRulePassRow: ledgerSchema.$defs.BookRulePassRow,
 		},
-		violationRuleRow: {
-			rule: "<rule-id>",
-			examined: ["<path-or-artifact>"],
-			verdict: "violation",
-			evidence: "<why>",
-			violations: [
-				{
-					observation:
-						"<what the code does wrong, completing '<observation> breaks <principle>'>",
-					anchor: {
-						kind: "surface",
-						path: "<file-path>",
-						side: "head | base",
-						lines: [{ idToReportViolationOn: 1, text: "<exact line text>" }],
-					},
-				},
-			],
-		},
-		bookRuleRow: {
-			bookRule: { ruleset: "<ruleset-url>", heading: "<heading>" },
-			examined: ["<path-or-artifact>"],
-			verdict: "clean | not-applicable | violation",
-			evidence: "<why>",
-		},
-		pullRequestAnchor: {
-			kind: "pull-request",
-		},
-	},
-});
+	};
+};
+
+const toRawSubAgentCommand = (args: readonly string[]): unknown => {
+	const [command, session, probe, fourthArg] = args;
+	if (command === "inspect") {
+		return { command, session, probe };
+	}
+	if (command === "ack") {
+		return { command, session, probe, message: fourthArg };
+	}
+	if (command === "report") {
+		return {
+			command,
+			session,
+			probe,
+			report: isNullOrEmpty(fourthArg) ? undefined : readReportInput(fourthArg),
+		};
+	}
+	return { command };
+};
 
 export function runSubAgentCli(
 	forSession: (session: Checkout, name: Checkout) => SubAgentCliTarget,
 	args: readonly string[],
 ): number {
-	const [command, rawSession, probeName, rawRows] = args;
+	const [command, rawSession, probeName] = args;
 	if (command === "-h" || command === "--help") {
 		writeJson(subAgentHelpPayload());
 		return 0;
@@ -119,76 +147,71 @@ export function runSubAgentCli(
 			"Usage: node sub-agent-controller.ts <inspect|ack|report> <session> <probe> [<rows-json-or-file>]\n",
 		);
 	}
+	if (command !== "inspect" && command !== "ack" && command !== "report") {
+		return failCli(`Unsupported command: ${command}\n`);
+	}
 	const parsedWorkdir = Workdir.fromSession(rawSession);
 	if (!parsedWorkdir.success) {
-		writeJson({
+		const errorResponse: AckResponse = {
 			success: false,
 			error: z.prettifyError(parsedWorkdir.error),
-		});
+		};
+		writeJson(errorResponse);
 		return failCli();
 	}
-	const sub = forSession(rawSession, probeName);
-	if (command === "inspect") {
-		const rules = sub.rules();
-		writeJson({
-			probe: probeName,
-			permissions: sub.instructions().permissions(),
-			instructions: sub.instructions().prose(),
-			task: sub.instructions().task(),
-			change: sub.change(),
-			surface: sub.codeUnderReview().surface(),
-			rules:
-				rules.kind === "rulebook"
-					? { kind: "rulebook", ruleset: rules.rulebook.toRuleset() }
-					: rules,
-			snapshotDirectory: sub.workdir().snapshotDirectory().toString(),
-		});
+	const parsedCommand = SubAgentCommandSchema.safeParse(
+		toRawSubAgentCommand(args),
+	);
+	if (!parsedCommand.success) {
+		const errorResponse: ReportResponse = {
+			success: false,
+			error: z.prettifyError(parsedCommand.error),
+		};
+		writeJson(errorResponse);
+		return failCli();
+	}
+	const cmd = parsedCommand.data;
+	const sub = forSession(cmd.session, cmd.probe);
+	if (cmd.command === "inspect") {
+		writeJson(sub.inspect());
 		return 0;
 	}
-	if (command === "ack") {
+	if (cmd.command === "ack") {
+		const expectedPrompt = bootstrapPrompt(cmd.session, cmd.probe);
+		if (cmd.message.trim() !== expectedPrompt) {
+			const errorResponse: AckResponse = {
+				success: false,
+				error: `Dispatcher message does not match the canonical bootstrap prompt for ${cmd.probe}. Do not pass custom instructions to subagents.`,
+			};
+			writeJson(errorResponse);
+			return failCli();
+		}
 		const ack = sub.ack();
-		writeJson({
+		const response: AckResponse = {
 			success: true,
-			probe: probeName,
+			probe: cmd.probe,
 			acknowledged: true,
 			deadlineMs: ack.deadlineMs,
-			permissions: ack.permissions,
-		});
+			permissions: [...ack.permissions],
+		};
+		writeJson(response);
 		return 0;
 	}
-	if (command === "report") {
-		if (isNullOrEmpty(rawRows)) {
-			writeJson({
-				success: false,
-				error: "Missing rows JSON argument or file path",
-			});
-			return failCli();
-		}
-		const parsedRows = z
-			.array(RowSchema)
-			.safeParse(JSON.parse(readRowsInput(rawRows)));
-		if (!parsedRows.success) {
-			writeJson({
-				success: false,
-				error: z.prettifyError(parsedRows.error),
-			});
-			return failCli();
-		}
-		const reported = sub.report(parsedRows.data);
-		if (!reported.success) {
-			writeJson({
-				success: false,
-				error: z.prettifyError(reported.error),
-			});
-			return failCli();
-		}
-		writeJson({
-			success: true,
-			kind: reported.data.kind,
-			headCommit: reported.data.ledger.headCommit,
-			rowCount: reported.data.ledger.rows.length,
-		});
-		return 0;
+	const reported = sub.report(cmd.report.oneRowPerRuleInOrder);
+	if (!reported.success) {
+		const errorResponse: ReportResponse = {
+			success: false,
+			error: z.prettifyError(reported.error),
+		};
+		writeJson(errorResponse);
+		return failCli();
 	}
-	return failCli(`Unsupported command: ${command}\n`);
+	const response: ReportResponse = {
+		success: true,
+		kind: reported.data.kind,
+		headCommit: reported.data.ledger.headCommit,
+		rowCount: reported.data.ledger.rows.length,
+	};
+	writeJson(response);
+	return 0;
 }

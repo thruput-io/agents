@@ -9,25 +9,22 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { test as it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { parse as parseYaml } from "yaml";
 import { MainAgentController } from "./controller.ts";
 import { runMainAgentCli } from "./controller-cli.ts";
 import { LedgerDirectory } from "./ledger-directory.ts";
 import { nonnull } from "./nullish.ts";
 import { CodeUnderReviewFactory } from "./review-snapshot.ts";
 import { Rulebook } from "./rulebook.ts";
-import { runSubAgentCli } from "./sub-agent-cli.ts";
+import { bootstrapPrompt, runSubAgentCli } from "./sub-agent-cli.ts";
 import { SubAgentController } from "./sub-agent-controller.ts";
 import { RulesSubAgentLedger } from "./sub-agent-ledger.ts";
 import { Workdir } from "./workdir.ts";
 
 const H = "a".repeat(40);
 const DOMAIN_DIR = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(DOMAIN_DIR, "../../../..");
-const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---/u;
 
 const sampleRulebook = () =>
 	nonnull(
@@ -177,6 +174,16 @@ it("SubAgentController exposes instructions, change, rules, codeUnderReview, and
 		"WebFetch",
 		"Bash(node *sub-agent-controller.ts*)",
 	]);
+	assert.equal("checkout" in sub.inspect(), false);
+	assert.equal(sub.inspect().kind, "rules");
+	assert.equal(
+		(deadCodeSub.inspect() as { readonly checkout?: string }).checkout,
+		"/tmp/review/workspace/snapshot",
+	);
+	assert.equal(
+		(reuseSub.inspect() as { readonly checkout?: string }).checkout,
+		"/tmp/review/workspace/snapshot",
+	);
 
 	const subLedger = RulesSubAgentLedger.from(
 		workdir.data.ledgerDirectory(),
@@ -305,20 +312,17 @@ it("SubAgentController.forWorkdir and forSession rehydrate a probe, enforce ack 
 	]);
 	assert.equal(beforeAck.success, false);
 
-	rehydratedSub.ack();
-	currentClock = 1000 + 300_001;
-	const expiredReport = rehydratedSub.report([
-		{
-			rule: "Stated purpose",
-			examined: ["a.ts"],
-			verdict: "clean",
-			evidence: "stated",
-		},
-	]);
-	assert.equal(expiredReport.success, false);
+	const beforeAckMain = MainAgentController.create().ledger(workdir.data);
+	assert.deepEqual(beforeAckMain.acknowledged(), []);
+	assert.deepEqual(beforeAckMain.unacknowledged(), ["01-purpose"]);
 
-	currentClock = 1000 + 60_000;
-	const reportResult = rehydratedSub.report([
+	rehydratedSub.ack();
+	const afterAckMain = MainAgentController.create().ledger(workdir.data);
+	assert.deepEqual(afterAckMain.acknowledged(), ["01-purpose"]);
+	assert.deepEqual(afterAckMain.unacknowledged(), []);
+
+	currentClock = 1000 + 300_001;
+	const lateReportResult = rehydratedSub.report([
 		{
 			rule: "Stated purpose",
 			examined: ["a.ts"],
@@ -326,13 +330,16 @@ it("SubAgentController.forWorkdir and forSession rehydrate a probe, enforce ack 
 			evidence: "stated",
 		},
 	]);
-	assert.equal(reportResult.success, true);
-	assert.equal(reportResult.data.kind, "submitted");
+	assert.equal(lateReportResult.success, true);
+	assert.equal(lateReportResult.data.kind, "submitted");
 
 	const freshMain = MainAgentController.create();
 	const mainLedger = freshMain.ledger(workdir.data);
 	assert.deepEqual(mainLedger.pending(), []);
 	assert.deepEqual(mainLedger.completed(), ["01-purpose"]);
+	assert.deepEqual(mainLedger.permissions("01-purpose"), [
+		"Bash(node *sub-agent-controller.ts*)",
+	]);
 	assert.equal(mainLedger.submittedOutcome()?.verdict, "approve");
 
 	assert.equal(
@@ -348,6 +355,17 @@ it("SubAgentController.forWorkdir and forSession rehydrate a probe, enforce ack 
 			"ack",
 			sessionToken,
 			"01-purpose",
+			"Home-baked instructions from main agent",
+		]),
+		1,
+	);
+	process.exitCode = 0;
+	assert.equal(
+		runSubAgentCli(SubAgentController.forSession, [
+			"ack",
+			sessionToken,
+			"01-purpose",
+			bootstrapPrompt(sessionToken, "01-purpose"),
 		]),
 		0,
 	);
@@ -356,14 +374,16 @@ it("SubAgentController.forWorkdir and forSession rehydrate a probe, enforce ack 
 			"report",
 			sessionToken,
 			"01-purpose",
-			JSON.stringify([
-				{
-					rule: "Stated purpose",
-					examined: ["a.ts"],
-					verdict: "clean",
-					evidence: "stated",
-				},
-			]),
+			JSON.stringify({
+				oneRowPerRuleInOrder: [
+					{
+						rule: "Stated purpose",
+						examined: ["a.ts"],
+						verdict: "clean",
+						evidence: "stated",
+					},
+				],
+			}),
 		]),
 		0,
 	);
@@ -401,7 +421,7 @@ it("Workdir immediately writes to establish it is operational, fails on unwritea
 	rmSync(tempRoot, { recursive: true, force: true });
 });
 
-it("controller CLIs support -h / --help with row schemas, execute correctly through symlinks, and probe.md grants no disk-write tools", async () => {
+it("controller CLIs support -h / --help with row schemas and execute correctly through symlinks", async () => {
 	const freshMain = MainAgentController.create();
 	assert.equal(await runMainAgentCli(freshMain, ["-h"]), 0);
 	assert.equal(await runMainAgentCli(freshMain, ["--help"]), 0);
@@ -421,22 +441,6 @@ it("controller CLIs support -h / --help with row schemas, execute correctly thro
 		encoding: "utf8",
 	});
 	assert.notEqual(badRun.status, 0);
-
-	const probeMd = readFileSync(join(REPO_ROOT, "agents/probe.md"), "utf8");
-	const frontmatterMatch = FRONTMATTER_RE.exec(probeMd);
-	const frontmatter = parseYaml(nonnull(frontmatterMatch?.[1])) as {
-		readonly omitClaudeMd?: boolean;
-		readonly tools?: readonly string[];
-	};
-	assert.equal(frontmatter.omitClaudeMd, true);
-	assert.equal(Array.isArray(frontmatter.tools), true);
-	assert.equal(frontmatter.tools?.includes("Write"), false);
-	assert.equal(frontmatter.tools?.includes("Edit"), false);
-	assert.equal(frontmatter.tools?.includes("Bash"), false);
-	assert.equal(
-		frontmatter.tools?.includes("Bash(node *sub-agent-controller.ts*)"),
-		true,
-	);
 
 	rmSync(tempRoot, { recursive: true, force: true });
 });

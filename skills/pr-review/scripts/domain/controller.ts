@@ -1,9 +1,9 @@
-import type { z } from "zod";
+import { z } from "zod";
 import type { AccessToken } from "./access-token.ts";
 import type { AdapterResolution, HostAdapter } from "./adapter.ts";
 import { HostAdapterFactory } from "./adapter-factory.ts";
 import type { CodeUnderReview } from "./code-under-review.ts";
-import type { Ledger, Outcome } from "./contracts.g.ts";
+import type { DispatchResult, PrepareError } from "./contracts.g.ts";
 import { runMainAgentCli } from "./controller-cli.ts";
 import {
 	type CoordinatedProbeSpec,
@@ -19,24 +19,13 @@ import {
 import { isCliEntrypoint } from "./sub-agent-controller.ts";
 import type { Workdir } from "./workdir.ts";
 
-type ReadyReview = Extract<AdapterResolution, { readonly kind: "ready" }>;
+export type { DispatchResult, PrepareError } from "./contracts.g.ts";
 
-export type PrepareError =
-	| { readonly kind: "invalid-target"; readonly error: z.ZodError }
-	| Exclude<AdapterResolution, { readonly kind: "ready" }>;
+type ReadyReview = Extract<AdapterResolution, { readonly kind: "ready" }>;
 
 type PrepareResult =
 	| { readonly success: true; readonly data: ReadyReview }
 	| { readonly success: false; readonly error: PrepareError };
-
-export type DispatchResult =
-	| { readonly kind: "pending"; readonly remaining: readonly string[] }
-	| {
-			readonly kind: "submitted";
-			readonly outcome: Outcome;
-			readonly ledger: Ledger;
-			readonly location: string;
-	  };
 
 interface PreparedSession {
 	readonly adapter: HostAdapter;
@@ -111,7 +100,10 @@ export class MainAgentController {
 		if (!parsedAdapter.success) {
 			return {
 				success: false,
-				error: { kind: "invalid-target", error: parsedAdapter.error },
+				error: {
+					kind: "invalid-target",
+					message: z.prettifyError(parsedAdapter.error),
+				},
 			};
 		}
 		const resolved = await parsedAdapter.data.resolve(
@@ -167,7 +159,7 @@ export class MainAgentController {
 		if (isNullOrEmpty(submittedOutcome)) {
 			return {
 				kind: "pending",
-				remaining: refreshed.mainLedger.pending(),
+				remaining: [...refreshed.mainLedger.pending()],
 			};
 		}
 		const submittedLedger = nonnull(refreshed.mainLedger.submittedLedger());
@@ -175,6 +167,9 @@ export class MainAgentController {
 			submittedOutcome,
 			submittedLedger,
 		);
+		if (typeof location !== "string") {
+			return location;
+		}
 		return {
 			kind: "submitted",
 			outcome: submittedOutcome,

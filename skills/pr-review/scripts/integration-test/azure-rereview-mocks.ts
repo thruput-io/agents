@@ -42,13 +42,16 @@ export function createAzureReReviewHandlers(
 		getPullRequestsGetPullRequestMockHandler({
 			...baseAzure,
 			createdBy: { ...baseAzure.createdBy, uniqueName: "author@example.com" },
+			lastMergeTargetCommit: {
+				...baseAzure.lastMergeTargetCommit,
+				commitId: repo.baseCommit,
+			},
 			lastMergeSourceCommit: {
 				...baseAzure.lastMergeSourceCommit,
 				commitId: repo.headCommitV2,
 			},
 			repository: {
 				...baseAzureRepo,
-				remoteUrl: repo.repoDir,
 				project: {
 					...baseAzureRepo.project,
 					id: "00000000-0000-0000-0000-000000000000",

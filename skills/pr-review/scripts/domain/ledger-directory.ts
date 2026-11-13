@@ -2,39 +2,18 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import {
-	type Change,
-	ChangeSchema,
+	AckRecordSchema,
 	type Checkout,
 	CheckoutSchema,
-	type Fragment,
-	FragmentSchema,
 	type Ledger,
 	LedgerSchema,
-	type Surface,
-	SurfaceSchema,
-	type Threads,
-	ThreadsSchema,
+	type PersistedPullRequest,
+	PersistedPullRequestSchema,
 } from "./contracts.g.ts";
 
+export type { PersistedPullRequest } from "./contracts.g.ts";
+
 const PULL_REQUEST_FILE = "pull-request.json";
-
-const PersistedPullRequestSchema = z.object({
-	change: ChangeSchema,
-	surface: SurfaceSchema,
-	fragments: z.array(FragmentSchema).readonly(),
-	threads: ThreadsSchema,
-});
-
-const AckFileSchema = z.object({
-	acknowledgedAt: z.number().int().nonnegative(),
-});
-
-export interface PersistedPullRequest {
-	readonly change: Change;
-	readonly surface: Surface;
-	readonly fragments: readonly Fragment[];
-	readonly threads: Threads;
-}
 
 export class LedgerDirectory {
 	readonly #path: Checkout;
@@ -87,7 +66,7 @@ export class LedgerDirectory {
 		if (!existsSync(ackPath)) {
 			return null;
 		}
-		return AckFileSchema.parse(JSON.parse(readFileSync(ackPath, "utf-8")))
+		return AckRecordSchema.parse(JSON.parse(readFileSync(ackPath, "utf-8")))
 			.acknowledgedAt;
 	}
 

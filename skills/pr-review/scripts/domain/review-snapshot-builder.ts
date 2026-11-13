@@ -1,8 +1,9 @@
-import type { AdapterResolution, RemotePullRequest } from "./adapter.ts";
+import type { AdapterResolution, ReviewSnapshotInput } from "./adapter.ts";
 import type { CodeUnderReview } from "./code-under-review.ts";
 import type {
 	ChangedFile,
 	HeadCommit,
+	HostError,
 	Path,
 	Summary,
 	SurfaceFile,
@@ -22,64 +23,38 @@ import { narrowSurface, threadRanges, wholeSurface } from "./surface.ts";
 
 function narrowed(
 	snapshotDir: SnapshotDirectory,
-	remote: RemotePullRequest,
+	input: ReviewSnapshotInput,
 	files: readonly ChangedFile[],
 ) {
-	const prior = nonnull(remote.priorCommit);
-	snapshotDir.git(["fetch", "--quiet", "--no-tags", remote.remoteUrl, prior]);
-	const since = snapshotDir.git([
-		"diff",
-		"--no-renames",
-		"--unified=0",
-		`${prior}..${remote.headCommit}`,
-	]);
+	const prior = nonnull(input.priorCommit);
+	const since = snapshotDir.diff(prior, input.headCommit);
 	const changedSince = new Map(
 		changedFiles(since).map((file) => [file.path, file.added] as const),
 	);
-	return narrowSurface({ files }, changedSince, threadRanges(remote.threads));
+	return narrowSurface({ files }, changedSince, threadRanges(input.threads));
 }
 
 function linesAtHead(
 	snapshotDir: SnapshotDirectory,
-	headCommit: HeadCommit,
 	path: Path,
 ): NumberedLines {
-	const exists = snapshotDir
-		.git(["ls-tree", "--name-only", headCommit, "--", path])
-		.trim();
-	return isNullOrEmpty(exists)
-		? {}
-		: numbered(snapshotDir.gitRaw(["show", `${headCommit}:${path}`]));
+	const content = snapshotDir.readTextFile(path);
+	return isNullOrEmpty(content) ? {} : numbered(content);
 }
 
-export async function hydrateSnapshot(
+export async function buildReviewSnapshot(
 	review: CodeUnderReview,
 	snapshotDir: SnapshotDirectory,
-	remote: RemotePullRequest,
-	refuse: (headCommit: HeadCommit, reason: Summary) => Promise<Summary>,
+	input: ReviewSnapshotInput,
+	refuse: (
+		headCommit: HeadCommit,
+		reason: Summary,
+	) => Promise<Summary | HostError>,
 ): Promise<AdapterResolution> {
-	const fetchRef = (ref: string) =>
-		snapshotDir.git(["fetch", "--quiet", "--no-tags", remote.remoteUrl, ref]);
-	snapshotDir.git(["init", "--quiet"]);
-	fetchRef(remote.baseRef);
-	const baseCommit = snapshotDir.git(["rev-parse", "FETCH_HEAD"]).trim();
-	fetchRef(remote.headRef);
-	snapshotDir.git(["checkout", "--quiet", "--detach", "FETCH_HEAD"]);
-	const mergeBase = snapshotDir
-		.git(["merge-base", baseCommit, remote.headCommit])
-		.trim();
-	const diffText = snapshotDir.git([
-		"diff",
-		"--no-renames",
-		"--unified=0",
-		`${mergeBase}..${remote.headCommit}`,
-	]);
+	const diffText = snapshotDir.diff(input.baseCommit, input.headCommit);
 	const files = changedFiles(diffText);
 	const linesByPath = new Map(
-		files.map((file) => [
-			file.path,
-			linesAtHead(snapshotDir, remote.headCommit, file.path),
-		]),
+		files.map((file) => [file.path, linesAtHead(snapshotDir, file.path)]),
 	);
 	const fileCounts = files.map((file) => ({
 		path: file.path,
@@ -92,24 +67,27 @@ export async function hydrateSnapshot(
 	const oversizedReasons = tooLarge(fileCounts);
 	if (oversizedReasons.length > 0) {
 		const reason = oversizedReasons.join(", ");
-		const location = isNullOrEmpty(remote.existingRefusal)
-			? await refuse(remote.headCommit, reason)
-			: remote.existingRefusal;
+		const refusalResult = isNullOrEmpty(input.existingRefusal)
+			? await refuse(input.headCommit, reason)
+			: input.existingRefusal;
+		if (typeof refusalResult !== "string") {
+			return refusalResult;
+		}
 		return {
 			kind: "too-large",
-			headCommit: remote.headCommit,
+			headCommit: input.headCommit,
 			files: oversizedFiles(fileCounts),
-			location,
+			location: refusalResult,
 		};
 	}
-	const surfaceSpec = isNullOrEmpty(remote.priorCommit)
+	const surfaceSpec = isNullOrEmpty(input.priorCommit)
 		? wholeSurface({ files })
-		: narrowed(snapshotDir, remote, files);
+		: narrowed(snapshotDir, input, files);
 	if (surfaceSpec.files.length === 0) {
 		return {
 			kind: "already-reviewed",
-			headCommit: remote.headCommit,
-			location: String(remote.priorCommit),
+			headCommit: input.headCommit,
+			location: String(input.priorCommit),
 		};
 	}
 	const surfaceFiles: SurfaceFile[] = surfaceSpec.files.map((entry) => {
@@ -127,14 +105,14 @@ export async function hydrateSnapshot(
 		review.withReview(
 			surfaceFiles,
 			surfaceFiles.flatMap((file) => file.fragments),
-			{ threads: [...remote.threads] },
+			{ threads: [...input.threads] },
 		),
 		snapshotDir,
 	);
 	return {
 		kind: "ready",
-		headCommit: remote.headCommit,
-		change: remote.change,
+		headCommit: input.headCommit,
+		change: input.change,
 		snapshot,
 	};
 }

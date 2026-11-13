@@ -4,13 +4,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test as it } from "node:test";
 import { z } from "zod";
-import type { Anchor, Row, Violation } from "./contracts.g.ts";
+import type { Row, RuleRef, Violation } from "./contracts.g.ts";
 import {
-	anchorInside,
 	type ContextProbe,
 	type LedgerProbe,
 	ledgerFor,
 	type RulesProbe,
+	violationInside,
 } from "./ledger.ts";
 import { LedgerDirectory } from "./ledger-directory.ts";
 import { coordinateLedgers } from "./main-agent-ledger.ts";
@@ -87,21 +87,13 @@ const contextProbe: ContextProbe = {
 	],
 };
 
-const lines = (
-	path: string,
-	start: number,
-	end: number,
-	side: "head" | "base",
-): Anchor => ({
-	kind: "surface",
-	path,
-	side,
-	lines: run(side, start, end),
-});
-const atPullRequest: Anchor = { kind: "pull-request" };
-const violation = (anchor: Anchor): Violation => ({
+const violation = (
+	rule: RuleRef,
+	idToReportViolationOn?: number,
+): Violation => ({
+	rule,
+	...(idToReportViolationOn === undefined ? {} : { idToReportViolationOn }),
 	observation: "what is wrong",
-	anchor,
 });
 const cleanRow = (rule: string): Row => ({
 	rule,
@@ -133,33 +125,13 @@ const rowOn = (ruleset: string): Row => ({
 	evidence: "e",
 });
 
-it("anchorInside accepts lines copied from one surface fragment on their side, and the pull request", () => {
-	assert.equal(anchorInside(lines("p", 3, 3, "head"), files), true);
-	assert.equal(anchorInside(lines("p", 1, 5, "head"), files), true);
-	assert.equal(anchorInside(lines("p", 9, 9, "base"), files), true);
-	assert.equal(anchorInside(atPullRequest, files), true);
-	assert.equal(anchorInside(lines("p", 6, 6, "head"), files), false);
-	assert.equal(anchorInside(lines("p", 3, 3, "base"), files), false);
-	assert.equal(anchorInside(lines("q", 1, 1, "head"), files), false);
-	assert.equal(
-		anchorInside(
-			{
-				kind: "surface",
-				path: "p",
-				side: "head",
-				lines: [{ idToReportViolationOn: 3, text: "edited" }],
-			},
-			files,
-		),
-		false,
-	);
-	assert.equal(
-		anchorInside(
-			{ kind: "surface", path: "p", side: "head", lines: [] },
-			files,
-		),
-		false,
-	);
+it("violationInside accepts surface line ids and pull-request-level findings (omitted idToReportViolationOn)", () => {
+	assert.equal(violationInside(violation("A", 3), files), true);
+	assert.equal(violationInside(violation("A", 1), files), true);
+	assert.equal(violationInside(violation("A", 9), files), true);
+	assert.equal(violationInside(violation("A"), files), true);
+	assert.equal(violationInside(violation("A", 6), files), false);
+	assert.equal(violationInside(violation("A", 7), files), false);
 });
 
 it("the ledger schema accepts rows matching the rules in order", () => {
@@ -207,26 +179,25 @@ it("the ledger schema rejects a missing, extra, reordered, book-rule, or foreign
 });
 
 it("the ledger schema rejects a violation anchored outside the surface", () => {
-	const rows = (anchor: Anchor) => [
-		violatedRow("A", [violation(anchor)]),
+	const rows = (lineId?: number) => [
+		violatedRow("A", [violation("A", lineId)]),
 		cleanRow("B"),
 	];
 	assert.equal(
 		ledgerFor(probe).decode({
 			headCommit: H,
-			rows: rows(lines("p", 2, 2, "head")),
+			rows: rows(2),
 		}).rows.length,
 		2,
 	);
 	assert.equal(
-		ledgerFor(probe).decode({ headCommit: H, rows: rows(atPullRequest) }).rows
-			.length,
+		ledgerFor(probe).decode({ headCommit: H, rows: rows() }).rows.length,
 		2,
 	);
 	assert.match(
 		rejectionMessage(probe, {
 			headCommit: H,
-			rows: rows(lines("p", 7, 7, "head")),
+			rows: rows(7),
 		}),
 		OUTSIDE_SURFACE_RE,
 	);
@@ -319,7 +290,7 @@ it("coordinateLedgers records each probe slice to disk, tracks MainAgentLedger s
 	assert.deepEqual(mainLedger.completed(), ["01-rules"]);
 
 	const secondReport = nonnull(ledgers[1]).report([
-		violatedRow("B", [violation(lines("p", 2, 2, "head"))]),
+		violatedRow("B", [violation("B", 2)]),
 	]);
 	assert.equal(secondReport.success, true);
 	assert.equal(secondReport.data.kind, "submitted");

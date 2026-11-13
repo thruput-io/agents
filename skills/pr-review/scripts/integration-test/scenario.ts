@@ -1,75 +1,28 @@
 import type {
-	Change,
-	Rulebook as ExternalRulebook,
-	Outcome,
+	AckSuccess,
+	AgentInstructions,
+	PrepareReady,
+	PrepareResponse,
+	ReportSuccess,
+	ReviewStatus,
 	Row,
-	SurfaceFile,
 } from "../domain/contracts.g.ts";
 import {
 	type DispatchResult,
 	MainAgentController,
-	type PrepareError,
 } from "../domain/controller.ts";
 import { runMainAgentCli } from "../domain/controller-cli.ts";
 import { nonnull } from "../domain/nullish.ts";
-import { runSubAgentCli } from "../domain/sub-agent-cli.ts";
+import { bootstrapPrompt, runSubAgentCli } from "../domain/sub-agent-cli.ts";
 import { SubAgentController } from "../domain/sub-agent-controller.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
 
-export interface PreparedCliSuccess {
-	readonly success: true;
-	readonly session: string;
-	readonly headCommit: string;
-	readonly change: Change;
-	readonly pending: readonly string[];
-	readonly warning?: string;
-}
-
-export type PreparedCliPayload =
-	| PreparedCliSuccess
-	| { readonly success: false; readonly error: PrepareError };
-
-export interface StatusCliPayload {
-	readonly pending: readonly string[];
-	readonly completed: readonly string[];
-	readonly submittedOutcome: Outcome | null;
-}
-
-export interface InspectedProbePayload {
-	readonly probe: string;
-	readonly permissions: readonly string[];
-	readonly instructions: readonly string[];
-	readonly task: string;
-	readonly change: Change;
-	readonly surface: readonly SurfaceFile[];
-	readonly rules:
-		| {
-				readonly kind: "rulebook";
-				readonly ruleset: {
-					readonly rules: ReadonlyArray<{ readonly id: string }>;
-				};
-		  }
-		| {
-				readonly kind: "rulesets";
-				readonly rulesets: readonly ExternalRulebook[];
-		  };
-	readonly snapshotDirectory: string;
-}
-
-interface AckCliPayload {
-	readonly success: true;
-	readonly probe: string;
-	readonly acknowledged: true;
-	readonly deadlineMs: number;
-	readonly permissions: readonly string[];
-}
-
-interface ReportCliPayload {
-	readonly success: true;
-	readonly kind: "recorded" | "submitted";
-	readonly headCommit: string;
-	readonly rowCount: number;
-}
+export type PreparedCliSuccess = PrepareReady;
+export type PreparedCliPayload = PrepareResponse;
+export type StatusCliPayload = ReviewStatus;
+export type InspectedProbePayload = AgentInstructions;
+type AckCliPayload = AckSuccess;
+type ReportCliPayload = ReportSuccess;
 
 const captureStdout = async <T>(
 	fn: () => Promise<number> | number,
@@ -122,7 +75,12 @@ const inspectAndAck = async (
 		await invokeSubCli<InspectedProbePayload>(["inspect", session, probeName]),
 	);
 	const acked = requireExitZero(
-		await invokeSubCli<AckCliPayload>(["ack", session, probeName]),
+		await invokeSubCli<AckCliPayload>([
+			"ack",
+			session,
+			probeName,
+			bootstrapPrompt(session, probeName),
+		]),
 	);
 	if (!acked.acknowledged) {
 		throw new Error(`Expected probe ${probeName} to be acknowledged`);
@@ -135,17 +93,10 @@ export const reportForProbe = async (
 	probeName: string,
 ): Promise<InspectedProbePayload> => {
 	const inspected = await inspectAndAck(session, probeName);
-	const { rules } = inspected;
 	const rows: readonly Row[] =
-		rules.kind === "rulebook"
-			? rules.ruleset.rules.map((rule) => ({
-					rule: rule.id,
-					examined: ["service.ts", "helper.ts"],
-					verdict: "clean" as const,
-					evidence: `Verified ${rule.id}`,
-				}))
-			: (() => {
-					const first = nonnull(rules.rulesets[0]);
+		inspected.kind === "context"
+			? (() => {
+					const first = nonnull(inspected.rulesets[0]);
 					return [
 						{
 							bookRule: { ruleset: first.url, heading: "R1" },
@@ -166,27 +117,27 @@ export const reportForProbe = async (
 							evidence: "Export y has no caller",
 							violations: [
 								{
+									rule: { ruleset: first.url, heading: "R3" },
+									idToReportViolationOn: 2,
 									observation: "Remove unused export y.",
-									anchor: {
-										kind: "surface" as const,
-										path: "service.ts",
-										side: "head" as const,
-										lines: [
-											{ idToReportViolationOn: 2, text: "export const y = 2;" },
-										],
-									},
 								},
 							],
 						},
 					];
-				})();
+				})()
+			: inspected.ruleset.rules.map((rule) => ({
+					rule: rule.id,
+					examined: ["service.ts", "helper.ts"],
+					verdict: "clean" as const,
+					evidence: `Verified ${rule.id}`,
+				}));
 
 	const reported = requireExitZero(
 		await invokeSubCli<ReportCliPayload>([
 			"report",
 			session,
 			probeName,
-			JSON.stringify(rows),
+			JSON.stringify({ oneRowPerRuleInOrder: rows }),
 		]),
 	);
 	if (!reported.success) {
@@ -200,16 +151,15 @@ export const reportForReReviewProbe = async (
 	probeName: string,
 ): Promise<InspectedProbePayload> => {
 	const inspected = await inspectAndAck(session, probeName);
-	const { rules } = inspected;
 	const rows: readonly Row[] =
-		rules.kind === "rulesets"
+		inspected.kind === "context"
 			? (["R1", "R2", "R3"] as const).map((heading) => ({
-					bookRule: { ruleset: nonnull(rules.rulesets[0]).url, heading },
+					bookRule: { ruleset: nonnull(inspected.rulesets[0]).url, heading },
 					examined: ["helper.ts"],
 					verdict: "clean" as const,
 					evidence: "Clean",
 				}))
-			: rules.ruleset.rules.map((rule) =>
+			: inspected.ruleset.rules.map((rule) =>
 					rule.id === "Stated purpose"
 						? {
 								rule: rule.id,
@@ -218,18 +168,9 @@ export const reportForReReviewProbe = async (
 								evidence: "Recurring issue on helper.ts",
 								violations: [
 									{
+										rule: rule.id,
+										idToReportViolationOn: 1,
 										observation: "Still unused export z",
-										anchor: {
-											kind: "surface" as const,
-											path: "helper.ts",
-											side: "head" as const,
-											lines: [
-												{
-													idToReportViolationOn: 1,
-													text: "export const z = 4;",
-												},
-											],
-										},
 									},
 								],
 							}
@@ -246,7 +187,7 @@ export const reportForReReviewProbe = async (
 			"report",
 			session,
 			probeName,
-			JSON.stringify(rows),
+			JSON.stringify({ oneRowPerRuleInOrder: rows }),
 		]),
 	);
 	return inspected;

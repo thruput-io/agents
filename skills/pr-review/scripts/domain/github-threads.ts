@@ -132,7 +132,36 @@ export type FetchGitHubThreadsResult =
 			readonly ok: false;
 			readonly status: number;
 			readonly headers: Headers;
+			readonly data?: unknown;
 	  };
+
+const GraphQlErrorResponseSchema = z.object({
+	body: z.string().optional(),
+	message: SummarySchema.optional(),
+	errors: z.array(z.object({ message: SummarySchema })).optional(),
+});
+
+const extractClientErrorData = (response: unknown): unknown => {
+	const parsed = GraphQlErrorResponseSchema.safeDecode(
+		response as z.input<typeof GraphQlErrorResponseSchema>,
+	);
+	if (!parsed.success) {
+		return undefined;
+	}
+	const directMessage =
+		parsed.data.message ?? parsed.data.errors?.[0]?.message ?? undefined;
+	if (!isNullOrEmpty(directMessage)) {
+		return { message: directMessage };
+	}
+	if (!isNullOrEmpty(parsed.data.body)) {
+		try {
+			return JSON.parse(parsed.data.body);
+		} catch {
+			return undefined;
+		}
+	}
+	return undefined;
+};
 
 export async function fetchGitHubThreads(
 	client: GraphQLClient,
@@ -169,6 +198,7 @@ export async function fetchGitHubThreads(
 					ok: false,
 					status: error.response.status,
 					headers: error.response.headers ?? new Headers(),
+					data: extractClientErrorData(error.response),
 				};
 			}
 			throw error;
@@ -177,17 +207,39 @@ export async function fetchGitHubThreads(
 	return { ok: true, viewerCanUpdate, threads: collected };
 }
 
+export type MutateGitHubThreadsResult =
+	| { readonly ok: true }
+	| {
+			readonly ok: false;
+			readonly status: number;
+			readonly headers: Headers;
+			readonly data?: unknown;
+	  };
+
 export async function settleAndReopenGitHubThreads(
 	client: GraphQLClient,
 	settle: readonly ThreadId[],
 	reopen: readonly ThreadId[],
-): Promise<void> {
-	await Promise.all([
-		...settle.map((threadId) =>
-			client.rawRequest(RESOLVE_REVIEW_THREAD_MUTATION, { threadId }),
-		),
-		...reopen.map((threadId) =>
-			client.rawRequest(UNRESOLVE_REVIEW_THREAD_MUTATION, { threadId }),
-		),
-	]);
+): Promise<MutateGitHubThreadsResult> {
+	try {
+		await Promise.all([
+			...settle.map((threadId) =>
+				client.rawRequest(RESOLVE_REVIEW_THREAD_MUTATION, { threadId }),
+			),
+			...reopen.map((threadId) =>
+				client.rawRequest(UNRESOLVE_REVIEW_THREAD_MUTATION, { threadId }),
+			),
+		]);
+		return { ok: true };
+	} catch (error) {
+		if (error instanceof ClientError) {
+			return {
+				ok: false,
+				status: error.response.status,
+				headers: error.response.headers ?? new Headers(),
+				data: extractClientErrorData(error.response),
+			};
+		}
+		throw error;
+	}
 }

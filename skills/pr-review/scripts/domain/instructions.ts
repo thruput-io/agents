@@ -1,7 +1,5 @@
 import {
 	type AgentInstructions,
-	type AgentInstructionsBase,
-	AgentInstructionsBaseSchema,
 	type Change,
 	type Checkout,
 	type ContextInstructions,
@@ -17,6 +15,7 @@ import {
 	type DeadCodeTask,
 	DeadCodeTaskSchema,
 	type InstructionsProse,
+	InstructionsProseSchema,
 	type ReuseInstructions,
 	type ReuseKind,
 	type ReusePermissions,
@@ -71,8 +70,8 @@ const PERMISSIONS_BY_KIND: {
 };
 
 export class Instructions {
-	static readonly Prose: AgentInstructionsBase["instructions"] =
-		AgentInstructionsBaseSchema.decode({}).instructions;
+	static readonly Prose: InstructionsProse =
+		InstructionsProseSchema.decode(undefined);
 	readonly #prose: InstructionsProse;
 	readonly #task: Task;
 	readonly #permissions: ProbePermissions;

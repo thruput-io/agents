@@ -2,14 +2,18 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { after, before, beforeEach, test as it } from "node:test";
-import type { DispatchResult } from "../domain/controller.ts";
+import { type HostError, HostErrorSchema } from "../domain/contracts.g.ts";
+import type { DispatchResult, PrepareError } from "../domain/controller.ts";
 import { nonnull } from "../domain/nullish.ts";
 import {
 	createAzureAlreadyReviewedHandler,
 	createAzureExistingRefusalHandler,
+	createFailedAzureThreadCreateHandler,
+	createForbiddenAzureItemsHandler,
 	createForbiddenAzureWriteHandler,
 	createForbiddenHtmlAzureHandler,
 	createRejectedAzurePolicyHandler,
+	createUnwriteableAzurePullRequestHandler,
 } from "./azure-mocks.ts";
 import {
 	type AzureReReviewRecorder,
@@ -17,7 +21,9 @@ import {
 } from "./azure-rereview-mocks.ts";
 import {
 	createFailedGitHubChecksHandler,
+	createFailedGitHubCreateReviewHandler,
 	createForbiddenGitHubGraphQlHandler,
+	createForbiddenGitHubZipballHandler,
 	createForbiddenHtmlGitHubHandler,
 	createGitHubAlreadyReviewedHandler,
 	createGitHubExistingRefusalHandler,
@@ -42,6 +48,13 @@ import { createScenarioRepo } from "./scenario-repo.ts";
 
 const repo = createScenarioRepo();
 const TOKEN_STRING = scenarioToken;
+
+const decodeHostError = (error: PrepareError | DispatchResult): HostError => {
+	if (error.kind !== "host-error") {
+		throw new Error(`Expected host-error, got ${error.kind}`);
+	}
+	return HostErrorSchema.decode(error);
+};
 
 before(() => {
 	mockServer.listen();
@@ -68,34 +81,52 @@ it("MainAgentController CLI prepares merge-base surface, preserves trailing blan
 	assert.equal(gitRun.invoked.length > 1, true);
 	assert.deepEqual(githubRun.invoked, gitRun.invoked);
 	assert.deepEqual(azureRun.invoked, gitRun.invoked);
+	assert.equal("change" in gitRun.prepared, false);
+	assert.equal("headCommit" in gitRun.prepared, false);
 
-	assert.equal(gitRun.prepared.change.author, "author@example.com");
+	const firstInspected = nonnull(gitRun.inspected[0]);
+	const firstGithubInspected = nonnull(githubRun.inspected[0]);
+	const firstAzureInspected = nonnull(azureRun.inspected[0]);
+	assert.equal(firstInspected.change.author, "author@example.com");
 	assert.equal(
-		gitRun.prepared.change.description,
+		firstInspected.change.description,
 		"Refine helper\n\nSecond body.\n\nAdd y export\n\nFirst body.",
 	);
 	assert.equal(
-		githubRun.prepared.change.description,
-		gitRun.prepared.change.description,
+		firstGithubInspected.change.description,
+		firstInspected.change.description,
 	);
 	assert.equal(
-		azureRun.prepared.change.description,
-		gitRun.prepared.change.description,
+		firstAzureInspected.change.description,
+		firstInspected.change.description,
 	);
+	assert.equal(
+		gitRun.prepared.prompts[nonnull(gitRun.invoked[0])]?.includes(
+			nonnull(gitRun.invoked[0]),
+		),
+		true,
+	);
+	assert.deepEqual(gitRun.prepared.permissions[nonnull(gitRun.invoked[0])], [
+		"Bash(node *sub-agent-controller.ts*)",
+	]);
 
-	const firstInspected = nonnull(gitRun.inspected[0]);
-	const surfacePaths = firstInspected.surface.map((f) => f.path);
+	const surfacePaths = firstInspected.surface.files.map((f) => f.path);
 	assert.deepEqual(surfacePaths, ["helper.ts", "service.ts"]);
 
-	const snapshotDir = repo
-		.workdirFor("scenario-git")
-		.snapshotDirectory()
-		.toString();
-	assert.equal(firstInspected.snapshotDirectory, snapshotDir);
-	assert.equal(
-		readFileSync(join(snapshotDir, "helper.ts"), "utf8"),
-		"export const z = 3;\n\n",
-	);
+	assert.equal("checkout" in firstInspected, false);
+	for (const entry of gitRun.inspected) {
+		assert.equal(
+			"checkout" in entry,
+			entry.kind === "reuse" || entry.kind === "dead-code",
+		);
+	}
+	for (const label of ["scenario-git", "scenario-github", "scenario-azure"]) {
+		const dir = repo.workdirFor(label).snapshotDirectory().toString();
+		assert.equal(
+			readFileSync(join(dir, "helper.ts"), "utf8"),
+			"export const z = 3;\n\n",
+		);
+	}
 	assert.equal(
 		existsSync(
 			join(
@@ -149,7 +180,12 @@ it("MainAgentController CLI handles re-review with narrowed surface, GraphQL pag
 	]);
 	assert.equal(ghPrep.exitCode, 0);
 	assert.equal(ghPrep.payload.success, true);
-	assert.equal(ghPrep.payload.headCommit, repo.headCommitV2);
+	assert.equal("headCommit" in ghPrep.payload, false);
+	assert.equal("change" in ghPrep.payload, false);
+	assert.equal(
+		ghWorkdir.ledgerDirectory().readPullRequest().surface.headCommit,
+		repo.headCommitV2,
+	);
 	assert.equal(
 		ghWorkdir.ledgerDirectory().readPullRequest().threads.threads.length,
 		2,
@@ -163,8 +199,8 @@ it("MainAgentController CLI handles re-review with narrowed surface, GraphQL pag
 		assert.equal(inspected.change.description, "Re-review body");
 		assert.equal(inspected.instructions.length, 8);
 		assert.equal(
-			inspected.snapshotDirectory,
-			ghWorkdir.snapshotDirectory().toString(),
+			"checkout" in inspected,
+			inspected.kind === "reuse" || inspected.kind === "dead-code",
 		);
 	}
 
@@ -193,7 +229,12 @@ it("MainAgentController CLI handles re-review with narrowed surface, GraphQL pag
 	]);
 	assert.equal(azPrep.exitCode, 0);
 	assert.equal(azPrep.payload.success, true);
-	assert.equal(azPrep.payload.headCommit, repo.headCommitV2);
+	assert.equal("headCommit" in azPrep.payload, false);
+	assert.equal("change" in azPrep.payload, false);
+	assert.equal(
+		azWorkdir.ledgerDirectory().readPullRequest().surface.headCommit,
+		repo.headCommitV2,
+	);
 	for (const probeName of azPrep.payload.pending) {
 		await reportForReReviewProbe(azPrep.payload.session, probeName);
 	}
@@ -414,12 +455,9 @@ it("MainAgentController CLI returns typed errors for invalid-target, too-large, 
 		TOKEN_STRING,
 	]);
 	assert.equal(azHtml403.payload.success, false);
-	assert.equal(azHtml403.payload.error.kind, "host-error");
-	const azHostError = azHtml403.payload.error as Extract<
-		typeof azHtml403.payload.error,
-		{ kind: "host-error" }
-	>;
+	const azHostError = decodeHostError(azHtml403.payload.error);
 	assert.equal(azHostError.status, 403);
+	assert.equal(azHostError.message.includes("access denied"), true);
 	assert.equal(
 		azHostError.reason.includes("Azure DevOps returned HTTP 403"),
 		true,
@@ -431,12 +469,9 @@ it("MainAgentController CLI returns typed errors for invalid-target, too-large, 
 		repo.workdirFor("err-gh-403-html").toString(),
 	]);
 	assert.equal(ghHtml403.payload.success, false);
-	assert.equal(ghHtml403.payload.error.kind, "host-error");
-	const ghHostError = ghHtml403.payload.error as Extract<
-		typeof ghHtml403.payload.error,
-		{ kind: "host-error" }
-	>;
+	const ghHostError = decodeHostError(ghHtml403.payload.error);
 	assert.equal(ghHostError.status, 403);
+	assert.equal(ghHostError.message.includes("access denied"), true);
 	assert.equal(ghHostError.reason.includes("GitHub returned HTTP 403"), true);
 
 	resetHostMocks(repo);
@@ -448,7 +483,8 @@ it("MainAgentController CLI returns typed errors for invalid-target, too-large, 
 		TOKEN_STRING,
 	]);
 	assert.equal(ghMissingScope.payload.success, false);
-	assert.equal(ghMissingScope.payload.error.kind, "host-error");
+	const ghMissingScopeErr = decodeHostError(ghMissingScope.payload.error);
+	assert.equal(ghMissingScopeErr.status, 403);
 
 	resetHostMocks(repo);
 	mockServer.use(createReadOnlyViewerGitHubGraphQlHandler());
@@ -459,7 +495,8 @@ it("MainAgentController CLI returns typed errors for invalid-target, too-large, 
 		TOKEN_STRING,
 	]);
 	assert.equal(ghReadOnlyViewer.payload.success, false);
-	assert.equal(ghReadOnlyViewer.payload.error.kind, "host-error");
+	const ghReadOnlyViewerErr = decodeHostError(ghReadOnlyViewer.payload.error);
+	assert.equal(ghReadOnlyViewerErr.status, 403);
 
 	resetHostMocks(repo);
 	mockServer.use(createForbiddenGitHubGraphQlHandler());
@@ -469,7 +506,42 @@ it("MainAgentController CLI returns typed errors for invalid-target, too-large, 
 		repo.workdirFor("err-gh-graphql-403").toString(),
 	]);
 	assert.equal(ghGraphQl403.payload.success, false);
-	assert.equal(ghGraphQl403.payload.error.kind, "host-error");
+	const ghGraphQlErr = decodeHostError(ghGraphQl403.payload.error);
+	assert.equal(ghGraphQlErr.status, 403);
+	assert.equal(ghGraphQlErr.message, "Resource not accessible by integration");
+	assert.equal(
+		ghGraphQlErr.reason.includes("Resource not accessible by integration"),
+		true,
+	);
+
+	resetHostMocks(repo);
+	mockServer.use(createForbiddenGitHubZipballHandler());
+	const ghZip403 = await invokeMainCli<PreparedCliPayload>([
+		"prepare",
+		repo.githubTarget,
+		repo.workdirFor("err-gh-zip-403").toString(),
+		TOKEN_STRING,
+	]);
+	assert.equal(ghZip403.payload.success, false);
+	const ghZipErr = decodeHostError(ghZip403.payload.error);
+	assert.equal(ghZipErr.status, 403);
+	assert.equal(ghZipErr.message, "Repository archive access denied");
+
+	resetHostMocks(repo);
+	mockServer.use(createForbiddenAzureItemsHandler());
+	const azZip403 = await invokeMainCli<PreparedCliPayload>([
+		"prepare",
+		repo.azureTarget,
+		repo.workdirFor("err-az-zip-403").toString(),
+		TOKEN_STRING,
+	]);
+	assert.equal(azZip403.payload.success, false);
+	const azZipErr = decodeHostError(azZip403.payload.error);
+	assert.equal(azZipErr.status, 403);
+	assert.equal(
+		azZipErr.message,
+		"TF401019: The Git repository with name or identifier does not exist or you do not have permissions.",
+	);
 
 	resetHostMocks(repo);
 	const readOnlyJwt = `eyJhbGciOiJIUzI1NiJ9.${Buffer.from(JSON.stringify({ scp: "vso.code" }), "utf8").toString("base64url")}.sig`;
@@ -480,7 +552,8 @@ it("MainAgentController CLI returns typed errors for invalid-target, too-large, 
 		readOnlyJwt,
 	]);
 	assert.equal(azMissingJwtScope.payload.success, false);
-	assert.equal(azMissingJwtScope.payload.error.kind, "host-error");
+	const azMissingJwtErr = decodeHostError(azMissingJwtScope.payload.error);
+	assert.equal(azMissingJwtErr.status, 403);
 
 	resetHostMocks(repo);
 	mockServer.use(createForbiddenAzureWriteHandler());
@@ -491,18 +564,109 @@ it("MainAgentController CLI returns typed errors for invalid-target, too-large, 
 		TOKEN_STRING,
 	]);
 	assert.equal(azReadOnlyPat.payload.success, false);
-	assert.equal(azReadOnlyPat.payload.error.kind, "host-error");
+	const azReadOnlyPatErr = decodeHostError(azReadOnlyPat.payload.error);
+	assert.equal(azReadOnlyPatErr.status, 403);
+	assert.equal(
+		azReadOnlyPatErr.message,
+		"TF401027: You need the Git 'PullRequestContribute' permission.",
+	);
+	assert.equal(
+		azReadOnlyPatErr.reason.includes(
+			"TF401027: You need the Git 'PullRequestContribute' permission.",
+		),
+		true,
+	);
+
+	resetHostMocks(repo);
+	mockServer.use(createUnwriteableAzurePullRequestHandler());
+	const azUnwriteablePr = await invokeMainCli<PreparedCliPayload>([
+		"prepare",
+		repo.azureTarget,
+		repo.workdirFor("err-az-unwriteable-pr").toString(),
+		TOKEN_STRING,
+	]);
+	assert.equal(azUnwriteablePr.payload.success, false);
+	const azUnwriteableError = decodeHostError(azUnwriteablePr.payload.error);
+	assert.equal(azUnwriteableError.status, 400);
+	assert.equal(
+		azUnwriteableError.message,
+		"TF401181: The pull request cannot be edited due to its state.",
+	);
+	assert.equal(
+		azUnwriteableError.reason.includes("pull request is not writeable"),
+		true,
+	);
+	assert.equal(
+		azUnwriteableError.reason.includes(
+			"TF401181: The pull request cannot be edited due to its state.",
+		),
+		true,
+	);
+	assert.equal(azUnwriteableError.reason.includes("Review must halt."), true);
+
+	resetHostMocks(repo);
+	const azDispatchFailWorkdir = repo.workdirFor("err-az-dispatch-400");
+	const azDispatchPrep = await invokeMainCli<PreparedCliPayload>([
+		"prepare",
+		repo.azureTarget,
+		azDispatchFailWorkdir.toString(),
+		TOKEN_STRING,
+	]);
+	assert.equal(azDispatchPrep.payload.success, true);
+	for (const probeName of azDispatchPrep.payload.pending) {
+		await reportForProbe(azDispatchPrep.payload.session, probeName);
+	}
+	mockServer.use(createFailedAzureThreadCreateHandler());
+	const azDispatchErr = await invokeMainCli<DispatchResult>([
+		"dispatch",
+		azDispatchFailWorkdir.toString(),
+		TOKEN_STRING,
+	]);
+	const decodedAzDispatchErr = decodeHostError(azDispatchErr.payload);
+	assert.equal(decodedAzDispatchErr.status, 400);
+	assert.equal(
+		decodedAzDispatchErr.message,
+		"TF401181: The pull request cannot be edited due to its state.",
+	);
+
+	resetHostMocks(repo);
+	const ghDispatchFailWorkdir = repo.workdirFor("err-gh-dispatch-422");
+	const ghDispatchPrep = await invokeMainCli<PreparedCliPayload>([
+		"prepare",
+		repo.githubTarget,
+		ghDispatchFailWorkdir.toString(),
+		TOKEN_STRING,
+	]);
+	assert.equal(ghDispatchPrep.payload.success, true);
+	for (const probeName of ghDispatchPrep.payload.pending) {
+		await reportForProbe(ghDispatchPrep.payload.session, probeName);
+	}
+	mockServer.use(createFailedGitHubCreateReviewHandler());
+	const ghDispatchErr = await invokeMainCli<DispatchResult>([
+		"dispatch",
+		ghDispatchFailWorkdir.toString(),
+		TOKEN_STRING,
+	]);
+	const decodedGhDispatchErr = decodeHostError(ghDispatchErr.payload);
+	assert.equal(decodedGhDispatchErr.status, 422);
+	assert.equal(
+		decodedGhDispatchErr.message,
+		"Validation Failed: PullRequestReview can only have one pending review per pull request",
+	);
 });
 
 it("MainAgentController CLI reads GH_TOKEN and AZURE_DEVOPS_EXT_PAT from process.env, formats headers per host, and sends accept: application/json", async () => {
 	const seenHeaders: Array<{
 		readonly host: string;
+		readonly pathname: string;
 		readonly auth: string | null;
 		readonly accept: string | null;
 	}> = [];
 	const onRequest = ({ request }: { readonly request: Request }) => {
+		const url = new URL(request.url);
 		seenHeaders.push({
-			host: new URL(request.url).host,
+			host: url.host,
+			pathname: url.pathname,
 			auth: request.headers.get("authorization"),
 			accept: request.headers.get("accept"),
 		});
@@ -527,24 +691,33 @@ it("MainAgentController CLI reads GH_TOKEN and AZURE_DEVOPS_EXT_PAT from process
 		assert.equal(azWithToken.payload.success, true);
 
 		const expectedAzAuth = `Basic ${Buffer.from(":env-az-pat", "utf8").toString("base64")}`;
+		const ghRequests = seenHeaders.filter(
+			(entry) => entry.host === "api.github.com",
+		);
+		const azRequests = seenHeaders.filter(
+			(entry) => entry.host === "dev.azure.com",
+		);
 		assert.equal(
-			seenHeaders
-				.filter((entry) => entry.host === "api.github.com")
-				.every(
-					(entry) =>
-						entry.auth === "Bearer env-gh-token" &&
-						entry.accept === "application/json",
-				),
+			ghRequests.some((entry) => entry.pathname.includes("/zipball/")),
 			true,
 		);
 		assert.equal(
-			seenHeaders
-				.filter((entry) => entry.host === "dev.azure.com")
-				.every(
-					(entry) =>
-						entry.auth === expectedAzAuth &&
-						entry.accept === "application/json",
-				),
+			azRequests.some((entry) => entry.pathname.endsWith("/items")),
+			true,
+		);
+		assert.equal(
+			ghRequests.every(
+				(entry) =>
+					entry.auth === "Bearer env-gh-token" &&
+					entry.accept === "application/json",
+			),
+			true,
+		);
+		assert.equal(
+			azRequests.every(
+				(entry) =>
+					entry.auth === expectedAzAuth && entry.accept === "application/json",
+			),
 			true,
 		);
 

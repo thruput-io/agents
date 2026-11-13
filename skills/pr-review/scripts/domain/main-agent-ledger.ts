@@ -7,6 +7,7 @@ import type {
 	ReuseKind,
 	RulesKind,
 } from "./contracts.g.ts";
+import { Instructions, type ProbePermissions } from "./instructions.ts";
 import type { ContextProbe, RulesProbe } from "./ledger.ts";
 import type { LedgerDirectory } from "./ledger-directory.ts";
 import { merge } from "./ledger-table.ts";
@@ -40,6 +41,7 @@ export type CoordinatedProbeSpec =
 
 interface MainAgentLedgerState {
 	readonly probeNames: readonly string[];
+	readonly permissionsByProbe: ReadonlyMap<string, ProbePermissions>;
 	readonly completed: ReadonlySet<string>;
 	readonly submitted: ReadonlyMap<
 		string,
@@ -81,6 +83,22 @@ export class MainAgentLedger {
 	pending(): readonly string[] {
 		return this.#state.probeNames.filter(
 			(name) => !this.#state.completed.has(name),
+		);
+	}
+
+	permissions(probeName: string): ProbePermissions {
+		return nonnull(this.#state.permissionsByProbe.get(probeName));
+	}
+
+	acknowledged(): readonly string[] {
+		return this.pending().filter(
+			(name) => !isNullOrEmpty(this.#directory.readAck(name)),
+		);
+	}
+
+	unacknowledged(): readonly string[] {
+		return this.pending().filter((name) =>
+			isNullOrEmpty(this.#directory.readAck(name)),
 		);
 	}
 
@@ -146,6 +164,12 @@ export function coordinateLedgers(
 	settleIfComplete();
 	const mainLedger = MainAgentLedger.from(directory, pullRequest, {
 		probeNames: specs.map((spec) => spec.name),
+		permissionsByProbe: new Map(
+			specs.map((spec) => [
+				spec.name,
+				Instructions.forKind(spec.kind).permissions(),
+			]),
+		),
 		completed,
 		submitted,
 	});

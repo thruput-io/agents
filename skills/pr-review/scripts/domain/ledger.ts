@@ -1,15 +1,18 @@
 import type { z } from "zod";
 import {
-	type Anchor,
 	type Ledger,
 	LedgerSchema,
+	type LineNumber,
+	type Path,
 	type Row,
 	type Rule,
 	type RuleHeading,
+	type RuleRef,
 	type RulesetUrl,
+	type Side,
 	type Surface,
-	type SurfaceAnchor,
 	type SurfaceFile,
+	type Violation,
 } from "./contracts.g.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 
@@ -31,39 +34,44 @@ export interface ContextProbe {
 
 export type LedgerProbe = RulesProbe | ContextProbe;
 
+export interface ResolvedSurfaceLine {
+	readonly path: Path;
+	readonly side: Side;
+	readonly line: LineNumber;
+}
+
 export const ruleName = (row: Row): RuleHeading | Rule["id"] =>
 	"bookRule" in row ? row.bookRule.heading : row.rule;
 
-const surfaceAnchorInside = (
-	anchor: SurfaceAnchor,
+const rowRuleRef = (row: Row): RuleRef =>
+	"bookRule" in row ? row.bookRule : row.rule;
+
+export const resolveSurfaceLine = (
+	lineId: LineNumber | undefined,
 	files: readonly SurfaceFile[],
-): boolean => {
-	const matchedFile = files.find((candidate) => candidate.path === anchor.path);
-	const copied = anchor.lines;
-	return (
-		!isNullOrEmpty(matchedFile) &&
-		copied.length > 0 &&
-		matchedFile.fragments.some(
-			(fragment) =>
+): ResolvedSurfaceLine | null => {
+	if (isNullOrEmpty(lineId)) {
+		return null;
+	}
+	for (const file of files) {
+		for (const fragment of file.fragments) {
+			if (
 				fragment.kind === "surface" &&
-				fragment.side === anchor.side &&
-				copied.every((anchorLine) =>
-					fragment.lines.some(
-						(surfaceLine) =>
-							surfaceLine.idToReportViolationOn ===
-								anchorLine.idToReportViolationOn &&
-							surfaceLine.text === anchorLine.text,
-					),
-				),
-		)
-	);
+				fragment.lines.some((line) => line.idToReportViolationOn === lineId)
+			) {
+				return { path: file.path, side: fragment.side, line: lineId };
+			}
+		}
+	}
+	return null;
 };
 
-export const anchorInside = (
-	anchor: Anchor,
+export const violationInside = (
+	violation: Violation,
 	files: readonly SurfaceFile[],
 ): boolean =>
-	anchor.kind === "pull-request" || surfaceAnchorInside(anchor, files);
+	isNullOrEmpty(violation.idToReportViolationOn) ||
+	!isNullOrEmpty(resolveSurfaceLine(violation.idToReportViolationOn, files));
 
 function issue(ctx: z.RefinementCtx, message: string): false {
 	ctx.addIssue({ code: "custom", message });
@@ -138,13 +146,24 @@ function refineViolations(
 		if (row.verdict !== "violation") {
 			continue;
 		}
+		const expectedRule = JSON.stringify(rowRuleRef(row));
+		const mismatchedRule = row.violations.find(
+			(violation) => JSON.stringify(violation.rule) !== expectedRule,
+		);
+		if (!isNullOrEmpty(mismatchedRule)) {
+			issue(
+				ctx,
+				`a violation in row ${ruleName(row)} names rule ${JSON.stringify(mismatchedRule.rule)} instead of ${expectedRule}`,
+			);
+			return;
+		}
 		const outside = row.violations.find(
-			(violation) => !anchorInside(violation.anchor, probe.surface.files),
+			(violation) => !violationInside(violation, probe.surface.files),
 		);
 		if (!isNullOrEmpty(outside)) {
 			issue(
 				ctx,
-				`a violation of ${ruleName(row)} is anchored outside the surface at ${JSON.stringify(outside.anchor)}; a finding with no surface line to blame is anchored at the pull request`,
+				`a violation of ${ruleName(row)} is anchored outside the surface at ${JSON.stringify(outside.idToReportViolationOn)}; a finding with no surface line to blame omits idToReportViolationOn`,
 			);
 			return;
 		}

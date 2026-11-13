@@ -4,6 +4,7 @@ import { z } from "zod";
 import { HostAdapterFactory } from "./adapter-factory.ts";
 import type { CodeUnderReview } from "./code-under-review.ts";
 import type {
+	AgentInstructions,
 	Change,
 	Checkout,
 	ContextKind,
@@ -29,7 +30,7 @@ import {
 	coordinateLedgers,
 } from "./main-agent-ledger.ts";
 import { isNullOrEmpty, nonnull } from "./nullish.ts";
-import { loadPersistedProbes } from "./probe-loader.ts";
+import { loadPersistedProbes, toAgentInstructions } from "./probe-loader.ts";
 import type { Rulebook } from "./rulebook.ts";
 import {
 	type AckStatus,
@@ -101,6 +102,7 @@ interface SubAgentControllerInit {
 	readonly instructions: Instructions;
 	readonly change: Change;
 	readonly rules: ProbeRules;
+	readonly probe: ProbeDocument;
 	readonly name?: string | undefined;
 	readonly now?: (() => number) | undefined;
 }
@@ -119,6 +121,7 @@ export class SubAgentController {
 	readonly #instructions: Instructions;
 	readonly #change: Change;
 	readonly #rules: ProbeRules;
+	readonly #probe: ProbeDocument;
 	readonly #name: string | undefined;
 	readonly #now: () => number;
 	#acknowledgedAt: number | null = null;
@@ -129,6 +132,7 @@ export class SubAgentController {
 		this.#instructions = init.instructions;
 		this.#change = init.change;
 		this.#rules = init.rules;
+		this.#probe = init.probe;
 		this.#name = init.name;
 		this.#now = init.now ?? Date.now;
 	}
@@ -138,12 +142,22 @@ export class SubAgentController {
 		ledger: SubAgentLedger,
 		change: Change,
 	): SubAgentController {
+		const surface: Surface = {
+			headCommit: "0".repeat(40),
+			files: [...ledger.pullRequest().surface()],
+		};
 		return new SubAgentController({
 			workdir,
 			ledger,
 			instructions: Instructions.forKind("context"),
 			change,
 			rules: { kind: "rulesets", rulesets: [] },
+			probe: {
+				kind: "context",
+				change,
+				surface,
+				rulesets: [],
+			},
 		});
 	}
 
@@ -170,12 +184,20 @@ export class SubAgentController {
 			probe.kind === "context"
 				? { kind: "rulesets", rulesets: probe.rulesets }
 				: { kind: "rulebook", rulebook: probe.rulebook };
+		const hydratedProbe: ProbeDocument =
+			probe.kind === "reuse" || probe.kind === "dead-code"
+				? {
+						...probe,
+						checkout: probe.checkout ?? workdir.snapshotDirectory().toString(),
+					}
+				: probe;
 		return new SubAgentController({
 			workdir,
 			ledger,
 			instructions: Instructions.forKind(probe.kind),
 			change: probe.change,
 			rules,
+			probe: hydratedProbe,
 			name: options?.name,
 			now: options?.now,
 		});
@@ -249,6 +271,10 @@ export class SubAgentController {
 		return this.#rules;
 	}
 
+	inspect(): AgentInstructions {
+		return toAgentInstructions(this.#probe);
+	}
+
 	ack(): AckStatus {
 		const acknowledgedAt = this.#now();
 		this.#acknowledgedAt = acknowledgedAt;
@@ -272,12 +298,6 @@ export class SubAgentController {
 			return customFailure(
 				"ack",
 				"Probe must acknowledge instructions via ack before reporting",
-			);
-		}
-		if (this.#now() - ackTime > SUBAGENT_DEADLINE_MS) {
-			return customFailure(
-				"deadline",
-				`Probe exceeded the 5-minute (${SUBAGENT_DEADLINE_MS}ms) reporting deadline`,
 			);
 		}
 		return this.#ledger.report(rows);

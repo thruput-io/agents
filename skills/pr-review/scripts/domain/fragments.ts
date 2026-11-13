@@ -96,8 +96,3 @@ export const removedLines = (
 				.join("\n"),
 		};
 	});
-
-export function span(lines: readonly SurfaceLine[]): LineRange {
-	const numbers = lines.map((line): LineNumber => line.idToReportViolationOn);
-	return { start: Math.min(...numbers), end: Math.max(...numbers) };
-}

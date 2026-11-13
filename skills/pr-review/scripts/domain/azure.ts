@@ -8,7 +8,6 @@ import {
 	type AzureDevOps,
 	type Change,
 	type HeadCommit,
-	type RepositoryPath,
 	type Summary,
 	SummarySchema,
 } from "./contracts.g.ts";
@@ -72,12 +71,9 @@ export const artifactIdOf = (
 ): Summary =>
 	`vstfs:///CodeReview/CodeReviewId/${pullRequest.repository?.project?.id ?? host.project}/${host.id}`;
 
-export const remoteUrlOf = (
-	host: AzureDevOps,
-	pullRequest: Pick<AzurePullRequest, "repository">,
-): RepositoryPath =>
-	pullRequest.repository?.remoteUrl ??
-	`https://dev.azure.com/${host.organization}/${host.project}/_git/${host.repository}`;
+export const targetCommitOf = (
+	pullRequest: Pick<AzurePullRequest, "lastMergeTargetCommit">,
+): HeadCommit => pullRequest.lastMergeTargetCommit?.commitId ?? "";
 
 export const blockingBuildPolicies = (
 	policies: readonly Pick<AzureEvaluationRecord, "status" | "configuration">[],

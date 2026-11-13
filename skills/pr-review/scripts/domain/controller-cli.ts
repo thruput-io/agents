@@ -1,38 +1,45 @@
 import { z } from "zod";
 import { AccessToken } from "./access-token.ts";
 import type { AdapterResolution } from "./adapter.ts";
-import type { Ledger, Outcome } from "./contracts.g.ts";
+import {
+	ControllerCommandSchema,
+	type DispatchResult,
+	type PrepareResponse,
+	type ReviewStatus,
+} from "./contracts.g.ts";
 import type { MainAgentLedger } from "./main-agent-ledger.ts";
 import { isNullOrEmpty } from "./nullish.ts";
-import { subAgentHelpPayload } from "./sub-agent-cli.ts";
+import { bootstrapPrompt, subAgentHelpPayload } from "./sub-agent-cli.ts";
 import { Workdir } from "./workdir.ts";
 
-type ReadyReview = Extract<AdapterResolution, { readonly kind: "ready" }>;
-
-type PrepareError =
-	| { readonly kind: "invalid-target"; readonly error: z.ZodError }
-	| Exclude<AdapterResolution, { readonly kind: "ready" }>;
-
-type PrepareResult =
-	| { readonly success: true; readonly data: ReadyReview }
-	| { readonly success: false; readonly error: PrepareError };
-
-type DispatchResult =
-	| { readonly kind: "pending"; readonly remaining: readonly string[] }
-	| {
-			readonly kind: "submitted";
-			readonly outcome: Outcome;
-			readonly ledger: Ledger;
-			readonly location: string;
-	  };
-
 export interface MainAgentCliDriver {
-	prepare: (url: string, workdir: Workdir) => Promise<PrepareResult>;
+	prepare: (
+		target: string,
+		workdir: Workdir,
+	) => Promise<
+		| { readonly success: true; readonly data: AdapterResolution }
+		| {
+				readonly success: false;
+				readonly error: Extract<
+					PrepareResponse,
+					{ readonly success: false }
+				>["error"];
+		  }
+	>;
 	prepareWithToken: (
-		url: string,
+		target: string,
 		workdir: Workdir,
 		token: AccessToken,
-	) => Promise<PrepareResult>;
+	) => Promise<
+		| { readonly success: true; readonly data: AdapterResolution }
+		| {
+				readonly success: false;
+				readonly error: Extract<
+					PrepareResponse,
+					{ readonly success: false }
+				>["error"];
+		  }
+	>;
 	ledger: (workdir: Workdir) => MainAgentLedger;
 	dispatch: (workdir: Workdir) => Promise<DispatchResult>;
 	dispatchWithToken: (
@@ -42,7 +49,7 @@ export interface MainAgentCliDriver {
 }
 
 const writeJson = (payload: object): void => {
-	process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+	process.stdout.write(`${JSON.stringify(payload)}\n`);
 };
 
 const failCli = (message?: string): number => {
@@ -53,28 +60,58 @@ const failCli = (message?: string): number => {
 	return 1;
 };
 
-const writePrepared = (
-	workdir: Workdir,
-	result: ReadyReview,
-	pending: readonly string[],
-): number => {
+const writePrepared = (workdir: Workdir, ledger: MainAgentLedger): number => {
 	const warning = workdir.warning();
-	writeJson({
-		success: true,
-		session: workdir.sessionToken(),
-		headCommit: result.headCommit,
-		change: result.change,
-		pending,
-		...(isNullOrEmpty(warning) ? {} : { warning }),
-	});
+	const session = workdir.sessionToken();
+	const pending = ledger.pending();
+	const prompts = Object.fromEntries(
+		pending.map((name) => [name, bootstrapPrompt(session, name)]),
+	);
+	const permissions = Object.fromEntries(
+		pending.map((name) => [name, ledger.permissions(name)]),
+	);
+	const response: PrepareResponse = isNullOrEmpty(warning)
+		? { success: true, session, pending: [...pending], prompts, permissions }
+		: {
+				success: true,
+				session,
+				pending: [...pending],
+				prompts,
+				permissions,
+				warning,
+			};
+	writeJson(response);
 	return 0;
+};
+
+const toRawControllerCommand = (args: readonly string[]): unknown => {
+	const [command, firstArg, secondArg, thirdArg] = args;
+	if (command === "prepare") {
+		return {
+			command,
+			url: firstArg,
+			workdir: secondArg,
+			...(isNullOrEmpty(thirdArg) ? {} : { token: thirdArg }),
+		};
+	}
+	if (command === "status") {
+		return { command, workdir: firstArg };
+	}
+	if (command === "dispatch") {
+		return {
+			command,
+			workdir: firstArg,
+			...(isNullOrEmpty(secondArg) ? {} : { token: secondArg }),
+		};
+	}
+	return { command };
 };
 
 export async function runMainAgentCli(
 	controller: MainAgentCliDriver,
 	args: readonly string[],
 ): Promise<number> {
-	const [command, firstArg, secondArg, thirdArg] = args;
+	const [command] = args;
 	if (command === "-h" || command === "--help") {
 		writeJson({
 			usage: [
@@ -87,103 +124,96 @@ export async function runMainAgentCli(
 		});
 		return 0;
 	}
-	if (command === "prepare") {
-		if (isNullOrEmpty(firstArg) || isNullOrEmpty(secondArg)) {
-			return failCli(
-				"Usage: node controller.ts prepare <url> <workdir> [<token>]\n",
-			);
-		}
-		const parsedWorkdir = Workdir.from(secondArg);
+	const parsedCommand = ControllerCommandSchema.safeParse(
+		toRawControllerCommand(args),
+	);
+	if (!parsedCommand.success) {
+		return failCli(`${z.prettifyError(parsedCommand.error)}\n`);
+	}
+	const cmd = parsedCommand.data;
+	if (cmd.command === "prepare") {
+		const parsedWorkdir = Workdir.from(cmd.workdir);
 		if (!parsedWorkdir.success) {
-			writeJson({
+			const response: PrepareResponse = {
 				success: false,
 				error: {
 					kind: "invalid-workdir",
 					message: z.prettifyError(parsedWorkdir.error),
 				},
-			});
+			};
+			writeJson(response);
 			return failCli();
 		}
-		if (!isNullOrEmpty(thirdArg)) {
-			const parsedToken = AccessToken.from(thirdArg);
+		if (!isNullOrEmpty(cmd.token)) {
+			const parsedToken = AccessToken.from(cmd.token);
 			if (!parsedToken.success) {
-				writeJson({
+				const response: PrepareResponse = {
 					success: false,
 					error: {
 						kind: "invalid-token",
 						message: z.prettifyError(parsedToken.error),
 					},
-				});
+				};
+				writeJson(response);
 				return failCli();
 			}
 			const result = await controller.prepareWithToken(
-				firstArg,
+				cmd.url,
 				parsedWorkdir.data,
 				parsedToken.data,
 			);
 			if (!result.success) {
-				writeJson(result);
+				const response: PrepareResponse = result;
+				writeJson(response);
 				return 0;
 			}
 			return writePrepared(
 				parsedWorkdir.data,
-				result.data,
-				controller.ledger(parsedWorkdir.data).pending(),
+				controller.ledger(parsedWorkdir.data),
 			);
 		}
-		const result = await controller.prepare(firstArg, parsedWorkdir.data);
+		const result = await controller.prepare(cmd.url, parsedWorkdir.data);
 		if (!result.success) {
-			writeJson(result);
+			const response: PrepareResponse = result;
+			writeJson(response);
 			return 0;
 		}
 		return writePrepared(
 			parsedWorkdir.data,
-			result.data,
-			controller.ledger(parsedWorkdir.data).pending(),
+			controller.ledger(parsedWorkdir.data),
 		);
 	}
-	if (command === "dispatch" || command === "status") {
-		if (isNullOrEmpty(firstArg)) {
-			return failCli(
-				"Usage: node controller.ts <dispatch|status> <workdir> [<token>]\n",
-			);
+	const parsedWorkdir = Workdir.from(cmd.workdir);
+	if (!parsedWorkdir.success) {
+		return failCli(`${z.prettifyError(parsedWorkdir.error)}\n`);
+	}
+	if (cmd.command === "status") {
+		const ledger = controller.ledger(parsedWorkdir.data);
+		const status: ReviewStatus = {
+			pending: [...ledger.pending()],
+			acknowledged: [...ledger.acknowledged()],
+			unacknowledged: [...ledger.unacknowledged()],
+			completed: [...ledger.completed()],
+			submittedOutcome: ledger.submittedOutcome(),
+		};
+		writeJson(status);
+		return 0;
+	}
+	if (!isNullOrEmpty(cmd.token)) {
+		const parsedToken = AccessToken.from(cmd.token);
+		if (!parsedToken.success) {
+			return failCli(`${z.prettifyError(parsedToken.error)}\n`);
 		}
-		const parsedWorkdir = Workdir.from(firstArg);
-		if (!parsedWorkdir.success) {
-			writeJson({
-				success: false,
-				error: z.prettifyError(parsedWorkdir.error),
-			});
-			return failCli();
-		}
-		if (command === "status") {
-			const ledger = controller.ledger(parsedWorkdir.data);
-			writeJson({
-				pending: ledger.pending(),
-				completed: ledger.completed(),
-				submittedOutcome: ledger.submittedOutcome(),
-			});
-			return 0;
-		}
-		if (!isNullOrEmpty(secondArg)) {
-			const parsedToken = AccessToken.from(secondArg);
-			if (!parsedToken.success) {
-				writeJson({
-					success: false,
-					error: z.prettifyError(parsedToken.error),
-				});
-				return failCli();
-			}
-			const dispatched = await controller.dispatchWithToken(
-				parsedWorkdir.data,
-				parsedToken.data,
-			);
-			writeJson(dispatched);
-			return 0;
-		}
-		const dispatched = await controller.dispatch(parsedWorkdir.data);
+		const dispatched: DispatchResult = await controller.dispatchWithToken(
+			parsedWorkdir.data,
+			parsedToken.data,
+		);
 		writeJson(dispatched);
 		return 0;
 	}
-	return failCli("Usage: node controller.ts <prepare|dispatch|status> ...\n");
+	const dispatched: DispatchResult = await controller.dispatch(
+		parsedWorkdir.data,
+	);
+	writeJson(dispatched);
+	return 0;
 }

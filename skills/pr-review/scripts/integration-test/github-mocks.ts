@@ -14,6 +14,7 @@ import {
 	getPullsGetResponseMock,
 	getPullsListReviewsMockHandler,
 	getPullsListReviewsResponseMock,
+	getReposDownloadZipballArchiveMockHandler,
 } from "../../clients/github.g.ts";
 import { PullsCreateReviewBody } from "../../clients/github.zod.g.ts";
 import { nonnull } from "../domain/nullish.ts";
@@ -88,12 +89,11 @@ export function createReadOnlyOAuthScopesGitHubHandler(repo: ScenarioRepo) {
 				{
 					...basePull,
 					user: { ...basePull.user, login: "author@example.com" },
-					base: { ...basePull.base, ref: "main" },
+					base: { ...basePull.base, ref: "main", sha: repo.baseCommit },
 					head: {
 						...basePull.head,
 						ref: "feature",
 						sha: repo.headCommit,
-						repo: { ...nonnull(basePull.head.repo), clone_url: repo.repoDir },
 					},
 				},
 				{
@@ -128,6 +128,31 @@ export function createForbiddenGitHubGraphQlHandler() {
 			{ message: "Resource not accessible by integration" },
 			{ status: 403 },
 		),
+	);
+}
+
+export function createForbiddenGitHubZipballHandler() {
+	return http.get(
+		"https://api.github.com/repos/:owner/:repo/zipball/:ref",
+		() =>
+			HttpResponse.json(
+				{ message: "Repository archive access denied" },
+				{ status: 403 },
+			),
+	);
+}
+
+export function createFailedGitHubCreateReviewHandler() {
+	return http.post(
+		"https://api.github.com/repos/:owner/:repo/pulls/:pull_number/reviews",
+		() =>
+			HttpResponse.json(
+				{
+					message:
+						"Validation Failed: PullRequestReview can only have one pending review per pull request",
+				},
+				{ status: 422 },
+			),
 	);
 }
 
@@ -194,13 +219,16 @@ export function createGitHubHandlers(repo: ScenarioRepo) {
 		getPullsGetMockHandler({
 			...basePull,
 			user: { ...basePull.user, login: "author@example.com" },
-			base: { ...basePull.base, ref: "main" },
+			base: { ...basePull.base, ref: "main", sha: repo.baseCommit },
 			head: {
 				...basePull.head,
 				ref: "feature",
 				sha: repo.headCommit,
-				repo: { ...nonnull(basePull.head.repo), clone_url: repo.repoDir },
 			},
+		}),
+		getReposDownloadZipballArchiveMockHandler(({ params }) => {
+			const ref = String(params.ref);
+			return repo.zipForCommit(ref, `octocat-hello-world-${ref.slice(0, 7)}/`);
 		}),
 		getChecksListForRefMockHandler({
 			total_count: 1,
