@@ -212,7 +212,7 @@ rules:
     Perform comparison, addition, subtraction, or any other domain operation via [[Domain method]]s.
 - id: Branching belongs at the perimeter
   marker: MUST
-  group: Domain Model
+  group: Architecture
   parent: Replace conditional with polymorphism
   body: |
     Use a [[Factory]] with [[Inheritance]], a [[Feature]], a [[Strategy]], or a [[Builder]] instead of a boolean or [[Pure enum]].
@@ -220,19 +220,19 @@ rules:
   - "[[Branching]] outside of a [[Perimeter]] fold."
 - id: Tell, don't ask
   marker: MUST NOT
-  group: Domain Model
+  group: Architecture
   parent: Replace conditional with polymorphism
   body: |
     Query a [[Domain object]]'s state to decide how to act upon it instead of invoking a [[Domain method]] on it.
 - id: Respect layering
   marker: MUST NOT
-  group: Domain Model
+  group: Architecture
   parent: Separation of Concerns
   body: |
     Import or call against the [[Dependency direction]] the architecture declares: from a [[Layer]] into the layer above it, or skipping a layer.
 - id: Domain separated from transport and framework
   marker: MUST
-  group: Domain Model
+  group: Architecture
   parent: Separation of Concerns
   body: |
     Isolate [[Domain object]] representations in their own [[Module]] separated from transport [[Foreign shape]]s and [[Framework]] code, with no dependencies on other [[Module]]s in the project, using [[Interface]] abstractions that hide concerns of technical character.
@@ -242,7 +242,7 @@ rules:
   - An [[Interface]] in the domain [[Layer]] that exposes technical concerns rather than hiding them behind domain concepts.
 - id: No primitive leakage
   marker: MUST
-  group: Domain Model
+  group: Architecture
   parent: No Primitive Obsession
   body: |
     Keep raw [[Primitive]]s from crossing a [[Layer]] boundary.
@@ -344,49 +344,49 @@ rules:
     Any bug fix has a [[Unit test]] pinning it.
 - id: No retry on failure
   marker: MUST NOT
-  group: Tests
+  group: Test Isolation
   parent: F.I.R.S.T.
   body: |
     Configure a [[Test]] to run again until it passes, by a retry count, a retry annotation, or a [[Flaky test]] marker.
 - id: One subject under test
   marker: MUST NOT
-  group: Tests
+  group: Test Isolation
   parent: No grey tests
   body: |
     Include more than one [[Subject under test]] in a [[Unit test]], [[Narrow integration test]], or [[Integration test]], or test the composition of objects within a [[Unit test]] or a [[Narrow integration test]].
 - id: No test case coupling
   marker: MUST NOT
-  group: Tests
+  group: Test Isolation
   parent: F.I.R.S.T.
   body: |
     Allow one [[Test case]] to depend on another; every test case is executable on its own, in any order.
 - id: Integration Tests Are Black-Box
   marker: MUST
-  group: Tests
+  group: Test Isolation
   parent: No grey tests
   body: |
     Test the shipped [[Runtime artifact]] through its public [[API]]s using [[Black-box testing]].
 - id: Test setup leaves production code alone
   marker: MUST NOT
-  group: Toolchain & Environment
+  group: Test Isolation
   parent: Production Parity
   body: |
     Alter the behaviour of [[Production code]] in [[Test setup]].
 - id: No global lint changes
   marker: MUST NOT
-  group: Toolchain & Environment
+  group: Quality Tooling & Shift Left
   parent: The Toolchain Is the Guardrail
   body: |
     Change global or project-wide [[Lint rule]]s, except in a [[Pull request]] that contains only that [[Change]].
 - id: No global quality changes
   marker: MUST NOT
-  group: Toolchain & Environment
+  group: Quality Tooling & Shift Left
   parent: The Toolchain Is the Guardrail
   body: |
     Change global or project-wide [[Quality]] standards, except in a [[Pull request]] that contains only that [[Change]].
 - id: No local disabling of lint rules
   marker: MUST NOT
-  group: Toolchain & Environment
+  group: Quality Tooling & Shift Left
   parent: The Toolchain Is the Guardrail
   body: |
     Disable a [[Lint rule]] locally, by a comment, a [[Pragma]], or alike. An exception the team accepts is expressed globally, by a [[File]] filter in the lint configuration or alike.
@@ -428,13 +428,13 @@ rules:
     Leave to a [[Manual test]] what an [[End-to-end test]] can catch.
 - id: No committing generated code
   marker: MUST NOT
-  group: Toolchain & Environment
+  group: Quality Tooling & Shift Left
   parent: The Toolchain Is the Guardrail
   body: |
     Commit [[Generated code]].
 - id: Strict presets
   marker: MUST
-  group: Toolchain & Environment
+  group: Quality Tooling & Shift Left
   parent: The Toolchain Is the Guardrail
   body: |
     Use the strictest possible [[Preset]]s on linting and style.
@@ -491,19 +491,19 @@ rules:
     Instruct an [[AI agent]] to follow a [[Coding standard]] that has no entry in these documents; add the entry and cite it.
 - id: One-command setup
   marker: MUST
-  group: Toolchain & Environment
+  group: Environment
   parent: Infrastructure as Code
   body: |
     Keep clone, build, and [[Test]] of the entire [[Environment]] to one documented command.
 - id: No manual environment setup
   marker: MUST NOT
-  group: Toolchain & Environment
+  group: Environment
   parent: Infrastructure as Code
   body: |
     Set up a test or production [[Environment]] with a manual step.
 - id: Twice is automated
   marker: MUST
-  group: Toolchain & Environment
+  group: Environment
   parent: Infrastructure as Code
   body: |
     Script a procedure for [[Automation]] the second time it is performed.
@@ -511,7 +511,7 @@ rules:
   - A manual procedure written down to be repeated instead of scripted for [[Automation]].
 - id: Ship with telemetry
   marker: MUST
-  group: Toolchain & Environment
+  group: Environment
   parent: Own the Runtime
   body: |
     Add the [[Signal]] in the [[Change]] that adds the behaviour it shows.

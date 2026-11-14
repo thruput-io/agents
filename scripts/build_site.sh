@@ -18,5 +18,6 @@ lychee  --verbose\
         --no-progress\
         --include-fragments\
         --extensions html,css,json\
+        --remap "https://thruput.se/agents/schemas file://$PROJECT_ROOT/build/_site/schemas"\
         --root-dir "build/_site"\
         "build/_site"
