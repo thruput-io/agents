@@ -22,26 +22,19 @@
   },
   "examples": [
     {
-      "path": "scripts/verify.sh",
+      "path": "rules/Definitions.yaml",
       "fragments": [
         {
           "kind": "context",
           "lines": {
-            "20": "npx --yes @sourcemeta/jsonschema@17.0.0 lint \"$PROJECT_ROOT/schemas\""
+            "85": "- id: Encapsulated type"
           }
         },
         {
           "kind": "surface",
           "side": "head",
           "lines": {
-            "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
-          }
-        },
-        {
-          "kind": "surface",
-          "side": "base",
-          "lines": {
-            "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\""
+            "87": "    A [[Class]] into which one or more [[Primitive]]s are folded at the [[Perimeter]]."
           }
         }
       ]

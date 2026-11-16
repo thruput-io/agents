@@ -102,34 +102,21 @@
             "kind": "github",
             "owner": "thruput-io",
             "repository": "agents",
-            "number": 12
+            "number": 27
           },
-          "author": "agent-rasmus[bot]",
-          "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
+          "author": "agent-tore[bot]",
+          "description": "Add Encapsulated type rule to Rules.yaml."
         },
-        "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
+        "headCommit": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5",
         "files": [
           {
-            "path": "scripts/verify.sh",
+            "path": "rules/Rules.yaml",
             "fragments": [
-              {
-                "kind": "context",
-                "lines": {
-                  "20": "npx --yes @sourcemeta/jsonschema@17.0.0 lint \"$PROJECT_ROOT/schemas\""
-                }
-              },
               {
                 "kind": "surface",
                 "side": "head",
                 "lines": {
-                  "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
-                }
-              },
-              {
-                "kind": "surface",
-                "side": "base",
-                "lines": {
-                  "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\""
+                  "180": "- id: Opaque encapsulated types"
                 }
               }
             ]

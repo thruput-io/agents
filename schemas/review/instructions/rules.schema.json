@@ -46,34 +46,21 @@
             "kind": "github",
             "owner": "thruput-io",
             "repository": "agents",
-            "number": 12
+            "number": 25
           },
-          "author": "agent-rasmus[bot]",
-          "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
+          "author": "agent-tore[bot]",
+          "description": "Enforce strict exit code handling in build_site.sh."
         },
-        "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
+        "headCommit": "c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
         "files": [
           {
-            "path": "scripts/verify.sh",
+            "path": "scripts/build_site.sh",
             "fragments": [
-              {
-                "kind": "context",
-                "lines": {
-                  "20": "npx --yes @sourcemeta/jsonschema@17.0.0 lint \"$PROJECT_ROOT/schemas\""
-                }
-              },
               {
                 "kind": "surface",
                 "side": "head",
                 "lines": {
-                  "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
-                }
-              },
-              {
-                "kind": "surface",
-                "side": "base",
-                "lines": {
-                  "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\""
+                  "2": "set -euo pipefail"
                 }
               }
             ]
@@ -86,24 +73,24 @@
         "instructions": "Apply each rule with its [[term]]s as definitions defines them. When the application of a rule is in doubt, its parent in principles decides",
         "rules": [
           {
-            "id": "No suppressed exit status",
-            "marker": "MUST NOT",
-            "group": "Failure Handling",
-            "parent": "Fail fast",
-            "body": "Discard a command's non-zero [[Exit status]] so that a failure passes as success."
+            "id": "Wrap primitives",
+            "marker": "MUST",
+            "group": "Types",
+            "parent": "No Primitive Obsession",
+            "body": "Wrap a [[Primitive]] in its [[Domain primitive]] before it crosses any [[Interface]] of ours."
           }
         ],
         "principles": [
           {
-            "id": "Fail fast",
-            "parent": "Crash, don't guess",
-            "body": "A system fails loudly and at once on an unexpected state; it never continues on a guess."
+            "id": "No Primitive Obsession",
+            "parent": "Make illegal states unrepresentable",
+            "body": "Domain values carry their own type rather than raw primitives."
           }
         ],
         "definitions": [
           {
-            "id": "Exit status",
-            "specification": "The number a process returns when it ends; zero means success, anything else failure."
+            "id": "Primitive",
+            "specification": "A built-in value type without domain meaning."
           }
         ]
       }
