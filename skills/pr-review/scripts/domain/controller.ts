@@ -4,7 +4,6 @@ import type { AdapterResolution, HostAdapter } from "./adapter.ts";
 import { HostAdapterFactory } from "./adapter-factory.ts";
 import type { CodeUnderReview } from "./code-under-review.ts";
 import type { DispatchResult, PrepareError } from "./contracts.g.ts";
-import { runMainAgentCli } from "./controller-cli.ts";
 import {
 	type CoordinatedProbeSpec,
 	coordinateLedgers,
@@ -16,10 +15,7 @@ import {
 	loadPersistedProbes,
 	type NamedProbe,
 } from "./probe-loader.ts";
-import { isCliEntrypoint } from "./sub-agent-controller.ts";
 import type { Workdir } from "./workdir.ts";
-
-export type { DispatchResult, PrepareError } from "./contracts.g.ts";
 
 type ReadyReview = Extract<AdapterResolution, { readonly kind: "ready" }>;
 
@@ -202,8 +198,4 @@ export class MainAgentController {
 		this.#bind(workdir, adapter, pullRequest, probes);
 		return this.dispatch(workdir);
 	}
-}
-
-if (import.meta.main || isCliEntrypoint(import.meta.url)) {
-	await runMainAgentCli(MainAgentController.create(), process.argv.slice(2));
 }

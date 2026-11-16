@@ -51,7 +51,7 @@
       "minLength": 1
     },
     "InspectCommand": {
-      "description": "CLI arguments to sub-agent-controller.ts inspect <session> <probe>",
+      "description": "CLI arguments to review-tool-probe inspect <session> <probe>",
       "type": "object",
       "required": [
         "command",
@@ -72,7 +72,7 @@
       "additionalProperties": false
     },
     "DefineCommand": {
-      "description": "CLI arguments to sub-agent-controller.ts define \"<term>\" [depth]",
+      "description": "CLI arguments to review-tool-probe define \"<term>\" [depth]",
       "type": "object",
       "required": [
         "command",
@@ -146,7 +146,7 @@
       "additionalProperties": false
     },
     "AckPayload": {
-      "description": "JSON payload passed to sub-agent-controller.ts ack confirming dispatcher message receipt and report contract readiness",
+      "description": "JSON payload passed to review-tool-probe ack confirming dispatcher message receipt and report contract readiness",
       "oneOf": [
         {
           "$ref": "#/$defs/RulesAckPayload"
@@ -157,7 +157,7 @@
       ]
     },
     "AckCommand": {
-      "description": "CLI arguments to sub-agent-controller.ts ack <session> <probe> '<ack-json>'",
+      "description": "CLI arguments to review-tool-probe ack <session> <probe> '<ack-json>'",
       "type": "object",
       "required": [
         "command",
@@ -182,7 +182,7 @@
       "additionalProperties": false
     },
     "NextCommand": {
-      "description": "CLI arguments to sub-agent-controller.ts next <session> <probe>",
+      "description": "CLI arguments to review-tool-probe next <session> <probe>",
       "type": "object",
       "required": [
         "command",
@@ -203,7 +203,7 @@
       "additionalProperties": false
     },
     "PrevCommand": {
-      "description": "CLI arguments to sub-agent-controller.ts prev <session> <probe>",
+      "description": "CLI arguments to review-tool-probe prev <session> <probe>",
       "type": "object",
       "required": [
         "command",
@@ -224,7 +224,7 @@
       "additionalProperties": false
     },
     "RulesetCommand": {
-      "description": "CLI arguments to sub-agent-controller.ts ruleset <session> <probe> \"<url>\" [page]",
+      "description": "CLI arguments to review-tool-probe ruleset <session> <probe> \"<url>\" [page]",
       "type": "object",
       "required": [
         "command",
@@ -254,7 +254,7 @@
       "additionalProperties": false
     },
     "ProbeReport": {
-      "description": "Container passed to sub-agent-controller.ts report holding one verdict row per rule in the order named by the probe's task",
+      "description": "Container passed to review-tool-probe report holding one verdict row per rule in the order named by the probe's task",
       "type": "object",
       "required": [
         "oneRowPerRuleInOrder"
@@ -267,7 +267,7 @@
       "additionalProperties": false
     },
     "ReportCommand": {
-      "description": "CLI arguments to sub-agent-controller.ts report <session> <probe> '{\"oneRowPerRuleInOrder\": [...]}'",
+      "description": "CLI arguments to review-tool-probe report <session> <probe> '{\"oneRowPerRuleInOrder\": [...]}'",
       "type": "object",
       "required": [
         "command",
@@ -292,7 +292,7 @@
       "additionalProperties": false
     },
     "SubAgentCommand": {
-      "description": "CLI command arguments accepted by sub-agent-controller.ts",
+      "description": "CLI command arguments accepted by review-tool-probe",
       "oneOf": [
         {
           "$ref": "#/$defs/DefineCommand"
@@ -345,7 +345,7 @@
       "additionalProperties": false
     },
     "DefineSuccess": {
-      "description": "Returned by sub-agent-controller.ts define with the resolved term and nested definitions up to depth levels",
+      "description": "Returned by review-tool-probe define with the resolved term and nested definitions up to depth levels",
       "type": "object",
       "required": [
         "success",
@@ -371,7 +371,7 @@
       "additionalProperties": false
     },
     "SurfacePage": {
-      "description": "Returned by sub-agent-controller.ts next or prev showing one page of a grouped changed file and its context",
+      "description": "Returned by review-tool-probe next or prev showing one page of a grouped changed file and its context",
       "type": "object",
       "required": [
         "success",
@@ -430,7 +430,7 @@
       "additionalProperties": false
     },
     "SurfaceBoundary": {
-      "description": "Returned by sub-agent-controller.ts next or prev when stepping past the first or last changed-file page",
+      "description": "Returned by review-tool-probe next or prev when stepping past the first or last changed-file page",
       "type": "object",
       "required": [
         "success",
@@ -460,7 +460,7 @@
       "additionalProperties": false
     },
     "RulesetPage": {
-      "description": "Returned by sub-agent-controller.ts ruleset holding one bounded text page of an external rulebook",
+      "description": "Returned by review-tool-probe ruleset holding one bounded text page of an external rulebook",
       "type": "object",
       "required": [
         "success",
@@ -520,7 +520,7 @@
       "additionalProperties": false
     },
     "AckSuccess": {
-      "description": "Returned by sub-agent-controller.ts ack when the dispatcher message is verified and the 5-minute deadline starts",
+      "description": "Returned by review-tool-probe ack when the dispatcher message is verified and the 5-minute deadline starts",
       "type": "object",
       "required": [
         "success",
@@ -553,7 +553,7 @@
       "additionalProperties": false
     },
     "SubAgentError": {
-      "description": "Returned by sub-agent-controller.ts when an argument, ack message, or ledger row is rejected",
+      "description": "Returned by review-tool-probe when an argument, ack message, or ledger row is rejected",
       "type": "object",
       "required": [
         "success",
@@ -570,7 +570,7 @@
       "additionalProperties": false
     },
     "AckResponse": {
-      "description": "CLI return object of sub-agent-controller.ts ack",
+      "description": "CLI return object of review-tool-probe ack",
       "oneOf": [
         {
           "$ref": "#/$defs/AckSuccess"
@@ -581,7 +581,7 @@
       ]
     },
     "DefineResponse": {
-      "description": "CLI return object of sub-agent-controller.ts define",
+      "description": "CLI return object of review-tool-probe define",
       "oneOf": [
         {
           "$ref": "#/$defs/DefineSuccess"
@@ -592,7 +592,7 @@
       ]
     },
     "PageResponse": {
-      "description": "CLI return object of sub-agent-controller.ts next and prev",
+      "description": "CLI return object of review-tool-probe next and prev",
       "oneOf": [
         {
           "$ref": "#/$defs/SurfacePage"
@@ -606,7 +606,7 @@
       ]
     },
     "RulesetPageResponse": {
-      "description": "CLI return object of sub-agent-controller.ts ruleset",
+      "description": "CLI return object of review-tool-probe ruleset",
       "oneOf": [
         {
           "$ref": "#/$defs/RulesetPage"
@@ -666,7 +666,7 @@
       ]
     },
     "ReportSuccess": {
-      "description": "Returned by sub-agent-controller.ts report when all rows for the probe slice pass validation and are recorded",
+      "description": "Returned by review-tool-probe report when all rows for the probe slice pass validation and are recorded",
       "type": "object",
       "required": [
         "success",
@@ -695,7 +695,7 @@
       "additionalProperties": false
     },
     "ReportResponse": {
-      "description": "CLI return object of sub-agent-controller.ts report",
+      "description": "CLI return object of review-tool-probe report",
       "oneOf": [
         {
           "$ref": "#/$defs/ReportSuccess"
@@ -713,7 +713,7 @@
       "acknowledged": true,
       "deadlineMs": 300000,
       "permissions": [
-        "Bash(node *sub-agent-controller.ts*)"
+        "Bash(review-tool-probe*)"
       ]
     }
   ]

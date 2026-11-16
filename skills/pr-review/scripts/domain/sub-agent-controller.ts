@@ -1,29 +1,24 @@
-import { realpathSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { HostAdapterFactory } from "./adapter-factory.ts";
 import type { CodeUnderReview } from "./code-under-review.ts";
-import type {
-	AckPayload,
-	AgentInstructions,
-	Change,
-	Checkout,
-	PageResponse,
-	Row,
-	RulesetPageResponse,
-	RulesetUrl,
-	Surface,
+import {
+	type AckPayload,
+	type AckStatus,
+	type AgentInstructions,
+	type Change,
+	type Checkout,
+	DeadlineMsSchema,
+	type PageResponse,
+	type Row,
+	type RulesetPageResponse,
+	type RulesetUrl,
+	type Surface,
 } from "./contracts.g.ts";
 import { Instructions } from "./instructions.ts";
 import { coordinateLedgers } from "./main-agent-ledger.ts";
 import { isNullOrEmpty, nonnull } from "./nullish.ts";
 import { paginateSurface } from "./pagination.ts";
 import { loadPersistedProbes, toAgentInstructions } from "./probe-loader.ts";
-import {
-	type AckResult,
-	runSubAgentCli,
-	SUBAGENT_DEADLINE_MS,
-} from "./sub-agent-cli.ts";
 import type { LedgerSubmission, SubAgentLedger } from "./sub-agent-ledger.ts";
 import {
 	inMemoryProbeStorage,
@@ -38,17 +33,11 @@ import { Workdir } from "./workdir.ts";
 
 export type { ProbeDocument } from "./sub-agent-probe.ts";
 
-export const isCliEntrypoint = (metaUrl: string): boolean => {
-	const entryArg = process.argv[1];
-	if (isNullOrEmpty(entryArg)) {
-		return false;
-	}
-	try {
-		return realpathSync(fileURLToPath(metaUrl)) === realpathSync(entryArg);
-	} catch {
-		return false;
-	}
-};
+export type AckResult =
+	| { readonly success: true; readonly data: AckStatus }
+	| { readonly success: false; readonly error: string };
+
+export const SUBAGENT_DEADLINE_MS = DeadlineMsSchema.decode(undefined);
 
 interface SubAgentControllerInit {
 	readonly workdir: Workdir;
@@ -295,8 +284,4 @@ export class SubAgentController {
 		}
 		return this.#ledger.report(rows);
 	}
-}
-
-if (import.meta.main || isCliEntrypoint(import.meta.url)) {
-	runSubAgentCli(SubAgentController.forSession, process.argv.slice(2));
 }

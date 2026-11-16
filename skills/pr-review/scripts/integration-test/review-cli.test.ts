@@ -114,7 +114,7 @@ it("Review CLI prepares merge-base surface, preserves trailing blank lines, skip
 		assert.equal("prompts" in run.prepared, false);
 		assert.equal("rulesets" in run.prepared, false);
 		assert.deepEqual(run.prepared.permissions[nonnull(run.invoked[0])], [
-			"Bash(node *sub-agent-controller.ts*)",
+			"Bash(review-tool-probe*)",
 		]);
 
 		const firstInspected = nonnull(run.inspected[0]);

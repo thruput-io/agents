@@ -143,14 +143,14 @@ it("SubAgentController exposes instructions, change, rules, codeUnderReview, and
 	});
 	assert.equal(contextSub.rules().kind, "rulesets");
 	assert.deepEqual(sub.instructions().permissions(), [
-		"Bash(node *sub-agent-controller.ts*)",
+		"Bash(review-tool-probe*)",
 	]);
 	assert.deepEqual(contextSub.instructions().permissions(), [
 		"Read",
 		"Grep",
 		"Glob",
 		"Find",
-		"Bash(node *sub-agent-controller.ts*)",
+		"Bash(review-tool-probe*)",
 	]);
 	const deadCodeSub = SubAgentController.forProbe(workdir.data, reviewedPr, {
 		kind: "dead-code",
@@ -163,7 +163,7 @@ it("SubAgentController exposes instructions, change, rules, codeUnderReview, and
 		"Grep",
 		"Glob",
 		"Find",
-		"Bash(node *sub-agent-controller.ts*)",
+		"Bash(review-tool-probe*)",
 	]);
 	const reuseSub = SubAgentController.forProbe(workdir.data, reviewedPr, {
 		kind: "reuse",
@@ -177,7 +177,7 @@ it("SubAgentController exposes instructions, change, rules, codeUnderReview, and
 		"Glob",
 		"WebSearch",
 		"WebFetch",
-		"Bash(node *sub-agent-controller.ts*)",
+		"Bash(review-tool-probe*)",
 	]);
 	assert.equal("checkout" in sub.inspect(), false);
 	assert.equal("files" in sub.inspect().surface, false);
@@ -227,9 +227,7 @@ it("SubAgentController exposes instructions, change, rules, codeUnderReview, and
 	});
 	assert.equal(ackResult.success, true);
 	assert.equal(ackResult.data.deadlineMs, 300_000);
-	assert.deepEqual(ackResult.data.permissions, [
-		"Bash(node *sub-agent-controller.ts*)",
-	]);
+	assert.deepEqual(ackResult.data.permissions, ["Bash(review-tool-probe*)"]);
 
 	const result = sub.report([
 		{
@@ -280,7 +278,7 @@ it("SubAgentController.forWorkdir and forSession rehydrate a probe, enforce ack 
 			ReturnType<SubAgentController["inspect"]>,
 			{ readonly kind: "rules" }
 		>["task"],
-		permissions: ["Bash(node *sub-agent-controller.ts*)"],
+		permissions: ["Bash(review-tool-probe*)"],
 		kind: "rules",
 		change: sampleChange,
 		surface: { headCommit: H, changedFiles: 1, totalPages: 1 },
@@ -361,7 +359,7 @@ it("SubAgentController.forWorkdir and forSession rehydrate a probe, enforce ack 
 	assert.deepEqual(mainLedger.pending(), []);
 	assert.deepEqual(mainLedger.completed(), ["01-purpose"]);
 	assert.deepEqual(mainLedger.permissions("01-purpose"), [
-		"Bash(node *sub-agent-controller.ts*)",
+		"Bash(review-tool-probe*)",
 	]);
 	assert.equal(mainLedger.submittedOutcome()?.verdict, "approve");
 
@@ -491,8 +489,8 @@ it("controller CLIs support -h / --help with row schemas and execute correctly t
 	assert.equal(runSubAgentCli(SubAgentController.forSession, ["--help"]), 0);
 
 	const tempRoot = mkdtempSync(join(tmpdir(), "cli-symlink-"));
-	const linkedSubCli = join(tempRoot, "sub-agent-controller.ts");
-	symlinkSync(join(DOMAIN_DIR, "sub-agent-controller.ts"), linkedSubCli);
+	const linkedSubCli = join(tempRoot, "review-tool-probe");
+	symlinkSync(join(DOMAIN_DIR, "sub-agent-cli.ts"), linkedSubCli);
 	const helpRun = spawnSync(process.execPath, [linkedSubCli, "-h"], {
 		encoding: "utf8",
 	});
@@ -508,7 +506,7 @@ it("controller CLIs support -h / --help with row schemas and execute correctly t
 });
 
 it("sub-agent-controller define resolves [[term]]s with default depth 1, configurable depth, cycle safety, and explicit unknown-term errors", () => {
-	const cliPath = join(DOMAIN_DIR, "sub-agent-controller.ts");
+	const cliPath = join(DOMAIN_DIR, "sub-agent-cli.ts");
 	const defaultRun = spawnSync(
 		process.execPath,
 		[cliPath, "define", "Encapsulated type"],
@@ -651,7 +649,7 @@ it("sub-agent-controller next, prev, and ruleset page large changed files and la
 		checkout: workdir.data.snapshotDirectory().toString(),
 	});
 
-	const cliPath = join(DOMAIN_DIR, "sub-agent-controller.ts");
+	const cliPath = join(DOMAIN_DIR, "sub-agent-cli.ts");
 	const session = workdir.data.sessionToken();
 	const runJson = <T>(args: readonly string[]) => {
 		const res = spawnSync(process.execPath, [cliPath, ...args], {

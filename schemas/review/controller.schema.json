@@ -182,7 +182,7 @@
       "minLength": 1
     },
     "PrepareCommand": {
-      "description": "CLI arguments to controller.ts prepare <url> <workdir> [<token>]",
+      "description": "CLI arguments to review-tool prepare <url> <workdir> [<token>]",
       "type": "object",
       "required": [
         "command",
@@ -206,7 +206,7 @@
       "additionalProperties": false
     },
     "StatusCommand": {
-      "description": "CLI arguments to controller.ts status <workdir>",
+      "description": "CLI arguments to review-tool status <workdir>",
       "type": "object",
       "required": [
         "command",
@@ -223,7 +223,7 @@
       "additionalProperties": false
     },
     "DispatchCommand": {
-      "description": "CLI arguments to controller.ts dispatch <workdir> [<token>]",
+      "description": "CLI arguments to review-tool dispatch <workdir> [<token>]",
       "type": "object",
       "required": [
         "command",
@@ -243,7 +243,7 @@
       "additionalProperties": false
     },
     "ControllerCommand": {
-      "description": "CLI command arguments accepted by controller.ts",
+      "description": "CLI command arguments accepted by review-tool",
       "oneOf": [
         {
           "$ref": "#/$defs/PrepareCommand"
@@ -281,7 +281,7 @@
       }
     },
     "PrepareReady": {
-      "description": "Returned by controller.ts prepare when the review session is ready and subagents should be spawned",
+      "description": "Returned by review-tool prepare when the review session is ready and subagents should be spawned",
       "type": "object",
       "required": [
         "success",
@@ -428,7 +428,7 @@
       ]
     },
     "PrepareFailure": {
-      "description": "Returned by controller.ts prepare when preparation does not proceed to probing",
+      "description": "Returned by review-tool prepare when preparation does not proceed to probing",
       "type": "object",
       "required": [
         "success",
@@ -445,7 +445,7 @@
       "additionalProperties": false
     },
     "PrepareResponse": {
-      "description": "CLI return object of controller.ts prepare",
+      "description": "CLI return object of review-tool prepare",
       "oneOf": [
         {
           "$ref": "#/$defs/PrepareReady"
@@ -456,7 +456,7 @@
       ]
     },
     "ReviewStatus": {
-      "description": "CLI return object of controller.ts status <workdir>: current probe acknowledgment and completion state",
+      "description": "CLI return object of review-tool status <workdir>: current probe acknowledgment and completion state",
       "type": "object",
       "required": [
         "pending",
@@ -504,7 +504,7 @@
       "additionalProperties": false
     },
     "DispatchPending": {
-      "description": "Returned by controller.ts dispatch when one or more probes have not yet reported",
+      "description": "Returned by review-tool dispatch when one or more probes have not yet reported",
       "type": "object",
       "required": [
         "kind",
@@ -525,7 +525,7 @@
       "additionalProperties": false
     },
     "DispatchSubmitted": {
-      "description": "Returned by controller.ts dispatch when all probes reported and the review was posted to the host",
+      "description": "Returned by review-tool dispatch when all probes reported and the review was posted to the host",
       "type": "object",
       "required": [
         "kind",
@@ -550,7 +550,7 @@
       "additionalProperties": false
     },
     "DispatchResult": {
-      "description": "Return object of controller.ts dispatch",
+      "description": "Return object of review-tool dispatch",
       "oneOf": [
         {
           "$ref": "#/$defs/DispatchPending"
@@ -626,7 +626,7 @@
       "additionalProperties": false
     },
     "PersistedRulesets": {
-      "description": "External rulebooks fetched once at prepare and persisted to rulesets.json for paged reading via sub-agent-controller.ts ruleset",
+      "description": "External rulebooks fetched once at prepare and persisted to rulesets.json for paged reading via review-tool-probe ruleset",
       "type": "object",
       "required": [
         "rulesets"
@@ -651,7 +651,7 @@
       ],
       "permissions": {
         "01-purpose": [
-          "Bash(node *sub-agent-controller.ts*)"
+          "Bash(review-tool-probe*)"
         ]
       }
     }

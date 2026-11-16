@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -5,6 +6,7 @@ import { z } from "zod";
 import {
 	failCli,
 	failWithJsonError,
+	isCliEntrypoint,
 	parseSchemaCli,
 	type RawCommandResult,
 	writeJson,
@@ -13,11 +15,9 @@ import type { CodeUnderReview } from "./code-under-review.ts";
 import {
 	type AckPayload,
 	type AckResponse,
-	type AckStatus,
 	type AgentInstructions,
 	type Change,
 	type Checkout,
-	DeadlineMsSchema,
 	type Rulebook as ExternalRulebook,
 	type PageResponse,
 	type ReportResponse,
@@ -30,17 +30,16 @@ import { resolveDefinition } from "./define.ts";
 import type { Instructions } from "./instructions.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 import type { Rulebook } from "./rulebook.ts";
+import {
+	type AckResult,
+	SUBAGENT_DEADLINE_MS,
+	SubAgentController,
+} from "./sub-agent-controller.ts";
 import type { LedgerSubmission } from "./sub-agent-ledger.ts";
 import { Workdir } from "./workdir.ts";
 
-export type AckResult =
-	| { readonly success: true; readonly data: AckStatus }
-	| { readonly success: false; readonly error: string };
-
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const REVIEW_SCHEMAS_DIR = resolve(SCRIPT_DIR, "../../../../schemas/review");
-
-export const SUBAGENT_DEADLINE_MS = DeadlineMsSchema.decode(undefined);
+const REVIEW_SCHEMAS_DIR = resolve(SCRIPT_DIR, "../../schemas/review");
 
 type ProbeRules =
 	| { readonly kind: "rulebook"; readonly rulebook: Rulebook }
@@ -110,14 +109,14 @@ const subAgentHelpPayload = () => {
 	};
 	return {
 		usage: [
-			"node sub-agent-controller.ts -h | --help",
-			'node sub-agent-controller.ts define "<term>" [depth]',
-			"node sub-agent-controller.ts inspect <session> <probe>",
-			"node sub-agent-controller.ts ack <session> <probe> '<ack-json-or-file>'",
-			"node sub-agent-controller.ts next <session> <probe>",
-			"node sub-agent-controller.ts prev <session> <probe>",
-			'node sub-agent-controller.ts ruleset <session> <probe> "<url>" [page]',
-			"node sub-agent-controller.ts report <session> <probe> '{\"oneRowPerRuleInOrder\":[...]}'",
+			"review-tool-probe -h | --help",
+			'review-tool-probe define "<term>" [depth]',
+			"review-tool-probe inspect <session> <probe>",
+			"review-tool-probe ack <session> <probe> '<ack-json-or-file>'",
+			"review-tool-probe next <session> <probe>",
+			"review-tool-probe prev <session> <probe>",
+			'review-tool-probe ruleset <session> <probe> "<url>" [page]',
+			"review-tool-probe report <session> <probe> '{\"oneRowPerRuleInOrder\":[...]}'",
 		],
 		deadlineMs: SUBAGENT_DEADLINE_MS,
 		ackSchema: subAgentSchema.$defs.AckPayload,
@@ -247,7 +246,7 @@ export function runSubAgentCli(
 		help: subAgentHelpPayload,
 		toRaw: toRawSubAgentCommand,
 		missingCommandUsage:
-			"Usage: node sub-agent-controller.ts <define|inspect|ack|next|prev|ruleset|report> ...\n",
+			"Usage: review-tool-probe <define|inspect|ack|next|prev|ruleset|report> ...\n",
 		onInvalidCommand: (command, details) => {
 			if (command === "ack") {
 				return failWithJsonError(`${details}\n${ACK_FAILURE_GUIDE}`);
@@ -307,4 +306,8 @@ export function runSubAgentCli(
 	};
 	writeJson(response);
 	return 0;
+}
+
+if (import.meta.main || isCliEntrypoint(import.meta.url)) {
+	runSubAgentCli(SubAgentController.forSession, process.argv.slice(2));
 }

@@ -11,14 +11,14 @@ compatibility: Requires node and tar. GitHub needs gh; Azure DevOps needs az wit
 
 - **Main controller contract**: `controller.schema.json` (`#/$defs/ControllerCommand`, `#/$defs/PrepareResponse`, `#/$defs/ReviewStatus`, `#/$defs/DispatchResult`, `#/$defs/Outcome`, `#/$defs/HostError`).
 
-Do not read `.ts` source files or write inline `node -e` scripts; run `controller.ts` directly (`-h` or `--help` prints usage).
+Do not read `.ts` source files or write inline `node -e` scripts; run `review-tool` directly (`-h` or `--help` prints usage).
 
 ## Operating Boundaries
 
 - **This `SKILL.md` is strictly for the reviewing context (Main Agent) and must never be referenced, passed to, or read by subagents.**
-- **Do not pre-examine inputs before calling `prepare`.** Pass `<url>` (`controller.schema.json#/$defs/TargetUrl`) and `<workdir>` cleanly to `controller.ts prepare` without first inspecting the `[[Change]]`, `[[Change Set]]`, repository files, or `[[Ruleset]]`. Only inspect, adjust, or test `<workdir>` or `<url>` (with `git`, `gh`, or `az`) if `prepare` returns `InvalidInputError`.
+- **Do not pre-examine inputs before calling `prepare`.** Pass `<url>` (`controller.schema.json#/$defs/TargetUrl`) and `<workdir>` cleanly to `review-tool prepare` without first inspecting the `[[Change]]`, `[[Change Set]]`, repository files, or `[[Ruleset]]`. Only inspect, adjust, or test `<workdir>` or `<url>` (with `git`, `gh`, or `az`) if `prepare` returns `InvalidInputError`.
 - **Do not read or modify review artifacts in `<workdir>` or its sibling `ledger` directory, and never expose `<workdir>` to subagents.** Subagents receive only the opaque `<session>` token (`PrepareReady.session`) and their own `<probe>` name, and have no tools to write to disk.
-- **Do not author, alter, or relay subagent instructions, evaluate rules, decide verdicts, or invoke `sub-agent-controller.ts` in the main agent.** Spawn one boxed subagent per probe in `PrepareReady.pending`, restricting its allowed tools to `PrepareReady.permissions[<probe>]` and passing only the single-sentence CLI invocation prompt below.
+- **Do not author, alter, or relay subagent instructions, evaluate rules, decide verdicts, or invoke `review-tool-probe` in the main agent.** Spawn one boxed subagent per probe in `PrepareReady.pending`, restricting its allowed tools to `PrepareReady.permissions[<probe>]` and passing only the single-sentence CLI invocation prompt below.
 - **Cancel the entire review if no obvious solution is there rather than venturing into workarounds.** On `AlreadyReviewed`, `TooLarge`, `Refused`, or an unrecoverable `HostError` (`controller.schema.json#/$defs/HostError`), cancel the entire review immediately and report the controller's response to the user—never fall back to reviewing a local `git` range, fetching branches manually, or evaluating rules outside the controller pipeline.
 
 ## 1. Main Agent — Prepare (`controller.schema.json#/$defs/PrepareCommand`)
@@ -28,7 +28,7 @@ Do not read `.ts` source files or write inline `node -e` scripts; run `controlle
    ```sh
    rm -rf <workdir>
    mkdir -p <workdir>
-   node <skill>/scripts/domain/controller.ts prepare <url> <workdir> [<token>]
+   review-tool prepare <url> <workdir> [<token>]
    ```
 
    Omit `<token>` unless explicitly provided.
@@ -40,17 +40,17 @@ Do not read `.ts` source files or write inline `node -e` scripts; run `controlle
 
 ## 2. Main Agent — Spawn Subagents, Ack & Dispatch
 
-1. **Spawn all `PrepareReady.pending` probes concurrently**: Invoke one boxed subagent per `<name>` in `pending`, restricting its allowed tools to `permissions[<name>]` (`controller.schema.json#/$defs/ProbePermissions`) and passing only this single sentence as its prompt: `Run node <skill>/scripts/domain/sub-agent-controller.ts inspect <session> <name> and follow its instructions.`
-2. **Ack check (`45s` timer -> `controller.schema.json#/$defs/StatusCommand`)**: Schedule a one-shot timer (`DurationSeconds: 45`, `TimerCondition: "never"`). Subagents do not notify you when they `ack`. When the `45s` timer fires, run `node <skill>/scripts/domain/controller.ts status <workdir>` (`ReviewStatus`, `controller.schema.json#/$defs/ReviewStatus`) to check which probes are `ReviewStatus.unacknowledged`, and kill and re-spawn any probe in `ReviewStatus.unacknowledged` using the same single-sentence prompt.
+1. **Spawn all `PrepareReady.pending` probes concurrently**: Invoke one boxed subagent per `<name>` in `pending`, restricting its allowed tools to `permissions[<name>]` (`controller.schema.json#/$defs/ProbePermissions`) and passing only this single sentence as its prompt: `Run review-tool-probe inspect <session> <name> and follow its instructions.`
+2. **Ack check (`45s` timer -> `controller.schema.json#/$defs/StatusCommand`)**: Schedule a one-shot timer (`DurationSeconds: 45`, `TimerCondition: "never"`). Subagents do not notify you when they `ack`. When the `45s` timer fires, run `review-tool status <workdir>` (`ReviewStatus`, `controller.schema.json#/$defs/ReviewStatus`) to check which probes are `ReviewStatus.unacknowledged`, and kill and re-spawn any probe in `ReviewStatus.unacknowledged` using the same single-sentence prompt.
 3. **Review deadline from `ack` (`180s` reminder + `150s` kill)**:
    - Whenever a probe completes (including a late report, and regardless of whether an earlier or re-spawned subagent reported for that probe), immediately cancel any remaining subagent for that probe (`manage_subagents` `kill`). If all probes complete early, cancel the active timer (`manage_task` `kill`) and proceed to step 4.
    - After the `45s` status check, schedule a **3-minute reminder timer** (`DurationSeconds: 180`, `TimerCondition: "never"`).
-   - When the `180s` timer fires, run `node <skill>/scripts/domain/controller.ts status <workdir>`, send every probe in `ReviewStatus.pending` a wrap-up signal via `send_message` (`"3 minutes elapsed since ack (2 minutes remaining before the 5-minute deadline). Wrap up and run sub-agent-controller.ts report immediately."`—never reveal the extra 30-second grace buffer to the subagent), and schedule the **kill timer** (`DurationSeconds: 150`, `TimerCondition: "never"`).
+   - When the `180s` timer fires, run `review-tool status <workdir>`, send every probe in `ReviewStatus.pending` a wrap-up signal via `send_message` (`"3 minutes elapsed since ack (2 minutes remaining before the 5-minute deadline). Wrap up and run review-tool-probe report immediately."`—never reveal the extra 30-second grace buffer to the subagent), and schedule the **kill timer** (`DurationSeconds: 150`, `TimerCondition: "never"`).
    - If any subagent is still running when the `150s` kill timer fires, terminate the overdue subagents immediately (`manage_subagents` `kill`) and proceed to step 4.
 4. **Dispatch (`controller.schema.json#/$defs/DispatchCommand`)**:
 
    ```sh
-   node <skill>/scripts/domain/controller.ts dispatch <workdir> [<token>]
+   review-tool dispatch <workdir> [<token>]
    ```
 
 5. Handle `DispatchResult` (`controller.schema.json#/$defs/DispatchResult`):

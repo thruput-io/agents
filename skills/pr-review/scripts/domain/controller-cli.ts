@@ -1,9 +1,11 @@
+#!/usr/bin/env node
 import { z } from "zod";
 import { AccessToken } from "./access-token.ts";
 import type { AdapterResolution } from "./adapter.ts";
 import {
 	failCli,
 	failWithJson,
+	isCliEntrypoint,
 	optionalStringField,
 	parseSchemaCli,
 	type RawCommandResult,
@@ -15,6 +17,7 @@ import {
 	type PrepareResponse,
 	type ReviewStatus,
 } from "./contracts.g.ts";
+import { MainAgentController } from "./controller.ts";
 import type { MainAgentLedger } from "./main-agent-ledger.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 import { Workdir } from "./workdir.ts";
@@ -112,10 +115,10 @@ export async function runMainAgentCli(
 		schema: ControllerCommandSchema,
 		help: () => ({
 			usage: [
-				"node controller.ts -h | --help",
-				"node controller.ts prepare <url> <workdir> [<token>]",
-				"node controller.ts status <workdir>",
-				"node controller.ts dispatch <workdir> [<token>]",
+				"review-tool -h | --help",
+				"review-tool prepare <url> <workdir> [<token>]",
+				"review-tool status <workdir>",
+				"review-tool dispatch <workdir> [<token>]",
 			],
 		}),
 		toRaw: toRawControllerCommand,
@@ -208,4 +211,8 @@ export async function runMainAgentCli(
 	);
 	writeJson(dispatched);
 	return 0;
+}
+
+if (import.meta.main || isCliEntrypoint(import.meta.url)) {
+	await runMainAgentCli(MainAgentController.create(), process.argv.slice(2));
 }

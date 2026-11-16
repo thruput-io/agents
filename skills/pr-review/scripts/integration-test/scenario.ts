@@ -42,10 +42,10 @@ const expectEqual = <T>(actual: T, expected: T, message: string): void => {
 };
 
 const CONTROLLER_CLI_PATH = fileURLToPath(
-	new URL("../domain/controller.ts", import.meta.url),
+	new URL("../domain/controller-cli.ts", import.meta.url),
 );
 const SUB_AGENT_CLI_PATH = fileURLToPath(
-	new URL("../domain/sub-agent-controller.ts", import.meta.url),
+	new URL("../domain/sub-agent-cli.ts", import.meta.url),
 );
 const PRELOAD_PATH = fileURLToPath(
 	new URL("./msw-child-preload.ts", import.meta.url),
