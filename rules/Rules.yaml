@@ -329,9 +329,11 @@ rules:
   group: Tests
   parent: F.I.R.S.T.
   body: |
-    Make an [[Assertion]] on the actual returned values — not merely that no error occurred, or on generalizations such as the presence or type of the asserted value.
+    Make an [[Assertion]] on the actual returned values.
   smells:
-  - "[[Test]]s that discard return values, or make [[Assertion]]s on generalizations such as presence or type, just to increase [[Code coverage]]."
+  - "[[Assertion]]s that only check no error occurred."
+  - "[[Assertion]]s on generalizations such as presence or type."
+  - "[[Test]]s that discard return values just to increase [[Code coverage]]."
 - id: Add tests for new code
   marker: MUST
   group: Tests
