@@ -5,6 +5,7 @@ import type {
 	LineRange,
 	LineText,
 	RemovedLines,
+	SurfaceFile,
 	SurfaceFragment,
 	SurfaceLine,
 } from "./contracts.g.ts";
@@ -40,6 +41,7 @@ export function fragments(
 		if (isSurface) {
 			const surfaceLine: SurfaceLine = {
 				idToReportViolationOn: lineNumber,
+				line: lineNumber,
 				text,
 			};
 			if (!isNullOrEmpty(previous) && previous.kind === "surface") {
@@ -68,10 +70,32 @@ export function fragments(
 		side: "base",
 		lines: hunk.content.split("\n").map((lineText, index) => ({
 			idToReportViolationOn: hunk.start + index,
+			line: hunk.start + index,
 			text: lineText,
 		})),
 	}));
 	return [...headFragments, ...baseFragments];
+}
+
+export function indexSurface(files: readonly SurfaceFile[]): SurfaceFile[] {
+	let nextId = 1;
+	const reindexFragment = (fragment: Fragment): Fragment => {
+		if (fragment.kind === "context") {
+			return fragment;
+		}
+		return {
+			...fragment,
+			lines: fragment.lines.map((entry) => {
+				const id = nextId;
+				nextId += 1;
+				return { ...entry, idToReportViolationOn: id };
+			}),
+		};
+	};
+	return files.map((file) => ({
+		path: file.path,
+		fragments: file.fragments.map(reindexFragment),
+	}));
 }
 
 export const removedLines = (

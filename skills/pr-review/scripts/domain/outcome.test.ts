@@ -22,15 +22,15 @@ const files = [
 				kind: "surface" as const,
 				side: "head" as const,
 				lines: [
-					{ idToReportViolationOn: 3, text: "x3" },
-					{ idToReportViolationOn: 4, text: "x4" },
-					{ idToReportViolationOn: 7, text: "x7" },
+					{ idToReportViolationOn: 3, line: 3, text: "x3" },
+					{ idToReportViolationOn: 4, line: 4, text: "x4" },
+					{ idToReportViolationOn: 7, line: 7, text: "x7" },
 				],
 			},
 			{
 				kind: "surface" as const,
 				side: "base" as const,
-				lines: [{ idToReportViolationOn: 9, text: "y9" }],
+				lines: [{ idToReportViolationOn: 9, line: 9, text: "y9" }],
 			},
 		],
 	},
@@ -161,8 +161,8 @@ it("settled lists the open threads that no finding of this review carries any mo
 							kind: "surface" as const,
 							side: "head" as const,
 							lines: [
-								{ idToReportViolationOn: 3, text: "c" },
-								{ idToReportViolationOn: 4, text: "d" },
+								{ idToReportViolationOn: 3, line: 3, text: "c" },
+								{ idToReportViolationOn: 4, line: 4, text: "d" },
 							],
 						},
 					],
@@ -282,4 +282,55 @@ it("outcome produces the verdict, summary, fresh inline findings, threads to set
 		).verdict,
 		"approve",
 	);
+	const multiFileProbe = {
+		review: {
+			headCommit: H,
+			files: [
+				{
+					path: "helper.ts",
+					fragments: [
+						{
+							kind: "surface" as const,
+							side: "head" as const,
+							lines: [
+								{ idToReportViolationOn: 1, line: 1, text: "a" },
+								{ idToReportViolationOn: 2, line: 2, text: "b" },
+							],
+						},
+					],
+				},
+				{
+					path: "service.ts",
+					fragments: [
+						{
+							kind: "surface" as const,
+							side: "head" as const,
+							lines: [{ idToReportViolationOn: 3, line: 2, text: "y" }],
+						},
+					],
+				},
+			],
+		},
+		rulebook: { rules: [{ id: "A", parent: "P" }] },
+	};
+	const multiFileResult = outcome(
+		[
+			{
+				document: multiFileProbe,
+				ledger: {
+					headCommit: H,
+					rows: [violatedRow("A", [violationAt("A", 3)])],
+				},
+			},
+		],
+		[],
+	);
+	assert.deepEqual(multiFileResult.inline, [
+		{
+			path: "service.ts",
+			side: "head",
+			lines: { start: 2, end: 2 },
+			body: `what is wrong breaks ${citeP}`,
+		},
+	]);
 });

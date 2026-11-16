@@ -303,15 +303,24 @@
       },
       "additionalProperties": false
     },
+    "SurfaceLineId": {
+      "description": "Unique 1-based identifier of a [[Surface]] line across all changed files in the review, used to anchor a [[Violation]]",
+      "type": "integer",
+      "minimum": 1
+    },
     "SurfaceLine": {
-      "description": "One line of a surface fragment, with the identifier a violation reports on and its text",
+      "description": "One line of a surface fragment, with the unique identifier a violation reports on, its 1-based file line number on its fragment's side, and its text",
       "type": "object",
       "required": [
         "idToReportViolationOn",
+        "line",
         "text"
       ],
       "properties": {
         "idToReportViolationOn": {
+          "$ref": "#/$defs/SurfaceLineId"
+        },
+        "line": {
           "$ref": "#/$defs/LineNumber"
         },
         "text": {

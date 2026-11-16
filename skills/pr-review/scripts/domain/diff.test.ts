@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { changedFiles, intersect, parseHunks, union } from "./diff.ts";
-import { fragments, numbered, removedLines } from "./fragments.ts";
+import {
+	fragments,
+	indexSurface,
+	numbered,
+	removedLines,
+} from "./fragments.ts";
 import { narrowSurface, threadRanges, wholeSurface } from "./surface.ts";
 
 const H = "a".repeat(40);
@@ -221,8 +226,8 @@ it("fragments cuts a file into context and surface fragments in order, head firs
 				kind: "surface",
 				side: "head",
 				lines: [
-					{ idToReportViolationOn: 2, text: "b" },
-					{ idToReportViolationOn: 3, text: "c" },
+					{ idToReportViolationOn: 2, line: 2, text: "b" },
+					{ idToReportViolationOn: 3, line: 3, text: "c" },
 				],
 			},
 			{ kind: "context", lines: ["d"] },
@@ -230,8 +235,8 @@ it("fragments cuts a file into context and surface fragments in order, head firs
 				kind: "surface",
 				side: "base",
 				lines: [
-					{ idToReportViolationOn: 7, text: "x" },
-					{ idToReportViolationOn: 8, text: "y" },
+					{ idToReportViolationOn: 7, line: 7, text: "x" },
+					{ idToReportViolationOn: 8, line: 8, text: "y" },
 				],
 			},
 		],
@@ -240,14 +245,71 @@ it("fragments cuts a file into context and surface fragments in order, head firs
 		{
 			kind: "surface",
 			side: "base",
-			lines: [{ idToReportViolationOn: 1, text: "gone" }],
+			lines: [{ idToReportViolationOn: 1, line: 1, text: "gone" }],
 		},
 	]);
 	assert.deepEqual(fragments(numbered("a\n"), [{ start: 1, end: 1 }], []), [
 		{
 			kind: "surface",
 			side: "head",
-			lines: [{ idToReportViolationOn: 1, text: "a" }],
+			lines: [{ idToReportViolationOn: 1, line: 1, text: "a" }],
+		},
+	]);
+});
+
+it("indexSurface assigns globally unique idToReportViolationOn across files while preserving file line numbers", () => {
+	const helperFragments = fragments(
+		numbered("export const z = 3;\n\n"),
+		[{ start: 1, end: 2 }],
+		[],
+	);
+	const serviceFragments = fragments(
+		numbered("export const x = 1;\nexport const y = 2;\n\n"),
+		[{ start: 2, end: 3 }],
+		[{ start: 10, end: 10, content: "export const old = 0;" }],
+	);
+	const indexed = indexSurface([
+		{ path: "helper.ts", fragments: helperFragments },
+		{ path: "service.ts", fragments: serviceFragments },
+	]);
+	assert.deepEqual(indexed, [
+		{
+			path: "helper.ts",
+			fragments: [
+				{
+					kind: "surface",
+					side: "head",
+					lines: [
+						{ idToReportViolationOn: 1, line: 1, text: "export const z = 3;" },
+						{ idToReportViolationOn: 2, line: 2, text: "" },
+					],
+				},
+			],
+		},
+		{
+			path: "service.ts",
+			fragments: [
+				{ kind: "context", lines: ["export const x = 1;"] },
+				{
+					kind: "surface",
+					side: "head",
+					lines: [
+						{ idToReportViolationOn: 3, line: 2, text: "export const y = 2;" },
+						{ idToReportViolationOn: 4, line: 3, text: "" },
+					],
+				},
+				{
+					kind: "surface",
+					side: "base",
+					lines: [
+						{
+							idToReportViolationOn: 5,
+							line: 10,
+							text: "export const old = 0;",
+						},
+					],
+				},
+			],
 		},
 	]);
 });

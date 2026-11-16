@@ -63,11 +63,14 @@ export const resolveSurfaceLine = (
 	}
 	for (const file of files) {
 		for (const fragment of file.fragments) {
-			if (
-				fragment.kind === "surface" &&
-				fragment.lines.some((line) => line.idToReportViolationOn === lineId)
-			) {
-				return { path: file.path, side: fragment.side, line: lineId };
+			if (fragment.kind !== "surface") {
+				continue;
+			}
+			const matched = fragment.lines.find(
+				(line) => line.idToReportViolationOn === lineId,
+			);
+			if (!isNullOrEmpty(matched)) {
+				return { path: file.path, side: fragment.side, line: matched.line };
 			}
 		}
 	}

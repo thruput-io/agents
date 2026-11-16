@@ -4,6 +4,7 @@ import type { Path, SurfaceFile } from "./contracts.g.ts";
 import { changedFiles, parseNumstat } from "./diff.ts";
 import {
 	fragments,
+	indexSurface,
 	type NumberedLines,
 	numbered,
 	removedLines,
@@ -67,20 +68,22 @@ export async function buildReviewSnapshot(
 	if (surfaceSpec.files.length === 0) {
 		return input.baseline.alreadyReviewed(input.headCommit);
 	}
-	const surfaceFiles: SurfaceFile[] = surfaceSpec.files.map((entry) => {
-		const changed = nonnull(files.find((file) => file.path === entry.path));
-		const headLines =
-			linesByPath.get(entry.path) ?? linesAtHead(snapshotDir, entry.path);
-		linesByPath.set(entry.path, headLines);
-		return {
-			path: entry.path,
-			fragments: fragments(
-				headLines,
-				entry.added,
-				removedLines(changed.removed, entry.removed),
-			),
-		};
-	});
+	const surfaceFiles: SurfaceFile[] = indexSurface(
+		surfaceSpec.files.map((entry) => {
+			const changed = nonnull(files.find((file) => file.path === entry.path));
+			const headLines =
+				linesByPath.get(entry.path) ?? linesAtHead(snapshotDir, entry.path);
+			linesByPath.set(entry.path, headLines);
+			return {
+				path: entry.path,
+				fragments: fragments(
+					headLines,
+					entry.added,
+					removedLines(changed.removed, entry.removed),
+				),
+			};
+		}),
+	);
 	const snapshot = CodeUnderReviewSnapshot.from(
 		review.withReview(
 			surfaceFiles,

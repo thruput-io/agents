@@ -112,11 +112,25 @@ const invokeSubCli = <T>(
 interface ProbeDriver {
 	ackPayload: (probeName: string) => Record<string, unknown>;
 	verifyBeforeReport: (session: string, probeName: string) => Promise<void>;
-	initialRows: () => readonly Row[];
-	reReviewRows: () => readonly Row[];
+	initialRows: (pages: readonly SurfacePage[]) => readonly Row[];
+	reReviewRows: (pages: readonly SurfacePage[]) => readonly Row[];
 }
 
-const RE_REVIEW_VIOLATION_ROW: Row = {
+const surfaceLineId = (
+	pages: readonly SurfacePage[],
+	filePath: string,
+	lineText: string,
+): number =>
+	nonnull(
+		pages
+			.filter((page) => page.path === filePath)
+			.flatMap((page) => page.fragments)
+			.filter((fragment) => fragment.kind === "surface")
+			.flatMap((fragment) => fragment.lines)
+			.find((line) => line.text === lineText),
+	).idToReportViolationOn;
+
+const reReviewViolationRow = (pages: readonly SurfacePage[]): Row => ({
 	rule: "Stated purpose",
 	examined: ["helper.ts"],
 	verdict: "violation",
@@ -124,11 +138,15 @@ const RE_REVIEW_VIOLATION_ROW: Row = {
 	violations: [
 		{
 			rule: "Stated purpose",
-			idToReportViolationOn: 1,
+			idToReportViolationOn: surfaceLineId(
+				pages,
+				"helper.ts",
+				"export const z = 4;",
+			),
 			observation: "Still unused export z",
 		},
 	],
-};
+});
 
 function contextProbeDriver(
 	inspected: Extract<InspectedProbePayload, { readonly kind: "context" }>,
@@ -153,7 +171,7 @@ function contextProbeDriver(
 				`Expected non-empty ruleset page for ${first.url}`,
 			);
 		},
-		initialRows: () => [
+		initialRows: (pages) => [
 			{
 				bookRule: { ruleset: first.url, heading: "R1" },
 				examined: ["service.ts"],
@@ -174,7 +192,11 @@ function contextProbeDriver(
 				violations: [
 					{
 						rule: { ruleset: first.url, heading: "R3" },
-						idToReportViolationOn: 2,
+						idToReportViolationOn: surfaceLineId(
+							pages,
+							"service.ts",
+							"export const y = 2;",
+						),
 						observation: "Remove unused export y.",
 					},
 				],
@@ -207,9 +229,9 @@ function rulebookProbeDriver(
 				verdict: "clean",
 				evidence: `Verified ${rule.id}`,
 			})),
-		reReviewRows: () => {
+		reReviewRows: (pages) => {
 			const overrides: Readonly<Record<string, Row>> = {
-				"Stated purpose": RE_REVIEW_VIOLATION_ROW,
+				"Stated purpose": reReviewViolationRow(pages),
 			};
 			return inspected.ruleset.rules.map(
 				(rule) =>
@@ -292,7 +314,7 @@ export const reportForProbe = async (
 				"report",
 				session,
 				probeName,
-				JSON.stringify({ oneRowPerRuleInOrder: driver.initialRows() }),
+				JSON.stringify({ oneRowPerRuleInOrder: driver.initialRows(pages) }),
 			],
 			ReportSuccessSchema,
 		),
@@ -305,14 +327,14 @@ export const reportForReReviewProbe = async (
 	session: string,
 	probeName: string,
 ): Promise<InspectedProbePayload> => {
-	const { inspected, driver } = await inspectAndAck(session, probeName);
+	const { inspected, driver, pages } = await inspectAndAck(session, probeName);
 	requireExitZero(
 		await invokeSubCli(
 			[
 				"report",
 				session,
 				probeName,
-				JSON.stringify({ oneRowPerRuleInOrder: driver.reReviewRows() }),
+				JSON.stringify({ oneRowPerRuleInOrder: driver.reReviewRows(pages) }),
 			],
 			ReportSuccessSchema,
 		),
@@ -332,7 +354,6 @@ export const runScenario = async (
 	readonly dispatched: DispatchResult;
 	readonly invoked: readonly string[];
 }> => {
-	const invoked: string[] = [];
 	const workdir = repo.workdirFor(label);
 	const prep = PrepareReadySchema.parse(
 		requireExitZero(
@@ -342,14 +363,10 @@ export const runScenario = async (
 			),
 		),
 	);
-	const probeRuns: {
-		readonly inspected: InspectedProbePayload;
-		readonly pages: readonly SurfacePage[];
-	}[] = [];
-	for (const probeName of prep.pending) {
-		invoked.push(probeName);
-		probeRuns.push(await reportForProbe(prep.session, probeName));
-	}
+	const invoked = [...prep.pending];
+	const probeRuns = await Promise.all(
+		prep.pending.map((probeName) => reportForProbe(prep.session, probeName)),
+	);
 	const dispatched = requireExitZero(
 		await invokeMainCli(["dispatch", workdir.toString()], DispatchResultSchema),
 	);

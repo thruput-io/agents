@@ -57,7 +57,7 @@ const sampleFile = {
 		{
 			kind: "surface" as const,
 			side: "head" as const,
-			lines: [{ idToReportViolationOn: 1, text: "const x = 1;" }],
+			lines: [{ idToReportViolationOn: 1, line: 1, text: "const x = 1;" }],
 		},
 	],
 };
@@ -565,6 +565,7 @@ it("sub-agent-controller next, prev, and ruleset page large changed files and la
 				side: "head" as const,
 				lines: Array.from({ length: 120 }, (_, i) => ({
 					idToReportViolationOn: i + 121,
+					line: i + 121,
 					text: `export const line${i} = "${"x".repeat(80)}";`,
 				})),
 			},
@@ -576,7 +577,9 @@ it("sub-agent-controller next, prev, and ruleset page large changed files and la
 			{
 				kind: "surface" as const,
 				side: "head" as const,
-				lines: [{ idToReportViolationOn: 1, text: "export const ok = 1;" }],
+				lines: [
+					{ idToReportViolationOn: 241, line: 1, text: "export const ok = 1;" },
+				],
 			},
 		],
 	};

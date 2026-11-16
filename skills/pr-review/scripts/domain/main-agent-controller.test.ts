@@ -40,7 +40,13 @@ const sampleSnapshot = () =>
 					{
 						kind: "surface",
 						side: "head",
-						lines: [{ idToReportViolationOn: 1, text: "export const a = 1;" }],
+						lines: [
+							{
+								idToReportViolationOn: 1,
+								line: 1,
+								text: "export const a = 1;",
+							},
+						],
 					},
 				],
 			},

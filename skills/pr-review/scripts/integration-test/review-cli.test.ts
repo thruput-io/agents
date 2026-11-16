@@ -5,14 +5,18 @@ import { after, before, beforeEach, test as it } from "node:test";
 import {
 	type DispatchResult,
 	DispatchResultSchema,
+	PrepareReadySchema,
 	PrepareResponseSchema,
 	ReviewStatusSchema,
 } from "../domain/contracts.g.ts";
 import { DIFF_LIMIT_EXCEEDED } from "../domain/limits.ts";
 import { nonnull } from "../domain/nullish.ts";
 import {
+	AZURE_REVIEWER_ID,
+	type AzureOutcomeRecorder,
 	createAzureAlreadyReviewedHandler,
 	createAzureExistingRefusalHandler,
+	createAzureOutcomeRecorderHandlers,
 	createRejectedAzurePolicyHandler,
 } from "./azure-mocks.ts";
 import {
@@ -23,8 +27,10 @@ import {
 	createFailedGitHubChecksHandler,
 	createGitHubAlreadyReviewedHandler,
 	createGitHubExistingRefusalHandler,
+	createGitHubReviewRecorderHandler,
 	createInProgressGitHubChecksHandlers,
 	createOversizedGitHubPullHandlers,
+	type GitHubReviewRecord,
 } from "./github-mocks.ts";
 import {
 	createGitHubReReviewHandlers,
@@ -62,92 +68,134 @@ after(async () => {
 });
 
 it("Review CLI prepares merge-base surface, preserves trailing blank lines, skips 0-hunk files, and posts identical outcomes across Git, GitHub, and AzureDevOps", async () => {
-	const gitRun = await runScenario(repo, repo.gitTarget, "scenario-git");
-	const githubRun = await runScenario(
-		repo,
-		repo.githubTarget,
-		"scenario-github",
+	const ghReviews: GitHubReviewRecord[] = [];
+	const azOutcome: AzureOutcomeRecorder = {
+		inlineThreads: [],
+		summaryThreads: [],
+		votes: [],
+	};
+	mockServer.use(
+		createGitHubReviewRecorderHandler(ghReviews),
+		...createAzureOutcomeRecorderHandlers(azOutcome),
 	);
-	const azureRun = await runScenario(repo, repo.azureTarget, "scenario-azure");
 
-	assert.equal(gitRun.invoked.length > 1, true);
-	assert.deepEqual(githubRun.invoked, gitRun.invoked);
-	assert.deepEqual(azureRun.invoked, gitRun.invoked);
-	assert.equal("change" in gitRun.prepared, false);
-	assert.equal("headCommit" in gitRun.prepared, false);
+	const adapters = [
+		{ label: "scenario-git", target: repo.gitTarget },
+		{ label: "scenario-github", target: repo.githubTarget },
+		{ label: "scenario-azure", target: repo.azureTarget },
+	] as const;
+	const runs = await Promise.all(
+		adapters.map(({ label, target }) => runScenario(repo, target, label)),
+	);
 
-	const firstInspected = nonnull(gitRun.inspected[0]);
-	const firstGithubInspected = nonnull(githubRun.inspected[0]);
-	const firstAzureInspected = nonnull(azureRun.inspected[0]);
-	assert.equal(firstInspected.change.author, "author@example.com");
+	const baseline = nonnull(runs[0]);
+	const baselineInspected = nonnull(baseline.inspected[0]);
+	const baselineSubmitted = baseline.dispatched as Extract<
+		DispatchResult,
+		{ kind: "submitted" }
+	>;
+	assert.equal(baseline.invoked.length > 1, true);
+	assert.equal(baselineInspected.change.author, "author@example.com");
 	assert.equal(
-		firstInspected.change.description,
+		baselineInspected.change.description,
 		"Refine helper\n\nSecond body.\n\nAdd y export\n\nFirst body.",
 	);
-	assert.equal(
-		firstGithubInspected.change.description,
-		firstInspected.change.description,
+	assert.equal(baselineInspected.surface.changedFiles, 2);
+	assert.deepEqual(
+		baseline.pages.map((p) => p.path),
+		["helper.ts", "service.ts"],
 	);
-	assert.equal(
-		firstAzureInspected.change.description,
-		firstInspected.change.description,
-	);
-	assert.equal("prompts" in gitRun.prepared, false);
-	assert.equal("rulesets" in gitRun.prepared, false);
-	assert.deepEqual(gitRun.prepared.permissions[nonnull(gitRun.invoked[0])], [
-		"Bash(node *sub-agent-controller.ts*)",
-	]);
+	assert.equal(baselineSubmitted.outcome.verdict, "request-changes");
 
-	assert.equal(firstInspected.surface.changedFiles, 2);
-	const surfacePaths = gitRun.pages.map((p) => p.path);
-	assert.deepEqual(surfacePaths, ["helper.ts", "service.ts"]);
+	for (const run of runs) {
+		assert.deepEqual(run.invoked, baseline.invoked);
+		assert.equal("change" in run.prepared, false);
+		assert.equal("headCommit" in run.prepared, false);
+		assert.equal("prompts" in run.prepared, false);
+		assert.equal("rulesets" in run.prepared, false);
+		assert.deepEqual(run.prepared.permissions[nonnull(run.invoked[0])], [
+			"Bash(node *sub-agent-controller.ts*)",
+		]);
 
-	assert.equal("checkout" in firstInspected, false);
-	for (const entry of gitRun.inspected) {
-		assert.equal("checkout" in entry, entry.kind !== "rules");
-	}
-	for (const run of [gitRun, githubRun, azureRun]) {
-		const dir = run.workdir.snapshotDirectory().toString();
+		const firstInspected = nonnull(run.inspected[0]);
+		assert.equal(firstInspected.change.author, baselineInspected.change.author);
 		assert.equal(
-			readFileSync(join(dir, "helper.ts"), "utf8"),
+			firstInspected.change.description,
+			baselineInspected.change.description,
+		);
+		assert.equal(firstInspected.surface.changedFiles, 2);
+		assert.deepEqual(
+			run.pages.map((p) => p.path),
+			["helper.ts", "service.ts"],
+		);
+		assert.equal("checkout" in firstInspected, false);
+		for (const entry of run.inspected) {
+			assert.equal("checkout" in entry, entry.kind !== "rules");
+		}
+		assert.equal(
+			readFileSync(
+				join(run.workdir.snapshotDirectory().toString(), "helper.ts"),
+				"utf8",
+			),
 			"export const z = 3;\n\n",
 		);
+		assert.equal(
+			existsSync(
+				join(
+					run.workdir.toString(),
+					"instructions",
+					`${nonnull(run.invoked[0])}.json`,
+				),
+			),
+			true,
+		);
+		assert.equal(
+			existsSync(
+				join(
+					run.workdir.ledgerDirectory().toString(),
+					`${nonnull(run.invoked[0])}.json`,
+				),
+			),
+			true,
+		);
+		const submitted = run.dispatched as Extract<
+			DispatchResult,
+			{ kind: "submitted" }
+		>;
+		assert.deepEqual(submitted.outcome, baselineSubmitted.outcome);
 	}
-	assert.equal(
-		existsSync(
-			join(
-				gitRun.workdir.toString(),
-				"instructions",
-				`${nonnull(gitRun.invoked[0])}.json`,
-			),
-		),
-		true,
-	);
-	assert.equal(
-		existsSync(
-			join(
-				gitRun.workdir.ledgerDirectory().toString(),
-				`${nonnull(gitRun.invoked[0])}.json`,
-			),
-		),
-		true,
-	);
 
-	const gitSubmitted = gitRun.dispatched as Extract<
-		DispatchResult,
-		{ kind: "submitted" }
-	>;
-	const githubSubmitted = githubRun.dispatched as Extract<
-		DispatchResult,
-		{ kind: "submitted" }
-	>;
-	const azureSubmitted = azureRun.dispatched as Extract<
-		DispatchResult,
-		{ kind: "submitted" }
-	>;
-	assert.equal(gitSubmitted.outcome.verdict, "request-changes");
-	assert.deepEqual(githubSubmitted.outcome, gitSubmitted.outcome);
-	assert.deepEqual(azureSubmitted.outcome, gitSubmitted.outcome);
+	assert.equal(ghReviews.length, 1);
+	const ghPosted = nonnull(ghReviews[0]);
+	assert.equal(ghPosted.event, "REQUEST_CHANGES");
+	assert.equal(ghPosted.commitId, repo.headCommit);
+	assert.equal(ghPosted.body.startsWith("**Verdict: request-changes**"), true);
+	assert.deepEqual(ghPosted.comments, [
+		{
+			path: "service.ts",
+			line: 2,
+			side: "RIGHT",
+			body: nonnull(baselineSubmitted.outcome.inline[0]).body,
+		},
+	]);
+
+	assert.deepEqual(azOutcome.inlineThreads, [
+		{
+			filePath: "/service.ts",
+			line: 2,
+			content: nonnull(baselineSubmitted.outcome.inline[0]).body,
+		},
+	]);
+	assert.equal(azOutcome.summaryThreads.length, 1);
+	assert.equal(
+		nonnull(azOutcome.summaryThreads[0]).startsWith(
+			"**Verdict: request-changes**",
+		),
+		true,
+	);
+	assert.deepEqual(azOutcome.votes, [
+		{ reviewerId: AZURE_REVIEWER_ID, vote: -10 },
+	]);
 });
 
 it("Review CLI handles re-review with narrowed surface, GraphQL pagination, thread settle/reopen, and closing stale Azure refusals", async () => {
@@ -156,77 +204,86 @@ it("Review CLI handles re-review with narrowed surface, GraphQL pagination, thre
 		reopenedThreadIds: [],
 		postedBodies: [],
 	};
-	mockServer.use(...createGitHubReReviewHandlers(repo, ghRecorder));
-	const ghWorkdir = repo.workdirFor("rereview-github");
-	const ghPrep = await invokeMainCli(
-		["prepare", repo.githubTarget, ghWorkdir.toString(), TOKEN_STRING],
-		PrepareResponseSchema,
-	);
-	assert.equal(ghPrep.exitCode, 0);
-	assert.equal(ghPrep.payload.success, true);
-	assert.equal("headCommit" in ghPrep.payload, false);
-	assert.equal("change" in ghPrep.payload, false);
-	assert.equal(
-		ghWorkdir.ledgerDirectory().readPullRequest().surface.headCommit,
-		repo.headCommitV2,
-	);
-	assert.equal(
-		ghWorkdir.ledgerDirectory().readPullRequest().threads.threads.length,
-		2,
-	);
-
-	for (const probeName of ghPrep.payload.pending) {
-		const inspected = await reportForReReviewProbe(
-			ghPrep.payload.session,
-			probeName,
-		);
-		assert.equal(inspected.change.description, "Re-review body");
-		assert.equal(inspected.instructions.length, 9);
-		assert.equal("checkout" in inspected, inspected.kind !== "rules");
-	}
-
-	const ghDispatch = await invokeMainCli(
-		["dispatch", ghWorkdir.toString(), TOKEN_STRING],
-		DispatchResultSchema,
-	);
-	assert.equal(ghDispatch.exitCode, 0);
-	assert.equal(ghDispatch.payload.kind, "submitted");
-	assert.deepEqual(ghRecorder.settledThreadIds, ["T_open_fixed"]);
-	assert.deepEqual(ghRecorder.reopenedThreadIds, ["T_resolved_recurring"]);
-	assert.equal(ghRecorder.postedBodies.length, 1);
-
 	const azRecorder: AzureReReviewRecorder = {
 		patchedThreads: [],
 		createdThreads: [],
 	};
-	mockServer.use(...createAzureReReviewHandlers(repo, azRecorder));
-	const azWorkdir = repo.workdirFor("rereview-azure");
-	const azPrep = await invokeMainCli(
-		["prepare", repo.azureTarget, azWorkdir.toString(), TOKEN_STRING],
-		PrepareResponseSchema,
+	mockServer.use(
+		...createGitHubReReviewHandlers(repo, ghRecorder),
+		...createAzureReReviewHandlers(repo, azRecorder),
 	);
-	assert.equal(azPrep.exitCode, 0);
-	assert.equal(azPrep.payload.success, true);
-	assert.equal("headCommit" in azPrep.payload, false);
-	assert.equal("change" in azPrep.payload, false);
-	assert.equal(
-		azWorkdir.ledgerDirectory().readPullRequest().surface.headCommit,
-		repo.headCommitV2,
-	);
-	for (const probeName of azPrep.payload.pending) {
-		await reportForReReviewProbe(azPrep.payload.session, probeName);
+	const reReviewAdapters = [
+		{
+			label: "rereview-github",
+			target: repo.githubTarget,
+			expectedThreads: 2,
+			verify: () => {
+				assert.deepEqual(ghRecorder.settledThreadIds, ["T_open_fixed"]);
+				assert.deepEqual(ghRecorder.reopenedThreadIds, [
+					"T_resolved_recurring",
+				]);
+				assert.equal(ghRecorder.postedBodies.length, 1);
+			},
+		},
+		{
+			label: "rereview-azure",
+			target: repo.azureTarget,
+			expectedThreads: 2,
+			verify: () => {
+				assert.deepEqual(azRecorder.patchedThreads[0], {
+					id: "90",
+					status: "closed",
+				});
+				assert.deepEqual(
+					[...azRecorder.patchedThreads.slice(1)].sort((a, b) =>
+						a.id.localeCompare(b.id),
+					),
+					[
+						{ id: "10", status: "closed" },
+						{ id: "11", status: "active" },
+					],
+				);
+			},
+		},
+	] as const;
+
+	for (const adapter of reReviewAdapters) {
+		const workdir = repo.workdirFor(adapter.label);
+		const prep = await invokeMainCli(
+			["prepare", adapter.target, workdir.toString(), TOKEN_STRING],
+			PrepareResponseSchema,
+		);
+		assert.equal(prep.exitCode, 0);
+		assert.equal(prep.payload.success, true);
+		assert.equal("headCommit" in prep.payload, false);
+		assert.equal("change" in prep.payload, false);
+		assert.equal(
+			workdir.ledgerDirectory().readPullRequest().surface.headCommit,
+			repo.headCommitV2,
+		);
+		assert.equal(
+			workdir.ledgerDirectory().readPullRequest().threads.threads.length,
+			adapter.expectedThreads,
+		);
+		const ready = PrepareReadySchema.parse(prep.payload);
+		const inspected = await Promise.all(
+			ready.pending.map((probeName) =>
+				reportForReReviewProbe(ready.session, probeName),
+			),
+		);
+		for (const entry of inspected) {
+			assert.equal(entry.change.description, "Re-review body");
+			assert.equal(entry.instructions.length, 9);
+			assert.equal("checkout" in entry, entry.kind !== "rules");
+		}
+		const dispatch = await invokeMainCli(
+			["dispatch", workdir.toString(), TOKEN_STRING],
+			DispatchResultSchema,
+		);
+		assert.equal(dispatch.exitCode, 0);
+		assert.equal(dispatch.payload.kind, "submitted");
+		adapter.verify();
 	}
-	const azDispatch = await invokeMainCli(
-		["dispatch", azWorkdir.toString(), TOKEN_STRING],
-		DispatchResultSchema,
-	);
-	assert.equal(azDispatch.exitCode, 0);
-	assert.equal(azDispatch.payload.kind, "submitted");
-	assert.deepEqual(azRecorder.patchedThreads, [
-		{ id: "90", status: "closed" },
-		{ id: "10", status: "closed" },
-		{ id: "11", status: "active" },
-	]);
 });
 
 it("Review CLI reports pending probes on partial completion and submits once remaining probes report", async () => {
@@ -327,81 +384,53 @@ it("Review CLI returns typed errors for invalid-target, too-large, already-revie
 	assert.deepEqual(diffError.files, ["part-a.ts", "part-b.ts", "part-c.ts"]);
 	assert.equal(diffError.location.includes(DIFF_LIMIT_EXCEEDED), true);
 
-	mockServer.use(createGitHubAlreadyReviewedHandler(repo.headCommit));
-	const ghAlready = await invokeMainCli(
-		[
-			"prepare",
-			repo.githubTarget,
-			repo.workdirFor("err-gh-already").toString(),
-			TOKEN_STRING,
-		],
-		PrepareResponseSchema,
-	);
-	assert.equal(ghAlready.payload.success, false);
-	assert.equal(ghAlready.payload.error.kind, "already-reviewed");
-	assert.equal(
-		(
-			ghAlready.payload.error as Extract<
-				typeof ghAlready.payload.error,
-				{ kind: "already-reviewed" }
-			>
-		).headCommit,
-		repo.headCommit,
-	);
+	const remoteErrorCases = [
+		{
+			label: "gh-already",
+			target: repo.githubTarget,
+			handlers: [createGitHubAlreadyReviewedHandler(repo.headCommit)],
+			expectedKind: "already-reviewed" as const,
+		},
+		{
+			label: "az-already",
+			target: repo.azureTarget,
+			handlers: [createAzureAlreadyReviewedHandler(repo.headCommit)],
+			expectedKind: "already-reviewed" as const,
+		},
+		{
+			label: "gh-refused",
+			target: repo.githubTarget,
+			handlers: [
+				createFailedGitHubChecksHandler("ci"),
+				createGitHubExistingRefusalHandler(repo.headCommit),
+			],
+			expectedKind: "refused" as const,
+		},
+		{
+			label: "az-refused",
+			target: repo.azureTarget,
+			handlers: [
+				createRejectedAzurePolicyHandler(),
+				createAzureExistingRefusalHandler(repo.headCommit),
+			],
+			expectedKind: "refused" as const,
+		},
+	] as const;
 
-	mockServer.use(createAzureAlreadyReviewedHandler(repo.headCommit));
-	const azAlready = await invokeMainCli(
-		[
-			"prepare",
-			repo.azureTarget,
-			repo.workdirFor("err-az-already").toString(),
-			TOKEN_STRING,
-		],
-		PrepareResponseSchema,
-	);
-	assert.equal(azAlready.payload.success, false);
-	assert.equal(azAlready.payload.error.kind, "already-reviewed");
-	assert.equal(
-		(
-			azAlready.payload.error as Extract<
-				typeof azAlready.payload.error,
-				{ kind: "already-reviewed" }
-			>
-		).headCommit,
-		repo.headCommit,
-	);
-
-	mockServer.use(
-		createFailedGitHubChecksHandler("ci"),
-		createGitHubExistingRefusalHandler(repo.headCommit),
-	);
-	const ghRefused = await invokeMainCli(
-		[
-			"prepare",
-			repo.githubTarget,
-			repo.workdirFor("err-gh-refused").toString(),
-			TOKEN_STRING,
-		],
-		PrepareResponseSchema,
-	);
-	assert.equal(ghRefused.payload.success, false);
-	assert.equal(ghRefused.payload.error.kind, "refused");
-
-	mockServer.use(
-		createRejectedAzurePolicyHandler(),
-		createAzureExistingRefusalHandler(repo.headCommit),
-	);
-	const azRefused = await invokeMainCli(
-		[
-			"prepare",
-			repo.azureTarget,
-			repo.workdirFor("err-az-refused").toString(),
-			TOKEN_STRING,
-		],
-		PrepareResponseSchema,
-	);
-	assert.equal(azRefused.payload.success, false);
-	assert.equal(azRefused.payload.error.kind, "refused");
+	for (const errorCase of remoteErrorCases) {
+		mockServer.use(...errorCase.handlers);
+		const response = await invokeMainCli(
+			[
+				"prepare",
+				errorCase.target,
+				repo.workdirFor(`err-${errorCase.label}`).toString(),
+				TOKEN_STRING,
+			],
+			PrepareResponseSchema,
+		);
+		assert.equal(response.payload.success, false);
+		assert.equal(response.payload.error.kind, errorCase.expectedKind);
+	}
 
 	resetHostMocks(repo);
 	const postedRefusals: string[] = [];

@@ -13,10 +13,14 @@ import {
 	getPullRequestThreadsUpdateResponseMock,
 } from "../../clients/azure-git.g.ts";
 import {
+	PullRequestReviewersCreatePullRequestReviewerBody,
+	PullRequestThreadsCreateBody,
+} from "../../clients/azure-git.zod.g.ts";
+import {
 	getEvaluationsListMockHandler,
 	getEvaluationsListResponseMock,
 } from "../../clients/azure-policy.g.ts";
-import { nonnull } from "../domain/nullish.ts";
+import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
 import { SITE } from "../domain/rulebook.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
 
@@ -158,6 +162,92 @@ export function createAzureExistingRefusalHandler(headCommit: string) {
 }
 
 export const AZURE_REVIEWER_ID = "11111111-2222-3333-4444-555555555555";
+
+export interface AzureOutcomeRecorder {
+	readonly inlineThreads: Array<{
+		readonly filePath: string;
+		readonly line: number;
+		readonly content: string;
+	}>;
+	readonly summaryThreads: string[];
+	readonly votes: Array<{
+		readonly reviewerId: string;
+		readonly vote: number;
+	}>;
+}
+
+export function createAzureOutcomeRecorderHandlers(
+	recorder: AzureOutcomeRecorder,
+) {
+	return [
+		http.post(
+			"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/pullRequests/:pullRequestId/threads",
+			async ({ request }) => {
+				const raw = (await request.json()) as Parameters<
+					typeof PullRequestThreadsCreateBody.decode
+				>[0];
+				const decoded = PullRequestThreadsCreateBody.decode(raw);
+				const content = nonnull(nonnull(decoded.comments)[0]?.content);
+				const recordThread = (context: typeof decoded.threadContext): void => {
+					const hasContext = !isNullOrEmpty(context?.filePath);
+					const handlers: Readonly<Record<string, () => void>> = {
+						true: () => {
+							const ctx = nonnull(context);
+							recorder.inlineThreads.push({
+								filePath: nonnull(ctx.filePath),
+								line: nonnull(ctx.rightFileStart?.line),
+								content,
+							});
+						},
+						false: () => {
+							recorder.summaryThreads.push(content);
+						},
+					};
+					nonnull(handlers[String(hasContext)])();
+				};
+				recordThread(decoded.threadContext);
+				return HttpResponse.json({
+					...getPullRequestThreadsCreateResponseMock(),
+					id:
+						100 +
+						recorder.inlineThreads.length +
+						recorder.summaryThreads.length,
+				});
+			},
+		),
+		http.put(
+			"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/pullRequests/:pullRequestId/reviewers/:reviewerId",
+			async ({ params, request }) => {
+				const { reviewerId } = params;
+				const raw = (await request.json()) as Parameters<
+					typeof PullRequestReviewersCreatePullRequestReviewerBody.decode
+				>[0];
+				const decoded =
+					PullRequestReviewersCreatePullRequestReviewerBody.decode(raw);
+				const vote = nonnull(decoded.vote);
+				recorder.votes.push({
+					reviewerId: String(reviewerId),
+					vote,
+				});
+				switch (String(reviewerId)) {
+					case AZURE_REVIEWER_ID:
+						return HttpResponse.json({
+							...getPullRequestReviewersCreatePullRequestReviewerResponseMock(),
+							id: AZURE_REVIEWER_ID,
+							vote,
+						});
+					default:
+						return HttpResponse.json(
+							{
+								message: `Invalid argument value.\r\nParameter name: The identity ${String(reviewerId)} is not recognized.`,
+							},
+							{ status: 400 },
+						);
+				}
+			},
+		),
+	];
+}
 
 export function createFailedAzureConnectionDataHandler() {
 	return http.get(

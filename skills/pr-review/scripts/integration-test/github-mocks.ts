@@ -161,6 +161,49 @@ export function createFailedGitHubCreateReviewHandler() {
 	);
 }
 
+export interface GitHubReviewRecord {
+	readonly event: string;
+	readonly commitId: string;
+	readonly body: string;
+	readonly comments: ReadonlyArray<{
+		readonly path: string;
+		readonly line: number;
+		readonly side: string;
+		readonly body: string;
+	}>;
+}
+
+export function createGitHubReviewRecorderHandler(
+	recorded: GitHubReviewRecord[],
+) {
+	return http.post(
+		"https://api.github.com/repos/:owner/:repo/pulls/:pull_number/reviews",
+		async ({ request }) => {
+			const raw = (await request.json()) as Parameters<
+				typeof PullsCreateReviewBody.decode
+			>[0];
+			const decoded = PullsCreateReviewBody.decode(raw);
+			recorded.push({
+				event: nonnull(decoded.event),
+				commitId: nonnull(decoded.commit_id),
+				body: nonnull(decoded.body),
+				comments: nonnull(decoded.comments).map((c) => ({
+					path: nonnull(c.path),
+					line: nonnull(c.line),
+					side: nonnull(c.side),
+					body: nonnull(c.body),
+				})),
+			});
+			return HttpResponse.json(
+				getPullsCreateReviewResponseMock({
+					html_url:
+						"https://github.com/octocat/hello-world/pull/42#pullrequestreview-101",
+				}),
+			);
+		},
+	);
+}
+
 export function createInProgressGitHubChecksHandlers(
 	name: string,
 	postedReviews: string[],

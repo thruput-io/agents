@@ -10,6 +10,7 @@ import {
 	type LedgerProbe,
 	ledgerFor,
 	type RulesProbe,
+	resolveSurfaceLine,
 	violationInside,
 } from "./ledger.ts";
 import { LedgerDirectory } from "./ledger-directory.ts";
@@ -57,6 +58,7 @@ const text = (side: "head" | "base", n: number) => `${PREFIX[side]}${n}`;
 const run = (side: "head" | "base", from: number, to: number) =>
 	Array.from({ length: to - from + 1 }, (_, i) => ({
 		idToReportViolationOn: from + i,
+		line: from + i,
 		text: text(side, from + i),
 	}));
 const contextRun = (side: "head" | "base", from: number, to: number) =>
@@ -140,6 +142,41 @@ it("violationInside accepts surface line ids and pull-request-level findings (om
 	assert.equal(violationInside(violation("A"), files), true);
 	assert.equal(violationInside(violationAt("A", 6), files), false);
 	assert.equal(violationInside(violationAt("A", 7), files), false);
+});
+
+it("resolveSurfaceLine maps idToReportViolationOn to the line's file, side, and 1-based file line number", () => {
+	const multiFileSurface = [
+		{
+			path: "helper.ts",
+			fragments: [
+				{
+					kind: "surface" as const,
+					side: "head" as const,
+					lines: [
+						{ idToReportViolationOn: 1, line: 1, text: "export const z = 3;" },
+						{ idToReportViolationOn: 2, line: 2, text: "" },
+					],
+				},
+			],
+		},
+		{
+			path: "service.ts",
+			fragments: [
+				{
+					kind: "surface" as const,
+					side: "head" as const,
+					lines: [
+						{ idToReportViolationOn: 3, line: 2, text: "export const y = 2;" },
+					],
+				},
+			],
+		},
+	];
+	assert.deepEqual(resolveSurfaceLine(3, multiFileSurface), {
+		path: "service.ts",
+		side: "head",
+		line: 2,
+	});
 });
 
 it("the ledger schema accepts rows matching the rules in order", () => {
