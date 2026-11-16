@@ -52,29 +52,29 @@ principles:
   body: |
     Each allowed combination of options is its own operation with its own name; [[Optionality]] is never a parameter.
 - id: Test-Driven Development
-  parent: Tests prove behaviour, not execution
+  parent: Tests prove behavior, not execution
   body: |
     Write a test first.
 - id: Never fix a bug without a test pinning it
-  parent: Tests prove behaviour, not execution
+  parent: Tests prove behavior, not execution
   body: |
-    A bug is pinned by a failing test before it is fixed, and the fix is done when that test passes.
-- id: No grey tests
-  parent: Tests prove behaviour, not execution
+    A bug is pinned by a [[Failing test]] before it is fixed, and the fix is done when that test passes.
+- id: No gray tests
+  parent: Tests prove behavior, not execution
   body: |
     A test is either a black-box test of the shipped artifact or a test of one subject in isolation; nothing in between.
 - id: Never trust a test you haven't seen fail
-  parent: Tests prove behaviour, not execution
+  parent: Tests prove behavior, not execution
   body: |
     A test counts only once it has failed for the behaviour it checks; a test that cannot fail checks nothing.
 - id: F.I.R.S.T.
-  parent: Tests prove behaviour, not execution
+  parent: Tests prove behavior, not execution
   body: |
     Tests are Fast, Independent, Repeatable, Self-validating, and Timely.
 - id: Verification ends the chain
-  parent: Tests prove behaviour, not execution
+  parent: Tests prove behavior, not execution
   body: |
-    All [[Production code]] is tested. [[Verification code]] is not production code and is not tested.
+    All [[Production code]] is tested. [[Verification code]] is not [[Production code]] and is not tested.
 - id: Separation of Concerns
   parent: One concern, one owner
   body: |
@@ -102,7 +102,7 @@ principles:
 - id: Own the Runtime
   parent: Telemetry over guesswork
   body: |
-    A behaviour ships with its [[Signal]]; if we cannot see it, it is not shipped.
+    A behavior ships with its [[Signal]]; if we cannot see it, it is not shipped.
 - id: Don't Repeat Yourself
   parent: Convention over invention
   body: |
@@ -118,7 +118,7 @@ principles:
 - id: Less is more
   parent: Read far more than written
   body: |
-    A [[Component]] is small enough to be read whole, so that a reader unfamiliar with it sees what it does without holding more than one screen in mind.
+    Perfection is achieved, not when there is nothing more to add, but when there is nothing left to take away ([Antoine de Saint-Exupéry](https://en.wikiquote.org/wiki/Antoine_de_Saint-Exup%C3%A9ry)). Keep only what serves the intent and remove everything else.
 - id: Make it work, make it right, make it fast
   parent: Premature optimization and Jackson's rules
   body: |

@@ -81,7 +81,7 @@ definitions:
     A single invocation receiver of an [[Interface]]: one operation that code outside the [[Component]] can invoke through it. An operation that only code inside the [[Component]] can invoke is not a public method.
 - id: Domain object
   specification: |
-    A type in the domain layer that models a business concept and upholds its own invariants: [[Immutable]], created only through its [[Validating path of creation]], and operated on only through other domain objects.
+    A type in the domain layer that models a business concept and upholds its own invariants: [[Immutable]], created only through its [[Validating path of creation]], and operated on only through other [[Domain objects]].
 - id: Encapsulated type
   specification: |
     A [[Class]] into which one or more [[Primitive]]s are folded at the [[Perimeter]], named for what the values mean rather than for their shape, with a single [[Validating path of creation]], and [[Immutable]]. Inside our code it is never collapsed back into [[Primitive]]s; it becomes another type only through a verified conversion, and at an outbound [[Perimeter]] a contract of the type folds it into the [[Foreign shape]]. Kept opaque, no code depends on its internal representation.
@@ -476,7 +476,7 @@ definitions:
     A [[Component]] that forms a namespace and, where the language supports it, a compile-time dependency boundary—such as a project or assembly in C#, a package in Go, a crate in Rust, or a module in Java or TypeScript—that decides which of its parts are visible outside it and which other modules it may reference.
 - id: Signature
   specification: |
-    The declared parameter types and return type of a function or method.
+    The declared [[Parameter type]]s and [[Return type]] of a function or method.
 - id: Exception
   specification: |
     A signal that interrupts normal control flow to report a failure, unwinding the stack until something catches it.
@@ -509,7 +509,7 @@ definitions:
     A pattern that matches any value, used as a catch-all case.
 - id: Aggregate
   specification: |
-    A cluster of domain objects treated as one unit for changes, entered only through its root, which keeps the cluster's invariants.
+    A cluster of [[Domain objects]] treated as one unit for changes, entered only through its root, which keeps the cluster's invariants.
 - id: Domain method
   specification: |
     An operation defined on a domain type that expresses a business action in the domain's own terms.
