@@ -105,16 +105,29 @@ rules:
   parent: Convention Over Novelty
   body: |
     Point at a [[Demonstrable standard]] whenever you invoke a standard as justification. Novel work is not required to cite a standard it does not have.
-- id: Single-purpose components
+- id: On point prose
   marker: MUST
   group: Conventions
   parent: Less is more
   body: |
-    Decompose [[Production code]] into small, single-purpose [[Component]]s.
+    Keep every prose [[Representation]] on point and adhering to [[Single Source of Truth]].
   smells:
-  - A [[Production code]] [[Component]] longer than 200 lines.
-  - A [[Function]] or [[Public method]] with more than 3 parameters.
-  - An [[Interface]] with more than 4 [[Public method]]s, not counting [[Overload]]s or convenience methods.
+  - Repeating what the code or [[Contract]] already defines.
+  - Inline code snippets in a prose [[Representation]] when not motivated.
+  - Exact [[File]] names or paths referenced in a prose [[Representation]] when not motivated.
+  - Restating the same point across sections of a [[Representation]].
+  - A prose walkthrough in a [[Representation]] of logic or schemas that the code or [[Contract]] already states.
+  - Hedging, filler, or decorative phrasing in a [[Representation]] that can be removed without losing meaning.
+- id: ADRs state direction only
+  marker: MUST
+  group: Conventions
+  parent: Less is more
+  body: |
+    Write every [[Architectural Direction]] record to follow [adr.schema.json](https://thruput.se/agents/schemas/repository/adr.schema.json), in addition to [[On point prose]].
+  smells:
+  - An [[Architectural Direction]] record placed outside `docs/adrs/` or carrying disallowed sections such as Status, Considered Options, Reasoning, How It Works, Acceptance Criteria, or Consequences.
+  - An [[Architectural Direction]] record describing current codebase state, file inventory, or a step-by-step implementation walkthrough.
+  - An [[Architectural Direction]] record that embeds code snippets or phase-by-phase rollout plans instead of the decision itself.
 - id: Validating factory
   marker: MUST
   group: Types
@@ -164,6 +177,12 @@ rules:
     Wrap a [[Primitive]] in its [[Domain primitive]] before it crosses any [[Interface]] of ours.
   smells:
   - A [[Primitive]] in a domain [[Signature]].
+- id: Opaque encapsulated types
+  marker: MUST
+  group: Types
+  parent: No Primitive Obsession
+  body: |
+    Keep every [[Encapsulated type]] opaque so no code depends on its internal representation. Never collapse it back into [[Primitive]]s inside our code; convert it to another type only through a verified conversion, and fold it into a [[Foreign shape]] only through a contract of the type at an outbound [[Perimeter]].
 - id: Exhaustive matching
   marker: MUST
   group: Domain Model
@@ -240,6 +259,16 @@ rules:
   - "[[Domain object]]s placed in the same [[Module]] as transport [[Foreign shape]]s or [[Framework]] code."
   - A [[Domain object]] or domain [[Module]] that references or depends on other [[Module]]s in the project, a [[Framework]], or transport [[Foreign shape]]s.
   - An [[Interface]] in the domain [[Layer]] that exposes technical concerns rather than hiding them behind domain concepts.
+- id: Single-purpose components
+  marker: MUST
+  group: Domain Model
+  parent: Separation of Concerns
+  body: |
+    Decompose code into small, single-purpose [[Component]]s.
+  smells:
+  - A [[Component]] longer than 200 lines.
+  - A [[Function]] or [[Public method]] with more than 3 parameters.
+  - An [[Interface]] with more than 4 [[Public method]]s, not counting [[Overload]]s or convenience methods.
 - id: No primitive leakage
   marker: MUST
   group: Architecture
@@ -351,7 +380,7 @@ rules:
 - id: One subject under test
   marker: MUST NOT
   group: Test Isolation
-  parent: No grey tests
+  parent: No gray tests
   body: |
     Include more than one [[Subject under test]] in a [[Unit test]], [[Narrow integration test]], or [[Integration test]], or test the composition of objects within a [[Unit test]] or a [[Narrow integration test]].
 - id: No test case coupling
@@ -359,11 +388,11 @@ rules:
   group: Test Isolation
   parent: F.I.R.S.T.
   body: |
-    Allow one [[Test case]] to depend on another; every test case is executable on its own, in any order.
+    Allow one [[Test case]] to depend on another; every [[Test case]] is executable on its own, in any order.
 - id: Integration Tests Are Black-Box
   marker: MUST
   group: Test Isolation
-  parent: No grey tests
+  parent: No gray tests
   body: |
     Test the shipped [[Runtime artifact]] through its public [[API]]s using [[Black-box testing]].
 - id: Test setup leaves production code alone
@@ -514,7 +543,7 @@ rules:
   group: Environment
   parent: Own the Runtime
   body: |
-    Add the [[Signal]] in the [[Change]] that adds the behaviour it shows.
+    Add the [[Signal]] in the [[Change]] that adds the behavior it shows.
 - id: No iteration over calls over the network
   marker: MUST NOT
   group: Performance
