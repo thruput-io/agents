@@ -9,6 +9,7 @@ permissions:
   contents: write
   issues: write
   pull-requests: write
+  packages: write
   pages: write
   id-token: write
 
@@ -35,6 +36,30 @@ jobs:
     uses: ./.github/workflows/build-site.yml
     with:
       artifact: github-pages
+
+  publish-npm:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://npm.pkg.github.com
+          scope: "@thruput-io"
+      - run: |
+          version=$(git describe --tags | sed 's/^v//')
+          npm --prefix skills/pr-review ci --no-audit --no-fund
+          npm --prefix skills/pr-review run codegen
+          rm -rf skills/pr-review/rules skills/pr-review/schemas
+          cp -RL rules skills/pr-review/rules
+          cp -RL schemas skills/pr-review/schemas
+          npm --prefix skills/pr-review version "$version" --no-git-tag-version --allow-same-version
+          npm --prefix skills/pr-review publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   pages:
     needs: site

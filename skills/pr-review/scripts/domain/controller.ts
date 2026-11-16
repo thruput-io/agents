@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { z } from "zod";
 import type { AccessToken } from "./access-token.ts";
 import type { AdapterResolution, HostAdapter } from "./adapter.ts";

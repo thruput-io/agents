@@ -1,7 +1,23 @@
 {
-	"name": "pr-review",
-	"private": true,
+	"name": "@thruput-io/review-tool",
+	"version": "0.0.0",
 	"type": "module",
+	"publishConfig": {
+		"registry": "https://npm.pkg.github.com"
+	},
+	"bin": {
+		"review-tool": "./scripts/domain/controller.ts",
+		"review-tool-probe": "./scripts/domain/sub-agent-controller.ts"
+	},
+	"files": [
+		"scripts/domain/*.ts",
+		"!scripts/domain/*.test.ts",
+		"clients/*.ts",
+		"rules/",
+		"schemas/",
+		"references/agent-rules-books-search-index.json",
+		"README.md"
+	],
 	"scripts": {
 		"codegen": "node scripts/generate-contracts.ts && node scripts/generate-clients.ts",
 		"knip": "knip",
