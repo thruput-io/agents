@@ -31,6 +31,9 @@ export function createGitHubReReviewHandlers(
 		title: "Update helper",
 		body: "Re-review body",
 		mergeable_state: "clean",
+		additions: 10,
+		deletions: 2,
+		changed_files: 2,
 	});
 	const baseReview = nonnull(getPullsListReviewsResponseMock()[0]);
 	const citeYagni = `[You aren't gonna need it](${SITE}#you-arent-gonna-need-it)`;

@@ -4,12 +4,19 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test as it } from "node:test";
 import { AccessToken } from "./access-token.ts";
-import { hasOAuthScope, hostErrorReason, isJsonResponse } from "./adapter.ts";
+import {
+	anonymousHttpTransport,
+	hasOAuthScope,
+	hostErrorReason,
+	isJsonResponse,
+	transportFromEnv,
+} from "./adapter.ts";
 import {
 	AzureMergeRequest,
 	GitDiff,
 	GithubPullRequest,
 } from "./code-under-review.ts";
+import { parseNumstat } from "./diff.ts";
 import { nonnull } from "./nullish.ts";
 import {
 	CodeUnderReviewFactory,
@@ -107,12 +114,13 @@ it("isJsonResponse, hasOAuthScope, and hostErrorReason classify HTTP responses a
 		false,
 	);
 	assert.equal(hasOAuthScope(scopeHeaders(""), ["repo", "public_repo"]), false);
+	const anonymous = anonymousHttpTransport();
 	assert.equal(
 		hostErrorReason(
 			"Azure DevOps",
 			"AZURE_DEVOPS_EXT_PAT",
 			{ status: 403, headers: htmlHeaders },
-			null,
+			anonymous,
 		).includes("authentication required"),
 		true,
 	);
@@ -121,7 +129,7 @@ it("isJsonResponse, hasOAuthScope, and hostErrorReason classify HTTP responses a
 			"Azure DevOps",
 			"AZURE_DEVOPS_EXT_PAT",
 			{ status: 500, headers: jsonHeaders },
-			null,
+			anonymous,
 		),
 		"Azure DevOps returned HTTP 500 (application/json).",
 	);
@@ -137,9 +145,39 @@ it("isJsonResponse, hasOAuthScope, and hostErrorReason classify HTTP responses a
 						"TF401181: The pull request cannot be edited due to its state.",
 				},
 			},
-			null,
+			anonymous,
 		),
 		"Azure DevOps returned HTTP 400 (application/json): pull request is not writeable (TF401181: The pull request cannot be edited due to its state.). Review must halt.",
+	);
+	assert.deepEqual(anonymous.requestInit(), {
+		headers: { accept: "application/json" },
+	});
+	assert.equal(anonymous.hasScope(["repo"]), true);
+	assert.equal(
+		anonymous.authGuidance("GH_TOKEN"),
+		"authentication required (set GH_TOKEN or pass AccessToken.from(...) to prepareWithToken)",
+	);
+	const emptyTransport = transportFromEnv("  ", (token) => token.forGitHub());
+	assert.deepEqual(emptyTransport.requestInit(), {
+		headers: { accept: "application/json" },
+	});
+	const ghTransport = transportFromEnv("ghp_example_token", (token) =>
+		token.forGitHub(),
+	);
+	const { authorization: ghAuth } = ghTransport.requestInit().headers;
+	assert.equal(ghAuth, "Bearer ghp_example_token");
+	const patGhTransport = transportFromEnv("azdo-example-pat", (token) =>
+		token.forGitHub(),
+	);
+	const { authorization: patGhAuth } = patGhTransport.requestInit().headers;
+	assert.equal(patGhAuth, "Bearer azdo-example-pat");
+	const patAzTransport = transportFromEnv("azdo-example-pat", (token) =>
+		token.forAzure(),
+	);
+	const { authorization: patAzAuth } = patAzTransport.requestInit().headers;
+	assert.equal(
+		patAzAuth,
+		`Basic ${Buffer.from(":azdo-example-pat", "utf8").toString("base64")}`,
 	);
 });
 
@@ -160,6 +198,31 @@ it("SnapshotDirectory parses a non-empty path, compares by value, and reads text
 	assert.equal(realSnap.data.readTextFile("missing.ts"), null);
 	assert.equal(realSnap.data.readTextFile("bin.dat"), null);
 	rmSync(tempDir, { recursive: true, force: true });
+});
+
+it("SnapshotDirectory.diff returns diffs larger than Node's 1 MiB default maxBuffer", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "snapshot-diff-buffer-"));
+	try {
+		const snap = nonnull(SnapshotDirectory.from(tempDir).data);
+		snap.git(["init", "--quiet"]);
+		snap.git(["config", "user.email", "test@local"]);
+		snap.git(["config", "user.name", "test"]);
+		writeFileSync(join(tempDir, "big.txt"), "start\n", "utf8");
+		snap.git(["add", "big.txt"]);
+		snap.git(["commit", "--quiet", "-m", "base"]);
+		const baseSha = snap.git(["rev-parse", "HEAD"]);
+		const largePayload = `${"x".repeat(80)}\n`.repeat(20_000);
+		writeFileSync(join(tempDir, "big.txt"), largePayload, "utf8");
+		snap.git(["add", "big.txt"]);
+		snap.git(["commit", "--quiet", "-m", "head"]);
+		const headSha = snap.git(["rev-parse", "HEAD"]);
+		const stats = parseNumstat(snap.numstat(baseSha, headSha));
+		assert.deepEqual(stats, [{ path: "big.txt", added: 20_000, deleted: 1 }]);
+		const diffText = snap.diff(baseSha, headSha);
+		assert.equal(diffText.length > 1024 * 1024, true);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
 });
 
 it("GithubPullRequest exposes its host, surface, fragments, and threads", () => {

@@ -11,22 +11,35 @@ import {
 	PullRequestThreadsUpdateBody,
 } from "../../clients/azure-git.zod.g.ts";
 import {
+	decodeAzureThreadContext,
+	encodeAzureThreadContext,
+} from "./azure-thread-context.ts";
+import {
 	type HeadCommit,
 	HeadCommitSchema,
 	type InlineFinding,
 	InlineFindingSchema,
 	type ReviewVerdict,
 	ReviewVerdictSchema,
-	type Side,
 	type Summary,
 	SummarySchema,
 	type ThreadBody,
 	ThreadBodySchema,
 } from "./contracts.g.ts";
-import { isNullOrEmpty } from "./nullish.ts";
 import { SITE } from "./rulebook.ts";
 
-const LEADING_SLASH = /^\//u;
+const AZURE_VOTE_APPROVED = 10;
+const AZURE_VOTE_REJECTED = -10;
+const AZURE_VOTE_BY_VERDICT: Readonly<Record<ReviewVerdict, number>> = {
+	approve: AZURE_VOTE_APPROVED,
+	"request-changes": AZURE_VOTE_REJECTED,
+};
+const EDITABLE_STATUS_BY_WIRE: Readonly<
+	Record<string, AzureEditableThreadStatus>
+> = {
+	closed: "closed",
+	active: "active",
+};
 const REFUSAL_PATTERN =
 	/^\*\*Verdict: request-changes\*\*\n\nNot reviewed at ([0-9a-f]{40}) against \[the rules\]\([^)]+\): ([\s\S]+)\.$/u;
 
@@ -55,46 +68,18 @@ export const AzureInlineThreadCodec = z.codec(
 	PullRequestThreadsCreateBody,
 	InlineFindingSchema,
 	{
-		decode: (wire) => {
-			const context = wire.threadContext;
-			const side: Side = isNullOrEmpty(context?.rightFileEnd) ? "base" : "head";
-			const startPos =
-				side === "head" ? context?.rightFileStart : context?.leftFileStart;
-			const endLine =
-				(side === "head"
-					? context?.rightFileEnd?.line
-					: context?.leftFileEnd?.line) ?? 1;
-			return {
-				path: (context?.filePath ?? "").replace(LEADING_SLASH, ""),
-				side,
-				lines: {
-					start: startPos?.line ?? endLine,
-					end: endLine,
-				},
-				body: wire.comments?.[0]?.content ?? "",
-			};
-		},
-		encode: (finding) => {
-			const { start, end } = finding.lines;
-			const startPosition = { line: start, offset: 1 };
-			const endPosition = { line: end, offset: 1 };
-			const threadContext =
-				finding.side === "head"
-					? {
-							filePath: `/${finding.path}`,
-							rightFileStart: startPosition,
-							rightFileEnd: endPosition,
-						}
-					: {
-							filePath: `/${finding.path}`,
-							leftFileStart: startPosition,
-							leftFileEnd: endPosition,
-						};
-			return {
-				...AzureTextThreadCodec.encode(finding.body),
-				threadContext,
-			};
-		},
+		decode: (wire) => ({
+			...decodeAzureThreadContext(wire.threadContext),
+			body: wire.comments?.[0]?.content ?? "",
+		}),
+		encode: (finding) => ({
+			...AzureTextThreadCodec.encode(finding.body),
+			threadContext: encodeAzureThreadContext(
+				finding.path,
+				finding.side,
+				finding.lines,
+			),
+		}),
 	},
 );
 
@@ -138,9 +123,14 @@ export const AzureVoteCodec = z.codec(
 	PullRequestReviewersCreatePullRequestReviewerBody,
 	ReviewVerdictSchema,
 	{
-		decode: (wire) => ((wire.vote ?? 0) > 0 ? "approve" : "request-changes"),
+		decode: (wire) => {
+			if ((wire.vote ?? 0) > 0) {
+				return "approve";
+			}
+			return "request-changes";
+		},
 		encode: (verdict) => ({
-			vote: verdict === "approve" ? 10 : -10,
+			vote: AZURE_VOTE_BY_VERDICT[verdict],
 		}),
 	},
 );
@@ -157,7 +147,7 @@ export const AzureThreadStatusCodec = z.codec(
 	PullRequestThreadsUpdateBody,
 	AzureEditableThreadStatusSchema,
 	{
-		decode: (wire) => (wire.status === "closed" ? "closed" : "active"),
+		decode: (wire) => EDITABLE_STATUS_BY_WIRE[wire.status ?? ""] ?? "active",
 		encode: (status) => ({ status }),
 	},
 );

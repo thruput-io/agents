@@ -1,25 +1,24 @@
 import { GraphQLClient } from "graphql-request";
 import {
 	checksListForRef,
-	pullsCreateReview,
 	pullsGet,
 	pullsListReviews,
-	reposDownloadZipballArchive,
 } from "../../clients/github.g.ts";
-import { AccessToken } from "./access-token.ts";
+import type { AccessToken } from "./access-token.ts";
 import {
 	type AdapterResolution,
-	buildBinaryHostError,
 	buildHostError,
 	type HostAdapter,
+	type HostHttpResponse,
+	type HostTransport,
 	hasOAuthScope,
-	isBinaryResponse,
 	isJsonResponse,
+	tokenHttpTransport,
+	transportFromEnv,
 } from "./adapter.ts";
 import type { GithubPullRequest } from "./code-under-review.ts";
 import type {
 	GitHub,
-	HeadCommit,
 	HostError,
 	Ledger,
 	Outcome,
@@ -30,7 +29,6 @@ import {
 	changeOf,
 	failedChecks,
 	GitHubCheckRunsCodec,
-	GitHubCreatedReviewCodec,
 	GitHubPullRequestCodec,
 	GitHubReviewsCodec,
 	headCommitOf,
@@ -39,80 +37,49 @@ import {
 	refusalReasons,
 	refusedIn,
 } from "./github.ts";
-import { payload, refusalPayload } from "./github-review.ts";
+import { postGitHubReview, refuseGitHubReview } from "./github-post.ts";
 import {
-	fetchGitHubThreads,
-	settleAndReopenGitHubThreads,
-} from "./github-threads.ts";
-import { table } from "./ledger-table.ts";
+	downloadGitHubCommitZips,
+	exceedsPullCounts,
+	resolveOversizedGitHubPull,
+} from "./github-pull-precheck.ts";
+import { fetchGitHubThreads } from "./github-threads.ts";
 import { isNullOrEmpty } from "./nullish.ts";
+import { refusalRecorder, reviewBaselineFrom } from "./review-baseline.ts";
 import { buildReviewSnapshot } from "./review-snapshot-builder.ts";
-import type {
-	CommitZipArchive,
-	SnapshotDirectory,
-} from "./snapshot-directory.ts";
+import type { SnapshotDirectory } from "./snapshot-directory.ts";
 
 const GRAPHQL_URL = "https://api.github.com/graphql";
 
-const githubTokenOf = (token: AccessToken): AccessToken =>
-	token.isBasic() ? token : token.toBearer();
-
 export class GitHubAdapter implements HostAdapter<GitHub> {
 	readonly #review: GithubPullRequest;
-	readonly #token: AccessToken | null;
-	private constructor(review: GithubPullRequest, token: AccessToken | null) {
+	readonly #transport: HostTransport;
+	private constructor(review: GithubPullRequest, transport: HostTransport) {
 		this.#review = review;
-		this.#token = token;
+		this.#transport = transport;
 	}
 	static from(review: GithubPullRequest): GitHubAdapter {
 		const { GH_TOKEN } = process.env;
-		const envToken = AccessToken.from(GH_TOKEN ?? "");
 		return new GitHubAdapter(
 			review,
-			envToken.success ? githubTokenOf(envToken.data) : null,
+			transportFromEnv(GH_TOKEN, (token) => token.forGitHub()),
 		);
 	}
 	static fromWithToken(
 		review: GithubPullRequest,
 		token: AccessToken,
 	): GitHubAdapter {
-		return new GitHubAdapter(review, githubTokenOf(token));
+		return new GitHubAdapter(review, tokenHttpTransport(token.forGitHub()));
 	}
 	host(): GitHub {
 		return this.#review.host();
 	}
-	#requestInit(): { readonly headers: Readonly<Record<string, string>> } {
-		return isNullOrEmpty(this.#token)
-			? { headers: { accept: "application/json" } }
-			: this.#token.requestInit();
-	}
-	#hostError(res: {
-		readonly status: number;
-		readonly headers: Headers;
-		readonly data?: unknown;
-	}): HostError {
-		return buildHostError(this.host(), res, this.#token);
-	}
-	async #refuse(
-		headCommit: HeadCommit,
-		reason: Summary,
-	): Promise<Summary | HostError> {
-		const host = this.host();
-		const created = await pullsCreateReview(
-			host.owner,
-			host.repository,
-			host.number,
-			refusalPayload(headCommit, reason),
-			this.#requestInit(),
-		);
-		if (!isJsonResponse(created)) {
-			return this.#hostError(created);
-		}
-		return GitHubCreatedReviewCodec.decode(created.data).html_url;
+	#hostError(res: HostHttpResponse): HostError {
+		return buildHostError(this.host(), res, this.#transport);
 	}
 	async resolve(snapshotDir: SnapshotDirectory): Promise<AdapterResolution> {
 		const host = this.host();
-		const init = this.#requestInit();
+		const init = this.#transport.requestInit();
 		const prRes = await pullsGet(
 			host.owner,
 			host.repository,
@@ -125,7 +92,7 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 		if (
 			!(
 				hasOAuthScope(prRes.headers, ["repo", "public_repo"]) &&
-				(this.#token?.hasScope(["repo", "public_repo"]) ?? true)
+				this.#transport.hasScope(["repo", "public_repo"])
 			)
 		) {
 			return this.#hostError({
@@ -139,6 +106,25 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 		}
 		const pr = GitHubPullRequestCodec.decode(prRes.data);
 		const headCommit = headCommitOf(pr);
+		if (exceedsPullCounts(pr)) {
+			return resolveOversizedGitHubPull({
+				host,
+				pr,
+				headCommit,
+				init,
+				onError: (err) => this.#hostError(err),
+				refuseLocation: (commit, existing, reason) =>
+					refusalRecorder(existing, (head, msg) =>
+						refuseGitHubReview({
+							host,
+							init,
+							headCommit: head,
+							reason: msg,
+							onError: (res) => this.#hostError(res),
+						}),
+					)(commit, reason),
+			});
+		}
 		const change = changeOf(host, pr);
 		const client = new GraphQLClient(GRAPHQL_URL, init);
 		const [checksRes, reviewsRes, threadsRes] = await Promise.all([
@@ -170,48 +156,39 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 			return { kind: "already-reviewed", headCommit, location: already };
 		}
 		const existingRefusal = refusedIn(reviews, headCommit);
+		const refuse = refusalRecorder(existingRefusal, (commit, reason) =>
+			refuseGitHubReview({
+				host,
+				init,
+				headCommit: commit,
+				reason,
+				onError: (res) => this.#hostError(res),
+			}),
+		);
 		const reasons = refusalReasons(
 			pr.mergeable_state,
 			failedChecks(GitHubCheckRunsCodec.decode(checksRes.data)),
 		);
 		if (reasons.length > 0) {
 			const reason = reasons.join(", ");
-			const location = isNullOrEmpty(existingRefusal)
-				? await this.#refuse(headCommit, reason)
-				: existingRefusal;
+			const location = await refuse(headCommit, reason);
 			if (typeof location !== "string") {
 				return location;
 			}
 			return { kind: "refused", headCommit, reason, location };
 		}
 		const baseCommit = baseCommitOf(pr);
-		const priorCommit = priorOf(reviews);
-		const commitsToFetch = [
-			baseCommit,
-			...(isNullOrEmpty(priorCommit) ? [] : [priorCommit]),
-			headCommit,
-		];
-		const zipResponses = await Promise.all(
-			commitsToFetch.map(async (sha) => ({
-				sha,
-				res: await reposDownloadZipballArchive(
-					host.owner,
-					host.repository,
-					sha,
-					init,
-				),
-			})),
-		);
-		const failedZip = zipResponses.find(({ res }) => !isBinaryResponse(res));
-		if (!isNullOrEmpty(failedZip)) {
-			return buildBinaryHostError(host, failedZip.res, this.#token);
+		const baseline = reviewBaselineFrom(priorOf(reviews));
+		const commits = baseline.commitsToFetch(baseCommit, headCommit);
+		const zipArchives = await downloadGitHubCommitZips({
+			host,
+			commits,
+			init,
+			token: this.#transport,
+		});
+		if (!Array.isArray(zipArchives)) {
+			return zipArchives;
 		}
-		const zipArchives: CommitZipArchive[] = zipResponses.map(
-			({ sha, res }) => ({
-				sha,
-				zip: res.data,
-			}),
-		);
 		await snapshotDir.loadCommitZips(zipArchives, true);
 		return buildReviewSnapshot(
 			this.#review,
@@ -220,51 +197,19 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 				baseCommit,
 				headCommit,
 				change,
-				priorCommit,
+				baseline,
 				threads: threadsRes.threads,
-				existingRefusal,
 			},
-			(commit, reason) => this.#refuse(commit, reason),
+			refuse,
 		);
 	}
-	async post(outcome: Outcome, ledger: Ledger): Promise<Summary | HostError> {
-		const host = this.host();
-		const init = this.#requestInit();
-		const reviewsRes = await pullsListReviews(
-			host.owner,
-			host.repository,
-			host.number,
-			{},
-			init,
-		);
-		if (!isJsonResponse(reviewsRes)) {
-			return this.#hostError(reviewsRes);
-		}
-		const reviews = GitHubReviewsCodec.decode(reviewsRes.data);
-		const existingUrl = postedAt(reviews, outcome.headCommit);
-		let location = existingUrl;
-		if (isNullOrEmpty(location)) {
-			const createRes = await pullsCreateReview(
-				host.owner,
-				host.repository,
-				host.number,
-				payload(outcome, table(ledger)),
-				init,
-			);
-			if (!isJsonResponse(createRes)) {
-				return this.#hostError(createRes);
-			}
-			location = GitHubCreatedReviewCodec.decode(createRes.data).html_url;
-		}
-		const client = new GraphQLClient(GRAPHQL_URL, init);
-		const mutateRes = await settleAndReopenGitHubThreads(
-			client,
-			outcome.settle,
-			outcome.reopen,
-		);
-		if (!mutateRes.ok) {
-			return this.#hostError(mutateRes);
-		}
-		return location;
+	post(outcome: Outcome, ledger: Ledger): Promise<Summary | HostError> {
+		return postGitHubReview({
+			host: this.host(),
+			init: this.#transport.requestInit(),
+			outcome,
+			ledger,
+			onError: (res) => this.#hostError(res),
+		});
 	}
 }

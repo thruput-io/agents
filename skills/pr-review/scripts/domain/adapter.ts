@@ -1,4 +1,5 @@
-import type { AccessToken } from "./access-token.ts";
+import { z } from "zod";
+import { AccessToken } from "./access-token.ts";
 import {
 	type AlreadyReviewed,
 	type Change,
@@ -17,6 +18,7 @@ import {
 	type TooLarge,
 } from "./contracts.g.ts";
 import { isNullOrEmpty } from "./nullish.ts";
+import type { ReviewBaseline } from "./review-baseline.ts";
 import type { CodeUnderReviewSnapshot } from "./review-snapshot.ts";
 import type { SnapshotDirectory } from "./snapshot-directory.ts";
 
@@ -66,35 +68,127 @@ export function hasOAuthScope(
 	return accepted.some((scope) => granted.includes(scope));
 }
 
-const extractErrorMessage = (data: unknown): ErrorMessage | null => {
-	if (typeof data !== "object" || isNullOrEmpty(data) || !("message" in data)) {
-		return null;
+export interface HostTransport {
+	requestInit: () => { readonly headers: Readonly<Record<string, string>> };
+	requestInitWithHeaders: (headers: Readonly<Record<string, string>>) => {
+		readonly headers: Readonly<Record<string, string>>;
+	};
+	hasScope: (accepted: readonly string[]) => boolean;
+	authGuidance: (envVar: string) => string;
+}
+
+export function anonymousHttpTransport(): HostTransport {
+	return {
+		requestInit: () => ({ headers: { accept: "application/json" } }),
+		requestInitWithHeaders: (headers) => ({
+			headers: { accept: "application/json", ...headers },
+		}),
+		hasScope: (_accepted) => true,
+		authGuidance: (envVar) =>
+			`authentication required (set ${envVar} or pass AccessToken.from(...) to prepareWithToken)`,
+	};
+}
+
+export function tokenHttpTransport(token: AccessToken): HostTransport {
+	return {
+		requestInit: () => token.requestInit(),
+		requestInitWithHeaders: (headers) => token.requestInitWithHeaders(headers),
+		hasScope: (accepted) => token.hasScope(accepted),
+		authGuidance: (envVar) => token.authGuidance(envVar),
+	};
+}
+
+export function transportFromEnv(
+	raw: string | undefined,
+	normalize: (token: AccessToken) => AccessToken,
+): HostTransport {
+	const parsed = AccessToken.from(raw ?? "");
+	if (parsed.success) {
+		return tokenHttpTransport(normalize(parsed.data));
 	}
-	const parsed = ErrorMessageSchema.safeParse(data.message);
-	return parsed.success ? parsed.data : null;
+	return anonymousHttpTransport();
+}
+
+interface HttpErrorFormatter {
+	auth: (
+		hostLabel: string,
+		status: number,
+		contentType: string,
+		guidance: string,
+	) => Summary;
+	badRequest: (hostLabel: string, contentType: string) => Summary;
+	other: (hostLabel: string, status: number, contentType: string) => Summary;
+}
+
+const bareHttpErrorFormatter: HttpErrorFormatter = {
+	auth: (hostLabel, status, contentType, guidance) =>
+		SummarySchema.decode(
+			`${hostLabel} returned HTTP ${status} (${contentType}): ${guidance}.`,
+		),
+	badRequest: (hostLabel, contentType) =>
+		SummarySchema.decode(
+			`${hostLabel} returned HTTP 400 (${contentType}): pull request is not writeable. Review must halt.`,
+		),
+	other: (hostLabel, status, contentType) =>
+		SummarySchema.decode(
+			`${hostLabel} returned HTTP ${status} (${contentType}).`,
+		),
 };
+
+function messageHttpErrorFormatter(message: ErrorMessage): HttpErrorFormatter {
+	return {
+		auth: (hostLabel, status, contentType, guidance) =>
+			SummarySchema.decode(
+				`${hostLabel} returned HTTP ${status} (${contentType}): ${guidance} (${message}).`,
+			),
+		badRequest: (hostLabel, contentType) =>
+			SummarySchema.decode(
+				`${hostLabel} returned HTTP 400 (${contentType}): pull request is not writeable (${message}). Review must halt.`,
+			),
+		other: (hostLabel, status, contentType) =>
+			SummarySchema.decode(
+				`${hostLabel} returned HTTP ${status} (${contentType}): ${message}`,
+			),
+	};
+}
+
+const ErrorPayloadSchema = z.object({ message: ErrorMessageSchema });
+
+function errorFormatterFor(data: unknown): HttpErrorFormatter {
+	const parsed = ErrorPayloadSchema.safeParse(data);
+	if (!parsed.success) {
+		return bareHttpErrorFormatter;
+	}
+	return messageHttpErrorFormatter(parsed.data.message);
+}
+
+const HOST_INFO: Readonly<
+	Record<Host["kind"], { readonly label: string; readonly envVar: string }>
+> = {
+	"azure-devops": { label: "Azure DevOps", envVar: "AZURE_DEVOPS_EXT_PAT" },
+	github: { label: "GitHub", envVar: "GH_TOKEN" },
+	git: { label: "Git", envVar: "GH_TOKEN" },
+};
+
+const isAuthFailure = (status: number, contentType: string): boolean =>
+	status === 203 ||
+	status === 401 ||
+	status === 403 ||
+	!contentType.includes("json");
 
 function hostErrorMessage(
 	envVar: string,
 	res: HostHttpResponse,
-	token: AccessToken | null,
+	transport: HostTransport,
 ): Summary {
-	const payloadMessage = extractErrorMessage(res.data);
-	if (!isNullOrEmpty(payloadMessage)) {
-		return payloadMessage;
+	const parsed = ErrorPayloadSchema.safeParse(res.data);
+	if (parsed.success) {
+		return parsed.data.message;
 	}
 	const contentType =
 		(res.headers.get("content-type") ?? "").toLowerCase() || "no content-type";
-	const isAuthFailure =
-		res.status === 203 ||
-		res.status === 401 ||
-		res.status === 403 ||
-		!contentType.includes("json");
-	if (isAuthFailure) {
-		const guidance = isNullOrEmpty(token)
-			? `authentication required (set ${envVar} or pass AccessToken.from(...) to prepareWithToken)`
-			: `access denied for ${token.kind()} token (verify ${envVar} or AccessToken permissions)`;
-		return SummarySchema.decode(guidance);
+	if (isAuthFailure(res.status, contentType)) {
+		return SummarySchema.decode(transport.authGuidance(envVar));
 	}
 	return SummarySchema.decode(`HTTP ${res.status} (${contentType})`);
 }
@@ -103,60 +197,44 @@ export function hostErrorReason(
 	hostLabel: string,
 	envVar: string,
 	res: HostHttpResponse,
-	token: AccessToken | null,
+	transport: HostTransport,
 ): Summary {
 	const contentType =
 		(res.headers.get("content-type") ?? "").toLowerCase() || "no content-type";
-	const payloadMessage = extractErrorMessage(res.data);
-	const isAuthFailure =
-		res.status === 203 ||
-		res.status === 401 ||
-		res.status === 403 ||
-		!contentType.includes("json");
-	if (!isAuthFailure) {
-		if (res.status === 400) {
-			const detail = isNullOrEmpty(payloadMessage)
-				? ": pull request is not writeable. Review must halt."
-				: `: pull request is not writeable (${payloadMessage}). Review must halt.`;
-			return SummarySchema.decode(
-				`${hostLabel} returned HTTP 400 (${contentType})${detail}`,
-			);
-		}
-		const detail = isNullOrEmpty(payloadMessage) ? "." : `: ${payloadMessage}`;
-		return SummarySchema.decode(
-			`${hostLabel} returned HTTP ${res.status} (${contentType})${detail}`,
+	const formatter = errorFormatterFor(res.data);
+	if (isAuthFailure(res.status, contentType)) {
+		return formatter.auth(
+			hostLabel,
+			res.status,
+			contentType,
+			transport.authGuidance(envVar),
 		);
 	}
-	const guidance = isNullOrEmpty(token)
-		? `authentication required (set ${envVar} or pass AccessToken.from(...) to prepareWithToken)`
-		: `access denied for ${token.kind()} token (verify ${envVar} or AccessToken permissions)`;
-	const detail = isNullOrEmpty(payloadMessage) ? "" : ` (${payloadMessage})`;
-	return SummarySchema.decode(
-		`${hostLabel} returned HTTP ${res.status} (${contentType}): ${guidance}${detail}.`,
-	);
+	if (res.status === 400) {
+		return formatter.badRequest(hostLabel, contentType);
+	}
+	return formatter.other(hostLabel, res.status, contentType);
 }
 
 export const buildHostError = (
 	host: Host,
 	res: HostHttpResponse,
-	token: AccessToken | null,
+	transport: HostTransport,
 ): HostError => {
-	const hostLabel = host.kind === "azure-devops" ? "Azure DevOps" : "GitHub";
-	const envVar =
-		host.kind === "azure-devops" ? "AZURE_DEVOPS_EXT_PAT" : "GH_TOKEN";
+	const { label: hostLabel, envVar } = HOST_INFO[host.kind];
 	return HostErrorSchema.decode({
 		kind: "host-error",
 		host,
 		status: res.status,
-		message: hostErrorMessage(envVar, res, token),
-		reason: hostErrorReason(hostLabel, envVar, res, token),
+		message: hostErrorMessage(envVar, res, transport),
+		reason: hostErrorReason(hostLabel, envVar, res, transport),
 	});
 };
 
 export async function buildBinaryHostError(
 	host: Host,
 	res: HostHttpResponse,
-	token: AccessToken | null,
+	transport: HostTransport,
 ): Promise<HostError> {
 	const contentType = (res.headers.get("content-type") ?? "").toLowerCase();
 	if (res.data instanceof Blob && contentType.includes("json")) {
@@ -164,10 +242,10 @@ export async function buildBinaryHostError(
 		return buildHostError(
 			host,
 			{ status: res.status, headers: res.headers, data: JSON.parse(text) },
-			token,
+			transport,
 		);
 	}
-	return buildHostError(host, res, token);
+	return buildHostError(host, res, transport);
 }
 
 export type AdapterResolution =
@@ -186,9 +264,8 @@ export interface ReviewSnapshotInput {
 	readonly baseCommit: HeadCommit;
 	readonly headCommit: HeadCommit;
 	readonly change: Change;
-	readonly priorCommit: HeadCommit | null;
+	readonly baseline: ReviewBaseline;
 	readonly threads: readonly Thread[];
-	readonly existingRefusal: Summary | null;
 }
 
 export interface HostAdapter<HostType extends Host = Host> {

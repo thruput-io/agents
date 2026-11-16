@@ -62,12 +62,16 @@ const cleanBookRow = (heading: string): Row => ({
 	verdict: "clean",
 	evidence: "e",
 });
-const violation = (
+const violation = (rule: RuleRef): Violation => ({
+	rule,
+	observation: "what is wrong",
+});
+const violationAt = (
 	rule: RuleRef,
-	idToReportViolationOn?: number,
+	idToReportViolationOn: number,
 ): Violation => ({
 	rule,
-	...(idToReportViolationOn === undefined ? {} : { idToReportViolationOn }),
+	idToReportViolationOn,
 	observation: "what is wrong",
 });
 const citeP = `[P](${SITE}#p)`;
@@ -90,7 +94,7 @@ const violatedBookRow = (heading: string, violations: Violation[]): Row => ({
 const sampleLedger: Ledger = {
 	headCommit: H,
 	rows: [
-		violatedRow("A", [violation("A", 3), violation("A")]),
+		violatedRow("A", [violationAt("A", 3), violation("A")]),
 		{
 			rule: "B",
 			examined: ["x"],
@@ -101,7 +105,7 @@ const sampleLedger: Ledger = {
 };
 const contextLedger: Ledger = {
 	headCommit: H,
-	rows: [violatedBookRow("Book rule", [violation(bookRule("Book rule"), 9)])],
+	rows: [violatedBookRow("Book rule", [violationAt(bookRule("Book rule"), 9)])],
 };
 const entries = [
 	{ document: outcomeProbe, ledger: sampleLedger },
@@ -136,10 +140,10 @@ it("alreadyOpen matches an open thread on the same line citing the same principl
 	const open = [
 		{ path: "p", lines: { start: 3, end: 3 }, body: `earlier breaks ${citeP}` },
 	];
-	assert.equal(alreadyOpen(violation("A", 3), citeP, open, files), true);
-	assert.equal(alreadyOpen(violation("A", 4), citeP, open, files), false);
+	assert.equal(alreadyOpen(violationAt("A", 3), citeP, open, files), true);
+	assert.equal(alreadyOpen(violationAt("A", 4), citeP, open, files), false);
 	assert.equal(
-		alreadyOpen(violation("A", 3), `[Q](${SITE}#q)`, open, files),
+		alreadyOpen(violationAt("A", 3), `[Q](${SITE}#q)`, open, files),
 		false,
 	);
 	assert.equal(alreadyOpen(violation("A"), citeP, open, files), false);

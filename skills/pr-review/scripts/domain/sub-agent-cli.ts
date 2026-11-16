@@ -2,6 +2,13 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import {
+	failCli,
+	failWithJsonError,
+	parseSchemaCli,
+	type RawCommandResult,
+	writeJson,
+} from "./cli.ts";
 import type { CodeUnderReview } from "./code-under-review.ts";
 import {
 	type AckPayload,
@@ -58,23 +65,6 @@ export interface SubAgentCliTarget {
 
 const ACK_FAILURE_GUIDE =
 	'Provide valid JSON for ack: Rules/Reuse/DeadCode -> {"message":"<dispatcher message received>","rulesInOrder":[<rule ids from #/ruleset/rules in order>],"observationFormat":"<observation> breaks <principle>"}; Context -> {"message":"<dispatcher message received>","bookRuleRows":3,"observationFormat":"<observation> breaks <principle>"}.';
-
-const writeJson = (payload: object): void => {
-	process.stdout.write(`${JSON.stringify(payload)}\n`);
-};
-
-const failCli = (message?: string): number => {
-	if (!isNullOrEmpty(message)) {
-		process.stderr.write(message);
-	}
-	process.exitCode = 1;
-	return 1;
-};
-
-const failWithJsonError = (error: string): number => {
-	writeJson({ success: false, error });
-	return failCli();
-};
 
 const readJsonInput = (
 	arg: string,
@@ -153,11 +143,7 @@ const parseIntegerArg = (
 	return Number.isInteger(parsed) ? parsed : raw;
 };
 
-const toRawSubAgentCommand = (
-	args: readonly string[],
-):
-	| { readonly ok: true; readonly raw: unknown }
-	| { readonly ok: false; readonly error: string } => {
+const toRawSubAgentCommand = (args: readonly string[]): RawCommandResult => {
 	const [command, firstArg, secondArg, thirdArg, fourthArg] = args;
 	if (command === "define") {
 		return {
@@ -244,32 +230,35 @@ const runDefineCli = (term: string, depth: number): number => {
 	return 0;
 };
 
+const writePageResponse = (page: { readonly success: boolean }): number => {
+	writeJson(page);
+	if (page.success) {
+		return 0;
+	}
+	return failCli();
+};
+
 export function runSubAgentCli(
 	forSession: (session: Checkout, name: Checkout) => SubAgentCliTarget,
 	args: readonly string[],
 ): number {
-	const [command] = args;
-	if (command === "-h" || command === "--help") {
-		writeJson(subAgentHelpPayload());
-		return 0;
-	}
-	if (isNullOrEmpty(command)) {
-		return failCli(
+	const dispatchedCli = parseSchemaCli(args, {
+		schema: SubAgentCommandSchema,
+		help: subAgentHelpPayload,
+		toRaw: toRawSubAgentCommand,
+		missingCommandUsage:
 			"Usage: node sub-agent-controller.ts <define|inspect|ack|next|prev|ruleset|report> ...\n",
-		);
+		onInvalidCommand: (command, details) => {
+			if (command === "ack") {
+				return failWithJsonError(`${details}\n${ACK_FAILURE_GUIDE}`);
+			}
+			return failWithJsonError(details);
+		},
+	});
+	if (dispatchedCli.kind === "done") {
+		return dispatchedCli.exitCode;
 	}
-	const built = toRawSubAgentCommand(args);
-	if (!built.ok) {
-		return failWithJsonError(built.error);
-	}
-	const parsedCommand = SubAgentCommandSchema.safeParse(built.raw);
-	if (!parsedCommand.success) {
-		const details = z.prettifyError(parsedCommand.error);
-		return failWithJsonError(
-			command === "ack" ? `${details}\n${ACK_FAILURE_GUIDE}` : details,
-		);
-	}
-	const cmd = parsedCommand.data;
+	const cmd = dispatchedCli.command;
 	if (cmd.command === "define") {
 		return runDefineCli(cmd.term, cmd.depth);
 	}
@@ -283,19 +272,13 @@ export function runSubAgentCli(
 		return 0;
 	}
 	if (cmd.command === "next") {
-		const page = sub.next();
-		writeJson(page);
-		return page.success ? 0 : failCli();
+		return writePageResponse(sub.next());
 	}
 	if (cmd.command === "prev") {
-		const page = sub.prev();
-		writeJson(page);
-		return page.success ? 0 : failCli();
+		return writePageResponse(sub.prev());
 	}
 	if (cmd.command === "ruleset") {
-		const page = sub.ruleset(cmd.url, cmd.page);
-		writeJson(page);
-		return page.success ? 0 : failCli();
+		return writePageResponse(sub.ruleset(cmd.url, cmd.page));
 	}
 	if (cmd.command === "ack") {
 		const acked = sub.ack(cmd.payload);

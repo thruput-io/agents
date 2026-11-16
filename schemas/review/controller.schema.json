@@ -354,7 +354,7 @@
       "additionalProperties": false
     },
     "TooLarge": {
-      "description": "Returned when changed production files or total added lines exceed the size limits",
+      "description": "Returned when changed files or diff line counts exceed the hard review size limits",
       "type": "object",
       "required": [
         "kind",

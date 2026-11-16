@@ -9,14 +9,17 @@ import {
 	pullRequestThreadsUpdate,
 } from "../../clients/azure-git.g.ts";
 import { evaluationsList } from "../../clients/azure-policy.g.ts";
-import { AccessToken } from "./access-token.ts";
+import type { AccessToken } from "./access-token.ts";
 import {
 	type AdapterResolution,
 	buildBinaryHostError,
 	buildHostError,
 	type HostAdapter,
+	type HostTransport,
 	isBinaryResponse,
 	isJsonResponse,
+	tokenHttpTransport,
+	transportFromEnv,
 } from "./adapter.ts";
 import {
 	AzureCreatedThreadIdCodec,
@@ -59,6 +62,7 @@ import type {
 } from "./contracts.g.ts";
 import { table } from "./ledger-table.ts";
 import { isNullOrEmpty } from "./nullish.ts";
+import { refusalRecorder, reviewBaselineFrom } from "./review-baseline.ts";
 import { buildReviewSnapshot } from "./review-snapshot-builder.ts";
 import type {
 	CommitZipArchive,
@@ -77,29 +81,25 @@ const AZURE_WRITE_SCOPES = [
 const isWritePermitted = (res: { readonly status: number }): boolean =>
 	res.status >= 200 && res.status < 300 && res.status !== 203;
 
-const azureTokenOf = (token: AccessToken): AccessToken =>
-	token.isPat() ? token.toBasic() : token;
-
 export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 	readonly #review: AzureMergeRequest;
-	readonly #token: AccessToken | null;
-	private constructor(review: AzureMergeRequest, token: AccessToken | null) {
+	readonly #transport: HostTransport;
+	private constructor(review: AzureMergeRequest, transport: HostTransport) {
 		this.#review = review;
-		this.#token = token;
+		this.#transport = transport;
 	}
 	static from(review: AzureMergeRequest): AzureDevOpsAdapter {
 		const { AZURE_DEVOPS_EXT_PAT } = process.env;
-		const envToken = AccessToken.from(AZURE_DEVOPS_EXT_PAT ?? "");
 		return new AzureDevOpsAdapter(
 			review,
-			envToken.success ? azureTokenOf(envToken.data) : null,
+			transportFromEnv(AZURE_DEVOPS_EXT_PAT, (token) => token.forAzure()),
 		);
 	}
 	static fromWithToken(
 		review: AzureMergeRequest,
 		token: AccessToken,
 	): AzureDevOpsAdapter {
-		return new AzureDevOpsAdapter(review, azureTokenOf(token));
+		return new AzureDevOpsAdapter(review, tokenHttpTransport(token.forAzure()));
 	}
 	host(): AzureDevOps {
 		return this.#review.host();
@@ -109,16 +109,24 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 		return [organization, project, repository, id];
 	}
 	#requestInit(): { readonly headers: Readonly<Record<string, string>> } {
-		return isNullOrEmpty(this.#token)
-			? { headers: { accept: "application/json" } }
-			: this.#token.requestInit();
+		return this.#transport.requestInit();
 	}
 	#hostError(res: {
 		readonly status: number;
 		readonly headers: Headers;
 		readonly data?: unknown;
 	}): HostError {
-		return buildHostError(this.host(), res, this.#token);
+		return buildHostError(this.host(), res, this.#transport);
+	}
+	#writeResult(res: {
+		readonly status: number;
+		readonly headers: Headers;
+		readonly data?: unknown;
+	}): HostError | null {
+		if (isWritePermitted(res)) {
+			return null;
+		}
+		return this.#hostError(res);
 	}
 	async #setStatus(
 		tid: ThreadId,
@@ -131,7 +139,7 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 			API_VERSION,
 			this.#requestInit(),
 		);
-		return isWritePermitted(res) ? null : this.#hostError(res);
+		return this.#writeResult(res);
 	}
 	async #createThread(
 		payload: GitPullRequestCommentThread,
@@ -155,7 +163,7 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 			API_VERSION,
 			this.#requestInit(),
 		);
-		return isWritePermitted(res) ? null : this.#hostError(res);
+		return this.#writeResult(res);
 	}
 	async #refuse(
 		headCommit: HeadCommit,
@@ -173,9 +181,7 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 	}
 	async resolve(snapshotDir: SnapshotDirectory): Promise<AdapterResolution> {
 		const host = this.host();
-		if (
-			!(isNullOrEmpty(this.#token) || this.#token.hasScope(AZURE_WRITE_SCOPES))
-		) {
+		if (!this.#transport.hasScope(AZURE_WRITE_SCOPES)) {
 			return this.#hostError({
 				status: 403,
 				headers: new Headers({ "content-type": "application/json" }),
@@ -222,15 +228,16 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 		const rawThreads = AzureThreadsListCodec.decode(threadsRes.data);
 		const headCommit = headCommitOf(pr);
 		const existingRefusal = refusedOf(rawThreads, headCommit);
+		const refuse = refusalRecorder(existingRefusal, (commit, reason) =>
+			this.#refuse(commit, reason),
+		);
 		const reasons = refusalReasons(
 			pr.mergeStatus,
 			blockingBuildPolicies(evaluations),
 		);
 		if (reasons.length > 0) {
 			const reason = reasons.join(", ");
-			const location = isNullOrEmpty(existingRefusal)
-				? await this.#refuse(headCommit, reason)
-				: existingRefusal;
+			const location = await refuse(headCommit, reason);
 			if (typeof location !== "string") {
 				return location;
 			}
@@ -244,12 +251,8 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 			return staleError;
 		}
 		const baseCommit = targetCommitOf(pr);
-		const priorCommit = priorOf(rawThreads);
-		const commitsToFetch = [
-			baseCommit,
-			...(isNullOrEmpty(priorCommit) ? [] : [priorCommit]),
-			headCommit,
-		];
+		const baseline = reviewBaselineFrom(priorOf(rawThreads));
+		const commitsToFetch = baseline.commitsToFetch(baseCommit, headCommit);
 		const zipResponses = await Promise.all(
 			commitsToFetch.map(async (sha) => ({
 				sha,
@@ -272,7 +275,7 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 		);
 		const failedZip = zipResponses.find(({ res }) => !isBinaryResponse(res));
 		if (!isNullOrEmpty(failedZip)) {
-			return buildBinaryHostError(host, failedZip.res, this.#token);
+			return buildBinaryHostError(host, failedZip.res, this.#transport);
 		}
 		const zipArchives: CommitZipArchive[] = zipResponses.map(
 			({ sha, res }) => ({
@@ -288,13 +291,12 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 				baseCommit,
 				headCommit,
 				change: changeOf(host, pr),
-				priorCommit,
+				baseline,
 				threads: rawThreads
 					.filter((record) => onLines(record) && isOurThread(record))
 					.map(thread),
-				existingRefusal,
 			},
-			(commit, reason) => this.#refuse(commit, reason),
+			refuse,
 		);
 	}
 	async post(outcome: Outcome, ledger: Ledger): Promise<Summary | HostError> {

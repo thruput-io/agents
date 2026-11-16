@@ -36,50 +36,44 @@ const checkSymlinked = (resolvedPath: string): boolean => {
 	);
 };
 
-const establishOperationalWorkdir = (
-	resolvedPath: string,
-	createFresh: boolean,
-):
-	| {
-			readonly ok: true;
-			readonly ledger: LedgerDirectory;
-			readonly symlinked: boolean;
-	  }
-	| { readonly ok: false; readonly message: string } => {
-	try {
-		const ledgerPath = join(dirname(resolvedPath), "ledger");
-		const parsedLedger = LedgerDirectory.from(ledgerPath);
-		if (!parsedLedger.success) {
-			return {
-				ok: false,
-				message: z.prettifyError(parsedLedger.error),
-			};
-		}
-		if (createFresh) {
-			rmSync(resolvedPath, { recursive: true, force: true });
-			mkdirSync(resolvedPath, { recursive: true });
-			const instructionsDir = join(resolvedPath, "instructions");
-			rmSync(instructionsDir, { recursive: true, force: true });
-			mkdirSync(instructionsDir, { recursive: true });
-			parsedLedger.data.initialize();
-		} else {
-			writeFileSync(join(ledgerPath, ".operational"), "ok\n", "utf-8");
-		}
-		writeFileSync(join(resolvedPath, ".operational"), "ok\n", "utf-8");
-		return {
-			ok: true,
-			ledger: parsedLedger.data,
-			symlinked: checkSymlinked(resolvedPath),
-		};
-	} catch (error) {
-		return {
-			ok: false,
-			message:
-				error instanceof Error
-					? error.message
-					: "Workdir is not operational for writing",
-		};
+const formatThrownError = (error: unknown): string => {
+	if (error instanceof Error) {
+		return error.message;
 	}
+	return String(error);
+};
+
+const assertWriteable = (
+	action: () => void,
+): { readonly ok: true } | { readonly ok: false; readonly message: string } => {
+	try {
+		action();
+		return { ok: true };
+	} catch (error) {
+		return { ok: false, message: formatThrownError(error) };
+	}
+};
+
+const prepareFreshDirectory = (
+	resolvedPath: string,
+	ledger: LedgerDirectory,
+): void => {
+	rmSync(resolvedPath, { recursive: true, force: true });
+	mkdirSync(resolvedPath, { recursive: true });
+	const instructionsDir = join(resolvedPath, "instructions");
+	rmSync(instructionsDir, { recursive: true, force: true });
+	mkdirSync(instructionsDir, { recursive: true });
+	ledger.initialize();
+	writeFileSync(join(resolvedPath, ".operational"), "ok\n", "utf-8");
+};
+
+const verifyExistingDirectory = (
+	resolvedPath: string,
+	_ledger: LedgerDirectory,
+	ledgerPath: string,
+): void => {
+	writeFileSync(join(ledgerPath, ".operational"), "ok\n", "utf-8");
+	writeFileSync(join(resolvedPath, ".operational"), "ok\n", "utf-8");
 };
 
 export class Workdir {
@@ -100,14 +94,31 @@ export class Workdir {
 		this.#symlinked = symlinked;
 	}
 
-	static #codec(createFresh: boolean) {
+	static #codec(
+		prepare: (
+			resolvedPath: string,
+			ledger: LedgerDirectory,
+			ledgerPath: string,
+		) => void,
+	) {
 		return CheckoutSchema.transform((rawPath, ctx) => {
 			const resolvedPath = resolve(rawPath);
-			const status = establishOperationalWorkdir(resolvedPath, createFresh);
-			if (!status.ok) {
+			const ledgerPath = join(dirname(resolvedPath), "ledger");
+			const parsedLedger = LedgerDirectory.from(ledgerPath);
+			if (!parsedLedger.success) {
 				ctx.addIssue({
 					code: "custom",
-					message: `Workdir is not writeable: ${status.message}`,
+					message: `Workdir is not writeable: ${z.prettifyError(parsedLedger.error)}`,
+				});
+				return z.NEVER;
+			}
+			const writeCheck = assertWriteable(() =>
+				prepare(resolvedPath, parsedLedger.data, ledgerPath),
+			);
+			if (!writeCheck.ok) {
+				ctx.addIssue({
+					code: "custom",
+					message: `Workdir is not writeable: ${writeCheck.message}`,
 				});
 				return z.NEVER;
 			}
@@ -123,15 +134,15 @@ export class Workdir {
 			}
 			return new Workdir(
 				resolvedPath,
-				status.ledger,
+				parsedLedger.data,
 				parsedSnapshot.data,
-				status.symlinked,
+				checkSymlinked(resolvedPath),
 			);
 		});
 	}
 
-	static readonly Schema = Workdir.#codec(true);
-	static readonly ExistingSchema = Workdir.#codec(false);
+	static readonly Schema = Workdir.#codec(prepareFreshDirectory);
+	static readonly ExistingSchema = Workdir.#codec(verifyExistingDirectory);
 
 	static from(raw: Checkout): z.ZodSafeParseResult<Workdir> {
 		return Workdir.Schema.safeDecode(raw);

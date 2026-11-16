@@ -105,13 +105,22 @@ export type GitHubThreadNode = z.infer<typeof ThreadNode>;
 export const isReviewableThreadNode = (node: GitHubThreadNode): boolean =>
 	!isNullOrEmpty(node.line) && ours(node.comments.nodes[0]?.body ?? "");
 
+const threadState = (
+	node: GitHubThreadNode,
+	author: Developer,
+): ThreadState => {
+	if (!node.isResolved) {
+		return "open";
+	}
+	if (node.resolvedBy?.login === author) {
+		return "resolved-by-author";
+	}
+	return "resolved";
+};
+
 export function thread(node: GitHubThreadNode, author: Developer): Thread {
 	const end = node.line ?? 1;
-	const state: ThreadState = node.isResolved
-		? node.resolvedBy?.login === author
-			? "resolved-by-author"
-			: "resolved"
-		: "open";
+	const state = threadState(node, author);
 	return {
 		id: node.id,
 		path: node.path,

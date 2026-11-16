@@ -2,6 +2,14 @@ import { z } from "zod";
 import { AccessToken } from "./access-token.ts";
 import type { AdapterResolution } from "./adapter.ts";
 import {
+	failCli,
+	failWithJson,
+	optionalStringField,
+	parseSchemaCli,
+	type RawCommandResult,
+	writeJson,
+} from "./cli.ts";
+import {
 	ControllerCommandSchema,
 	type DispatchResult,
 	type PrepareResponse,
@@ -47,18 +55,6 @@ export interface MainAgentCliDriver {
 	) => Promise<DispatchResult>;
 }
 
-const writeJson = (payload: object): void => {
-	process.stdout.write(`${JSON.stringify(payload)}\n`);
-};
-
-const failCli = (message?: string): number => {
-	if (!isNullOrEmpty(message)) {
-		process.stderr.write(message);
-	}
-	process.exitCode = 1;
-	return 1;
-};
-
 const writePrepared = (workdir: Workdir, ledger: MainAgentLedger): number => {
 	const warning = workdir.warning();
 	const session = workdir.sessionToken();
@@ -79,52 +75,56 @@ const writePrepared = (workdir: Workdir, ledger: MainAgentLedger): number => {
 	return 0;
 };
 
-const toRawControllerCommand = (args: readonly string[]): unknown => {
+const toRawControllerCommand = (args: readonly string[]): RawCommandResult => {
 	const [command, firstArg, secondArg, thirdArg] = args;
 	if (command === "prepare") {
 		return {
-			command,
-			url: firstArg,
-			workdir: secondArg,
-			...(isNullOrEmpty(thirdArg) ? {} : { token: thirdArg }),
+			ok: true,
+			raw: {
+				command,
+				url: firstArg,
+				workdir: secondArg,
+				...optionalStringField("token", thirdArg),
+			},
 		};
 	}
 	if (command === "status") {
-		return { command, workdir: firstArg };
+		return { ok: true, raw: { command, workdir: firstArg } };
 	}
 	if (command === "dispatch") {
 		return {
-			command,
-			workdir: firstArg,
-			...(isNullOrEmpty(secondArg) ? {} : { token: secondArg }),
+			ok: true,
+			raw: {
+				command,
+				workdir: firstArg,
+				...optionalStringField("token", secondArg),
+			},
 		};
 	}
-	return { command };
+	return { ok: true, raw: { command } };
 };
 
 export async function runMainAgentCli(
 	controller: MainAgentCliDriver,
 	args: readonly string[],
 ): Promise<number> {
-	const [command] = args;
-	if (command === "-h" || command === "--help") {
-		writeJson({
+	const dispatchedCli = parseSchemaCli(args, {
+		schema: ControllerCommandSchema,
+		help: () => ({
 			usage: [
 				"node controller.ts -h | --help",
 				"node controller.ts prepare <url> <workdir> [<token>]",
 				"node controller.ts status <workdir>",
 				"node controller.ts dispatch <workdir> [<token>]",
 			],
-		});
-		return 0;
+		}),
+		toRaw: toRawControllerCommand,
+		onInvalidCommand: (_command, details) => failCli(`${details}\n`),
+	});
+	if (dispatchedCli.kind === "done") {
+		return dispatchedCli.exitCode;
 	}
-	const parsedCommand = ControllerCommandSchema.safeParse(
-		toRawControllerCommand(args),
-	);
-	if (!parsedCommand.success) {
-		return failCli(`${z.prettifyError(parsedCommand.error)}\n`);
-	}
-	const cmd = parsedCommand.data;
+	const cmd = dispatchedCli.command;
 	if (cmd.command === "prepare") {
 		const parsedWorkdir = Workdir.from(cmd.workdir);
 		if (!parsedWorkdir.success) {
@@ -135,8 +135,7 @@ export async function runMainAgentCli(
 					message: z.prettifyError(parsedWorkdir.error),
 				},
 			};
-			writeJson(response);
-			return failCli();
+			return failWithJson(response);
 		}
 		if (!isNullOrEmpty(cmd.token)) {
 			const parsedToken = AccessToken.from(cmd.token);
@@ -148,8 +147,7 @@ export async function runMainAgentCli(
 						message: z.prettifyError(parsedToken.error),
 					},
 				};
-				writeJson(response);
-				return failCli();
+				return failWithJson(response);
 			}
 			const result = await controller.prepareWithToken(
 				cmd.url,

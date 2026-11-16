@@ -40,11 +40,19 @@ export interface ResolvedSurfaceLine {
 	readonly line: LineNumber;
 }
 
-export const ruleName = (row: Row): RuleHeading | Rule["id"] =>
-	"bookRule" in row ? row.bookRule.heading : row.rule;
+export function ruleName(row: Row): RuleHeading | Rule["id"] {
+	if ("bookRule" in row) {
+		return row.bookRule.heading;
+	}
+	return row.rule;
+}
 
-const rowRuleRef = (row: Row): RuleRef =>
-	"bookRule" in row ? row.bookRule : row.rule;
+function rowRuleRef(row: Row): RuleRef {
+	if ("bookRule" in row) {
+		return row.bookRule;
+	}
+	return row.rule;
+}
 
 export const resolveSurfaceLine = (
 	lineId: LineNumber | undefined,
@@ -89,9 +97,15 @@ function refineContext(
 			`${ledger.rows.length} rows, ${ESCALATION_ROWS} expected`,
 		);
 	}
-	const ourRules = ledger.rows.flatMap((row) =>
-		"rule" in row ? [row.rule] : [],
-	);
+	const ourRules: Rule["id"][] = [];
+	const selectedSet = new Set<RulesetUrl>();
+	for (const row of ledger.rows) {
+		if ("bookRule" in row) {
+			selectedSet.add(row.bookRule.ruleset);
+		} else {
+			ourRules.push(row.rule);
+		}
+	}
 	if (ourRules.length > 0) {
 		return issue(
 			ctx,
@@ -99,13 +113,7 @@ function refineContext(
 		);
 	}
 	const handed = probe.rulesets.map((ruleset) => ruleset.url);
-	const selected = [
-		...new Set(
-			ledger.rows.flatMap((row) =>
-				"bookRule" in row ? [row.bookRule.ruleset] : [],
-			),
-		),
-	];
+	const selected = [...selectedSet];
 	const foreign = selected.filter((url) => !handed.includes(url));
 	if (foreign.length > 0) {
 		return issue(
@@ -122,7 +130,14 @@ function refineRules(
 	ledger: Ledger,
 	ctx: z.RefinementCtx,
 ): boolean {
-	const found = ledger.rows.map((row) => ("rule" in row ? row.rule : null));
+	const found: (Rule["id"] | null)[] = [];
+	for (const row of ledger.rows) {
+		if ("rule" in row) {
+			found.push(row.rule);
+		} else {
+			found.push(null);
+		}
+	}
 	const expected = probe.rulebook.rules.map((rule) => rule.id);
 	if (JSON.stringify(found) === JSON.stringify(expected)) {
 		return true;
@@ -179,10 +194,12 @@ export const ledgerFor = (probe: LedgerProbe) =>
 			);
 			return;
 		}
-		const rowsValid =
-			"rulesets" in probe
-				? refineContext(probe, ledger, ctx)
-				: refineRules(probe, ledger, ctx);
+		let rowsValid: boolean;
+		if ("rulesets" in probe) {
+			rowsValid = refineContext(probe, ledger, ctx);
+		} else {
+			rowsValid = refineRules(probe, ledger, ctx);
+		}
 		if (rowsValid) {
 			refineViolations(probe, ledger, ctx);
 		}

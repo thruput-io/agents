@@ -1,38 +1,18 @@
 import type { AdapterResolution, ReviewSnapshotInput } from "./adapter.ts";
 import type { CodeUnderReview } from "./code-under-review.ts";
-import type {
-	ChangedFile,
-	HeadCommit,
-	HostError,
-	Path,
-	Summary,
-	SurfaceFile,
-} from "./contracts.g.ts";
-import { changedFiles } from "./diff.ts";
+import type { Path, SurfaceFile } from "./contracts.g.ts";
+import { changedFiles, parseNumstat } from "./diff.ts";
 import {
 	fragments,
 	type NumberedLines,
 	numbered,
 	removedLines,
 } from "./fragments.ts";
+import { oversizedFiles, tooLarge } from "./limits.ts";
 import { isNullOrEmpty, nonnull } from "./nullish.ts";
+import type { RefusalRecorder } from "./review-baseline.ts";
 import { CodeUnderReviewSnapshot } from "./review-snapshot.ts";
-import { oversizedFiles, tooLarge } from "./ruleset.ts";
 import type { SnapshotDirectory } from "./snapshot-directory.ts";
-import { narrowSurface, threadRanges, wholeSurface } from "./surface.ts";
-
-function narrowed(
-	snapshotDir: SnapshotDirectory,
-	input: ReviewSnapshotInput,
-	files: readonly ChangedFile[],
-) {
-	const prior = nonnull(input.priorCommit);
-	const since = snapshotDir.diff(prior, input.headCommit);
-	const changedSince = new Map(
-		changedFiles(since).map((file) => [file.path, file.added] as const),
-	);
-	return narrowSurface({ files }, changedSince, threadRanges(input.threads));
-}
 
 function linesAtHead(
 	snapshotDir: SnapshotDirectory,
@@ -46,30 +26,26 @@ export async function buildReviewSnapshot(
 	review: CodeUnderReview,
 	snapshotDir: SnapshotDirectory,
 	input: ReviewSnapshotInput,
-	refuse: (
-		headCommit: HeadCommit,
-		reason: Summary,
-	) => Promise<Summary | HostError>,
+	refuse: RefusalRecorder,
 ): Promise<AdapterResolution> {
-	const diffText = snapshotDir.diff(input.baseCommit, input.headCommit);
-	const files = changedFiles(diffText);
-	const linesByPath = new Map(
-		files.map((file) => [file.path, linesAtHead(snapshotDir, file.path)]),
+	const numstatEntries = parseNumstat(
+		snapshotDir.numstat(input.baseCommit, input.headCommit),
 	);
-	const fileCounts = files.map((file) => ({
-		path: file.path,
-		lines: Object.keys(nonnull(linesByPath.get(file.path))).length,
-		added: file.added.reduce(
-			(sum, range) => sum + range.end - range.start + 1,
-			0,
-		),
-	}));
+	const linesByPath = new Map<Path, NumberedLines>();
+	const fileCounts = numstatEntries.map((entry) => {
+		const lines = linesAtHead(snapshotDir, entry.path);
+		linesByPath.set(entry.path, lines);
+		return {
+			path: entry.path,
+			lines: Object.keys(lines).length,
+			added: entry.added,
+			deleted: entry.deleted,
+		};
+	});
 	const oversizedReasons = tooLarge(fileCounts);
 	if (oversizedReasons.length > 0) {
 		const reason = oversizedReasons.join(", ");
-		const refusalResult = isNullOrEmpty(input.existingRefusal)
-			? await refuse(input.headCommit, reason)
-			: input.existingRefusal;
+		const refusalResult = await refuse(input.headCommit, reason);
 		if (typeof refusalResult !== "string") {
 			return refusalResult;
 		}
@@ -80,22 +56,26 @@ export async function buildReviewSnapshot(
 			location: refusalResult,
 		};
 	}
-	const surfaceSpec = isNullOrEmpty(input.priorCommit)
-		? wholeSurface({ files })
-		: narrowed(snapshotDir, input, files);
+	const diffText = snapshotDir.diff(input.baseCommit, input.headCommit);
+	const files = changedFiles(diffText);
+	const surfaceSpec = input.baseline.surfaceSpec(
+		snapshotDir,
+		input.headCommit,
+		files,
+		input.threads,
+	);
 	if (surfaceSpec.files.length === 0) {
-		return {
-			kind: "already-reviewed",
-			headCommit: input.headCommit,
-			location: String(input.priorCommit),
-		};
+		return input.baseline.alreadyReviewed(input.headCommit);
 	}
 	const surfaceFiles: SurfaceFile[] = surfaceSpec.files.map((entry) => {
 		const changed = nonnull(files.find((file) => file.path === entry.path));
+		const headLines =
+			linesByPath.get(entry.path) ?? linesAtHead(snapshotDir, entry.path);
+		linesByPath.set(entry.path, headLines);
 		return {
 			path: entry.path,
 			fragments: fragments(
-				nonnull(linesByPath.get(entry.path)),
+				headLines,
 				entry.added,
 				removedLines(changed.removed, entry.removed),
 			),

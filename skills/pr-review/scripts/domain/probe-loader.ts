@@ -26,7 +26,7 @@ import {
 	Rulebook,
 	rulebook,
 } from "./rulebook.ts";
-import { FILE_TOO_LARGE, IndexSchema, withText } from "./ruleset.ts";
+import { IndexSchema, withText } from "./ruleset.ts";
 import type { ProbeDocument } from "./sub-agent-controller.ts";
 import type { PersistedAudit } from "./workdir.ts";
 
@@ -48,7 +48,7 @@ function loadBundledRuleGroups(): readonly {
 }[] {
 	const { rules } = parseYaml("Rules.yaml", RulesSchema);
 	const { principles } = parseYaml("Principles.yaml", PrinciplesSchema);
-	const groups = partition(rules.filter((rule) => rule.id !== FILE_TOO_LARGE));
+	const groups = partition(rules);
 	checkKinds(groups.map((group) => group.group));
 	return groups.map((group) => ({
 		name: group.name,
@@ -166,6 +166,18 @@ export interface BundledProbes {
 	readonly rulesets: readonly ExternalRulebook[];
 }
 
+const BUNDLED_EXTRA_BY_KIND: Record<
+	ProbeDocument["kind"],
+	(rulesets: readonly ExternalRulebook[]) => {
+		readonly rulesets?: readonly ExternalRulebook[];
+	}
+> = {
+	context: (rulesets) => ({ rulesets }),
+	rules: () => ({}),
+	"dead-code": () => ({}),
+	reuse: () => ({}),
+};
+
 export async function loadBundledProbes(
 	change: Change,
 	surface: Surface,
@@ -179,7 +191,7 @@ export async function loadBundledProbes(
 		const probe: ProbeDocument = {
 			...raw,
 			surface,
-			...(raw.kind === "context" ? { rulesets } : {}),
+			...BUNDLED_EXTRA_BY_KIND[raw.kind](rulesets),
 		};
 		return {
 			name: entry.name,
@@ -207,6 +219,18 @@ const fromAuditDocument = (
 			checkout: document.checkout,
 		};
 	}
+	const parsedRulebook = nonnull(Rulebook.from(document.ruleset).data);
+	if (document.kind === "rules") {
+		return {
+			instructions: document.instructions,
+			task: document.task,
+			permissions: document.permissions,
+			kind: document.kind,
+			change: document.change,
+			surface,
+			rulebook: parsedRulebook,
+		};
+	}
 	return {
 		instructions: document.instructions,
 		task: document.task,
@@ -214,8 +238,8 @@ const fromAuditDocument = (
 		kind: document.kind,
 		change: document.change,
 		surface,
-		rulebook: nonnull(Rulebook.from(document.ruleset).data),
-		...(document.kind === "rules" ? {} : { checkout: document.checkout }),
+		rulebook: parsedRulebook,
+		checkout: document.checkout,
 	};
 };
 

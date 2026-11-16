@@ -23,7 +23,7 @@ Do not read `.ts` source files or write inline `node -e` scripts; run `controlle
 
 ## 1. Main Agent — Prepare (`controller.schema.json#/$defs/PrepareCommand`)
 
-1. Choose an isolated canonical (non-symlinked) `<workdir>` (never share its parent directory with another review's sibling `ledger` directory). Whenever creating `<workdir>` (or any folder), delete it first on the statement immediately before creating it:
+1. Use an isolated canonical (non-symlinked) `<workdir>` such as `.pr-review/<id>/work` (never share its parent directory with another review's sibling `ledger` directory). Delete `<workdir>` immediately before creating it:
 
    ```sh
    rm -rf <workdir>
@@ -35,7 +35,7 @@ Do not read `.ts` source files or write inline `node -e` scripts; run `controlle
 2. Handle `PrepareResponse` (`controller.schema.json#/$defs/PrepareResponse`):
    - **`PrepareFailure` with `InvalidInputError` (`controller.schema.json#/$defs/InvalidInputError`, `kind: "invalid-target" | "invalid-workdir" | "invalid-token"`)**: Fix `<workdir>` or `<url>` and re-run `prepare`.
    - **`PrepareFailure` with `HostError` (`controller.schema.json#/$defs/HostError`, `kind: "host-error"`)**: If `status` is `403`, `401`, or `203` and no `<token>` was passed yet, you may—if permitted by your assigned permissions and instructions—re-run `prepare <url> <workdir> <token>`; otherwise (including `status: 400` where the pull request is not writeable) report `host`, `status`, `message`, and `reason` to the user and cancel the entire review immediately without attempting any workarounds.
-   - **`PrepareFailure` with `Refused` | `TooLarge` | `AlreadyReviewed` (`controller.schema.json#/$defs/Refused`, `#/$defs/TooLarge`, `#/$defs/AlreadyReviewed`)**: Report `error` to the user and cancel the entire review without attempting any workarounds.
+   - **`PrepareFailure` with `Refused` | `TooLarge` | `AlreadyReviewed` (`controller.schema.json#/$defs/Refused`, `#/$defs/TooLarge`, `#/$defs/AlreadyReviewed`)**: Leave `<workdir>` untouched, report `error.kind`, `headCommit`, `location` (if present), and a brief summary (never paste full `files` arrays) to the user, and cancel immediately without attempting any workarounds.
    - **`PrepareReady` (`controller.schema.json#/$defs/PrepareReady`, `{ "success": true, "session", "pending", "permissions" }`)**: Proceed immediately to Step 2.
 
 ## 2. Main Agent — Spawn Subagents, Ack & Dispatch

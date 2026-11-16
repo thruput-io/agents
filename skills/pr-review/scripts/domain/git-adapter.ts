@@ -11,6 +11,7 @@ import {
 	type Summary,
 } from "./contracts.g.ts";
 import { table } from "./ledger-table.ts";
+import { reviewBaselineFrom } from "./review-baseline.ts";
 import { rendered } from "./review-snapshot.ts";
 import { buildReviewSnapshot } from "./review-snapshot-builder.ts";
 import type { SnapshotDirectory } from "./snapshot-directory.ts";
@@ -52,9 +53,8 @@ export class GitAdapter implements HostAdapter<Git> {
 				baseCommit: mergeBase,
 				headCommit,
 				change,
-				priorCommit: null,
+				baseline: reviewBaselineFrom(null),
 				threads: [],
-				existingRefusal: null,
 			},
 			(commit, reason) =>
 				Promise.resolve(`Refusing review at ${commit}: ${reason}`),

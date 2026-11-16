@@ -12,6 +12,8 @@ import {
 	getPullsCreateReviewResponseMock,
 	getPullsGetMockHandler,
 	getPullsGetResponseMock,
+	getPullsListFilesMockHandler,
+	getPullsListFilesResponseMock,
 	getPullsListReviewsMockHandler,
 	getPullsListReviewsResponseMock,
 	getReposDownloadZipballArchiveMockHandler,
@@ -81,6 +83,9 @@ export function createReadOnlyOAuthScopesGitHubHandler(repo: ScenarioRepo) {
 	const basePull = getPullsGetResponseMock({
 		number: 42,
 		mergeable_state: "clean",
+		additions: 10,
+		deletions: 2,
+		changed_files: 2,
 	});
 	return http.get(
 		"https://api.github.com/repos/:owner/:repo/pulls/:pull_number",
@@ -208,11 +213,49 @@ export function createGitHubExistingRefusalHandler(headCommit: string) {
 	]);
 }
 
+export function createOversizedGitHubPullHandlers(repo: ScenarioRepo) {
+	const basePull = getPullsGetResponseMock({
+		number: 42,
+		mergeable_state: "clean",
+		additions: 2000,
+		deletions: 300_000,
+		changed_files: 125,
+	});
+	const baseFile = nonnull(getPullsListFilesResponseMock()[0]);
+	return [
+		getPullsGetMockHandler({
+			...basePull,
+			user: { ...basePull.user, login: "author@example.com" },
+			base: { ...basePull.base, ref: "main", sha: repo.baseCommit },
+			head: {
+				...basePull.head,
+				ref: "feature",
+				sha: repo.headCommit,
+			},
+		}),
+		getPullsListFilesMockHandler([
+			{
+				...baseFile,
+				filename: "src/huge.ts",
+				status: "modified",
+				additions: 2000,
+				deletions: 300_000,
+				changes: 302_000,
+			},
+		]),
+		createForbiddenGitHubGraphQlHandler(),
+		createForbiddenGitHubZipballHandler(),
+	];
+}
+
 export function createGitHubHandlers(repo: ScenarioRepo) {
 	const basePull = getPullsGetResponseMock({
 		number: 42,
 		body: "Refine helper\n\nSecond body.\n\nAdd y export\n\nFirst body.",
 		mergeable_state: "clean",
+		additions: 10,
+		deletions: 2,
+		changed_files: 2,
 	});
 	const baseRun = nonnull(getChecksListForRefResponseMock().check_runs[0]);
 	return [

@@ -1,11 +1,5 @@
 import { execFileSync } from "node:child_process";
-import {
-	chmodSync,
-	mkdirSync,
-	mkdtempSync,
-	rmSync,
-	writeFileSync,
-} from "node:fs";
+import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { nonnull } from "../domain/nullish.ts";
@@ -86,16 +80,7 @@ export function createScenarioRepo(): ScenarioRepo {
 		(_, idx) => `export const line${idx} = ${idx};`,
 	).join("\n");
 	writeFileSync(join(repoDir, "large-prod.ts"), `${manyLines}\n`, "utf8");
-	writeFileSync(join(repoDir, "large.test.ts"), `${manyLines}\n`, "utf8");
-	writeFileSync(join(repoDir, "package-lock.json"), `${manyLines}\n`, "utf8");
-	writeFileSync(join(repoDir, "README.md"), `${manyLines}\n`, "utf8");
-	git([
-		"add",
-		"large-prod.ts",
-		"large.test.ts",
-		"package-lock.json",
-		"README.md",
-	]);
+	git(["add", "large-prod.ts"]);
 	git(["commit", "--quiet", "-m", "Oversized change"]);
 
 	git(["checkout", "--quiet", "main"]);
@@ -104,21 +89,17 @@ export function createScenarioRepo(): ScenarioRepo {
 		{ length: 550 },
 		(_, idx) => `export const item${idx} = ${idx};`,
 	).join("\n");
-	rmSync(join(repoDir, "docs"), { recursive: true, force: true });
-	mkdirSync(join(repoDir, "docs"), { recursive: true });
 	writeFileSync(join(repoDir, "part-a.ts"), `${mediumLines}\n`, "utf8");
 	writeFileSync(join(repoDir, "part-b.ts"), `${mediumLines}\n`, "utf8");
 	writeFileSync(join(repoDir, "part-c.ts"), `${mediumLines}\n`, "utf8");
-	writeFileSync(join(repoDir, "docs/spec.yaml"), `${manyLines}\n`, "utf8");
-	git(["add", "part-a.ts", "part-b.ts", "part-c.ts", "docs/spec.yaml"]);
+	git(["add", "part-a.ts", "part-b.ts", "part-c.ts"]);
 	git(["commit", "--quiet", "-m", "Oversized total diff"]);
 
 	git(["checkout", "--quiet", "feature"]);
 	const zipForCommit = (commit: string, prefix = ""): Blob => {
-		const prefixArgs = prefix.length > 0 ? [`--prefix=${prefix}`] : [];
 		const bytes = execFileSync(
 			"git",
-			["archive", "--format=zip", ...prefixArgs, commit],
+			["archive", "--format=zip", `--prefix=${prefix}`, commit],
 			{ cwd: repoDir },
 		);
 		return new Blob([bytes], { type: "application/zip" });

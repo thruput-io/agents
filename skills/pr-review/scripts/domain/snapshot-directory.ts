@@ -23,6 +23,7 @@ import { nonnull } from "./nullish.ts";
 
 const COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/u;
 const HEADS_PREFIX = /^refs\/heads\//u;
+const MAX_GIT_STDOUT_BYTES = 4 * 1024 * 1024;
 
 export interface CommitZipArchive {
 	readonly sha: string;
@@ -54,6 +55,7 @@ export class SnapshotDirectory {
 	gitRaw(args: readonly string[]): string {
 		return execFileSync("git", ["-C", this.#path, ...args], {
 			encoding: "utf8",
+			maxBuffer: MAX_GIT_STDOUT_BYTES,
 			env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
 		});
 	}
@@ -110,16 +112,25 @@ export class SnapshotDirectory {
 			this.git(["update-ref", `refs/snapshots/${sha}`, "HEAD"]);
 		}
 	}
+	#refOf(sha: string): string {
+		return existsSync(join(this.#path, ".git", "refs", "snapshots", sha))
+			? `refs/snapshots/${sha}`
+			: sha;
+	}
+	numstat(fromCommit: string, toCommit: string): string {
+		return this.git([
+			"diff",
+			"--numstat",
+			"--no-renames",
+			`${this.#refOf(fromCommit)}..${this.#refOf(toCommit)}`,
+		]);
+	}
 	diff(fromCommit: string, toCommit: string): string {
-		const refOf = (sha: string) =>
-			existsSync(join(this.#path, ".git", "refs", "snapshots", sha))
-				? `refs/snapshots/${sha}`
-				: sha;
 		return this.git([
 			"diff",
 			"--no-renames",
 			"--unified=0",
-			`${refOf(fromCommit)}..${refOf(toCommit)}`,
+			`${this.#refOf(fromCommit)}..${this.#refOf(toCommit)}`,
 		]);
 	}
 	resolveRef(ref: string): string {

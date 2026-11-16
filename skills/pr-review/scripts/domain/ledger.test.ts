@@ -38,11 +38,15 @@ const rejectionMessage = (
 	targetProbe: LedgerProbe,
 	raw: { readonly headCommit: string; readonly rows: readonly Row[] },
 ): string => {
-	const parsed = ledgerFor(targetProbe).safeDecode({
-		headCommit: raw.headCommit,
-		rows: [...raw.rows],
-	});
-	return parsed.success ? "" : z.prettifyError(parsed.error);
+	try {
+		ledgerFor(targetProbe).decode({
+			headCommit: raw.headCommit,
+			rows: [...raw.rows],
+		});
+	} catch (error) {
+		return z.prettifyError(error as z.ZodError);
+	}
+	throw new Error("Expected ledger validation to reject");
 };
 
 const H = "a".repeat(40);
@@ -87,12 +91,16 @@ const contextProbe: ContextProbe = {
 	],
 };
 
-const violation = (
+const violation = (rule: RuleRef): Violation => ({
+	rule,
+	observation: "what is wrong",
+});
+const violationAt = (
 	rule: RuleRef,
-	idToReportViolationOn?: number,
+	idToReportViolationOn: number,
 ): Violation => ({
 	rule,
-	...(idToReportViolationOn === undefined ? {} : { idToReportViolationOn }),
+	idToReportViolationOn,
 	observation: "what is wrong",
 });
 const cleanRow = (rule: string): Row => ({
@@ -126,12 +134,12 @@ const rowOn = (ruleset: string): Row => ({
 });
 
 it("violationInside accepts surface line ids and pull-request-level findings (omitted idToReportViolationOn)", () => {
-	assert.equal(violationInside(violation("A", 3), files), true);
-	assert.equal(violationInside(violation("A", 1), files), true);
-	assert.equal(violationInside(violation("A", 9), files), true);
+	assert.equal(violationInside(violationAt("A", 3), files), true);
+	assert.equal(violationInside(violationAt("A", 1), files), true);
+	assert.equal(violationInside(violationAt("A", 9), files), true);
 	assert.equal(violationInside(violation("A"), files), true);
-	assert.equal(violationInside(violation("A", 6), files), false);
-	assert.equal(violationInside(violation("A", 7), files), false);
+	assert.equal(violationInside(violationAt("A", 6), files), false);
+	assert.equal(violationInside(violationAt("A", 7), files), false);
 });
 
 it("the ledger schema accepts rows matching the rules in order", () => {
@@ -179,25 +187,23 @@ it("the ledger schema rejects a missing, extra, reordered, book-rule, or foreign
 });
 
 it("the ledger schema rejects a violation anchored outside the surface", () => {
-	const rows = (lineId?: number) => [
-		violatedRow("A", [violation("A", lineId)]),
-		cleanRow("B"),
-	];
+	const rows = (v: Violation) => [violatedRow("A", [v]), cleanRow("B")];
 	assert.equal(
 		ledgerFor(probe).decode({
 			headCommit: H,
-			rows: rows(2),
+			rows: rows(violationAt("A", 2)),
 		}).rows.length,
 		2,
 	);
 	assert.equal(
-		ledgerFor(probe).decode({ headCommit: H, rows: rows() }).rows.length,
+		ledgerFor(probe).decode({ headCommit: H, rows: rows(violation("A")) }).rows
+			.length,
 		2,
 	);
 	assert.match(
 		rejectionMessage(probe, {
 			headCommit: H,
-			rows: rows(7),
+			rows: rows(violationAt("A", 7)),
 		}),
 		OUTSIDE_SURFACE_RE,
 	);
@@ -290,7 +296,7 @@ it("coordinateLedgers records each probe slice to disk, tracks MainAgentLedger s
 	assert.deepEqual(mainLedger.completed(), ["01-rules"]);
 
 	const secondReport = nonnull(ledgers[1]).report([
-		violatedRow("B", [violation("B", 2)]),
+		violatedRow("B", [violationAt("B", 2)]),
 	]);
 	assert.equal(secondReport.success, true);
 	assert.equal(secondReport.data.kind, "submitted");

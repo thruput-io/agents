@@ -5,9 +5,12 @@ import {
 } from "../../clients/azure-git.g.ts";
 import { PullRequestThreadsListResponse } from "../../clients/azure-git.zod.g.ts";
 import {
+	decodeAzureThreadContext,
+	encodeAzureThreadContext,
+} from "./azure-thread-context.ts";
+import {
 	type HeadCommit,
 	type Outcome,
-	type Side,
 	type Thread,
 	type ThreadId,
 	ThreadSchema,
@@ -16,7 +19,6 @@ import {
 import { isNullOrEmpty } from "./nullish.ts";
 import { ours as written } from "./rulebook.ts";
 
-const LEADING_SLASH = /^\//u;
 const PRIOR = / probes at ([0-9a-f]{40})\b/u;
 const STATE_BY_STATUS: Readonly<Record<string, ThreadState>> = {
 	active: "open",
@@ -61,51 +63,30 @@ export const AzureThreadCodec = z.codec(
 	ThreadSchema,
 	{
 		decode: (record) => {
-			const context = record.threadContext;
-			const side: Side = isNullOrEmpty(context?.rightFileEnd) ? "base" : "head";
-			const start =
-				side === "head" ? context?.rightFileStart : context?.leftFileStart;
-			const end =
-				(side === "head"
-					? context?.rightFileEnd?.line
-					: context?.leftFileEnd?.line) ?? 1;
+			const decoded = decodeAzureThreadContext(record.threadContext);
 			return {
 				id: String(record.id ?? ""),
-				path: (context?.filePath ?? "").replace(LEADING_SLASH, ""),
-				side,
-				lines: { start: start?.line ?? end, end },
+				...decoded,
 				state: STATE_BY_STATUS[record.status ?? ""] ?? "resolved",
 				body: firstComment(record),
 			};
 		},
-		encode: (domainThread) => {
-			const startPosition = { line: domainThread.lines.start, offset: 1 };
-			const endPosition = { line: domainThread.lines.end, offset: 1 };
-			const threadContext =
-				domainThread.side === "head"
-					? {
-							filePath: `/${domainThread.path}`,
-							rightFileStart: startPosition,
-							rightFileEnd: endPosition,
-						}
-					: {
-							filePath: `/${domainThread.path}`,
-							leftFileStart: startPosition,
-							leftFileEnd: endPosition,
-						};
-			return {
-				id: Number(domainThread.id),
-				status: STATUS_BY_STATE[domainThread.state],
-				threadContext,
-				comments: [
-					{
-						parentCommentId: 0,
-						commentType: CommentCommentType.text,
-						content: domainThread.body,
-					},
-				],
-			};
-		},
+		encode: (domainThread) => ({
+			id: Number(domainThread.id),
+			status: STATUS_BY_STATE[domainThread.state],
+			threadContext: encodeAzureThreadContext(
+				domainThread.path,
+				domainThread.side,
+				domainThread.lines,
+			),
+			comments: [
+				{
+					parentCommentId: 0,
+					commentType: CommentCommentType.text,
+					content: domainThread.body,
+				},
+			],
+		}),
 	},
 );
 

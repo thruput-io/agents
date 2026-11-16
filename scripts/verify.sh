@@ -3,6 +3,8 @@ set -euo pipefail
 
 jsonschema=(npx --yes @sourcemeta/jsonschema@17.0.0)
 
+git -C "$PROJECT_ROOT" ls-files -z '*.sh' | xargs -0 -I{} shellcheck "$PROJECT_ROOT/{}"
+
 "$PROJECT_ROOT/scripts/declared-ids.schema.sh" > "$PROJECT_ROOT/schemas/governance/declared-ids.g.schema.json"
 "${jsonschema[@]}" lint "$PROJECT_ROOT/schemas" --resolve "$PROJECT_ROOT/schemas"
 "${jsonschema[@]}" metaschema "$PROJECT_ROOT/schemas" --resolve "$PROJECT_ROOT/schemas"

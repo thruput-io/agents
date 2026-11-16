@@ -2,6 +2,64 @@ import { z } from "zod";
 
 export type AccessTokenKind = "bearer" | "basic" | "pat";
 
+interface TokenBehavior {
+	readonly kind: AccessTokenKind;
+	readonly toBearer: (credential: string) => {
+		readonly kind: AccessTokenKind;
+		readonly credential: string;
+	};
+	readonly toBasic: (credential: string) => {
+		readonly kind: AccessTokenKind;
+		readonly credential: string;
+	};
+	readonly authHeader: (credential: string) => string;
+	readonly forGitHub: (token: AccessToken) => AccessToken;
+	readonly forAzure: (token: AccessToken) => AccessToken;
+	readonly authGuidance: (envVar: string) => string;
+}
+
+const TOKEN_BEHAVIORS: Readonly<Record<AccessTokenKind, TokenBehavior>> = {
+	bearer: {
+		kind: "bearer",
+		toBearer: (credential) => ({ kind: "bearer", credential }),
+		toBasic: (credential) => ({
+			kind: "basic",
+			credential: encodeBasic(`:${credential}`),
+		}),
+		authHeader: (credential) => `Bearer ${credential}`,
+		forGitHub: (token) => token,
+		forAzure: (token) => token,
+		authGuidance: (envVar) =>
+			`access denied for bearer token (verify ${envVar} or AccessToken permissions)`,
+	},
+	basic: {
+		kind: "basic",
+		toBearer: (credential) => ({
+			kind: "bearer",
+			credential: decodeBasicToken(credential),
+		}),
+		toBasic: (credential) => ({ kind: "basic", credential }),
+		authHeader: (credential) => `Basic ${credential}`,
+		forGitHub: (token) => token,
+		forAzure: (token) => token,
+		authGuidance: (envVar) =>
+			`access denied for basic token (verify ${envVar} or AccessToken permissions)`,
+	},
+	pat: {
+		kind: "pat",
+		toBearer: (credential) => ({ kind: "bearer", credential }),
+		toBasic: (credential) => ({
+			kind: "basic",
+			credential: encodeBasic(`:${credential}`),
+		}),
+		authHeader: (credential) => `Basic ${encodeBasic(`:${credential}`)}`,
+		forGitHub: (token) => token.toBearer(),
+		forAzure: (token) => token.toBasic(),
+		authGuidance: (envVar) =>
+			`access denied for pat token (verify ${envVar} or AccessToken permissions)`,
+	},
+};
+
 const BEARER_PREFIX = /^bearer\s+(\S+)$/iu;
 const BASIC_PREFIX = /^basic\s+(\S+)$/iu;
 const SCHEME_ONLY = /^(?:bearer|basic)$/iu;
@@ -22,7 +80,10 @@ function encodeBasic(credentials: string): string {
 function decodeBasicToken(encoded: string): string {
 	const decoded = Buffer.from(encoded, "base64").toString("utf8");
 	const separator = decoded.indexOf(":");
-	return separator >= 0 ? decoded.slice(separator + 1) : decoded;
+	if (separator >= 0) {
+		return decoded.slice(separator + 1);
+	}
+	return decoded;
 }
 
 function senseToken(raw: string): {
@@ -83,10 +144,10 @@ function parseJwtScopes(credential: string): readonly string[] | null {
 }
 
 export class AccessToken {
-	readonly #kind: AccessTokenKind;
+	readonly #behavior: TokenBehavior;
 	readonly #credential: string;
 	private constructor(kind: AccessTokenKind, credential: string) {
-		this.#kind = kind;
+		this.#behavior = TOKEN_BEHAVIORS[kind];
 		this.#credential = credential;
 	}
 	static from(raw: string): z.ZodSafeParseResult<AccessToken> {
@@ -96,16 +157,16 @@ export class AccessToken {
 		}).safeDecode(raw);
 	}
 	kind(): AccessTokenKind {
-		return this.#kind;
+		return this.#behavior.kind;
 	}
 	isBearer(): boolean {
-		return this.#kind === "bearer";
+		return this.#behavior.kind === "bearer";
 	}
 	isBasic(): boolean {
-		return this.#kind === "basic";
+		return this.#behavior.kind === "basic";
 	}
 	isPat(): boolean {
-		return this.#kind === "pat";
+		return this.#behavior.kind === "pat";
 	}
 	scopes(): readonly string[] | null {
 		return parseJwtScopes(this.#credential);
@@ -117,39 +178,29 @@ export class AccessToken {
 		);
 	}
 	toBearer(): AccessToken {
-		if (this.#kind === "bearer") {
-			return this;
-		}
-		const token =
-			this.#kind === "basic"
-				? decodeBasicToken(this.#credential)
-				: this.#credential;
-		return new AccessToken("bearer", token);
+		const next = this.#behavior.toBearer(this.#credential);
+		return new AccessToken(next.kind, next.credential);
 	}
 	toBasic(): AccessToken {
-		if (this.#kind === "basic") {
-			return this;
-		}
-		return new AccessToken("basic", encodeBasic(`:${this.#credential}`));
+		const next = this.#behavior.toBasic(this.#credential);
+		return new AccessToken(next.kind, next.credential);
+	}
+	forGitHub(): AccessToken {
+		return this.#behavior.forGitHub(this);
+	}
+	forAzure(): AccessToken {
+		return this.#behavior.forAzure(this);
+	}
+	authGuidance(envVar: string): string {
+		return this.#behavior.authGuidance(envVar);
 	}
 	authorizationHeader(): string {
-		if (this.#kind === "bearer") {
-			return `Bearer ${this.#credential}`;
-		}
-		if (this.#kind === "basic") {
-			return `Basic ${this.#credential}`;
-		}
-		return `Basic ${encodeBasic(`:${this.#credential}`)}`;
+		return this.#behavior.authHeader(this.#credential);
 	}
 	requestInit(): {
 		readonly headers: Readonly<Record<string, string>>;
 	} {
-		return {
-			headers: {
-				accept: "application/json",
-				authorization: this.authorizationHeader(),
-			},
-		};
+		return this.requestInitWithHeaders({});
 	}
 	requestInitWithHeaders(headers: Readonly<Record<string, string>>): {
 		readonly headers: Readonly<Record<string, string>>;

@@ -5,6 +5,7 @@ import {
 	PullsCreateReviewResponse,
 	PullsGetResponse,
 	type PullsGetResponse as PullsGetResponseType,
+	PullsListFilesResponse,
 	PullsListReviewsResponse,
 } from "../../clients/github.zod.g.ts";
 import type { Change, GitHub, HeadCommit, Summary } from "./contracts.g.ts";
@@ -29,6 +30,15 @@ export const GitHubReviewsCodec = z.codec(
 	{
 		decode: (wire) => wire,
 		encode: (reviews) => reviews,
+	},
+);
+
+export const GitHubPullFilesCodec = z.codec(
+	PullsListFilesResponse,
+	PullsListFilesResponse,
+	{
+		decode: (wire) => wire,
+		encode: (files) => files,
 	},
 );
 

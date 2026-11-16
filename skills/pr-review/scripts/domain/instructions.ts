@@ -22,7 +22,6 @@ import {
 	ReusePermissionsSchema,
 	type ReuseTask,
 	ReuseTaskSchema,
-	RULEBOOK_PROBE_KINDS,
 	type Rulebook,
 	type RulebookSummary,
 	type RulesInstructions,
@@ -116,6 +115,15 @@ export const toRulebookSummaries = (
 		totalPages: paginateText(text).length,
 	}));
 
+const CHECKOUT_FIELDS_BY_KIND: Record<
+	RulesKind | ReuseKind | DeadCodeKind,
+	(checkout: Checkout) => { readonly checkout?: Checkout }
+> = {
+	rules: () => ({}),
+	"dead-code": (checkout) => ({ checkout }),
+	reuse: (checkout) => ({ checkout }),
+};
+
 export function instructions<RulebookSlice>(
 	context: {
 		readonly change: Change;
@@ -131,8 +139,6 @@ export function instructions<RulebookSlice>(
 ) {
 	const overview = surfaceOverview(context.surface);
 	const summaries = toRulebookSummaries(rulesets);
-	const checkoutFor = (kind: ProbeKind) =>
-		RULEBOOK_PROBE_KINDS.has(kind) ? { checkout: context.checkout } : {};
 	const handed = [
 		...probes.map((probe) => ({
 			name: probe.name,
@@ -144,7 +150,7 @@ export function instructions<RulebookSlice>(
 				change: context.change,
 				surface: overview,
 				rulebook: probe.rulebook,
-				...checkoutFor(probe.kind),
+				...CHECKOUT_FIELDS_BY_KIND[probe.kind](context.checkout),
 			},
 		})),
 		{

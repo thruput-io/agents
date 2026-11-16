@@ -3,6 +3,7 @@
 	"entry": [
 		"scripts/domain/controller.ts",
 		"scripts/domain/sub-agent-controller.ts",
+		"scripts/integration-test/msw-child-preload.ts",
 		"scripts/**/*.test.ts"
 	],
 	"project": ["scripts/**/*.ts"]

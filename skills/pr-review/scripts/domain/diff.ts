@@ -5,6 +5,7 @@ import {
 	type LineNumber,
 	type LineRange,
 	type Path,
+	PathSchema,
 	type RemovedContent,
 	type RemovedLines,
 } from "./contracts.g.ts";
@@ -103,6 +104,40 @@ const parseDiff = (text: string): ChangedFile[] =>
 		.split(DIFF_GIT_HEADER)
 		.filter((section) => section.startsWith("diff --git "))
 		.flatMap(fileOfSection);
+
+export interface NumstatEntry {
+	readonly path: Path;
+	readonly added: number;
+	readonly deleted: number;
+}
+
+const countNumstatValue = (raw: string | undefined): number => {
+	if (isNullOrEmpty(raw) || raw === "-") {
+		return 0;
+	}
+	const parsed = Number(raw);
+	return Number.isFinite(parsed) ? parsed : 0;
+};
+
+export function parseNumstat(numstatText: string): NumstatEntry[] {
+	const entries: NumstatEntry[] = [];
+	for (const line of numstatText.split("\n")) {
+		if (line.length === 0) {
+			continue;
+		}
+		const parts = line.split("\t");
+		const filePath = parts.slice(2).join("\t");
+		if (filePath.length === 0) {
+			continue;
+		}
+		entries.push({
+			path: PathSchema.decode(filePath),
+			added: countNumstatValue(parts[0]),
+			deleted: countNumstatValue(parts[1]),
+		});
+	}
+	return entries;
+}
 
 export const changedFiles = (text: string): ChangedFile[] =>
 	z.array(ChangedFileSchema).decode(parseDiff(text));

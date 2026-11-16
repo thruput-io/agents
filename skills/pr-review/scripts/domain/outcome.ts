@@ -90,40 +90,36 @@ export function outcome<
 	);
 	const findings = entries.flatMap(({ document, ledger: ownLedger }) => {
 		const files = filesOf(document);
-		return ownLedger.rows.flatMap((row) =>
-			row.verdict === "violation"
-				? row.violations.map((violation) => ({
-						resolved: resolveSurfaceLine(
-							violation.idToReportViolationOn,
-							files,
-						),
-						body: message(violation, citation(document, row)),
-						carried: alreadyOpen(
-							violation,
-							citation(document, row),
-							unsettledThreads,
-							files,
-						),
-					}))
-				: [],
-		);
+		return ownLedger.rows
+			.filter((row) => row.verdict === "violation")
+			.flatMap((row) =>
+				row.violations.map((violation) => ({
+					resolved: resolveSurfaceLine(violation.idToReportViolationOn, files),
+					body: message(violation, citation(document, row)),
+					carried: alreadyOpen(
+						violation,
+						citation(document, row),
+						unsettledThreads,
+						files,
+					),
+				})),
+			);
 	});
 	const fresh = findings.filter((finding) => !finding.carried);
-	const inline: InlineFinding[] = fresh.flatMap(({ resolved, body }) =>
-		isNullOrEmpty(resolved)
-			? []
-			: [
-					{
-						path: resolved.path,
-						side: resolved.side,
-						lines: { start: resolved.line, end: resolved.line },
-						body,
-					},
-				],
-	);
-	const atPullRequest = fresh.filter((finding) =>
-		isNullOrEmpty(finding.resolved),
-	);
+	const inline: InlineFinding[] = [];
+	const atPullRequest: typeof fresh = [];
+	for (const finding of fresh) {
+		if (isNullOrEmpty(finding.resolved)) {
+			atPullRequest.push(finding);
+			continue;
+		}
+		inline.push({
+			path: finding.resolved.path,
+			side: finding.resolved.side,
+			lines: { start: finding.resolved.line, end: finding.resolved.line },
+			body: finding.body,
+		});
+	}
 	const decided = verdict(ledger);
 	const summary: Summary = [
 		`**Verdict: ${decided}**`,
