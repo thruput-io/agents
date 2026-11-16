@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { rmSync } from "node:fs";
 import { after, before, beforeEach, test as it } from "node:test";
 import {
+	AZURE_REVIEWER_ID,
 	createAzureAlreadyReviewedHandler,
+	createFailedAzureConnectionDataHandler,
 	createFailedAzureThreadCreateHandler,
 	createForbiddenAzureItemsHandler,
 	createForbiddenAzureWriteHandler,
@@ -308,4 +310,35 @@ it("AzureDevOpsAdapter returns already-reviewed for already-reviewed Azure targe
 		).data,
 	).resolve(repo.workdirFor("unit-az-already").snapshotDirectory());
 	assert.equal(azAlready.kind, "already-reviewed");
+});
+
+it("AzureDevOpsAdapter resolves reviewer GUID from connectionData during pre-flight and fails fast on connectionData errors", async () => {
+	const token = nonnull(AccessToken.from(scenarioToken).data);
+	const seenPaths: string[] = [];
+	const onRequest = ({ request }: { readonly request: Request }) => {
+		seenPaths.push(new URL(request.url).pathname);
+	};
+	mockServer.events.on("request:start", onRequest);
+	try {
+		const posted = await nonnull(
+			HostAdapterFactory.fromWithToken(repo.azureTarget, token).data,
+		).post(sampleOutcome(repo.headCommit), sampleLedger(repo.headCommit));
+		assert.equal(typeof posted, "string");
+		assert.equal(
+			seenPaths.some((path) => path.endsWith(`/${AZURE_REVIEWER_ID}`)),
+			true,
+		);
+		assert.equal(
+			seenPaths.some((path) => path.endsWith("/reviewers/me")),
+			false,
+		);
+	} finally {
+		mockServer.events.removeListener("request:start", onRequest);
+	}
+
+	mockServer.use(createFailedAzureConnectionDataHandler());
+	const connErr = await nonnull(
+		HostAdapterFactory.fromWithToken(repo.azureTarget, token).data,
+	).resolve(repo.workdirFor("unit-az-conn-403").snapshotDirectory());
+	assert.equal(HostErrorSchema.parse(connErr).status, 403);
 });

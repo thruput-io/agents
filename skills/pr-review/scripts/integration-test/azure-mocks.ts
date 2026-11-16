@@ -1,7 +1,6 @@
 import { HttpResponse, http } from "msw";
 import {
 	getItemsListMockHandler,
-	getPullRequestReviewersCreatePullRequestReviewerMockHandler,
 	getPullRequestReviewersCreatePullRequestReviewerResponseMock,
 	getPullRequestReviewersUpdatePullRequestReviewersMockHandler,
 	getPullRequestsGetPullRequestMockHandler,
@@ -158,6 +157,22 @@ export function createAzureExistingRefusalHandler(headCommit: string) {
 	});
 }
 
+export const AZURE_REVIEWER_ID = "11111111-2222-3333-4444-555555555555";
+
+export function createFailedAzureConnectionDataHandler() {
+	return http.get(
+		"https://dev.azure.com/:organization/_apis/connectionData",
+		() =>
+			HttpResponse.json(
+				{
+					message:
+						"TF400813: The user is not authorized to access this resource.",
+				},
+				{ status: 403 },
+			),
+	);
+}
+
 export function createAzureHandlers(repo: ScenarioRepo) {
 	const baseAzure = getPullRequestsGetPullRequestResponseMock({
 		pullRequestId: 42,
@@ -220,9 +235,31 @@ export function createAzureHandlers(repo: ScenarioRepo) {
 			id: 101,
 		}),
 		getPullRequestReviewersUpdatePullRequestReviewersMockHandler(),
-		getPullRequestReviewersCreatePullRequestReviewerMockHandler({
-			...getPullRequestReviewersCreatePullRequestReviewerResponseMock(),
-			vote: 10,
-		}),
+		http.get("https://dev.azure.com/:organization/_apis/connectionData", () =>
+			HttpResponse.json({
+				authenticatedUser: { id: AZURE_REVIEWER_ID },
+			}),
+		),
+		http.put(
+			"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/pullRequests/:pullRequestId/reviewers/:reviewerId",
+			({ params }) => {
+				const { reviewerId } = params;
+				switch (String(reviewerId)) {
+					case AZURE_REVIEWER_ID:
+						return HttpResponse.json({
+							...getPullRequestReviewersCreatePullRequestReviewerResponseMock(),
+							id: AZURE_REVIEWER_ID,
+							vote: 10,
+						});
+					default:
+						return HttpResponse.json(
+							{
+								message: `Invalid argument value.\r\nParameter name: The identity ${String(reviewerId)} is not recognized.`,
+							},
+							{ status: 400 },
+						);
+				}
+			},
+		),
 	];
 }

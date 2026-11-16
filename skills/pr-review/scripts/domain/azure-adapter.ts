@@ -1,3 +1,4 @@
+import { z } from "zod";
 import {
 	type GitPullRequestCommentThread,
 	itemsList,
@@ -71,6 +72,10 @@ import type {
 
 const API_VERSION = { "api-version": "7.1" } as const;
 const POLICY_VERSION = "7.1-preview.1";
+const CONNECTION_DATA_VERSION = "7.1-preview.1";
+const ConnectionDataSchema = z.object({
+	authenticatedUser: z.object({ id: z.string().min(1) }),
+});
 const AZURE_WRITE_SCOPES = [
 	"user_impersonation",
 	"vso.code_write",
@@ -84,6 +89,7 @@ const isWritePermitted = (res: { readonly status: number }): boolean =>
 export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 	readonly #review: AzureMergeRequest;
 	readonly #transport: HostTransport;
+	#reviewerId: string | null = null;
 	private constructor(review: AzureMergeRequest, transport: HostTransport) {
 		this.#review = review;
 		this.#transport = transport;
@@ -155,10 +161,32 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 		}
 		return AzureCreatedThreadIdCodec.decode(res.data);
 	}
+	async #resolveReviewerId(): Promise<string | HostError> {
+		if (!isNullOrEmpty(this.#reviewerId)) {
+			return this.#reviewerId;
+		}
+		const url = `https://dev.azure.com/${encodeURIComponent(this.host().organization)}/_apis/connectionData?api-version=${CONNECTION_DATA_VERSION}`;
+		const res = await fetch(url, this.#requestInit());
+		const data: unknown = await res.json().catch(() => null);
+		const httpRes = { status: res.status, headers: res.headers, data };
+		if (!isJsonResponse(httpRes)) {
+			return this.#hostError(httpRes);
+		}
+		const parsed = ConnectionDataSchema.safeParse(data);
+		if (!parsed.success) {
+			return this.#hostError(httpRes);
+		}
+		this.#reviewerId = parsed.data.authenticatedUser.id;
+		return this.#reviewerId;
+	}
 	async #castVote(verdict: Outcome["verdict"]): Promise<HostError | null> {
+		const reviewerId = await this.#resolveReviewerId();
+		if (typeof reviewerId !== "string") {
+			return reviewerId;
+		}
 		const res = await pullRequestReviewersCreatePullRequestReviewer(
 			...this.#prArgs(),
-			"me",
+			reviewerId,
 			votePayload(verdict),
 			API_VERSION,
 			this.#requestInit(),
@@ -205,7 +233,7 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 			artifactId: artifactIdOf(host, pr),
 			"api-version": POLICY_VERSION,
 		};
-		const [evalRes, threadsRes, writeRes] = await Promise.all([
+		const [evalRes, threadsRes, writeRes, reviewerId] = await Promise.all([
 			evaluationsList(host.organization, host.project, policyQuery, init),
 			pullRequestThreadsList(...this.#prArgs(), API_VERSION, init),
 			pullRequestReviewersUpdatePullRequestReviewers(
@@ -214,6 +242,7 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 				API_VERSION,
 				init,
 			),
+			this.#resolveReviewerId(),
 		]);
 		if (!isJsonResponse(evalRes)) {
 			return this.#hostError(evalRes);
@@ -223,6 +252,9 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 		}
 		if (!isWritePermitted(writeRes)) {
 			return this.#hostError(writeRes);
+		}
+		if (typeof reviewerId !== "string") {
+			return reviewerId;
 		}
 		const evaluations = AzureEvaluationsListCodec.decode(evalRes.data);
 		const rawThreads = AzureThreadsListCodec.decode(threadsRes.data);
