@@ -84,7 +84,7 @@ definitions:
     A type in the domain layer that models a business concept and upholds its own invariants: [[Immutable]], created only through its [[Validating path of creation]], and operated on only through other [[Domain objects]].
 - id: Encapsulated type
   specification: |
-    A [[Class]] into which one or more [[Primitive]]s are folded at the [[Perimeter]], named for what the values mean rather than for their shape, with a single [[Validating path of creation]], and [[Immutable]]. Inside our code it is never collapsed back into [[Primitive]]s; it becomes another type only through a verified conversion, and at an outbound [[Perimeter]] a contract of the type folds it into the [[Foreign shape]]. Kept opaque, no code depends on its internal representation.
+    A [[Class]] into which one or more [[Primitive]]s are folded at the [[Perimeter]], named for what the values mean rather than for their shape, with a single [[Validating path of creation]], and [[Immutable]].
   openEnumerationOf:
   - Domain primitive
 - id: Domain primitive

@@ -177,6 +177,12 @@ rules:
     Wrap a [[Primitive]] in its [[Domain primitive]] before it crosses any [[Interface]] of ours.
   smells:
   - A [[Primitive]] in a domain [[Signature]].
+- id: Opaque encapsulated types
+  marker: MUST
+  group: Types
+  parent: No Primitive Obsession
+  body: |
+    Keep every [[Encapsulated type]] opaque so no code depends on its internal representation. Never collapse it back into [[Primitive]]s inside our code; convert it to another type only through a verified conversion, and fold it into a [[Foreign shape]] only through a contract of the type at an outbound [[Perimeter]].
 - id: Exhaustive matching
   marker: MUST
   group: Domain Model
