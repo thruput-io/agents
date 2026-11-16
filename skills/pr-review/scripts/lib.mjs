@@ -282,8 +282,11 @@ export const isLock = (path) => LOCK_FILE.test(path);
 const DOC_FILE = /(?:^|\/)(?:.*\.(?:md|markdown|rst|txt|adoc)|LICENSE|NOTICE|CHANGELOG(?:\.[^/]+)?)$/i;
 export const isDoc = (path) => DOC_FILE.test(path);
 
+const CONTRACT_FILE = /(?:^|\/)(?:.*(?:openapi|swagger|asyncapi|api[-_]spec).*\.(?:json|ya?ml)|(?:schemas?|contracts?|api-specs?)\/.+\.(?:json|ya?ml)|.+\.schema\.(?:json|ya?ml)|.+\.(?:proto|graphql|gql|avsc|thrift))$/i;
+export const isContract = (path) => CONTRACT_FILE.test(path);
+
 export function tooLarge(counts) {
-  return counts.filter((file) => !isTest(file.path) && !isLock(file.path) && !isDoc(file.path) && file.lines > FILE_LINES).map((file) => `${file.path} is ${file.lines} lines long, which breaks ${FILE_TOO_LARGE}`);
+  return counts.filter((file) => !isTest(file.path) && !isLock(file.path) && !isDoc(file.path) && !isContract(file.path) && file.lines > FILE_LINES).map((file) => `${file.path} is ${file.lines} lines long, which breaks ${FILE_TOO_LARGE}`);
 }
 
 export const ESCALATION_ROWS = 3;

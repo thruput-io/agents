@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   parseDiff, parseHunks, intersect, union, threadRanges, wholeSurface, narrowSurface, slug, partition, kindOf, checkKinds, rulebook, rawUrl, rulesets,
   instructions, complete, numbered, fragments, span, removedLines, settled, anchorInside, checkLedger, merge, verdict, table, citation, message, alreadyOpen,
-  outcome, ours, tooLarge, FILE_TOO_LARGE, FILE_LINES, isTest, isLock, isDoc, CELL, SITE,
+  outcome, ours, tooLarge, FILE_TOO_LARGE, FILE_LINES, isTest, isLock, isDoc, isContract, CELL, SITE,
 } from './lib.mjs';
 
 const diff = [
@@ -372,7 +372,7 @@ test('removedLines cuts the removed lines the surface keeps out of the hunks tha
   assert.throws(() => removedLines(hunks, [{ start: 20, end: 20 }]), /no removed hunk holds lines 20-20/);
 });
 
-test('tooLarge names every changed production file over the limit as a reason to refuse the review, skipping tests, lockfiles, and docs', () => {
+test('tooLarge names every changed production file over the limit as a reason to refuse the review, skipping tests, lockfiles, docs, and contracts', () => {
   assert.deepEqual(tooLarge([
     { path: 'a.cs', lines: 201 },
     { path: 'b.cs', lines: 200 },
@@ -383,6 +383,11 @@ test('tooLarge names every changed production file over the limit as a reason to
     { path: 'poetry.lock', lines: 3404 },
     { path: 'package-lock.json', lines: 5000 },
     { path: 'README.md', lines: 500 },
+    { path: 'openapi.yaml', lines: 1200 },
+    { path: 'schemas/user.schema.json', lines: 450 },
+    { path: 'api/swagger.json', lines: 800 },
+    { path: 'service.proto', lines: 350 },
+    { path: 'schema.graphql', lines: 400 },
   ]), ['a.cs is 201 lines long, which breaks File too large']);
   assert.deepEqual(tooLarge([]), []);
   assert.equal(FILE_LINES, 200);
@@ -425,4 +430,32 @@ test('isDoc identifies documentation files while ignoring production code', () =
   assert.equal(isDoc('LICENSE'), true);
   assert.equal(isDoc('guide.rst'), true);
   assert.equal(isDoc('service.py'), false);
+});
+
+test('isContract identifies API specifications, schemas, and contract files while ignoring production code', () => {
+  assert.equal(isContract('openapi.json'), true);
+  assert.equal(isContract('openapi.yaml'), true);
+  assert.equal(isContract('api/openapi.yml'), true);
+  assert.equal(isContract('swagger.json'), true);
+  assert.equal(isContract('specs/swagger.yaml'), true);
+  assert.equal(isContract('asyncapi.yaml'), true);
+  assert.equal(isContract('api-spec.json'), true);
+  assert.equal(isContract('api_spec.yaml'), true);
+  assert.equal(isContract('api-specs/order.yaml'), true);
+  assert.equal(isContract('schemas/order.json'), true);
+  assert.equal(isContract('schema/user.yaml'), true);
+  assert.equal(isContract('contracts/event.json'), true);
+  assert.equal(isContract('user.schema.json'), true);
+  assert.equal(isContract('config.schema.yaml'), true);
+  assert.equal(isContract('service.proto'), true);
+  assert.equal(isContract('schema.graphql'), true);
+  assert.equal(isContract('schema.gql'), true);
+  assert.equal(isContract('event.avsc'), true);
+  assert.equal(isContract('service.thrift'), true);
+  assert.equal(isContract('service.py'), false);
+  assert.equal(isContract('OrderController.cs'), false);
+  assert.equal(isContract('schema.ts'), false);
+  assert.equal(isContract('schemas/user.py'), false);
+  assert.equal(isContract('contracts/service.cs'), false);
+  assert.equal(isContract('openapi.py'), false);
 });
