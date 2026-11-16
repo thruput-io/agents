@@ -37,7 +37,7 @@ rationales:
 - id: Intent lives where it is checked
   parent: Single Source of Truth
   body: |
-    A comment is prose no tool checks, and it drifts from the code it describes. Knowledge placed where drift is caught stays true: a name appears at every call site, a [[Failing test]] turns unfinished work into a red build, an Architecture Decision Record keeps the why of a design with its context. Michael Nygard's [Documenting Architecture Decisions](https://www.cognitect.com/blog/2011/11/15/documenting-architecture-decisions) shows the cost of losing that why: teams blindly accept a decision or blindly reverse it.
+    A comment is prose no tool checks, and it drifts from the code it describes. Knowledge placed where drift is caught stays true: a name appears at every call site, a [[Failing test]] turns unfinished work into a red build, an [[Architectural Direction]] record keeps the why of a design with its context. Michael Nygard's [Documenting Architecture Decisions](https://www.cognitect.com/blog/2011/11/15/documenting-architecture-decisions) shows the cost of losing that why: teams blindly accept a decision or blindly reverse it.
   solutions:
   - marker: SHOULD
     body: |
@@ -70,7 +70,7 @@ rationales:
 - id: The Practical Test Pyramid
   parent: Shift Left
   body: |
-    Write tests of different granularity, and the higher the level, the fewer the tests: "Write lots of small and fast unit tests. Write some more coarse-grained tests and very few high-level tests that test your application from end to end" ([Ham Vocke, The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)). Below the unit tests, Yaron Minsky's "[[Make illegal states unrepresentable]]" and Alexis King's [Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) remove whole classes of bugs before a test exists. Lower levels give faster, more precise feedback and leave less to maintain.
+    Write tests of different granularity, and the higher the level, the fewer the tests: "Write lots of small and fast unit tests. Write some more coarse-grained tests and very few high-level tests that test your application from end to end" ([Ham Vocke, The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)). Below the [[Unit test]]s, Yaron Minsky's "[[Make illegal states unrepresentable]]" and Alexis King's [Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) remove whole classes of bugs before a test exists. Lower levels give faster, more precise feedback and leave less to maintain.
 - id: Crash, don't guess
   parent: Shift Left
   body: |
@@ -85,7 +85,7 @@ rationales:
 - id: Translate at the door
   parent: Shift Left
   body: |
-    [[Code We Cannot Control]] speaks its own dialect, a [[Foreign shape]]. Alistair Cockburn's [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/) and Eric Evans's Anti-Corruption Layer both put translation at a port, so foreign models never leak inward. Parsed once at the [[Perimeter]] into types that cannot hold [[Illegal states]], a value is never checked again. Tony Hoare's [billion-dollar mistake](https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/) shows the cost of uncertainty travelling through every reference. One adapter per foreign shape keeps upgrades local.
+    [[Code We Cannot Control]] speaks its own dialect, a [[Foreign shape]]. Alistair Cockburn's [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/) and Eric Evans's Anti-Corruption Layer both put translation at a port, so foreign models never leak inward. Parsed once at the [[Perimeter]] into types that cannot hold [[Illegal states]], a value is never checked again. Tony Hoare's [billion-dollar mistake](https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/) shows the cost of uncertainty travelling through every reference. One adapter per [[Foreign shape]] keeps upgrades local.
   solutions:
   - marker: SHOULD
     body: |
@@ -137,7 +137,7 @@ rationales:
   - marker: SHOULD
     body: |
       Make overload or specific behaviour [[Explicitly named method]]s instead of optional flags
-- id: Tests prove behaviour, not execution
+- id: Tests prove behavior, not execution
   parent: Without Verification It Is Worthless
   body: |
     A line that runs under test is not a line that is checked. Martin Fowler's [AssertionFreeTesting](https://martinfowler.com/bliki/AssertionFreeTesting.html) describes suites with full coverage that verified nothing; Inozemtseva and Holmes found coverage predicts little about fault detection once suite size is controlled for. A test that asserts outcomes is an executable specification that documents and guards behaviour on every commit.
@@ -147,7 +147,7 @@ rationales:
       Run mutation testing to show that the tests fail when the code is wrong ([State of Mutation Testing at Google](https://research.google.com/pubs/archive/46584.pdf)).
   - marker: SHOULD
     body: |
-      Treat painful test setup as a design signal: split the subject into smaller domain models or focused interfaces before reaching for a mock.
+      Treat painful [[Test setup]] as a design signal: split the subject into smaller domain models or focused interfaces before reaching for a mock.
   - marker: SHOULD
     body: |
       Almost all code has tools for verification, make sure they are used inside the [project].
@@ -209,7 +209,7 @@ rationales:
 - id: What wins when values collide
   parent: Quality Uncompromised
   body: |
-    Each [[Software quality axis]] is challenged by a [[Competing good]], and when they collide the axis wins. The pairs read in both directions: finding the competing good in code is a symptom that its axis needs attention, and the repair belongs on the axis, not in more of the good. Quality is not measured by what a competing good offers: [[Performance]] and [[Feature Rich]] are requirements like any other, and meeting one is part of [[Correctness]], but neither earns credit against the other axes.
+    Each [[Software quality axis]] is challenged by a [[Competing good]], and when they collide the axis wins. The pairs read in both directions: finding the [[Competing good]] in code is a symptom that its axis needs attention, and the repair belongs on the axis, not in more of the good. Quality is not measured by what a [[Competing good]] offers: [[Performance]] and [[Feature Rich]] are requirements like any other, and meeting one is part of [[Correctness]], but neither earns credit against the other axes.
   solutions:
   - marker: SHOULD
     body: |

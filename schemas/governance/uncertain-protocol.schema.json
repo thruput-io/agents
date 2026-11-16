@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/governance/uncertain-protocol.schema.json",
+  "title": "Uncertain Protocol",
+  "description": "Lightweight schema for logging uncertain protocol resolutions into the .log folder",
+  "examples": [
+    {
+      "file_name": "auth-edge-case",
+      "issue_description": "Unclear whether expired tokens should be refreshed or rejected",
+      "hierarchical_rule_resolution": "unsuccessful",
+      "missing_from_rules": "No rule covers token refresh on expiry"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "file_name": {
+      "type": "string",
+      "description": "The descriptive name used for the .md file (e.g., 'auth-edge-case')"
+    },
+    "issue_description": {
+      "type": "string",
+      "description": "Description of the issue or the assistance needed"
+    },
+    "hierarchical_rule_resolution": {
+      "enum": [
+        "successful",
+        "unsuccessful"
+      ],
+      "description": "Outcome of executing the Hierarchical Rule Resolution steps"
+    },
+    "decision_basis": {
+      "description": "If successful, the item (rule, principle, etc.) the decision is based on",
+      "$ref": "id.schema.json"
+    },
+    "missing_from_rules": {
+      "type": "string",
+      "description": "If unsuccessful, what is missing from the existing rules documents"
+    }
+  },
+  "required": [
+    "file_name",
+    "issue_description",
+    "hierarchical_rule_resolution"
+  ],
+  "oneOf": [
+    {
+      "properties": {
+        "hierarchical_rule_resolution": {
+          "const": "successful"
+        }
+      },
+      "required": [
+        "decision_basis"
+      ]
+    },
+    {
+      "properties": {
+        "hierarchical_rule_resolution": {
+          "const": "unsuccessful"
+        }
+      },
+      "required": [
+        "missing_from_rules"
+      ]
+    }
+  ]
+}
