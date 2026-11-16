@@ -16,6 +16,7 @@ import {
 	type Row,
 	RulesetPageSchema,
 	SurfaceBoundarySchema,
+	type SurfaceLineId,
 	type SurfacePage,
 } from "../domain/contracts.g.ts";
 import { nonnull } from "../domain/nullish.ts";
@@ -120,7 +121,7 @@ const surfaceLineId = (
 	pages: readonly SurfacePage[],
 	filePath: string,
 	lineText: string,
-): number =>
+): SurfaceLineId =>
 	nonnull(
 		pages
 			.filter((page) => page.path === filePath)

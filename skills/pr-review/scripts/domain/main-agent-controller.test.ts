@@ -42,8 +42,7 @@ const sampleSnapshot = () =>
 						side: "head",
 						lines: [
 							{
-								idToReportViolationOn: 1,
-								line: 1,
+								idToReportViolationOn: "a.ts:1",
 								text: "export const a = 1;",
 							},
 						],

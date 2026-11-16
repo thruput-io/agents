@@ -12,6 +12,7 @@ import {
 	type Side,
 	type Surface,
 	type SurfaceFile,
+	type SurfaceLineId,
 	type Violation,
 } from "./contracts.g.ts";
 import { isNullOrEmpty } from "./nullish.ts";
@@ -34,12 +35,6 @@ export interface ContextProbe {
 
 export type LedgerProbe = RulesProbe | ContextProbe;
 
-export interface ResolvedSurfaceLine {
-	readonly path: Path;
-	readonly side: Side;
-	readonly line: LineNumber;
-}
-
 export function ruleName(row: Row): RuleHeading | Rule["id"] {
 	if ("bookRule" in row) {
 		return row.bookRule.heading;
@@ -54,27 +49,36 @@ function rowRuleRef(row: Row): RuleRef {
 	return row.rule;
 }
 
+export interface ResolvedSurfaceLine {
+	readonly path: Path;
+	readonly side: Side;
+	readonly line: LineNumber;
+}
+
 export const resolveSurfaceLine = (
-	lineId: LineNumber | undefined,
+	lineId: SurfaceLineId | undefined,
 	files: readonly SurfaceFile[],
 ): ResolvedSurfaceLine | null => {
 	if (isNullOrEmpty(lineId)) {
 		return null;
 	}
-	for (const file of files) {
-		for (const fragment of file.fragments) {
-			if (fragment.kind !== "surface") {
-				continue;
-			}
-			const matched = fragment.lines.find(
-				(line) => line.idToReportViolationOn === lineId,
-			);
-			if (!isNullOrEmpty(matched)) {
-				return { path: file.path, side: fragment.side, line: matched.line };
-			}
-		}
+	const file = files.find(
+		(candidate) =>
+			lineId.startsWith(`${candidate.path}:`) &&
+			candidate.fragments.some(
+				(fragment) =>
+					fragment.kind === "surface" &&
+					fragment.lines.some((line) => line.idToReportViolationOn === lineId),
+			),
+	);
+	if (isNullOrEmpty(file)) {
+		return null;
 	}
-	return null;
+	return {
+		path: file.path,
+		side: "head",
+		line: Number(lineId.slice(file.path.length + 1)),
+	};
 };
 
 export const violationInside = (

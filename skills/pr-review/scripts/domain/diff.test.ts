@@ -1,16 +1,10 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { changedFiles, intersect, parseHunks, union } from "./diff.ts";
-import {
-	fragments,
-	indexSurface,
-	numbered,
-	removedLines,
-} from "./fragments.ts";
+import { fragments, numbered } from "./fragments.ts";
 import { narrowSurface, threadRanges, wholeSurface } from "./surface.ts";
 
 const H = "a".repeat(40);
-const NO_REMOVED_HUNK_RE = /no removed hunk holds lines 20-20/u;
 
 const diff = [
 	"diff --git a/scripts/verify.sh b/scripts/verify.sh",
@@ -161,26 +155,27 @@ const changeSet = {
 			added: [{ start: 1, end: 1 }],
 			removed: [{ start: 1, end: 4, content: "one\ntwo\nthree\nfour" }],
 		},
+		{
+			path: "deleted.sh",
+			added: [],
+			removed: [{ start: 1, end: 2, content: "old1\nold2" }],
+		},
 		{ path: "d.sh", added: [{ start: 1, end: 9 }], removed: [] },
 		{ path: "empty.txt", added: [], removed: [] },
 	],
 };
 
-it("wholeSurface is every line of the change set, by number only, excluding zero-hunk files", () => {
+it("wholeSurface keeps added line ranges and excludes deletion-only or zero-hunk files", () => {
 	assert.deepEqual(wholeSurface(changeSet), {
 		files: [
-			{ path: "a.sh", added: [{ start: 1, end: 20 }], removed: [] },
-			{
-				path: "b.sh",
-				added: [{ start: 1, end: 1 }],
-				removed: [{ start: 1, end: 4 }],
-			},
-			{ path: "d.sh", added: [{ start: 1, end: 9 }], removed: [] },
+			{ path: "a.sh", added: [{ start: 1, end: 20 }] },
+			{ path: "b.sh", added: [{ start: 1, end: 1 }] },
+			{ path: "d.sh", added: [{ start: 1, end: 9 }] },
 		],
 	});
 });
 
-it("narrowSurface keeps change-set lines that changed since the prior review or carry a thread", () => {
+it("narrowSurface keeps new lines changed since the prior review or carrying an unsettled head thread", () => {
 	const changedSince = new Map([["a.sh", [{ start: 15, end: 30 }]]]);
 	assert.deepEqual(
 		narrowSurface(changeSet, changedSince, threadRanges(threads)),
@@ -193,9 +188,7 @@ it("narrowSurface keeps change-set lines that changed since the prior review or 
 						{ start: 8, end: 9 },
 						{ start: 15, end: 20 },
 					],
-					removed: [],
 				},
-				{ path: "b.sh", added: [], removed: [{ start: 2, end: 2 }] },
 			],
 		},
 	);
@@ -212,126 +205,31 @@ it("numbered lists the lines of a file by their number from 1, a final newline e
 	assert.deepEqual(Object.keys(numbered("x\n".repeat(12))).at(-1), "12");
 });
 
-it("fragments cuts a file into context and surface fragments in order, head first, then the removed hunks as base fragments", () => {
+it("fragments cuts a file into context and head surface fragments in file order with '<path>:<line>' ids", () => {
 	const numberedLines = numbered("a\nb\nc\nd\n");
 	assert.deepEqual(
-		fragments(
-			numberedLines,
-			[{ start: 2, end: 3 }],
-			[{ start: 7, end: 8, content: "x\ny" }],
-		),
+		fragments({ path: "a.ts", lines: numberedLines }, [{ start: 2, end: 3 }]),
 		[
 			{ kind: "context", lines: ["a"] },
 			{
 				kind: "surface",
 				side: "head",
 				lines: [
-					{ idToReportViolationOn: 2, line: 2, text: "b" },
-					{ idToReportViolationOn: 3, line: 3, text: "c" },
+					{ idToReportViolationOn: "a.ts:2", text: "b" },
+					{ idToReportViolationOn: "a.ts:3", text: "c" },
 				],
 			},
 			{ kind: "context", lines: ["d"] },
+		],
+	);
+	assert.deepEqual(
+		fragments({ path: "a.ts", lines: numbered("a\n") }, [{ start: 1, end: 1 }]),
+		[
 			{
 				kind: "surface",
-				side: "base",
-				lines: [
-					{ idToReportViolationOn: 7, line: 7, text: "x" },
-					{ idToReportViolationOn: 8, line: 8, text: "y" },
-				],
+				side: "head",
+				lines: [{ idToReportViolationOn: "a.ts:1", text: "a" }],
 			},
 		],
-	);
-	assert.deepEqual(fragments({}, [], [{ start: 1, end: 1, content: "gone" }]), [
-		{
-			kind: "surface",
-			side: "base",
-			lines: [{ idToReportViolationOn: 1, line: 1, text: "gone" }],
-		},
-	]);
-	assert.deepEqual(fragments(numbered("a\n"), [{ start: 1, end: 1 }], []), [
-		{
-			kind: "surface",
-			side: "head",
-			lines: [{ idToReportViolationOn: 1, line: 1, text: "a" }],
-		},
-	]);
-});
-
-it("indexSurface assigns globally unique idToReportViolationOn across files while preserving file line numbers", () => {
-	const helperFragments = fragments(
-		numbered("export const z = 3;\n\n"),
-		[{ start: 1, end: 2 }],
-		[],
-	);
-	const serviceFragments = fragments(
-		numbered("export const x = 1;\nexport const y = 2;\n\n"),
-		[{ start: 2, end: 3 }],
-		[{ start: 10, end: 10, content: "export const old = 0;" }],
-	);
-	const indexed = indexSurface([
-		{ path: "helper.ts", fragments: helperFragments },
-		{ path: "service.ts", fragments: serviceFragments },
-	]);
-	assert.deepEqual(indexed, [
-		{
-			path: "helper.ts",
-			fragments: [
-				{
-					kind: "surface",
-					side: "head",
-					lines: [
-						{ idToReportViolationOn: 1, line: 1, text: "export const z = 3;" },
-						{ idToReportViolationOn: 2, line: 2, text: "" },
-					],
-				},
-			],
-		},
-		{
-			path: "service.ts",
-			fragments: [
-				{ kind: "context", lines: ["export const x = 1;"] },
-				{
-					kind: "surface",
-					side: "head",
-					lines: [
-						{ idToReportViolationOn: 3, line: 2, text: "export const y = 2;" },
-						{ idToReportViolationOn: 4, line: 3, text: "" },
-					],
-				},
-				{
-					kind: "surface",
-					side: "base",
-					lines: [
-						{
-							idToReportViolationOn: 5,
-							line: 10,
-							text: "export const old = 0;",
-						},
-					],
-				},
-			],
-		},
-	]);
-});
-
-it("removedLines cuts the removed lines the surface keeps out of the hunks that carry their text", () => {
-	const hunks = [
-		{ start: 10, end: 13, content: "a\nb\nc\nd" },
-		{ start: 30, end: 30, content: "z" },
-	];
-	assert.deepEqual(
-		removedLines(hunks, [
-			{ start: 11, end: 12 },
-			{ start: 30, end: 30 },
-		]),
-		[
-			{ start: 11, end: 12, content: "b\nc" },
-			{ start: 30, end: 30, content: "z" },
-		],
-	);
-	assert.deepEqual(removedLines(hunks, []), []);
-	assert.throws(
-		() => removedLines(hunks, [{ start: 20, end: 20 }]),
-		NO_REMOVED_HUNK_RE,
 	);
 });

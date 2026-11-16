@@ -2,15 +2,9 @@ import type { AdapterResolution, ReviewSnapshotInput } from "./adapter.ts";
 import type { CodeUnderReview } from "./code-under-review.ts";
 import type { Path, SurfaceFile } from "./contracts.g.ts";
 import { changedFiles, parseNumstat } from "./diff.ts";
-import {
-	fragments,
-	indexSurface,
-	type NumberedLines,
-	numbered,
-	removedLines,
-} from "./fragments.ts";
+import { fragments, type NumberedLines, numbered } from "./fragments.ts";
 import { oversizedFiles, tooLarge } from "./limits.ts";
-import { isNullOrEmpty, nonnull } from "./nullish.ts";
+import { isNullOrEmpty } from "./nullish.ts";
 import type { RefusalRecorder } from "./review-baseline.ts";
 import { CodeUnderReviewSnapshot } from "./review-snapshot.ts";
 import type { SnapshotDirectory } from "./snapshot-directory.ts";
@@ -68,22 +62,15 @@ export async function buildReviewSnapshot(
 	if (surfaceSpec.files.length === 0) {
 		return input.baseline.alreadyReviewed(input.headCommit);
 	}
-	const surfaceFiles: SurfaceFile[] = indexSurface(
-		surfaceSpec.files.map((entry) => {
-			const changed = nonnull(files.find((file) => file.path === entry.path));
-			const headLines =
-				linesByPath.get(entry.path) ?? linesAtHead(snapshotDir, entry.path);
-			linesByPath.set(entry.path, headLines);
-			return {
-				path: entry.path,
-				fragments: fragments(
-					headLines,
-					entry.added,
-					removedLines(changed.removed, entry.removed),
-				),
-			};
-		}),
-	);
+	const surfaceFiles: SurfaceFile[] = surfaceSpec.files.map((entry) => {
+		const headLines =
+			linesByPath.get(entry.path) ?? linesAtHead(snapshotDir, entry.path);
+		linesByPath.set(entry.path, headLines);
+		return {
+			path: entry.path,
+			fragments: fragments({ path: entry.path, lines: headLines }, entry.added),
+		};
+	});
 	const snapshot = CodeUnderReviewSnapshot.from(
 		review.withReview(
 			surfaceFiles,

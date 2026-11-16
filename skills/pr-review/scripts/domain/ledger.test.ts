@@ -52,17 +52,14 @@ const rejectionMessage = (
 
 const H = "a".repeat(40);
 const OTHER = "b".repeat(40);
-const PREFIX = { head: "L", base: "R" } as const;
-
-const text = (side: "head" | "base", n: number) => `${PREFIX[side]}${n}`;
-const run = (side: "head" | "base", from: number, to: number) =>
+const text = (n: number) => `L${n}`;
+const run = (from: number, to: number) =>
 	Array.from({ length: to - from + 1 }, (_, i) => ({
-		idToReportViolationOn: from + i,
-		line: from + i,
-		text: text(side, from + i),
+		idToReportViolationOn: `p:${from + i}`,
+		text: text(from + i),
 	}));
-const contextRun = (side: "head" | "base", from: number, to: number) =>
-	Array.from({ length: to - from + 1 }, (_, i) => text(side, from + i));
+const contextRun = (from: number, to: number) =>
+	Array.from({ length: to - from + 1 }, (_, i) => text(from + i));
 const files = [
 	{
 		path: "p",
@@ -70,13 +67,13 @@ const files = [
 			{
 				kind: "surface" as const,
 				side: "head" as const,
-				lines: run("head", 1, 5),
+				lines: run(1, 5),
 			},
-			{ kind: "context" as const, lines: contextRun("head", 6, 8) },
+			{ kind: "context" as const, lines: contextRun(6, 8) },
 			{
 				kind: "surface" as const,
-				side: "base" as const,
-				lines: run("base", 9, 9),
+				side: "head" as const,
+				lines: run(9, 9),
 			},
 		],
 	},
@@ -97,12 +94,9 @@ const violation = (rule: RuleRef): Violation => ({
 	rule,
 	observation: "what is wrong",
 });
-const violationAt = (
-	rule: RuleRef,
-	idToReportViolationOn: number,
-): Violation => ({
+const violationAt = (rule: RuleRef, line: number): Violation => ({
 	rule,
-	idToReportViolationOn,
+	idToReportViolationOn: `p:${line}`,
 	observation: "what is wrong",
 });
 const cleanRow = (rule: string): Row => ({
@@ -144,7 +138,7 @@ it("violationInside accepts surface line ids and pull-request-level findings (om
 	assert.equal(violationInside(violationAt("A", 7), files), false);
 });
 
-it("resolveSurfaceLine maps idToReportViolationOn to the line's file, side, and 1-based file line number", () => {
+it("resolveSurfaceLine maps '<path>:<line>' to the exact matching file, head side, and 1-based file line number", () => {
 	const multiFileSurface = [
 		{
 			path: "helper.ts",
@@ -153,8 +147,11 @@ it("resolveSurfaceLine maps idToReportViolationOn to the line's file, side, and 
 					kind: "surface" as const,
 					side: "head" as const,
 					lines: [
-						{ idToReportViolationOn: 1, line: 1, text: "export const z = 3;" },
-						{ idToReportViolationOn: 2, line: 2, text: "" },
+						{
+							idToReportViolationOn: "helper.ts:1",
+							text: "export const z = 3;",
+						},
+						{ idToReportViolationOn: "helper.ts:2", text: "" },
 					],
 				},
 			],
@@ -166,17 +163,21 @@ it("resolveSurfaceLine maps idToReportViolationOn to the line's file, side, and 
 					kind: "surface" as const,
 					side: "head" as const,
 					lines: [
-						{ idToReportViolationOn: 3, line: 2, text: "export const y = 2;" },
+						{
+							idToReportViolationOn: "service.ts:2",
+							text: "export const y = 2;",
+						},
 					],
 				},
 			],
 		},
 	];
-	assert.deepEqual(resolveSurfaceLine(3, multiFileSurface), {
+	assert.deepEqual(resolveSurfaceLine("service.ts:2", multiFileSurface), {
 		path: "service.ts",
 		side: "head",
 		line: 2,
 	});
+	assert.equal(resolveSurfaceLine("service.ts:99", multiFileSurface), null);
 });
 
 it("the ledger schema accepts rows matching the rules in order", () => {

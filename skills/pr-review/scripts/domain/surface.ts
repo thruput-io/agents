@@ -26,7 +26,7 @@ interface RangeSides {
 }
 
 interface SurfaceFiles {
-	files: { path: Path; added: LineRange[]; removed: LineRange[] }[];
+	files: { path: Path; added: LineRange[] }[];
 }
 
 export function threadRanges(threads: readonly ThreadRangeInput[]) {
@@ -50,9 +50,8 @@ export const wholeSurface = (changeSet: ChangeSetFiles): SurfaceFiles => ({
 		.map((file) => ({
 			path: file.path,
 			added: file.added,
-			removed: file.removed.map(({ start, end }) => ({ start, end })),
 		}))
-		.filter((file) => file.added.length + file.removed.length > 0),
+		.filter((file) => file.added.length > 0),
 });
 
 export const narrowSurface = (
@@ -70,7 +69,6 @@ export const narrowSurface = (
 					threads.head.get(file.path) ?? [],
 				),
 			),
-			removed: intersect(file.removed, threads.base.get(file.path) ?? []),
 		}))
-		.filter((file) => file.added.length + file.removed.length > 0),
+		.filter((file) => file.added.length > 0),
 });

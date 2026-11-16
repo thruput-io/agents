@@ -4,8 +4,7 @@ import type {
 	LineNumber,
 	LineRange,
 	LineText,
-	RemovedLines,
-	SurfaceFile,
+	Path,
 	SurfaceFragment,
 	SurfaceLine,
 } from "./contracts.g.ts";
@@ -29,19 +28,17 @@ const isInsideRanges = (
 ): boolean => ranges.some((range) => range.start <= line && line <= range.end);
 
 export function fragments(
-	lines: NumberedLines,
+	file: { readonly path: Path; readonly lines: NumberedLines },
 	added: readonly LineRange[],
-	removed: readonly RemovedLines[],
 ): Fragment[] {
 	const headFragments: (SurfaceFragment | ContextFragment)[] = [];
-	for (const [numberText, text] of Object.entries(lines)) {
+	for (const [numberText, text] of Object.entries(file.lines)) {
 		const lineNumber: LineNumber = Number(numberText);
 		const isSurface = isInsideRanges(added, lineNumber);
 		const previous = headFragments.at(-1);
 		if (isSurface) {
 			const surfaceLine: SurfaceLine = {
-				idToReportViolationOn: lineNumber,
-				line: lineNumber,
+				idToReportViolationOn: `${file.path}:${lineNumber}`,
 				text,
 			};
 			if (!isNullOrEmpty(previous) && previous.kind === "surface") {
@@ -65,58 +62,5 @@ export function fragments(
 			headFragments.push({ kind: "context", lines: [text] });
 		}
 	}
-	const baseFragments: SurfaceFragment[] = removed.map((hunk) => ({
-		kind: "surface",
-		side: "base",
-		lines: hunk.content.split("\n").map((lineText, index) => ({
-			idToReportViolationOn: hunk.start + index,
-			line: hunk.start + index,
-			text: lineText,
-		})),
-	}));
-	return [...headFragments, ...baseFragments];
+	return headFragments;
 }
-
-export function indexSurface(files: readonly SurfaceFile[]): SurfaceFile[] {
-	let nextId = 1;
-	const reindexFragment = (fragment: Fragment): Fragment => {
-		if (fragment.kind === "context") {
-			return fragment;
-		}
-		return {
-			...fragment,
-			lines: fragment.lines.map((entry) => {
-				const id = nextId;
-				nextId += 1;
-				return { ...entry, idToReportViolationOn: id };
-			}),
-		};
-	};
-	return files.map((file) => ({
-		path: file.path,
-		fragments: file.fragments.map(reindexFragment),
-	}));
-}
-
-export const removedLines = (
-	hunks: readonly RemovedLines[],
-	ranges: readonly LineRange[],
-): RemovedLines[] =>
-	ranges.map((range) => {
-		const hunk = hunks.find(
-			(candidate) =>
-				candidate.start <= range.start && range.end <= candidate.end,
-		);
-		if (isNullOrEmpty(hunk)) {
-			throw new Error(
-				`no removed hunk holds lines ${range.start}-${range.end}`,
-			);
-		}
-		return {
-			...range,
-			content: hunk.content
-				.split("\n")
-				.slice(range.start - hunk.start, range.end - hunk.start + 1)
-				.join("\n"),
-		};
-	});

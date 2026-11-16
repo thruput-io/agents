@@ -304,24 +304,38 @@
       "additionalProperties": false
     },
     "SurfaceLineId": {
-      "description": "Unique 1-based identifier of a [[Surface]] line across all changed files in the review, used to anchor a [[Violation]]",
-      "type": "integer",
-      "minimum": 1
+      "description": "Canonical identifier of one new line on the [[Surface]] within the [[Change]], formatted as '<path>:<line>'",
+      "type": "string",
+      "pattern": "^[^/](?:.*[^/])?:[1-9][0-9]*$",
+      "contentEncoding": "8bit",
+      "contentMediaType": "text/plain",
+      "contentSchema": {
+        "type": "object",
+        "required": [
+          "path",
+          "line"
+        ],
+        "properties": {
+          "path": {
+            "$ref": "#/$defs/Path"
+          },
+          "line": {
+            "$ref": "#/$defs/LineNumber"
+          }
+        },
+        "additionalProperties": false
+      }
     },
     "SurfaceLine": {
-      "description": "One line of a surface fragment, with the unique identifier a violation reports on, its 1-based file line number on its fragment's side, and its text",
+      "description": "One new line of a surface fragment, with the '<path>:<line>' identifier a violation reports on and its text",
       "type": "object",
       "required": [
         "idToReportViolationOn",
-        "line",
         "text"
       ],
       "properties": {
         "idToReportViolationOn": {
           "$ref": "#/$defs/SurfaceLineId"
-        },
-        "line": {
-          "$ref": "#/$defs/LineNumber"
         },
         "text": {
           "$ref": "#/$defs/LineText"
@@ -346,7 +360,7 @@
       }
     },
     "SurfaceFragment": {
-      "description": "Lines the change added, on side head and numbered in the file at the head commit, or removed, on side base and numbered in the file at the base. An anchor copies these lines as they stand",
+      "description": "New lines the change added on side head, numbered in the file at the head commit. An anchor copies these lines as they stand",
       "type": "object",
       "required": [
         "kind",
@@ -358,7 +372,7 @@
           "const": "surface"
         },
         "side": {
-          "$ref": "#/$defs/Side"
+          "const": "head"
         },
         "lines": {
           "$ref": "#/$defs/SurfaceLines"
@@ -395,7 +409,7 @@
       ]
     },
     "SurfaceFile": {
-      "description": "One file that has [[Surface]] lines, whole: its fragments in file order at the [[Head commit]], then the base-side surface fragments",
+      "description": "One file that has [[Surface]] lines, whole: its fragments in file order at the [[Head commit]]",
       "type": "object",
       "required": [
         "path",
@@ -416,7 +430,7 @@
       "additionalProperties": false
     },
     "Surface": {
-      "description": "The [[Surface]] at the [[Head commit]], resolved once and handed to every probe: each file with its surface fragments on the left (base) and right (head), which a [[Violation]] may anchor on, and context fragments around them",
+      "description": "The [[Surface]] at the [[Head commit]], resolved once and handed to every probe: each file with its new surface fragments on head, which a [[Violation]] may anchor on, and context fragments around them",
       "type": "object",
       "required": [
         "headCommit",
@@ -427,7 +441,7 @@
           "$ref": "#/$defs/HeadCommit"
         },
         "files": {
-          "description": "Every file that has [[Surface]] lines, whole: its fragments in file order at the [[Head commit]], then the base-side surface fragments",
+          "description": "Every file that has [[Surface]] lines, whole: its fragments in file order at the [[Head commit]]",
           "type": "array",
           "items": {
             "$ref": "#/$defs/SurfaceFile"

@@ -270,7 +270,7 @@
           "violations": [
             {
               "rule": "No suppressed exit status",
-              "idToReportViolationOn": 21,
+              "idToReportViolationOn": "scripts/verify.sh:21",
               "observation": "Losing the check's exit status in a pipe into tail"
             }
           ]

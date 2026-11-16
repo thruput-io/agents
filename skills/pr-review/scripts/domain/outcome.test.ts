@@ -22,15 +22,11 @@ const files = [
 				kind: "surface" as const,
 				side: "head" as const,
 				lines: [
-					{ idToReportViolationOn: 3, line: 3, text: "x3" },
-					{ idToReportViolationOn: 4, line: 4, text: "x4" },
-					{ idToReportViolationOn: 7, line: 7, text: "x7" },
+					{ idToReportViolationOn: "p:3", text: "x3" },
+					{ idToReportViolationOn: "p:4", text: "x4" },
+					{ idToReportViolationOn: "p:7", text: "x7" },
+					{ idToReportViolationOn: "p:9", text: "y9" },
 				],
-			},
-			{
-				kind: "surface" as const,
-				side: "base" as const,
-				lines: [{ idToReportViolationOn: 9, line: 9, text: "y9" }],
 			},
 		],
 	},
@@ -68,7 +64,7 @@ const violation = (rule: RuleRef): Violation => ({
 });
 const violationAt = (
 	rule: RuleRef,
-	idToReportViolationOn: number,
+	idToReportViolationOn: string,
 ): Violation => ({
 	rule,
 	idToReportViolationOn,
@@ -94,7 +90,7 @@ const violatedBookRow = (heading: string, violations: Violation[]): Row => ({
 const sampleLedger: Ledger = {
 	headCommit: H,
 	rows: [
-		violatedRow("A", [violationAt("A", 3), violation("A")]),
+		violatedRow("A", [violationAt("A", "p:3"), violation("A")]),
 		{
 			rule: "B",
 			examined: ["x"],
@@ -105,7 +101,9 @@ const sampleLedger: Ledger = {
 };
 const contextLedger: Ledger = {
 	headCommit: H,
-	rows: [violatedBookRow("Book rule", [violationAt(bookRule("Book rule"), 9)])],
+	rows: [
+		violatedBookRow("Book rule", [violationAt(bookRule("Book rule"), "p:9")]),
+	],
 };
 const entries = [
 	{ document: outcomeProbe, ledger: sampleLedger },
@@ -140,10 +138,10 @@ it("alreadyOpen matches an open thread on the same line citing the same principl
 	const open = [
 		{ path: "p", lines: { start: 3, end: 3 }, body: `earlier breaks ${citeP}` },
 	];
-	assert.equal(alreadyOpen(violationAt("A", 3), citeP, open, files), true);
-	assert.equal(alreadyOpen(violationAt("A", 4), citeP, open, files), false);
+	assert.equal(alreadyOpen(violationAt("A", "p:3"), citeP, open, files), true);
+	assert.equal(alreadyOpen(violationAt("A", "p:4"), citeP, open, files), false);
 	assert.equal(
-		alreadyOpen(violationAt("A", 3), `[Q](${SITE}#q)`, open, files),
+		alreadyOpen(violationAt("A", "p:3"), `[Q](${SITE}#q)`, open, files),
 		false,
 	);
 	assert.equal(alreadyOpen(violation("A"), citeP, open, files), false);
@@ -161,8 +159,8 @@ it("settled lists the open threads that no finding of this review carries any mo
 							kind: "surface" as const,
 							side: "head" as const,
 							lines: [
-								{ idToReportViolationOn: 3, line: 3, text: "c" },
-								{ idToReportViolationOn: 4, line: 4, text: "d" },
+								{ idToReportViolationOn: "a.sh:3", text: "c" },
+								{ idToReportViolationOn: "a.sh:4", text: "d" },
 							],
 						},
 					],
@@ -173,7 +171,7 @@ it("settled lists the open threads that no finding of this review carries any mo
 	};
 	const v: Violation = {
 		rule: "R",
-		idToReportViolationOn: 4,
+		idToReportViolationOn: "a.sh:4",
 		observation: "x",
 	};
 	const row: Row = {
@@ -230,7 +228,7 @@ it("outcome produces the verdict, summary, fresh inline findings, threads to set
 	const resolved = {
 		id: "r",
 		path: "p",
-		side: "base" as const,
+		side: "head" as const,
 		lines: { start: 9, end: 9 },
 		state: "resolved-by-author" as const,
 		body: "earlier breaks [Book rule](https://books.example/ddd.md)",
@@ -265,7 +263,7 @@ it("outcome produces the verdict, summary, fresh inline findings, threads to set
 		},
 		{
 			path: "p",
-			side: "base",
+			side: "head",
 			lines: { start: 9, end: 9 },
 			body: "what is wrong breaks [Book rule](https://books.example/ddd.md)",
 		},
@@ -293,8 +291,8 @@ it("outcome produces the verdict, summary, fresh inline findings, threads to set
 							kind: "surface" as const,
 							side: "head" as const,
 							lines: [
-								{ idToReportViolationOn: 1, line: 1, text: "a" },
-								{ idToReportViolationOn: 2, line: 2, text: "b" },
+								{ idToReportViolationOn: "helper.ts:1", text: "a" },
+								{ idToReportViolationOn: "helper.ts:2", text: "b" },
 							],
 						},
 					],
@@ -305,7 +303,7 @@ it("outcome produces the verdict, summary, fresh inline findings, threads to set
 						{
 							kind: "surface" as const,
 							side: "head" as const,
-							lines: [{ idToReportViolationOn: 3, line: 2, text: "y" }],
+							lines: [{ idToReportViolationOn: "service.ts:2", text: "y" }],
 						},
 					],
 				},
@@ -319,7 +317,7 @@ it("outcome produces the verdict, summary, fresh inline findings, threads to set
 				document: multiFileProbe,
 				ledger: {
 					headCommit: H,
-					rows: [violatedRow("A", [violationAt("A", 3)])],
+					rows: [violatedRow("A", [violationAt("A", "service.ts:2")])],
 				},
 			},
 		],

@@ -663,7 +663,7 @@ definitions:
     The [[Head commit]] checked out with a clean working tree. A checkout at any other commit is not a checkout of the [[Change]].
 - id: Surface
   specification: |
-    The code a [[Violation]] may be reported against, identified by file and line numbers on the left (base) and right (head): changes carrying an unresolved comment, changes carrying a comment the author has resolved since the prior review, and changes new since the prior review (on a first review, the whole [[Change]]).
+    The code a [[Violation]] may be reported against, identified by file and line numbers on the right (head): new lines carrying an unresolved comment, new lines carrying a comment the author has resolved since the prior review, and new lines added since the prior review (on a first review, every added line of the [[Change]]).
 - id: Full context
   specification: |
     The [[Surface]] together with every changed file in full, the call sites of changed public symbols, and the covering [[Verification code]]. Context is what a [[Verdict]] is reached from, never what a [[Violation]] is reported against.

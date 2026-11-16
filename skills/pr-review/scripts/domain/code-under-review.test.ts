@@ -335,7 +335,10 @@ it("CodeUnderReviewSnapshot wraps a CodeUnderReview and exposes its SnapshotDire
 						kind: "surface",
 						side: "head",
 						lines: [
-							{ idToReportViolationOn: 1, line: 1, text: "const a = 1;" },
+							{
+								idToReportViolationOn: "a.ts:1",
+								text: "const a = 1;",
+							},
 						],
 					},
 				],
@@ -345,7 +348,12 @@ it("CodeUnderReviewSnapshot wraps a CodeUnderReview and exposes its SnapshotDire
 			{
 				kind: "surface",
 				side: "head",
-				lines: [{ idToReportViolationOn: 1, line: 1, text: "const a = 1;" }],
+				lines: [
+					{
+						idToReportViolationOn: "a.ts:1",
+						text: "const a = 1;",
+					},
+				],
 			},
 		],
 		{ threads: [] },

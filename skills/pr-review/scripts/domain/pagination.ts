@@ -2,7 +2,6 @@ import type {
 	ContextFragment,
 	Fragment,
 	LineText,
-	Side,
 	Surface,
 	SurfaceFile,
 	SurfaceLine,
@@ -39,7 +38,6 @@ const pageCandidate = (
 const pushFragmentLine = (
 	chunk: MutableChunk,
 	kind: Fragment["kind"],
-	side: Side | null,
 	line: LineText | SurfaceLine,
 ): void => {
 	const last = chunk.fragments.at(-1);
@@ -53,18 +51,13 @@ const pushFragmentLine = (
 		return;
 	}
 	const surfaceLine = line as SurfaceLine;
-	const resolvedSide = nonnull(side);
-	if (
-		last !== undefined &&
-		last.kind === "surface" &&
-		last.side === resolvedSide
-	) {
+	if (last !== undefined && last.kind === "surface") {
 		last.lines.push(surfaceLine);
 		return;
 	}
 	chunk.fragments.push({
 		kind: "surface",
-		side: resolvedSide,
+		side: "head",
 		lines: [surfaceLine],
 	});
 };
@@ -87,9 +80,8 @@ const splitFileFragments = (
 	const chunks: Fragment[][] = [];
 	let current: MutableChunk = { fragments: [] };
 	for (const fragment of file.fragments) {
-		const side = fragment.kind === "surface" ? fragment.side : null;
 		for (const line of fragment.lines) {
-			pushFragmentLine(current, fragment.kind, side, line);
+			pushFragmentLine(current, fragment.kind, line);
 			if (
 				current.fragments.length > 0 &&
 				!(
@@ -101,7 +93,7 @@ const splitFileFragments = (
 				popLastLine(current);
 				chunks.push(current.fragments);
 				current = { fragments: [] };
-				pushFragmentLine(current, fragment.kind, side, line);
+				pushFragmentLine(current, fragment.kind, line);
 			}
 		}
 	}
