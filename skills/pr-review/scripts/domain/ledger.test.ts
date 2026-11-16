@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test as it } from "node:test";
+import { Worker } from "node:worker_threads";
 import { z } from "zod";
 import type { Row, RuleRef, Violation } from "./contracts.g.ts";
 import {
@@ -391,4 +392,49 @@ it("RulesSubAgentLedger, DeadCodeSubAgentLedger, ReuseSubAgentLedger, and Contex
 			.success,
 		true,
 	);
+});
+
+it("LedgerDirectory.writeSlice writes atomically so concurrent readSlice calls never observe partial JSON", async () => {
+	const tempRoot = mkdtempSync(join(tmpdir(), "ledger-atomic-"));
+	const dir = nonnull(LedgerDirectory.from(tempRoot).data);
+	dir.initialize();
+	const sampleLedger = {
+		headCommit: H,
+		rows: [cleanRow("A"), cleanRow("B")],
+	};
+	dir.writeSlice("01-rules", sampleLedger);
+	const writer = new Worker(
+		`
+		const { workerData, parentPort } = require("node:worker_threads");
+		const { LedgerDirectory } = require(workerData.modulePath);
+		const dir = LedgerDirectory.from(workerData.tempRoot).data;
+		for (let i = 0; i < 300; i += 1) {
+			dir.writeSlice("01-rules", workerData.sampleLedger);
+		}
+		parentPort.postMessage("done");
+		`,
+		{
+			eval: true,
+			workerData: {
+				modulePath: new URL("./ledger-directory.ts", import.meta.url).pathname,
+				tempRoot,
+				sampleLedger,
+			},
+		},
+	);
+	let done = false;
+	writer.on("message", () => {
+		done = true;
+	});
+	try {
+		while (!done) {
+			const slice = nonnull(dir.readSlice("01-rules"));
+			assert.equal(slice.headCommit, H);
+			assert.equal(slice.rows.length, 2);
+			await new Promise((resolve) => setImmediate(resolve));
+		}
+	} finally {
+		await writer.terminate();
+		rmSync(tempRoot, { recursive: true, force: true });
+	}
 });

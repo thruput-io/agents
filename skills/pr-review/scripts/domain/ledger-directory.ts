@@ -1,7 +1,9 @@
+import { randomUUID } from "node:crypto";
 import {
 	existsSync,
 	mkdirSync,
 	readFileSync,
+	renameSync,
 	rmSync,
 	writeFileSync,
 } from "node:fs";
@@ -24,6 +26,12 @@ export type { PersistedPullRequest } from "./contracts.g.ts";
 
 const PULL_REQUEST_FILE = "pull-request.json";
 const RULESETS_FILE = "rulesets.json";
+
+const writeJsonAtomically = (targetPath: string, payload: unknown): void => {
+	const tempPath = `${targetPath}.${randomUUID()}.tmp`;
+	writeFileSync(tempPath, JSON.stringify(payload, null, 2), "utf-8");
+	renameSync(tempPath, targetPath);
+};
 
 export class LedgerDirectory {
 	readonly #path: Checkout;
@@ -54,11 +62,7 @@ export class LedgerDirectory {
 	}
 
 	writePullRequest(pullRequest: PersistedPullRequest): void {
-		writeFileSync(
-			join(this.#path, PULL_REQUEST_FILE),
-			JSON.stringify(pullRequest, null, 2),
-			"utf-8",
-		);
+		writeJsonAtomically(join(this.#path, PULL_REQUEST_FILE), pullRequest);
 	}
 
 	readPullRequest(): PersistedPullRequest {
@@ -68,11 +72,9 @@ export class LedgerDirectory {
 	}
 
 	writeAck(name: string, acknowledgedAt: number): void {
-		writeFileSync(
-			join(this.#path, `${name}.ack.json`),
-			JSON.stringify({ acknowledgedAt }, null, 2),
-			"utf-8",
-		);
+		writeJsonAtomically(join(this.#path, `${name}.ack.json`), {
+			acknowledgedAt,
+		});
 	}
 
 	readAck(name: string): number | null {
@@ -85,11 +87,7 @@ export class LedgerDirectory {
 	}
 
 	writeSlice(name: string, ledger: Ledger): void {
-		writeFileSync(
-			join(this.#path, `${name}.json`),
-			JSON.stringify(ledger, null, 2),
-			"utf-8",
-		);
+		writeJsonAtomically(join(this.#path, `${name}.json`), ledger);
 	}
 
 	readSlice(name: string): Ledger | null {
@@ -101,11 +99,7 @@ export class LedgerDirectory {
 	}
 
 	writeRulesets(rulesets: readonly Rulebook[]): void {
-		writeFileSync(
-			join(this.#path, RULESETS_FILE),
-			JSON.stringify({ rulesets }, null, 2),
-			"utf-8",
-		);
+		writeJsonAtomically(join(this.#path, RULESETS_FILE), { rulesets });
 	}
 
 	readRulesets(): readonly Rulebook[] {
@@ -119,11 +113,7 @@ export class LedgerDirectory {
 	}
 
 	writeCursor(name: string, index: number): void {
-		writeFileSync(
-			join(this.#path, `${name}.cursor.json`),
-			JSON.stringify({ index }, null, 2),
-			"utf-8",
-		);
+		writeJsonAtomically(join(this.#path, `${name}.cursor.json`), { index });
 	}
 
 	readCursor(name: string): number | null {

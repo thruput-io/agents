@@ -365,8 +365,38 @@ export const runScenario = async (
 		),
 	);
 	const invoked = [...prep.pending];
+	const staged = await Promise.all(
+		prep.pending.map(async (probeName) => {
+			const { inspected, driver, pages } = await inspectAndAck(
+				prep.session,
+				probeName,
+			);
+			await driver.verifyBeforeReport(prep.session, probeName);
+			return { probeName, inspected, driver, pages };
+		}),
+	);
 	const probeRuns = await Promise.all(
-		prep.pending.map((probeName) => reportForProbe(prep.session, probeName)),
+		staged.map(async ({ probeName, inspected, driver, pages }) => {
+			const reported = requireExitZero(
+				await invokeSubCli(
+					[
+						"report",
+						prep.session,
+						probeName,
+						JSON.stringify({
+							oneRowPerRuleInOrder: driver.initialRows(pages),
+						}),
+					],
+					ReportSuccessSchema,
+				),
+			);
+			expectEqual(
+				reported.success,
+				true,
+				`Probe report failed for ${probeName}`,
+			);
+			return { inspected, pages };
+		}),
 	);
 	const dispatched = requireExitZero(
 		await invokeMainCli(["dispatch", workdir.toString()], DispatchResultSchema),

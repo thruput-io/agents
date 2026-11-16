@@ -42,6 +42,7 @@ export type CoordinatedProbeSpec =
 interface MainAgentLedgerState {
 	readonly probeNames: readonly string[];
 	readonly permissionsByProbe: ReadonlyMap<string, ProbePermissions>;
+	readonly sync: () => void;
 	readonly completed: ReadonlySet<string>;
 	readonly submitted: ReadonlyMap<
 		string,
@@ -81,6 +82,7 @@ export class MainAgentLedger {
 	}
 
 	pending(): readonly string[] {
+		this.#state.sync();
 		return this.#state.probeNames.filter(
 			(name) => !this.#state.completed.has(name),
 		);
@@ -103,16 +105,19 @@ export class MainAgentLedger {
 	}
 
 	completed(): readonly string[] {
+		this.#state.sync();
 		return this.#state.probeNames.filter((name) =>
 			this.#state.completed.has(name),
 		);
 	}
 
 	submittedOutcome(): Outcome | null {
+		this.#state.sync();
 		return this.#state.submitted.get("submitted")?.outcome ?? null;
 	}
 
 	submittedLedger(): Ledger | null {
+		this.#state.sync();
 		return this.#state.submitted.get("submitted")?.ledger ?? null;
 	}
 }
@@ -141,6 +146,15 @@ export function coordinateLedgers(
 		readonly ledger: Ledger;
 		readonly outcome: Outcome;
 	} | null => {
+		for (const [index, spec] of specs.entries()) {
+			if (!recorded.has(index)) {
+				const existing = directory.readSlice(spec.name);
+				if (!isNullOrEmpty(existing)) {
+					recorded.set(index, existing);
+					completed.add(spec.name);
+				}
+			}
+		}
 		if (recorded.size < specs.length) {
 			return null;
 		}
@@ -154,14 +168,6 @@ export function coordinateLedgers(
 		submitted.set("submitted", result);
 		return result;
 	};
-	for (const [index, spec] of specs.entries()) {
-		const existing = directory.readSlice(spec.name);
-		if (!isNullOrEmpty(existing)) {
-			recorded.set(index, existing);
-			completed.add(spec.name);
-		}
-	}
-	settleIfComplete();
 	const mainLedger = MainAgentLedger.from(directory, pullRequest, {
 		probeNames: specs.map((spec) => spec.name),
 		permissionsByProbe: new Map(
@@ -170,6 +176,9 @@ export function coordinateLedgers(
 				Instructions.forKind(spec.kind).permissions(),
 			]),
 		),
+		sync: () => {
+			settleIfComplete();
+		},
 		completed,
 		submitted,
 	});
