@@ -50,34 +50,21 @@
             "kind": "github",
             "owner": "thruput-io",
             "repository": "agents",
-            "number": 12
+            "number": 18
           },
-          "author": "agent-rasmus[bot]",
-          "description": "A published site is valid and its links hold. Verify runs html-validate and lychee."
+          "author": "agent-tore[bot]",
+          "description": "Remove unused helper from lib.mjs."
         },
-        "headCommit": "e2bde7afe2f2b1ffc23cdb6f0dc00601b4868eb7",
+        "headCommit": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
         "files": [
           {
-            "path": "scripts/verify.sh",
+            "path": "skills/pr-review/scripts/lib.mjs",
             "fragments": [
-              {
-                "kind": "context",
-                "lines": {
-                  "20": "npx --yes @sourcemeta/jsonschema@17.0.0 lint \"$PROJECT_ROOT/schemas\""
-                }
-              },
-              {
-                "kind": "surface",
-                "side": "head",
-                "lines": {
-                  "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\" || true"
-                }
-              },
               {
                 "kind": "surface",
                 "side": "base",
                 "lines": {
-                  "21": "npx --yes @sourcemeta/jsonschema@17.0.0 metaschema \"$PROJECT_ROOT/schemas\""
+                  "10": "export function unusedHelper() { return null; }"
                 }
               }
             ]

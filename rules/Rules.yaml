@@ -5,24 +5,16 @@ rules:
   parent: You aren't gonna need it
   body: |
     State the [[Purpose]] of every [[Change]].
-- id: No code without purpose
-  marker: MUST NOT
-  group: Purpose
-  parent: You aren't gonna need it
-  body: |
-    Write or merge code whose [[Purpose]] is not stated.
+  smells:
+  - Code written or merged whose [[Purpose]] is not stated.
 - id: Every part solves the Purpose
   marker: MUST
   group: Purpose
   parent: Code as a Subset of the Purpose
   body: |
     Trace every part of the [[Change]] to the part of the stated [[Purpose]] it solves.
-- id: Nothing beyond the Purpose
-  marker: MUST NOT
-  group: Purpose
-  parent: Code as a Subset of the Purpose
-  body: |
-    Solve more than the stated [[Purpose]].
+  smells:
+  - A [[Change]] that solves more than the stated [[Purpose]].
 - id: No speculative portability
   marker: MUST NOT
   group: Purpose
@@ -177,12 +169,15 @@ rules:
     Wrap a [[Primitive]] in its [[Domain primitive]] before it crosses any [[Interface]] of ours.
   smells:
   - A [[Primitive]] in a domain [[Signature]].
+  - Raw [[Primitive]]s crossing a [[Layer]] boundary.
 - id: Opaque encapsulated types
   marker: MUST
   group: Types
   parent: No Primitive Obsession
   body: |
     Keep every [[Encapsulated type]] opaque so no code depends on its internal representation. Never collapse it back into [[Primitive]]s inside our code; convert it to another type only through a verified conversion, and fold it into a [[Foreign shape]] only through a contract of the type at an outbound [[Perimeter]].
+  smells:
+  - Unwrapping [[Domain objects]] into [[Primitive]]s anywhere but at the [[Perimeter]].
 - id: Exhaustive matching
   marker: MUST
   group: Domain Model
@@ -203,12 +198,6 @@ rules:
     Expose a [[Setter]] or any operation that changes a [[Domain object]] in place. A change returns a new [[Instance]] that passes the [[Validating path of creation]] again.
   smells:
   - An exposed [[Setter]] or [[Raw collection]] on an [[Aggregate]].
-- id: No unwrapping
-  marker: MUST NOT
-  group: Domain Model
-  parent: Make illegal states unrepresentable
-  body: |
-    Unwrap [[Domain objects]] into [[Primitive]]s anywhere but at the [[Perimeter]].
 - id: Strong typing
   marker: MUST NOT
   group: Domain Model
@@ -269,12 +258,6 @@ rules:
   - A [[Component]] longer than 200 lines.
   - A [[Function]] or [[Public method]] with more than 3 parameters.
   - An [[Interface]] with more than 4 [[Public method]]s, not counting [[Overload]]s or convenience methods.
-- id: No primitive leakage
-  marker: MUST
-  group: Domain Model
-  parent: No Primitive Obsession
-  body: |
-    Keep raw [[Primitive]]s from crossing a [[Layer]] boundary.
 - id: Delete unused
   marker: MUST
   group: Dead Code
@@ -341,18 +324,14 @@ rules:
   parent: Test-Driven Development
   body: |
     Leave a [[Muted test]] or skip [[Test]]s.
-- id: No coverage-only tests
-  marker: MUST NOT
-  group: Tests
-  parent: Never trust a test you haven't seen fail
-  body: |
-    Write [[Test]]s that discard return values, or make [[Assertion]]s on generalizations such as the presence or type of the asserted value, just to increase [[Code coverage]].
 - id: Assert values
   marker: MUST
   group: Tests
   parent: F.I.R.S.T.
   body: |
     Make an [[Assertion]] on the actual returned values — not merely that no error occurred, or on generalizations such as the presence or type of the asserted value.
+  smells:
+  - "[[Test]]s that discard return values, or make [[Assertion]]s on generalizations such as presence or type, just to increase [[Code coverage]]."
 - id: Add tests for new code
   marker: MUST
   group: Tests
@@ -401,18 +380,14 @@ rules:
   parent: Production Parity
   body: |
     Alter the behaviour of [[Production code]] in [[Test setup]].
-- id: No global lint changes
-  marker: MUST NOT
-  group: Toolchain & Environment
-  parent: The Toolchain Is the Guardrail
-  body: |
-    Change global or project-wide [[Lint rule]]s, except in a [[Pull request]] that contains only that [[Change]].
 - id: No global quality changes
   marker: MUST NOT
   group: Toolchain & Environment
   parent: The Toolchain Is the Guardrail
   body: |
     Change global or project-wide [[Quality]] standards, except in a [[Pull request]] that contains only that [[Change]].
+  smells:
+  - Changing global or project-wide [[Lint rule]]s outside a dedicated [[Pull request]].
 - id: No local disabling of lint rules
   marker: MUST NOT
   group: Toolchain & Environment

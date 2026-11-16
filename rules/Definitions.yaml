@@ -326,8 +326,10 @@ definitions:
   specification: |
     The property that tests fail when behavior breaks, rather than merely executing code paths.
 - id: Ease of Doing the Right Thing
+  aliases:
+  - Path of least resistance
   specification: |
-    The property that the correct approach is the [[Path of least resistance]] for the next contributor.
+    The property that the correct approach is the path of least resistance for the next contributor.
 - id: Guardrails Against Doing the Wrong Thing
   specification: |
     The property that types, tests, and tooling cause incorrect approaches to fail early at compile time rather than relying on human vigilance.
@@ -373,9 +375,6 @@ definitions:
 - id: Validating path of creation
   specification: |
     The single path through which an [[Encapsulated type]] or [[Domain primitive]] is constructed at the [[Perimeter]], running all required checks before a value is minted. Holding a value of the type is proof it was checked.
-- id: Path of least resistance
-  specification: |
-    The design property where the easiest and most convenient option for a contributor is also the correct one.
 - id: Illegal states
   specification: |
     Alias for [[Illegal state]].
