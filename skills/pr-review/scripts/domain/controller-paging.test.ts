@@ -194,32 +194,62 @@ const runSubCliJson = <T>(args: readonly string[]) => {
 	};
 };
 
+function collectPages(
+	session: string,
+	acc: {
+		readonly statuses: readonly (number | null)[];
+		readonly overLimit: readonly boolean[];
+		readonly seenPaths: readonly string[];
+		readonly lastTotalPages: number;
+	},
+): {
+	readonly statuses: readonly (number | null)[];
+	readonly overLimit: readonly boolean[];
+	readonly seenPaths: readonly string[];
+	readonly lastTotalPages: number;
+} {
+	const run = runSubCliJson<{
+		readonly status: "page" | "end";
+		readonly path?: string;
+		readonly totalPages: number;
+	}>(["next", session, "01-purpose"]);
+	const current = nonnull(run.payload);
+	const nextAcc = {
+		statuses: [...acc.statuses, run.status],
+		overLimit: [...acc.overLimit, run.byteLength > MAX_CLI_OUTPUT_BYTES],
+		seenPaths: acc.seenPaths,
+		lastTotalPages: acc.lastTotalPages,
+	};
+	const nextStep: Record<"page" | "end", () => typeof acc> = {
+		end: () => nextAcc,
+		page: () =>
+			collectPages(session, {
+				...nextAcc,
+				seenPaths: [...nextAcc.seenPaths, nonnull(current.path)],
+				lastTotalPages: current.totalPages,
+			}),
+	};
+	return nextStep[current.status]();
+}
+
 it("sub-agent-controller next, prev, and ruleset page large changed files and large rulebooks strictly under 9KB", () => {
 	const tempRoot = mkdtempSync(join(tmpdir(), "controller-paging-"));
 	const bigRulesetUrl =
 		"https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md";
 	try {
 		const session = setupPagingWorkdir(tempRoot, bigRulesetUrl);
-		const seenPaths: string[] = [];
-		let lastTotalPages = 0;
-		let run = runSubCliJson<{
-			readonly status: string;
-			readonly path?: string;
-			readonly totalPages: number;
-		}>(["next", session, "01-purpose"]);
-		while (nonnull(run.payload).status !== "end") {
-			assert.equal(run.status, 0, run.output);
-			assert.equal(run.byteLength <= MAX_CLI_OUTPUT_BYTES, true);
-			const current = nonnull(run.payload);
-			assert.equal(current.status, "page");
-			seenPaths.push(nonnull(current.path));
-			lastTotalPages = current.totalPages;
-			run = runSubCliJson<{
-				readonly status: string;
-				readonly path?: string;
-				readonly totalPages: number;
-			}>(["next", session, "01-purpose"]);
-		}
+		const { statuses, overLimit, seenPaths, lastTotalPages } = collectPages(
+			session,
+			{ statuses: [], overLimit: [], seenPaths: [], lastTotalPages: 0 },
+		);
+		assert.equal(
+			statuses.every((s) => s === 0),
+			true,
+		);
+		assert.equal(
+			overLimit.every((flag) => !flag),
+			true,
+		);
 		assert.equal(lastTotalPages > 2, true);
 		assert.equal(seenPaths.filter((p) => p === "large.ts").length > 1, true);
 		assert.equal(seenPaths.at(-1), "small.ts");

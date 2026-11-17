@@ -26,15 +26,14 @@ const rejectionMessage = (
 	targetProbe: LedgerProbe,
 	raw: { readonly headCommit: string; readonly rows: readonly Row[] },
 ): string => {
-	try {
-		ledgerFor(targetProbe).decode({
-			headCommit: raw.headCommit,
-			rows: [...raw.rows],
-		});
-	} catch (error) {
-		return z.prettifyError(error as z.ZodError);
+	const parsed = ledgerFor(targetProbe).safeDecode({
+		headCommit: raw.headCommit,
+		rows: [...raw.rows],
+	});
+	if (parsed.success) {
+		throw new Error("Expected ledger validation to reject");
 	}
-	throw new Error("Expected ledger validation to reject");
+	return z.prettifyError(parsed.error);
 };
 
 const SHA1_HEX_LENGTH = 40;

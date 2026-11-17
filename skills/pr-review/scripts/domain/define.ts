@@ -33,14 +33,18 @@ const referencedTerms = (entry: Definition): readonly string[] => [
 	]),
 ];
 
-export type DefineLookupResult =
+type DefineLookupResult =
 	| { readonly success: true; readonly data: DefineSuccess }
 	| { readonly success: false; readonly error: string };
 
-export function resolveDefinition(
+function resolveDefinition(term: string, depth: number): DefineLookupResult {
+	return resolveDefinitionFromPath(term, depth, DEFAULT_DEFINITIONS_PATH);
+}
+
+function resolveDefinitionFromPath(
 	term: string,
 	depth: number,
-	definitionsPath = DEFAULT_DEFINITIONS_PATH,
+	definitionsPath: string,
 ): DefineLookupResult {
 	const { definitions } = DefinitionsSchema.parse(
 		parse(readFileSync(definitionsPath, "utf8")),
@@ -77,3 +81,5 @@ export function resolveDefinition(
 		},
 	};
 }
+
+export { resolveDefinition };

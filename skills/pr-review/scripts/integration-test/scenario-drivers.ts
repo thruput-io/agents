@@ -124,7 +124,9 @@ function rulebookProbeDriver(
 			rulesInOrder: inspected.ruleset.rules.map((r) => r.id),
 			observationFormat: "<observation> breaks <principle>",
 		}),
-		verifyBeforeReport: async () => undefined,
+		verifyBeforeReport: async () => {
+			await Promise.resolve();
+		},
 		initialRows: () =>
 			inspected.ruleset.rules.map((rule) => ({
 				rule: rule.id,
@@ -150,12 +152,10 @@ function rulebookProbeDriver(
 }
 
 function probeDriverFor(inspected: InspectedProbePayload): ProbeDriver {
-	switch (inspected.kind) {
-		case "context":
-			return contextProbeDriver(inspected);
-		default:
-			return rulebookProbeDriver(inspected);
+	if (inspected.kind === "context") {
+		return contextProbeDriver(inspected);
 	}
+	return rulebookProbeDriver(inspected);
 }
 
 export { type ProbeDriver, probeDriverFor };

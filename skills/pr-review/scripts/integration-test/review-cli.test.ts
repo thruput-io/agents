@@ -64,6 +64,36 @@ const runPathsFor = (run: Awaited<ReturnType<typeof runScenario>>) => ({
 	),
 });
 
+function summarizePreparedRun(run: Awaited<ReturnType<typeof runScenario>>) {
+	const firstInspected = nonnull(run.inspected[0]);
+	const { helperSnap, auditFile, sliceFile } = runPathsFor(run);
+	return {
+		invoked: run.invoked,
+		hasLeak:
+			"change" in run.prepared ||
+			"headCommit" in run.prepared ||
+			"prompts" in run.prepared ||
+			"rulesets" in run.prepared,
+		firstPermission: run.prepared.permissions[nonnull(run.invoked[0])],
+		author: firstInspected.change.author,
+		description: firstInspected.change.description,
+		changedFiles: firstInspected.surface.changedFiles,
+		pagePaths: run.pages.map((p) => p.path),
+		firstHasCheckout: "checkout" in firstInspected,
+		checkoutMatch: run.inspected.every(
+			(entry) => "checkout" in entry === (entry.kind !== "rules"),
+		),
+		helperSnapContent: readFileSync(helperSnap, "utf8"),
+		auditExists: existsSync(auditFile),
+		sliceExists: existsSync(sliceFile),
+	};
+}
+
+function submittedOutcomeOf(run: Awaited<ReturnType<typeof runScenario>>) {
+	return (run.dispatched as Extract<DispatchResult, { kind: "submitted" }>)
+		.outcome;
+}
+
 it("Review CLI prepares identical surfaces across Git, GitHub, and AzureDevOps", async () => {
 	const adapters = [
 		{ label: "scenario-git", target: repo.gitTarget },
@@ -86,35 +116,23 @@ it("Review CLI prepares identical surfaces across Git, GitHub, and AzureDevOps",
 		baseline.pages.map((p) => p.path),
 		["helper.ts", "service.ts"],
 	);
-	for (const run of runs) {
-		assert.deepEqual(run.invoked, baseline.invoked);
-		assert.equal("change" in run.prepared, false);
-		assert.equal("headCommit" in run.prepared, false);
-		assert.equal("prompts" in run.prepared, false);
-		assert.equal("rulesets" in run.prepared, false);
-		assert.deepEqual(run.prepared.permissions[nonnull(run.invoked[0])], [
-			"Bash(review-tool-probe*)",
-		]);
-		const firstInspected = nonnull(run.inspected[0]);
-		assert.equal(firstInspected.change.author, baselineInspected.change.author);
-		assert.equal(
-			firstInspected.change.description,
-			baselineInspected.change.description,
-		);
-		assert.equal(firstInspected.surface.changedFiles, 2);
-		assert.deepEqual(
-			run.pages.map((p) => p.path),
-			["helper.ts", "service.ts"],
-		);
-		assert.equal("checkout" in firstInspected, false);
-		for (const entry of run.inspected) {
-			assert.equal("checkout" in entry, entry.kind !== "rules");
-		}
-		const { helperSnap, auditFile, sliceFile } = runPathsFor(run);
-		assert.equal(readFileSync(helperSnap, "utf8"), "export const z = 3;\n\n");
-		assert.equal(existsSync(auditFile), true);
-		assert.equal(existsSync(sliceFile), true);
-	}
+	assert.deepEqual(
+		runs.map(summarizePreparedRun),
+		runs.map(() => ({
+			invoked: baseline.invoked,
+			hasLeak: false,
+			firstPermission: ["Bash(review-tool-probe*)"],
+			author: baselineInspected.change.author,
+			description: baselineInspected.change.description,
+			changedFiles: 2,
+			pagePaths: ["helper.ts", "service.ts"],
+			firstHasCheckout: false,
+			checkoutMatch: true,
+			helperSnapContent: "export const z = 3;\n\n",
+			auditExists: true,
+			sliceExists: true,
+		})),
+	);
 });
 
 it("Review CLI posts identical review outcomes to GitHub and AzureDevOps", async () => {
@@ -141,13 +159,10 @@ it("Review CLI posts identical review outcomes to GitHub and AzureDevOps", async
 		{ kind: "submitted" }
 	>;
 	assert.equal(baselineSubmitted.outcome.verdict, "request-changes");
-	for (const run of runs) {
-		const submitted = run.dispatched as Extract<
-			DispatchResult,
-			{ kind: "submitted" }
-		>;
-		assert.deepEqual(submitted.outcome, baselineSubmitted.outcome);
-	}
+	assert.deepEqual(
+		runs.map(submittedOutcomeOf),
+		runs.map(() => baselineSubmitted.outcome),
+	);
 	assert.equal(ghReviews.length, 1);
 	const ghPosted = nonnull(ghReviews[0]);
 	assert.equal(ghPosted.event, "REQUEST_CHANGES");
