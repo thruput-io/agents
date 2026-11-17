@@ -326,8 +326,10 @@ definitions:
   specification: |
     The property that tests fail when behavior breaks, rather than merely executing code paths.
 - id: Ease of Doing the Right Thing
+  aliases:
+  - Path of least resistance
   specification: |
-    The property that the correct approach is the [[Path of least resistance]] for the next contributor.
+    The property that the correct approach is the path of least resistance for the next contributor.
 - id: Guardrails Against Doing the Wrong Thing
   specification: |
     The property that types, tests, and tooling cause incorrect approaches to fail early at compile time rather than relying on human vigilance.
@@ -373,9 +375,6 @@ definitions:
 - id: Validating path of creation
   specification: |
     The single path through which an [[Encapsulated type]] or [[Domain primitive]] is constructed at the [[Perimeter]], running all required checks before a value is minted. Holding a value of the type is proof it was checked.
-- id: Path of least resistance
-  specification: |
-    The design property where the easiest and most convenient option for a contributor is also the correct one.
 - id: Illegal states
   specification: |
     Alias for [[Illegal state]].
@@ -663,7 +662,7 @@ definitions:
     The [[Head commit]] checked out with a clean working tree. A checkout at any other commit is not a checkout of the [[Change]].
 - id: Surface
   specification: |
-    The code a [[Violation]] may be reported against, identified by file and line numbers on the right (head): new lines carrying an unresolved comment, new lines carrying a comment the author has resolved since the prior review, and new lines added since the prior review (on a first review, every added line of the [[Change]]).
+    The code a [[Violation]] may be reported against, identified by file and line numbers on the left (base) and right (head): changes carrying an unresolved comment, changes carrying a comment the author has resolved since the prior review, and changes new since the prior review (on a first review, the whole [[Change]]).
 - id: Full context
   specification: |
     The [[Surface]] together with every changed file in full, the call sites of changed public symbols, and the covering [[Verification code]]. Context is what a [[Verdict]] is reached from, never what a [[Violation]] is reported against.
