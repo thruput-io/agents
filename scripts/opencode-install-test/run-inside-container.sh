@@ -31,7 +31,7 @@ opencode api post /api/session --server http://127.0.0.1:4096 --header 'x-openco
 skills_json='{"data":[]}'
 for _ in $(seq 1 15); do
   skills_json=$(opencode api get /api/skill --server http://127.0.0.1:4096 --header 'x-opencode-directory:/home/node/workspace')
-  if ! printf '%s' "$skills_json" | grep -q '"data":\[\]'; then
+  if printf '%s' "$skills_json" | grep -q '"id":"dad-joke"' && printf '%s' "$skills_json" | grep -q '"id":"pr-review"'; then
     break
   fi
   sleep 1
