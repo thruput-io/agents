@@ -3,14 +3,14 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test as it } from "node:test";
+import { runMainAgentCli } from "../client/controller-cli.ts";
+import { runSubAgentCli } from "../client/sub-agent-cli.ts";
+import { MainAgentController } from "../controller/controller.ts";
+import { SubAgentController } from "../controller/sub-agent-controller.ts";
 import { CodeUnderReviewFactory } from "./code-under-review-factory.ts";
-import { MainAgentController } from "./controller.ts";
-import { runMainAgentCli } from "./controller-cli.ts";
 import { Instructions } from "./instructions.ts";
 import { nonnull } from "./nullish.ts";
 import { Rulebook } from "./rulebook.ts";
-import { runSubAgentCli } from "./sub-agent-cli.ts";
-import { SubAgentController } from "./sub-agent-controller.ts";
 import { Workdir } from "./workdir.ts";
 
 const SHA1_HEX_LENGTH = 40;

@@ -2,18 +2,18 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { test as it } from "node:test";
 import { fileURLToPath } from "node:url";
+import type { SubAgentController } from "../controller/sub-agent-controller.ts";
 import { Instructions } from "./instructions.ts";
 import { nonnull } from "./nullish.ts";
 import { Rulebook } from "./rulebook.ts";
-import type { SubAgentController } from "./sub-agent-controller.ts";
 import { Workdir } from "./workdir.ts";
 
 const SHA1_HEX_LENGTH = 40;
 const H = "a".repeat(SHA1_HEX_LENGTH);
-const DOMAIN_DIR = dirname(fileURLToPath(import.meta.url));
+const CLIENT_DIR = fileURLToPath(new URL("../client", import.meta.url));
 const LARGE_LINE_COUNT = 120;
 const LINE_WIDTH = 80;
 const SURFACE_LINE_OFFSET = 121;
@@ -178,7 +178,7 @@ const setupPagingWorkdir = (tempRoot: string, bigRulesetUrl: string) => {
 };
 
 const runSubCliJson = <T>(args: readonly string[]) => {
-	const cliPath = join(DOMAIN_DIR, "sub-agent-cli.ts");
+	const cliPath = join(CLIENT_DIR, "sub-agent-cli.ts");
 	const res = spawnSync(process.execPath, [cliPath, ...args], {
 		encoding: "utf8",
 	});

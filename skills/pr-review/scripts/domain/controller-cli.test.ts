@@ -2,19 +2,19 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { test as it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { MainAgentController } from "./controller.ts";
-import { runMainAgentCli } from "./controller-cli.ts";
-import { runSubAgentCli } from "./sub-agent-cli.ts";
-import { SubAgentController } from "./sub-agent-controller.ts";
+import { runMainAgentCli } from "../client/controller-cli.ts";
+import { runSubAgentCli } from "../client/sub-agent-cli.ts";
+import { MainAgentController } from "../controller/controller.ts";
+import { SubAgentController } from "../controller/sub-agent-controller.ts";
 
-const DOMAIN_DIR = dirname(fileURLToPath(import.meta.url));
+const CLIENT_DIR = fileURLToPath(new URL("../client", import.meta.url));
 const MAX_CLI_OUTPUT_BYTES = 9000;
 
 it("sub-agent-controller define resolves [[term]]s with default depth 1, configurable depth, and unknown-term errors", () => {
-	const cliPath = join(DOMAIN_DIR, "sub-agent-cli.ts");
+	const cliPath = join(CLIENT_DIR, "sub-agent-cli.ts");
 	const defaultRun = spawnSync(
 		process.execPath,
 		[cliPath, "define", "Encapsulated type"],
@@ -68,7 +68,7 @@ it("controller CLIs support -h / --help with row schemas and execute correctly t
 
 	const tempRoot = mkdtempSync(join(tmpdir(), "cli-symlink-"));
 	const linkedSubCli = join(tempRoot, "review-tool-probe");
-	symlinkSync(join(DOMAIN_DIR, "sub-agent-cli.ts"), linkedSubCli);
+	symlinkSync(join(CLIENT_DIR, "sub-agent-cli.ts"), linkedSubCli);
 	const helpRun = spawnSync(process.execPath, [linkedSubCli, "-h"], {
 		encoding: "utf8",
 	});

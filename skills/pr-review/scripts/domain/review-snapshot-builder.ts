@@ -1,8 +1,8 @@
-import type { AdapterResolution, ReviewSnapshotInput } from "./adapter.ts";
 import type { CodeUnderReview } from "./code-under-review.ts";
 import type { Path, SurfaceFile } from "./contracts.g.ts";
 import { changedFiles, parseNumstat } from "./diff.ts";
 import { fragments, type NumberedLines, numbered } from "./fragments.ts";
+import type { AdapterResolution, ReviewSnapshotInput } from "./host-adapter.ts";
 import { oversizedFiles, tooLarge } from "./limits.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 import type { RefusalRecorder } from "./review-baseline.ts";

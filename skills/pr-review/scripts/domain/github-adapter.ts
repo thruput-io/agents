@@ -5,18 +5,16 @@ import {
 	pullsGet,
 	pullsListReviews,
 } from "../../clients/github.g.ts";
-import type { AccessToken } from "./access-token.ts";
 import {
-	type AdapterResolution,
 	buildHostError,
-	type HostAdapter,
 	type HostHttpResponse,
 	type HostTransport,
 	hasOauthScope,
 	isJsonResponse,
 	tokenHttpTransport,
 	transportFromEnv,
-} from "./adapter.ts";
+} from "../adapters/http-transport.ts";
+import type { AccessToken } from "./access-token.ts";
 import type { GithubPullRequest } from "./code-under-review.ts";
 import type {
 	GitHub,
@@ -46,6 +44,7 @@ import {
 	resolveOversizedGitHubPull,
 } from "./github-pull-precheck.ts";
 import { fetchGitHubThreads } from "./github-threads.ts";
+import type { AdapterResolution, HostAdapter } from "./host-adapter.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 import { refusalRecorder, reviewBaselineFrom } from "./review-baseline.ts";
 import { buildReviewSnapshot } from "./review-snapshot-builder.ts";

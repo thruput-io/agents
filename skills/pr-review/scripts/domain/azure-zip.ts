@@ -3,7 +3,7 @@ import {
 	buildBinaryHostError,
 	type HostTransport,
 	isBinaryResponse,
-} from "./adapter.ts";
+} from "../adapters/http-transport.ts";
 import type { AzureDevOps, HeadCommit, HostError } from "./contracts.g.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 import type { CommitZipArchive } from "./snapshot-directory.ts";

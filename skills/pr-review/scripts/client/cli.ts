@@ -1,7 +1,7 @@
 import { existsSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { isNullOrEmpty } from "./nullish.ts";
+import { isNullOrEmpty } from "../domain/nullish.ts";
 
 export const isCliEntrypoint = (metaUrl: string): boolean => {
 	const [, entryArg] = process.argv;

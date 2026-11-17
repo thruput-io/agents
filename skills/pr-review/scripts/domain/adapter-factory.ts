@@ -1,6 +1,5 @@
 import { z } from "zod";
 import type { AccessToken } from "./access-token.ts";
-import type { HostAdapter } from "./adapter.ts";
 import { AzureDevOpsAdapter } from "./azure-adapter.ts";
 import { AzureMergeRequest } from "./azure-merge-request.ts";
 import {
@@ -11,6 +10,7 @@ import { GitAdapter } from "./git-adapter.ts";
 import { GitDiff } from "./git-diff.ts";
 import { GitHubAdapter } from "./github-adapter.ts";
 import { TargetSchema } from "./host.ts";
+import type { HostAdapter } from "./host-adapter.ts";
 import type { PersistedPullRequest } from "./ledger-directory.ts";
 import { nonnull } from "./nullish.ts";
 

@@ -1,21 +1,21 @@
 import { z } from "zod";
-import type { AccessToken } from "./access-token.ts";
-import type { AdapterResolution, HostAdapter } from "./adapter.ts";
-import { HostAdapterFactory } from "./adapter-factory.ts";
-import type { CodeUnderReview } from "./code-under-review.ts";
-import type { DispatchResult, PrepareError } from "./contracts.g.ts";
+import type { AccessToken } from "../domain/access-token.ts";
+import { HostAdapterFactory } from "../domain/adapter-factory.ts";
+import type { CodeUnderReview } from "../domain/code-under-review.ts";
+import type { DispatchResult, PrepareError } from "../domain/contracts.g.ts";
+import type { AdapterResolution, HostAdapter } from "../domain/host-adapter.ts";
 import {
 	type CoordinatedProbeSpec,
 	coordinateLedgers,
 	type MainAgentLedger,
-} from "./main-agent-ledger.ts";
-import { isNullOrEmpty, nonnull } from "./nullish.ts";
+} from "../domain/main-agent-ledger.ts";
+import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
 import {
 	loadBundledProbes,
 	loadPersistedProbes,
 	type NamedProbe,
-} from "./probe-loader.ts";
-import type { Workdir } from "./workdir.ts";
+} from "../domain/probe-loader.ts";
+import type { Workdir } from "../domain/workdir.ts";
 
 type ReadyReview = Extract<AdapterResolution, { readonly kind: "ready" }>;
 

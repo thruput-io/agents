@@ -1,26 +1,15 @@
 import { z } from "zod";
-import { AccessToken } from "./access-token.ts";
+import { AccessToken } from "../domain/access-token.ts";
 import {
-	type AlreadyReviewed,
-	type Change,
 	type ErrorMessage,
 	ErrorMessageSchema,
-	type HeadCommit,
 	type Host,
 	type HostError,
 	HostErrorSchema,
-	type Ledger,
-	type Outcome,
-	type Refused,
 	type Summary,
 	SummarySchema,
-	type Thread,
-	type TooLarge,
-} from "./contracts.g.ts";
-import { isNullOrEmpty } from "./nullish.ts";
-import type { ReviewBaseline } from "./review-baseline.ts";
-import type { CodeUnderReviewSnapshot } from "./review-snapshot.ts";
-import type { SnapshotDirectory } from "./snapshot-directory.ts";
+} from "../domain/contracts.g.ts";
+import { isNullOrEmpty } from "../domain/nullish.ts";
 
 const HTTP_OK = 200;
 const HTTP_NON_AUTHORITATIVE = 203;
@@ -197,7 +186,7 @@ function hostErrorMessage(
 	return SummarySchema.decode(`HTTP ${res.status} (${contentType})`);
 }
 
-export function hostErrorReason(
+function hostErrorReason(
 	hostLabel: string,
 	envVar: string,
 	res: HostHttpResponse,
@@ -220,7 +209,7 @@ export function hostErrorReason(
 	return formatter.other(hostLabel, res.status, contentType);
 }
 
-export const buildHostError = (
+const buildHostError = (
 	host: Host,
 	res: HostHttpResponse,
 	transport: HostTransport,
@@ -235,7 +224,7 @@ export const buildHostError = (
 	});
 };
 
-export async function buildBinaryHostError(
+async function buildBinaryHostError(
 	host: Host,
 	res: HostHttpResponse,
 	transport: HostTransport,
@@ -252,42 +241,19 @@ export async function buildBinaryHostError(
 	return buildHostError(host, res, transport);
 }
 
-export type AdapterResolution =
-	| {
-			readonly kind: "ready";
-			readonly headCommit: HeadCommit;
-			readonly change: Change;
-			readonly snapshot: CodeUnderReviewSnapshot;
-	  }
-	| AlreadyReviewed
-	| TooLarge
-	| Refused
-	| HostError;
-
 export type { HostHttpResponse, HostTransport };
 export {
 	anonymousHttpTransport,
+	buildBinaryHostError,
+	buildHostError,
 	HTTP_FORBIDDEN,
 	HTTP_MULTIPLE_CHOICES,
 	HTTP_NON_AUTHORITATIVE,
 	HTTP_OK,
 	hasOauthScope,
+	hostErrorReason,
 	isBinaryResponse,
 	isJsonResponse,
 	tokenHttpTransport,
 	transportFromEnv,
 };
-
-export interface ReviewSnapshotInput {
-	readonly baseCommit: HeadCommit;
-	readonly headCommit: HeadCommit;
-	readonly change: Change;
-	readonly baseline: ReviewBaseline;
-	readonly threads: readonly Thread[];
-}
-
-export interface HostAdapter<HostType extends Host = Host> {
-	host: () => HostType;
-	resolve: (snapshotDir: SnapshotDirectory) => Promise<AdapterResolution>;
-	post: (outcome: Outcome, ledger: Ledger) => Promise<Summary | HostError>;
-}

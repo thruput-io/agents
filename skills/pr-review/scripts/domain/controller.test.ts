@@ -9,13 +9,13 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test as it } from "node:test";
+import { MainAgentController } from "../controller/controller.ts";
+import { SubAgentController } from "../controller/sub-agent-controller.ts";
 import { CodeUnderReviewFactory } from "./code-under-review-factory.ts";
-import { MainAgentController } from "./controller.ts";
 import { LedgerDirectory } from "./ledger-directory.ts";
 import { nonnull } from "./nullish.ts";
 import { Rulebook } from "./rulebook.ts";
 import { RulesSubAgentLedger } from "./rules-sub-agent-ledger.ts";
-import { SubAgentController } from "./sub-agent-controller.ts";
 import { Workdir } from "./workdir.ts";
 
 const SHA1_HEX_LENGTH = 40;

@@ -13,7 +13,7 @@ import {
 	HTTP_NON_AUTHORITATIVE,
 	HTTP_OK,
 	isJsonResponse,
-} from "./adapter.ts";
+} from "../adapters/http-transport.ts";
 import { AzureCreatedThreadIdCodec } from "./azure.ts";
 import {
 	type AzureEditableThreadStatus,

@@ -1,7 +1,17 @@
 #!/usr/bin/env node
 import { z } from "zod";
-import { AccessToken } from "./access-token.ts";
-import type { AdapterResolution } from "./adapter.ts";
+import { MainAgentController } from "../controller/controller.ts";
+import { AccessToken } from "../domain/access-token.ts";
+import {
+	ControllerCommandSchema,
+	type DispatchResult,
+	type PrepareResponse,
+	type ReviewStatus,
+} from "../domain/contracts.g.ts";
+import type { AdapterResolution } from "../domain/host-adapter.ts";
+import type { MainAgentLedger } from "../domain/main-agent-ledger.ts";
+import { isNullOrEmpty } from "../domain/nullish.ts";
+import { Workdir } from "../domain/workdir.ts";
 import {
 	failCli,
 	failWithJson,
@@ -11,16 +21,6 @@ import {
 	type RawCommandResult,
 	writeJson,
 } from "./cli.ts";
-import {
-	ControllerCommandSchema,
-	type DispatchResult,
-	type PrepareResponse,
-	type ReviewStatus,
-} from "./contracts.g.ts";
-import { MainAgentController } from "./controller.ts";
-import type { MainAgentLedger } from "./main-agent-ledger.ts";
-import { isNullOrEmpty } from "./nullish.ts";
-import { Workdir } from "./workdir.ts";
 
 interface MainAgentCliDriver {
 	prepare: (

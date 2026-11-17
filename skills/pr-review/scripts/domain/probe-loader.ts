@@ -7,9 +7,22 @@ import {
 	type AgentInstructions,
 	type Change,
 	type Checkout,
+	type ContextKind,
+	type ContextPermissions,
+	type ContextTask,
+	type DeadCodeKind,
+	type DeadCodePermissions,
+	type DeadCodeTask,
 	type Rulebook as ExternalRulebook,
+	type InstructionsProse,
 	PrinciplesSchema,
+	type ReuseKind,
+	type ReusePermissions,
+	type ReuseTask,
+	type RulesKind,
+	type RulesPermissions,
 	RulesSchema,
+	type RulesTask,
 	type Surface,
 } from "./contracts.g.ts";
 import {
@@ -27,8 +40,32 @@ import {
 	rulebook,
 } from "./rulebook.ts";
 import { IndexSchema, withText } from "./ruleset.ts";
-import type { ProbeDocument } from "./sub-agent-controller.ts";
 import type { PersistedAudit } from "./workdir.ts";
+
+type ProbeDocument =
+	| {
+			readonly instructions?: InstructionsProse;
+			readonly task?: RulesTask | ReuseTask | DeadCodeTask;
+			readonly permissions?:
+				| RulesPermissions
+				| ReusePermissions
+				| DeadCodePermissions;
+			readonly kind: RulesKind | ReuseKind | DeadCodeKind;
+			readonly change: Change;
+			readonly surface: Surface;
+			readonly rulebook: Rulebook;
+			readonly checkout?: Checkout;
+	  }
+	| {
+			readonly instructions?: InstructionsProse;
+			readonly task?: ContextTask;
+			readonly permissions?: ContextPermissions;
+			readonly kind: ContextKind;
+			readonly change: Change;
+			readonly surface: Surface;
+			readonly rulesets: readonly ExternalRulebook[];
+			readonly checkout?: Checkout;
+	  };
 
 interface NamedProbe {
 	readonly name: string;
@@ -235,5 +272,5 @@ function loadPersistedProbes(
 	}));
 }
 
-export type { NamedProbe };
+export type { NamedProbe, ProbeDocument };
 export { loadBundledProbes, loadPersistedProbes, toAgentInstructions };

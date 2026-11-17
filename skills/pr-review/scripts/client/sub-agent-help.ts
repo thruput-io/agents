@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SUBAGENT_DEADLINE_MS } from "./sub-agent-controller.ts";
+import { SUBAGENT_DEADLINE_MS } from "../controller/sub-agent-controller.ts";
 
 const REVIEW_SCHEMAS_DIR = resolve(
 	dirname(fileURLToPath(import.meta.url)),

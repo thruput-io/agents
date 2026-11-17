@@ -1,36 +1,22 @@
-import type { CodeUnderReview } from "./code-under-review.ts";
-import { ContextSubAgentLedger } from "./context-sub-agent-ledger.ts";
+import type { CodeUnderReview } from "../domain/code-under-review.ts";
+import { ContextSubAgentLedger } from "../domain/context-sub-agent-ledger.ts";
 import type {
 	AckPayload,
-	Change,
 	Checkout,
-	ContextKind,
-	ContextPermissions,
-	ContextTask,
-	DeadCodeKind,
-	DeadCodePermissions,
-	DeadCodeTask,
 	Rulebook as ExternalRulebook,
-	InstructionsProse,
-	ReuseKind,
-	ReusePermissions,
-	ReuseTask,
 	RulesetPageResponse,
 	RulesetUrl,
-	RulesKind,
-	RulesPermissions,
-	RulesTask,
-	Surface,
-} from "./contracts.g.ts";
-import { DeadCodeSubAgentLedger } from "./dead-code-sub-agent-ledger.ts";
-import type { CoordinatedProbeSpec } from "./main-agent-ledger.ts";
-import { isNullOrEmpty, nonnull } from "./nullish.ts";
-import { paginateText } from "./pagination.ts";
-import type { SubAgentLedger } from "./probe-ledger.ts";
-import { ReuseSubAgentLedger } from "./reuse-sub-agent-ledger.ts";
-import type { Rulebook } from "./rulebook.ts";
-import { RulesSubAgentLedger } from "./rules-sub-agent-ledger.ts";
-import type { Workdir } from "./workdir.ts";
+} from "../domain/contracts.g.ts";
+import { DeadCodeSubAgentLedger } from "../domain/dead-code-sub-agent-ledger.ts";
+import type { CoordinatedProbeSpec } from "../domain/main-agent-ledger.ts";
+import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
+import { paginateText } from "../domain/pagination.ts";
+import type { SubAgentLedger } from "../domain/probe-ledger.ts";
+import type { ProbeDocument } from "../domain/probe-loader.ts";
+import { ReuseSubAgentLedger } from "../domain/reuse-sub-agent-ledger.ts";
+import type { Rulebook } from "../domain/rulebook.ts";
+import { RulesSubAgentLedger } from "../domain/rules-sub-agent-ledger.ts";
+import type { Workdir } from "../domain/workdir.ts";
 
 type LedgerDirectory = ReturnType<Workdir["ledgerDirectory"]>;
 
@@ -39,31 +25,6 @@ const CONTEXT_BOOK_RULE_ROWS = 3;
 type AckValidationResult =
 	| { readonly success: true }
 	| { readonly success: false; readonly error: string };
-
-type ProbeDocument =
-	| {
-			readonly instructions?: InstructionsProse;
-			readonly task?: RulesTask | ReuseTask | DeadCodeTask;
-			readonly permissions?:
-				| RulesPermissions
-				| ReusePermissions
-				| DeadCodePermissions;
-			readonly kind: RulesKind | ReuseKind | DeadCodeKind;
-			readonly change: Change;
-			readonly surface: Surface;
-			readonly rulebook: Rulebook;
-			readonly checkout?: Checkout;
-	  }
-	| {
-			readonly instructions?: InstructionsProse;
-			readonly task?: ContextTask;
-			readonly permissions?: ContextPermissions;
-			readonly kind: ContextKind;
-			readonly change: Change;
-			readonly surface: Surface;
-			readonly rulesets: readonly ExternalRulebook[];
-			readonly checkout?: Checkout;
-	  };
 
 type ProbeRules =
 	| { readonly kind: "rulebook"; readonly rulebook: Rulebook }
@@ -103,7 +64,7 @@ type RulebookProbeDocument = Extract<
 >;
 type ContextProbeDocument = Extract<
 	ProbeDocument,
-	{ readonly kind: ContextKind }
+	{ readonly kind: "context" }
 >;
 
 const HYDRATE_RULEBOOK_PROBE: Readonly<
@@ -228,7 +189,7 @@ export function probeBehaviorFor(
 	return rulebookProbeBehavior(probe, checkoutDir);
 }
 
-export type { ProbeBehavior, ProbeDocument, ProbeRules, ProbeStorage };
+export type { ProbeBehavior, ProbeRules, ProbeStorage };
 
 export function inMemoryProbeStorage(): ProbeStorage {
 	return {

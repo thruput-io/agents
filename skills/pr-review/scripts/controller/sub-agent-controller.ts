@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { HostAdapterFactory } from "./adapter-factory.ts";
-import type { CodeUnderReview } from "./code-under-review.ts";
+import { HostAdapterFactory } from "../domain/adapter-factory.ts";
+import type { CodeUnderReview } from "../domain/code-under-review.ts";
 import {
 	type AckPayload,
 	type AckStatus,
@@ -13,23 +13,29 @@ import {
 	type RulesetPageResponse,
 	type RulesetUrl,
 	type Surface,
-} from "./contracts.g.ts";
-import { Instructions } from "./instructions.ts";
-import { coordinateLedgers } from "./main-agent-ledger.ts";
-import { isNullOrEmpty, nonnull } from "./nullish.ts";
-import { paginateSurface } from "./pagination.ts";
-import type { LedgerSubmission, SubAgentLedger } from "./probe-ledger.ts";
-import { loadPersistedProbes, toAgentInstructions } from "./probe-loader.ts";
+} from "../domain/contracts.g.ts";
+import { Instructions } from "../domain/instructions.ts";
+import { coordinateLedgers } from "../domain/main-agent-ledger.ts";
+import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
+import { paginateSurface } from "../domain/pagination.ts";
+import type {
+	LedgerSubmission,
+	SubAgentLedger,
+} from "../domain/probe-ledger.ts";
+import {
+	loadPersistedProbes,
+	type ProbeDocument,
+	toAgentInstructions,
+} from "../domain/probe-loader.ts";
+import { Workdir } from "../domain/workdir.ts";
 import {
 	inMemoryProbeStorage,
 	type ProbeBehavior,
-	type ProbeDocument,
 	type ProbeRules,
 	type ProbeStorage,
 	persistedProbeStorage,
 	probeBehaviorFor,
 } from "./sub-agent-probe.ts";
-import { Workdir } from "./workdir.ts";
 
 const SHA1_HEX_LENGTH = 40;
 const ZERO_COMMIT_SHA = "0".repeat(SHA1_HEX_LENGTH);
@@ -52,7 +58,7 @@ const customFailure = (
 		.custom<LedgerSubmission>(() => false, { path: [path], message })
 		.safeDecode(null as never);
 
-export type { ProbeDocument } from "./sub-agent-probe.ts";
+export type { ProbeDocument } from "../domain/probe-loader.ts";
 
 export type AckResult =
 	| { readonly success: true; readonly data: AckStatus }

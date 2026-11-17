@@ -1,4 +1,3 @@
-import type { AdapterResolution, HostAdapter } from "./adapter.ts";
 import {
 	ChangeSchema,
 	DeveloperSchema,
@@ -10,6 +9,7 @@ import {
 	type Summary,
 } from "./contracts.g.ts";
 import type { GitDiff } from "./git-diff.ts";
+import type { AdapterResolution, HostAdapter } from "./host-adapter.ts";
 import { table } from "./ledger-table.ts";
 import { reviewBaselineFrom } from "./review-baseline.ts";
 import { rendered } from "./review-snapshot.ts";

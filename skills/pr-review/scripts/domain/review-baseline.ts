@@ -1,4 +1,3 @@
-import type { AdapterResolution } from "./adapter.ts";
 import type {
 	ChangedFile,
 	HeadCommit,
@@ -7,6 +6,7 @@ import type {
 	Thread,
 } from "./contracts.g.ts";
 import { changedFiles } from "./diff.ts";
+import type { AdapterResolution } from "./host-adapter.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 import type { SnapshotDirectory } from "./snapshot-directory.ts";
 import { narrowSurface, threadRanges, wholeSurface } from "./surface.ts";

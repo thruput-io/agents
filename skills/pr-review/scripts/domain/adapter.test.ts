@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { rmSync } from "node:fs";
 import { after, before, beforeEach, test as it } from "node:test";
+import { HTTP_FORBIDDEN } from "../adapters/http-transport.ts";
 import {
 	createFailedAzureThreadCreateHandler,
 	createForbiddenAzureItemsHandler,
@@ -23,7 +24,6 @@ import {
 } from "../integration-test/mock-server.ts";
 import { createScenarioRepo } from "../integration-test/scenario-repo.ts";
 import { AccessToken } from "./access-token.ts";
-import { HTTP_FORBIDDEN } from "./adapter.ts";
 import { HostAdapterFactory } from "./adapter-factory.ts";
 import { HostErrorSchema, type Ledger, type Outcome } from "./contracts.g.ts";
 import { nonnull } from "./nullish.ts";

@@ -2,14 +2,10 @@
 import { existsSync, readFileSync } from "node:fs";
 import { z } from "zod";
 import {
-	failCli,
-	failWithJsonError,
-	isCliEntrypoint,
-	parseSchemaCli,
-	type RawCommandResult,
-	writeJson,
-} from "./cli.ts";
-import type { CodeUnderReview } from "./code-under-review.ts";
+	type AckResult,
+	SubAgentController,
+} from "../controller/sub-agent-controller.ts";
+import type { CodeUnderReview } from "../domain/code-under-review.ts";
 import {
 	type AckPayload,
 	type AckResponse,
@@ -23,15 +19,22 @@ import {
 	type RulesetPageResponse,
 	type RulesetUrl,
 	SubAgentCommandSchema,
-} from "./contracts.g.ts";
-import { resolveDefinition } from "./define.ts";
-import type { Instructions } from "./instructions.ts";
-import { isNullOrEmpty } from "./nullish.ts";
-import type { LedgerSubmission } from "./probe-ledger.ts";
-import type { Rulebook } from "./rulebook.ts";
-import { type AckResult, SubAgentController } from "./sub-agent-controller.ts";
+} from "../domain/contracts.g.ts";
+import { resolveDefinition } from "../domain/define.ts";
+import type { Instructions } from "../domain/instructions.ts";
+import { isNullOrEmpty } from "../domain/nullish.ts";
+import type { LedgerSubmission } from "../domain/probe-ledger.ts";
+import type { Rulebook } from "../domain/rulebook.ts";
+import { Workdir } from "../domain/workdir.ts";
+import {
+	failCli,
+	failWithJsonError,
+	isCliEntrypoint,
+	parseSchemaCli,
+	type RawCommandResult,
+	writeJson,
+} from "./cli.ts";
 import { subAgentHelpPayload } from "./sub-agent-help.ts";
-import { Workdir } from "./workdir.ts";
 
 type ProbeRules =
 	| { readonly kind: "rulebook"; readonly rulebook: Rulebook }

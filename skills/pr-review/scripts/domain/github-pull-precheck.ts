@@ -6,13 +6,12 @@ import {
 } from "../../clients/github.g.ts";
 import type { PullsGetResponse } from "../../clients/github.zod.g.ts";
 import {
-	type AdapterResolution,
 	buildBinaryHostError,
 	type HostHttpResponse,
 	type HostTransport,
 	isBinaryResponse,
 	isJsonResponse,
-} from "./adapter.ts";
+} from "../adapters/http-transport.ts";
 import type { GitHub, HeadCommit, HostError, Summary } from "./contracts.g.ts";
 import {
 	GitHubPullFilesCodec,
@@ -20,6 +19,7 @@ import {
 	postedAt,
 	refusedIn,
 } from "./github.ts";
+import type { AdapterResolution } from "./host-adapter.ts";
 import {
 	DIFF_LIMIT_EXCEEDED,
 	type FileLineCount,

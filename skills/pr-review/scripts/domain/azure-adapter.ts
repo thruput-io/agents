@@ -5,18 +5,16 @@ import {
 	pullRequestThreadsList,
 } from "../../clients/azure-git.g.ts";
 import { evaluationsList } from "../../clients/azure-policy.g.ts";
-import type { AccessToken } from "./access-token.ts";
 import {
-	type AdapterResolution,
 	buildHostError,
-	type HostAdapter,
 	type HostHttpResponse,
 	type HostTransport,
 	HTTP_FORBIDDEN,
 	isJsonResponse,
 	tokenHttpTransport,
 	transportFromEnv,
-} from "./adapter.ts";
+} from "../adapters/http-transport.ts";
+import type { AccessToken } from "./access-token.ts";
 import {
 	AzureEvaluationsListCodec,
 	AzurePullRequestCodec,
@@ -53,6 +51,7 @@ import type {
 	Outcome,
 	Summary,
 } from "./contracts.g.ts";
+import type { AdapterResolution, HostAdapter } from "./host-adapter.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 import { refusalRecorder, reviewBaselineFrom } from "./review-baseline.ts";
 import { buildReviewSnapshot } from "./review-snapshot-builder.ts";

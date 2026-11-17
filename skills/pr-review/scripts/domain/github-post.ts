@@ -1,6 +1,9 @@
 import { GraphQLClient } from "graphql-request";
 import { pullsCreateReview, pullsListReviews } from "../../clients/github.g.ts";
-import { type HostHttpResponse, isJsonResponse } from "./adapter.ts";
+import {
+	type HostHttpResponse,
+	isJsonResponse,
+} from "../adapters/http-transport.ts";
 import type {
 	GitHub,
 	HeadCommit,

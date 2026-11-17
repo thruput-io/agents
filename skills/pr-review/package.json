@@ -11,8 +11,11 @@
 	},
 	"files": [
 		"bin/*",
+		"scripts/client/*.ts",
+		"scripts/controller/*.ts",
+		"scripts/adapters/**/*.ts",
 		"scripts/domain/*.ts",
-		"!scripts/domain/*.test.ts",
+		"!scripts/**/*.test.ts",
 		"clients/*.ts",
 		"rules/",
 		"schemas/",

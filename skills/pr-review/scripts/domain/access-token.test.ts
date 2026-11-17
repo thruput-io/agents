@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
-import { AccessToken } from "./access-token.ts";
 import {
 	anonymousHttpTransport,
 	hasOauthScope,
 	hostErrorReason,
 	isJsonResponse,
 	transportFromEnv,
-} from "./adapter.ts";
+} from "../adapters/http-transport.ts";
+import { AccessToken } from "./access-token.ts";
 import { nonnull } from "./nullish.ts";
 
 const JWT_HEADER = Buffer.from(
