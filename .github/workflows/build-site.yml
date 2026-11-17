@@ -54,6 +54,7 @@ jobs:
             --offline
             --include-fragments
             --extensions html,css,json
+            --remap 'https://thruput.se/agents/schemas file://${{ env.PROJECT_ROOT }}/_site/schemas'
             --root-dir '${{ env.PROJECT_ROOT }}/_site'
             '${{ env.PROJECT_ROOT }}/_site'
       - uses: actions/upload-pages-artifact@v3

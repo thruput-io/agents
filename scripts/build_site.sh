@@ -6,7 +6,7 @@ cp -R "$PROJECT_ROOT/rules" "build/site/_data"
 cp -R "$PROJECT_ROOT/schemas" "build/site/schemas"
 
 version=$(git -C "$PROJECT_ROOT" describe --tags | sed 's/^v//')
-echo $version
+echo "$version"
 printf 'version: %s\n' "$version" > "build/site/_data/release.yml"
 npx --yes @sourcemeta/jsonschema@17.0.0 validate \
   "$PROJECT_ROOT/schemas/repository/release.schema.json" \
@@ -18,5 +18,6 @@ lychee  --verbose\
         --no-progress\
         --include-fragments\
         --extensions html,css,json\
+        --remap "https://thruput.se/agents/schemas file://$PROJECT_ROOT/build/_site/schemas"\
         --root-dir "build/_site"\
         "build/_site"

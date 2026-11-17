@@ -23,6 +23,9 @@
         "id": {
           "$ref": "#/$defs/PrincipleId"
         },
+        "body": {
+          "$ref": "definitions.schema.json#/$defs/Prose"
+        },
         "parent": {
           "$ref": "rationales.schema.json#/$defs/RationaleId"
         },
