@@ -33,11 +33,4 @@ wait "$typecheck_pid"
 wait "$unit_pid"
 wait "$audit_pid"
 
-npm --prefix "$PROJECT_ROOT/skills/pr-review" run test:integration &
-pr_review_pid=$!
-trap 'kill "$pr_review_pid" 2>/dev/null || true' EXIT
-"$PROJECT_ROOT/scripts/verify-opencode-install.sh" &
-opencode_pid=$!
-
-wait "$opencode_pid"
-wait "$pr_review_pid"
+npm --prefix "$PROJECT_ROOT/skills/pr-review" run test:integration

@@ -9,4 +9,4 @@ ENV PATH=/home/node/.npm-global/bin:/usr/local/bin:/usr/bin:/bin
 RUN mkdir -p /home/node/.config/opencode /home/node/.npm-global /home/node/workspace \
   && npm config set prefix /home/node/.npm-global
 COPY --chown=node:node . /home/node/source
-CMD ["/home/node/source/scripts/opencode-install-test/run-inside-container.sh"]
+CMD ["timeout", "30", "/home/node/source/scripts/opencode-install-test/run-inside-container.sh"]

@@ -13,13 +13,19 @@ env:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
       - run: "$PROJECT_ROOT/scripts/verify.sh"
+
+  opencode-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - uses: actions/checkout@v4
+      - run: "$PROJECT_ROOT/scripts/verify-opencode-install.sh"
 
   build-site:
     uses: ./.github/workflows/build-site.yml
