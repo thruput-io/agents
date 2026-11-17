@@ -78,27 +78,35 @@ const sampleChange = {
 	description: "Body",
 };
 
-it("Workdir parses an absolute path and derives its sibling LedgerDirectory and snapshot subdirectory", () => {
-	const workdir = Workdir.from("/tmp/review/workspace");
-	const same = Workdir.from("/tmp/review/workspace");
-	const expectedSibling = LedgerDirectory.from("/tmp/review/ledger");
+it("Workdir parses an absolute path and derives its sibling LedgerDirectory and snapshot subdirectory", (t) => {
+	const tempRoot = mkdtempSync(join(tmpdir(), "controller-workdir-"));
+	t.after(() => rmSync(tempRoot, { recursive: true, force: true }));
+	const workspacePath = join(tempRoot, "workspace");
+	const ledgerPath = join(tempRoot, "ledger");
+	const workdir = Workdir.from(workspacePath);
+	const same = Workdir.from(workspacePath);
+	const expectedSibling = LedgerDirectory.from(ledgerPath);
 	assert.equal(workdir.success, true);
 	assert.equal(same.success, true);
 	assert.equal(expectedSibling.success, true);
 	assert.equal(workdir.data.equals(same.data), true);
-	assert.equal(workdir.data.toString(), "/tmp/review/workspace");
+	assert.equal(workdir.data.toString(), workspacePath);
 	assert.equal(
 		workdir.data.ledgerDirectory().equals(expectedSibling.data),
 		true,
 	);
 	assert.equal(
 		workdir.data.snapshotDirectory().toString(),
-		"/tmp/review/workspace/snapshot",
+		join(workspacePath, "snapshot"),
 	);
 });
 
-it("SubAgentController exposes instructions, change, rules, codeUnderReview, and report for its probe", async () => {
-	const workdir = Workdir.from("/tmp/review/workspace");
+it("SubAgentController exposes instructions, change, rules, codeUnderReview, and report for its probe", async (t) => {
+	const tempRoot = mkdtempSync(join(tmpdir(), "controller-subagent-"));
+	t.after(() => rmSync(tempRoot, { recursive: true, force: true }));
+	const workspacePath = join(tempRoot, "workspace");
+	const snapshotPath = join(workspacePath, "snapshot");
+	const workdir = Workdir.from(workspacePath);
 	assert.equal(workdir.success, true);
 	const rb = sampleRulebook();
 
@@ -184,15 +192,15 @@ it("SubAgentController exposes instructions, change, rules, codeUnderReview, and
 	assert.equal(sub.inspect().kind, "rules");
 	assert.equal(
 		(contextSub.inspect() as { readonly checkout?: string }).checkout,
-		"/tmp/review/workspace/snapshot",
+		snapshotPath,
 	);
 	assert.equal(
 		(deadCodeSub.inspect() as { readonly checkout?: string }).checkout,
-		"/tmp/review/workspace/snapshot",
+		snapshotPath,
 	);
 	assert.equal(
 		(reuseSub.inspect() as { readonly checkout?: string }).checkout,
-		"/tmp/review/workspace/snapshot",
+		snapshotPath,
 	);
 
 	const subLedger = RulesSubAgentLedger.from(

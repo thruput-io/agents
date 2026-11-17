@@ -16,3 +16,4 @@ git -C "$PROJECT_ROOT" ls-files -z '*.sh' | xargs -0 -I{} shellcheck "$PROJECT_R
 npm --prefix "$PROJECT_ROOT/skills/pr-review" ci --no-audit --no-fund
 npm --prefix "$PROJECT_ROOT/skills/pr-review" run verify
 npx --yes @agentplugins/cli@0.6.1 audit "$PROJECT_ROOT"
+"$PROJECT_ROOT/scripts/verify-opencode-install.sh"
