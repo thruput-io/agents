@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export type AccessTokenKind = "bearer" | "basic" | "pat";
+type AccessTokenKind = "bearer" | "basic" | "pat";
 
 interface TokenBehavior {
 	readonly kind: AccessTokenKind;
@@ -60,8 +60,8 @@ const TOKEN_BEHAVIORS: Readonly<Record<AccessTokenKind, TokenBehavior>> = {
 	},
 };
 
-const BEARER_PREFIX = /^bearer\s+(\S+)$/iu;
-const BASIC_PREFIX = /^basic\s+(\S+)$/iu;
+const BEARER_PREFIX = /^bearer\s+(?<token>\S+)$/iu;
+const BASIC_PREFIX = /^basic\s+(?<token>\S+)$/iu;
 const SCHEME_ONLY = /^(?:bearer|basic)$/iu;
 const JWT_PATTERN = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/u;
 const GITHUB_TOKEN_PATTERN = /^(?:gh[pousr]_|github_pat_)\S+$/u;
@@ -116,7 +116,7 @@ function parseJwtScopes(credential: string): readonly string[] | null {
 	if (!JWT_PATTERN.test(credential)) {
 		return null;
 	}
-	const payloadSegment = credential.split(".")[1];
+	const [, payloadSegment] = credential.split(".");
 	if (!payloadSegment) {
 		return null;
 	}
@@ -217,3 +217,5 @@ export class AccessToken {
 		return this.authorizationHeader() === other.authorizationHeader();
 	}
 }
+
+export type { AccessTokenKind };

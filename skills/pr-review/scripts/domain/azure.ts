@@ -12,6 +12,9 @@ import {
 	SummarySchema,
 } from "./contracts.g.ts";
 
+const AzureEvaluationTransportSchema =
+	EvaluationsListResponse.shape.value.element;
+
 export const KIND = "azure-devops" as const;
 
 export type AzurePullRequest = z.infer<
@@ -26,9 +29,6 @@ export const AzurePullRequestCodec = z.codec(
 		encode: (pr) => pr,
 	},
 );
-
-const AzureEvaluationTransportSchema =
-	EvaluationsListResponse.shape.value.element;
 
 export type AzureEvaluationRecord = z.infer<
 	typeof AzureEvaluationTransportSchema
@@ -87,9 +87,15 @@ export const blockingBuildPolicies = (
 export const refusalReasons = (
 	mergeStatus: string | null | undefined,
 	policies: readonly Pick<AzureEvaluationRecord, "status">[],
-): Summary[] => [
-	...(mergeStatus === "conflicts" ? ["pull request has merge conflicts"] : []),
-	...policies
-		.filter((policy) => policy.status !== "approved")
-		.map((policy) => `the blocking Build policy is ${String(policy.status)}`),
-];
+): Summary[] => {
+	const reasons: Summary[] = [];
+	if (mergeStatus === "conflicts") {
+		reasons.push("pull request has merge conflicts");
+	}
+	for (const policy of policies) {
+		if (policy.status !== "approved") {
+			reasons.push(`the blocking Build policy is ${String(policy.status)}`);
+		}
+	}
+	return reasons;
+};

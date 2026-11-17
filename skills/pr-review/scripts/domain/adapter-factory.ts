@@ -2,13 +2,13 @@ import { z } from "zod";
 import type { AccessToken } from "./access-token.ts";
 import type { HostAdapter } from "./adapter.ts";
 import { AzureDevOpsAdapter } from "./azure-adapter.ts";
+import { AzureMergeRequest } from "./azure-merge-request.ts";
 import {
-	AzureMergeRequest,
 	type CodeUnderReview,
-	GitDiff,
 	GithubPullRequest,
 } from "./code-under-review.ts";
 import { GitAdapter } from "./git-adapter.ts";
+import { GitDiff } from "./git-diff.ts";
 import { GitHubAdapter } from "./github-adapter.ts";
 import { TargetSchema } from "./host.ts";
 import type { PersistedPullRequest } from "./ledger-directory.ts";
@@ -16,27 +16,27 @@ import { nonnull } from "./nullish.ts";
 
 const defaultSchema = TargetSchema.pipe(
 	z.union([
-		GithubPullRequest.Schema.transform(
+		GithubPullRequest.SCHEMA.transform(
 			(review): HostAdapter => GitHubAdapter.from(review),
 		),
-		AzureMergeRequest.Schema.transform(
+		AzureMergeRequest.SCHEMA.transform(
 			(review): HostAdapter => AzureDevOpsAdapter.from(review),
 		),
-		GitDiff.Schema.transform((review): HostAdapter => GitAdapter.from(review)),
+		GitDiff.SCHEMA.transform((review): HostAdapter => GitAdapter.from(review)),
 	]),
 );
 
 const withTokenSchema = (token: AccessToken) =>
 	TargetSchema.pipe(
 		z.union([
-			GithubPullRequest.Schema.transform(
+			GithubPullRequest.SCHEMA.transform(
 				(review): HostAdapter => GitHubAdapter.fromWithToken(review, token),
 			),
-			AzureMergeRequest.Schema.transform(
+			AzureMergeRequest.SCHEMA.transform(
 				(review): HostAdapter =>
 					AzureDevOpsAdapter.fromWithToken(review, token),
 			),
-			GitDiff.Schema.transform(
+			GitDiff.SCHEMA.transform(
 				(review): HostAdapter => GitAdapter.from(review),
 			),
 		]),

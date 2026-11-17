@@ -11,6 +11,7 @@ import type {
 import { nonnull } from "./nullish.ts";
 
 const MAX_PAGE_JSON_BYTES = 8500;
+const TEXT_PAGE_ENVELOPE_RESERVE_BYTES = 700;
 
 interface MutableChunk {
 	readonly fragments: Fragment[];
@@ -152,7 +153,7 @@ export const surfaceOverview = (
 
 export function paginateText(
 	text: string,
-	maxBytes = MAX_PAGE_JSON_BYTES - 700,
+	maxBytes = MAX_PAGE_JSON_BYTES - TEXT_PAGE_ENVELOPE_RESERVE_BYTES,
 ): readonly string[] {
 	if (Buffer.byteLength(JSON.stringify(text), "utf8") <= maxBytes) {
 		return [text];

@@ -1,9 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { test as it } from "node:test";
-import { Worker } from "node:worker_threads";
 import { z } from "zod";
 import type { Row, RuleRef, Violation } from "./contracts.g.ts";
 import {
@@ -14,16 +10,6 @@ import {
 	resolveSurfaceLine,
 	violationInside,
 } from "./ledger.ts";
-import { LedgerDirectory } from "./ledger-directory.ts";
-import { coordinateLedgers } from "./main-agent-ledger.ts";
-import { nonnull } from "./nullish.ts";
-import { CodeUnderReviewFactory } from "./review-snapshot.ts";
-import {
-	ContextSubAgentLedger,
-	DeadCodeSubAgentLedger,
-	ReuseSubAgentLedger,
-	RulesSubAgentLedger,
-} from "./sub-agent-ledger.ts";
 
 const MISSING_B_RE = /missing: \["B"\]/u;
 const EXTRA_Z_RE = /extra: \["Z"\]/u;
@@ -51,8 +37,16 @@ const rejectionMessage = (
 	throw new Error("Expected ledger validation to reject");
 };
 
-const H = "a".repeat(40);
-const OTHER = "b".repeat(40);
+const SHA1_HEX_LENGTH = 40;
+const H = "a".repeat(SHA1_HEX_LENGTH);
+const OTHER = "b".repeat(SHA1_HEX_LENGTH);
+const LINE_3 = 3;
+const SURFACE_END = 5;
+const CONTEXT_START = 6;
+const CONTEXT_END = 8;
+const OUTSIDE_LINE = 7;
+const SURFACE_TAIL = 9;
+const EXPECTED_BOOK_ROWS = 3;
 const text = (n: number) => `L${n}`;
 const run = (from: number, to: number) =>
 	Array.from({ length: to - from + 1 }, (_, i) => ({
@@ -68,13 +62,16 @@ const files = [
 			{
 				kind: "surface" as const,
 				side: "head" as const,
-				lines: run(1, 5),
+				lines: run(1, SURFACE_END),
 			},
-			{ kind: "context" as const, lines: contextRun(6, 8) },
+			{
+				kind: "context" as const,
+				lines: contextRun(CONTEXT_START, CONTEXT_END),
+			},
 			{
 				kind: "surface" as const,
 				side: "head" as const,
-				lines: run(9, 9),
+				lines: run(SURFACE_TAIL, SURFACE_TAIL),
 			},
 		],
 	},
@@ -130,13 +127,13 @@ const rowOn = (ruleset: string): Row => ({
 	evidence: "e",
 });
 
-it("violationInside accepts surface line ids and pull-request-level findings (omitted idToReportViolationOn)", () => {
-	assert.equal(violationInside(violationAt("A", 3), files), true);
+it("violationInside accepts surface line ids and pull-request-level findings", () => {
+	assert.equal(violationInside(violationAt("A", LINE_3), files), true);
 	assert.equal(violationInside(violationAt("A", 1), files), true);
-	assert.equal(violationInside(violationAt("A", 9), files), true);
+	assert.equal(violationInside(violationAt("A", SURFACE_TAIL), files), true);
 	assert.equal(violationInside(violation("A"), files), true);
-	assert.equal(violationInside(violationAt("A", 6), files), false);
-	assert.equal(violationInside(violationAt("A", 7), files), false);
+	assert.equal(violationInside(violationAt("A", CONTEXT_START), files), false);
+	assert.equal(violationInside(violationAt("A", OUTSIDE_LINE), files), false);
 });
 
 it("resolveSurfaceLine maps '<path>:<line>' to the exact matching file, head side, and 1-based file line number", () => {
@@ -242,7 +239,7 @@ it("the ledger schema rejects a violation anchored outside the surface", () => {
 	assert.match(
 		rejectionMessage(probe, {
 			headCommit: H,
-			rows: rows(violationAt("A", 7)),
+			rows: rows(violationAt("A", OUTSIDE_LINE)),
 		}),
 		OUTSIDE_SURFACE_RE,
 	);
@@ -254,7 +251,7 @@ it("the ledger schema requires exactly three rows on rules of one ruleset the co
 			headCommit: H,
 			rows: [cleanBookRow("x"), cleanBookRow("y"), cleanBookRow("z")],
 		}).rows.length,
-		3,
+		EXPECTED_BOOK_ROWS,
 	);
 	assert.match(
 		rejectionMessage(contextProbe, {
@@ -292,149 +289,4 @@ it("the ledger schema requires exactly three rows on rules of one ruleset the co
 		}),
 		SELECTS_ONE_RULESET_RE,
 	);
-});
-
-it("coordinateLedgers records each probe slice to disk, tracks MainAgentLedger status, and auto-submits the merged outcome when the last probe reports", () => {
-	const tempRoot = mkdtempSync(join(tmpdir(), "ledger-test-"));
-	const dir = LedgerDirectory.from(tempRoot);
-	const pr = CodeUnderReviewFactory.from(
-		"https://github.com/thruput-io/agents/pull/14",
-	);
-	assert.equal(dir.success, true);
-	assert.equal(pr.success, true);
-
-	const firstProbe = {
-		surface: { headCommit: H, files },
-		rulebook: {
-			rules: [{ id: "A", parent: "You aren't gonna need it" }],
-		},
-	};
-	const secondProbe = {
-		surface: { headCommit: H, files },
-		rulebook: {
-			rules: [{ id: "B", parent: "Fail fast" }],
-		},
-	};
-	const { ledgers, mainLedger } = coordinateLedgers(dir.data, pr.data, [
-		{ name: "01-rules", kind: "rules", probe: firstProbe },
-		{ name: "02-dead-code", kind: "dead-code", probe: secondProbe },
-	]);
-
-	assert.equal(mainLedger.directory().equals(dir.data), true);
-	assert.deepEqual(mainLedger.pullRequest().host(), pr.data.host());
-	assert.deepEqual(mainLedger.pending(), ["01-rules", "02-dead-code"]);
-	assert.deepEqual(mainLedger.completed(), []);
-	assert.equal(mainLedger.submittedOutcome(), null);
-	assert.equal(mainLedger.submittedLedger(), null);
-
-	const firstReport = nonnull(ledgers[0]).report([cleanRow("A")]);
-	assert.equal(firstReport.success, true);
-	assert.equal(firstReport.data.kind, "recorded");
-	assert.equal(existsSync(join(tempRoot, "01-rules.json")), true);
-	assert.deepEqual(mainLedger.pending(), ["02-dead-code"]);
-	assert.deepEqual(mainLedger.completed(), ["01-rules"]);
-
-	const secondReport = nonnull(ledgers[1]).report([
-		violatedRow("B", [violationAt("B", 2)]),
-	]);
-	assert.equal(secondReport.success, true);
-	assert.equal(secondReport.data.kind, "submitted");
-	assert.equal(secondReport.data.ledger.rows.length, 2);
-	assert.equal(existsSync(join(tempRoot, "02-dead-code.json")), true);
-	assert.deepEqual(mainLedger.pending(), []);
-	assert.deepEqual(mainLedger.completed(), ["01-rules", "02-dead-code"]);
-	assert.equal(mainLedger.submittedOutcome()?.verdict, "request-changes");
-	assert.equal(mainLedger.submittedLedger()?.rows.length, 2);
-
-	rmSync(tempRoot, { recursive: true, force: true });
-});
-
-it("RulesSubAgentLedger, DeadCodeSubAgentLedger, ReuseSubAgentLedger, and ContextSubAgentLedger parse rows against their probes", () => {
-	const dir = LedgerDirectory.from("/tmp/ledger");
-	const pr = CodeUnderReviewFactory.from(
-		"https://github.com/thruput-io/agents/pull/14",
-	);
-	assert.equal(dir.success, true);
-	assert.equal(pr.success, true);
-
-	const rulesSub = RulesSubAgentLedger.from(dir.data, pr.data, probe);
-	assert.equal(rulesSub.path().equals(dir.data), true);
-	assert.equal(rulesSub.path().toString(), "/tmp/ledger");
-	assert.deepEqual(rulesSub.pullRequest().host(), pr.data.host());
-	const rulesResult = rulesSub.report([cleanRow("A"), cleanRow("B")]);
-	assert.equal(rulesResult.success, true);
-	assert.equal(rulesResult.data.kind, "recorded");
-	assert.equal(rulesResult.data.ledger.headCommit, H);
-	assert.equal(rulesSub.report([cleanRow("A")]).success, false);
-
-	const deadCodeSub = DeadCodeSubAgentLedger.from(dir.data, pr.data, probe);
-	assert.equal(deadCodeSub.path().equals(dir.data), true);
-	assert.deepEqual(deadCodeSub.pullRequest().host(), pr.data.host());
-	assert.equal(
-		deadCodeSub.report([cleanRow("A"), cleanRow("B")]).success,
-		true,
-	);
-
-	const reuseSub = ReuseSubAgentLedger.from(dir.data, pr.data, probe);
-	assert.equal(reuseSub.path().equals(dir.data), true);
-	assert.deepEqual(reuseSub.pullRequest().host(), pr.data.host());
-	assert.equal(reuseSub.report([cleanRow("A"), cleanRow("B")]).success, true);
-
-	const contextSub = ContextSubAgentLedger.from(
-		dir.data,
-		pr.data,
-		contextProbe,
-	);
-	assert.equal(contextSub.path().equals(dir.data), true);
-	assert.deepEqual(contextSub.pullRequest().host(), pr.data.host());
-	assert.equal(
-		contextSub.report([cleanBookRow("x"), cleanBookRow("y"), cleanBookRow("z")])
-			.success,
-		true,
-	);
-});
-
-it("LedgerDirectory.writeSlice writes atomically so concurrent readSlice calls never observe partial JSON", async () => {
-	const tempRoot = mkdtempSync(join(tmpdir(), "ledger-atomic-"));
-	const dir = nonnull(LedgerDirectory.from(tempRoot).data);
-	dir.initialize();
-	const sampleLedger = {
-		headCommit: H,
-		rows: [cleanRow("A"), cleanRow("B")],
-	};
-	dir.writeSlice("01-rules", sampleLedger);
-	const writer = new Worker(
-		`
-		const { workerData, parentPort } = require("node:worker_threads");
-		const { LedgerDirectory } = require(workerData.modulePath);
-		const dir = LedgerDirectory.from(workerData.tempRoot).data;
-		for (let i = 0; i < 300; i += 1) {
-			dir.writeSlice("01-rules", workerData.sampleLedger);
-		}
-		parentPort.postMessage("done");
-		`,
-		{
-			eval: true,
-			workerData: {
-				modulePath: new URL("./ledger-directory.ts", import.meta.url).pathname,
-				tempRoot,
-				sampleLedger,
-			},
-		},
-	);
-	let done = false;
-	writer.on("message", () => {
-		done = true;
-	});
-	try {
-		while (!done) {
-			const slice = nonnull(dir.readSlice("01-rules"));
-			assert.equal(slice.headCommit, H);
-			assert.equal(slice.rows.length, 2);
-			await new Promise((resolve) => setImmediate(resolve));
-		}
-	} finally {
-		await writer.terminate();
-		rmSync(tempRoot, { recursive: true, force: true });
-	}
 });

@@ -18,33 +18,33 @@ import {
 } from "./contracts.g.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 
-export const SITE = "https://thruput.se/agents/";
+const SITE = "https://thruput.se/agents/";
 const APOSTROPHE = /'/gu;
 const NON_ALPHANUMERIC = /[^a-z0-9]+/gu;
 const EDGE_HYPHEN = /^-|-$/gu;
 const RENDERED = / breaks \[[^\]]+\]\([^)]+\)/u;
 
-export const slug = (id: string): string =>
+const slug = (id: string): string =>
 	id
 		.toLowerCase()
 		.replace(APOSTROPHE, "")
 		.replace(NON_ALPHANUMERIC, "-")
 		.replace(EDGE_HYPHEN, "");
 
-export const ours = (text: string): boolean =>
+const ours = (text: string): boolean =>
 	RENDERED.test(text) || text.includes(SITE);
 
-export const message = (
+const message = (
 	violation: { readonly observation: Observation },
 	cite: string,
 ): ThreadBody => `${violation.observation} breaks ${cite}`;
 
-export interface CitationRule {
+interface CitationRule {
 	readonly id: Rule["id"];
 	readonly parent: Principle["id"];
 }
 
-export type CitationDocument =
+type CitationDocument =
 	| { readonly rulebook: { readonly rules: readonly CitationRule[] } }
 	| { readonly rulesets: readonly { readonly url: RulesetUrl }[] };
 
@@ -52,7 +52,7 @@ type CitationRow =
 	| { readonly rule: Rule["id"] }
 	| { readonly bookRule: BookRule };
 
-export function citation(document: CitationDocument, row: CitationRow): string {
+function citation(document: CitationDocument, row: CitationRow): string {
 	if ("bookRule" in row) {
 		return `[${row.bookRule.heading}](${row.bookRule.ruleset})`;
 	}
@@ -68,7 +68,7 @@ export function citation(document: CitationDocument, row: CitationRow): string {
 	return `[${rule.parent}](${SITE}#${slug(rule.parent)})`;
 }
 
-export function partition<T extends { readonly group: Rule["group"] }>(
+function partition<T extends { readonly group: Rule["group"] }>(
 	rules: readonly T[],
 ): { name: string; group: Rule["group"]; rules: readonly T[] }[] {
 	const groups = new Map<Rule["group"], readonly T[]>();
@@ -87,11 +87,14 @@ const KIND_OF_GROUP = new Map<Rule["group"], ReuseKind | DeadCodeKind>([
 	["Dead Code", "dead-code"],
 ]);
 
-export const kindOf = (
-	group: Rule["group"],
-): ReuseKind | DeadCodeKind | RulesKind => KIND_OF_GROUP.get(group) ?? "rules";
+const GovernanceSchema = z.object({
+	principles: z.array(PrincipleSchema).readonly(),
+});
 
-export function checkKinds(groups: readonly Rule["group"][]): void {
+const kindOf = (group: Rule["group"]): ReuseKind | DeadCodeKind | RulesKind =>
+	KIND_OF_GROUP.get(group) ?? "rules";
+
+function checkKinds(groups: readonly Rule["group"][]): void {
 	const absent = [...KIND_OF_GROUP.keys()].filter(
 		(group) => !groups.includes(group),
 	);
@@ -101,10 +104,6 @@ export function checkKinds(groups: readonly Rule["group"][]): void {
 		);
 	}
 }
-
-const GovernanceSchema = z.object({
-	principles: z.array(PrincipleSchema).readonly(),
-});
 
 export function rulebook(
 	rules: readonly Rule[],
@@ -134,7 +133,7 @@ export class Rulebook implements Iterable<Rule> {
 	private constructor(data: RulebookData) {
 		this.#data = data;
 	}
-	static readonly Schema = z.codec(
+	static readonly SCHEMA = z.codec(
 		RulesetSchema,
 		z.custom<Rulebook>((val): val is Rulebook => val instanceof Rulebook),
 		{
@@ -143,7 +142,7 @@ export class Rulebook implements Iterable<Rule> {
 		},
 	);
 	static from(raw: z.input<typeof RulesetSchema>) {
-		return Rulebook.Schema.safeDecode(raw);
+		return Rulebook.SCHEMA.safeDecode(raw);
 	}
 	static slice(
 		rules: readonly Rule[],
@@ -166,3 +165,6 @@ export class Rulebook implements Iterable<Rule> {
 		return this.#data.rules[Symbol.iterator]();
 	}
 }
+
+export type { CitationDocument, CitationRule };
+export { checkKinds, citation, kindOf, message, ours, partition, SITE, slug };

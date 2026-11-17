@@ -24,100 +24,23 @@ import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
 import { SITE } from "../domain/rulebook.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
 
-export function createForbiddenHtmlAzureHandler() {
-	return http.get(
-		"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/pullrequests/:pullRequestId",
-		() =>
-			new HttpResponse("\r\n\r\n<!DOCTYPE html><html>Forbidden</html>", {
-				status: 403,
-				headers: { "content-type": "text/html; charset=utf-8" },
-			}),
-	);
+const AZURE_REVIEWER_ID = "11111111-2222-3333-4444-555555555555";
+const BASE_CREATED_THREAD_ID = 100;
+
+interface AzureOutcomeRecorder {
+	readonly inlineThreads: Array<{
+		readonly filePath: string;
+		readonly line: number;
+		readonly content: string;
+	}>;
+	readonly summaryThreads: string[];
+	readonly votes: Array<{
+		readonly reviewerId: string;
+		readonly vote: number;
+	}>;
 }
 
-export function createForbiddenAzureWriteHandler() {
-	return http.patch(
-		"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/pullRequests/:pullRequestId/reviewers",
-		() =>
-			HttpResponse.json(
-				{
-					message:
-						"TF401027: You need the Git 'PullRequestContribute' permission.",
-				},
-				{ status: 403 },
-			),
-	);
-}
-
-export function createForbiddenAzureItemsHandler() {
-	return http.get(
-		"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/items",
-		() =>
-			HttpResponse.json(
-				{
-					message:
-						"TF401019: The Git repository with name or identifier does not exist or you do not have permissions.",
-				},
-				{ status: 403 },
-			),
-	);
-}
-
-export function createUnwriteableAzurePullRequestHandler() {
-	return http.patch(
-		"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/pullRequests/:pullRequestId/reviewers",
-		() =>
-			HttpResponse.json(
-				{
-					$id: "1",
-					innerException: null,
-					message:
-						"TF401181: The pull request cannot be edited due to its state.",
-					typeName:
-						"Microsoft.TeamFoundation.Git.Server.GitPullRequestNotEditableException, Microsoft.TeamFoundation.Git.Server",
-					typeKey: "GitPullRequestNotEditableException",
-					errorCode: 0,
-					eventId: 3000,
-				},
-				{ status: 400 },
-			),
-	);
-}
-
-export function createFailedAzureThreadCreateHandler() {
-	return http.post(
-		"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/pullRequests/:pullRequestId/threads",
-		() =>
-			HttpResponse.json(
-				{
-					message:
-						"TF401181: The pull request cannot be edited due to its state.",
-				},
-				{ status: 400 },
-			),
-	);
-}
-
-export function createRejectedAzurePolicyHandler() {
-	const baseEval = nonnull(getEvaluationsListResponseMock().value[0]);
-	const baseConfig = baseEval.configuration ?? {};
-	return getEvaluationsListMockHandler({
-		count: 1,
-		value: [
-			{
-				...baseEval,
-				status: "rejected",
-				configuration: {
-					...baseConfig,
-					isBlocking: true,
-					type: { ...baseConfig.type, displayName: "Build" },
-				},
-			},
-		],
-	});
-}
-
-export function createAzureAlreadyReviewedHandler(headCommit: string) {
+function createAzureAlreadyReviewedHandler(headCommit: string) {
 	const baseThread = nonnull(getPullRequestThreadsListResponseMock().value[0]);
 	return getPullRequestThreadsListMockHandler({
 		count: 1,
@@ -139,131 +62,76 @@ export function createAzureAlreadyReviewedHandler(headCommit: string) {
 	});
 }
 
-export function createAzureExistingRefusalHandler(headCommit: string) {
-	const baseThread = nonnull(getPullRequestThreadsListResponseMock().value[0]);
-	return getPullRequestThreadsListMockHandler({
-		count: 1,
-		value: [
-			{
-				...baseThread,
-				id: 2,
-				status: "active",
-				threadContext: null,
-				pullRequestThreadContext: null,
-				identities: null,
-				comments: [
-					{
-						content: `**Verdict: request-changes**\n\nNot reviewed at ${headCommit} against [the rules](${SITE}): policy 'Build' is rejected.`,
-					},
-				],
-			},
-		],
-	});
-}
-
-export const AZURE_REVIEWER_ID = "11111111-2222-3333-4444-555555555555";
-
-export interface AzureOutcomeRecorder {
-	readonly inlineThreads: Array<{
-		readonly filePath: string;
-		readonly line: number;
-		readonly content: string;
-	}>;
-	readonly summaryThreads: string[];
-	readonly votes: Array<{
-		readonly reviewerId: string;
-		readonly vote: number;
-	}>;
-}
-
-export function createAzureOutcomeRecorderHandlers(
-	recorder: AzureOutcomeRecorder,
-) {
-	return [
-		http.post(
-			"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/pullRequests/:pullRequestId/threads",
-			async ({ request }) => {
-				const raw = (await request.json()) as Parameters<
-					typeof PullRequestThreadsCreateBody.decode
-				>[0];
-				const decoded = PullRequestThreadsCreateBody.decode(raw);
-				const content = nonnull(nonnull(decoded.comments)[0]?.content);
-				const recordThread = (context: typeof decoded.threadContext): void => {
-					const hasContext = !isNullOrEmpty(context?.filePath);
-					const handlers: Readonly<Record<string, () => void>> = {
-						true: () => {
-							const ctx = nonnull(context);
-							recorder.inlineThreads.push({
-								filePath: nonnull(ctx.filePath),
-								line: nonnull(ctx.rightFileStart?.line),
-								content,
-							});
-						},
-						false: () => {
-							recorder.summaryThreads.push(content);
-						},
-					};
-					nonnull(handlers[String(hasContext)])();
-				};
-				recordThread(decoded.threadContext);
-				return HttpResponse.json({
-					...getPullRequestThreadsCreateResponseMock(),
-					id:
-						100 +
-						recorder.inlineThreads.length +
-						recorder.summaryThreads.length,
+const createRecordedThreadHandler = (recorder: AzureOutcomeRecorder) =>
+	http.post(
+		"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/pullRequests/:pullRequestId/threads",
+		async ({ request }) => {
+			const raw = (await request.json()) as Parameters<
+				typeof PullRequestThreadsCreateBody.decode
+			>[0];
+			const decoded = PullRequestThreadsCreateBody.decode(raw);
+			const content = nonnull(nonnull(decoded.comments)[0]?.content);
+			const context = decoded.threadContext;
+			const hasContext = !isNullOrEmpty(context?.filePath);
+			if (hasContext) {
+				const ctx = nonnull(context);
+				recorder.inlineThreads.push({
+					filePath: nonnull(ctx.filePath),
+					line: nonnull(ctx.rightFileStart?.line),
+					content,
 				});
-			},
-		),
-		http.put(
-			"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/pullRequests/:pullRequestId/reviewers/:reviewerId",
-			async ({ params, request }) => {
-				const { reviewerId } = params;
-				const raw = (await request.json()) as Parameters<
-					typeof PullRequestReviewersCreatePullRequestReviewerBody.decode
-				>[0];
-				const decoded =
-					PullRequestReviewersCreatePullRequestReviewerBody.decode(raw);
-				const vote = nonnull(decoded.vote);
-				recorder.votes.push({
-					reviewerId: String(reviewerId),
+			} else {
+				recorder.summaryThreads.push(content);
+			}
+			return HttpResponse.json({
+				...getPullRequestThreadsCreateResponseMock(),
+				id:
+					BASE_CREATED_THREAD_ID +
+					recorder.inlineThreads.length +
+					recorder.summaryThreads.length,
+			});
+		},
+	);
+
+const createRecordedReviewerHandler = (recorder: AzureOutcomeRecorder) =>
+	http.put(
+		"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/pullRequests/:pullRequestId/reviewers/:reviewerId",
+		async ({ params, request }) => {
+			const { reviewerId } = params;
+			const raw = (await request.json()) as Parameters<
+				typeof PullRequestReviewersCreatePullRequestReviewerBody.decode
+			>[0];
+			const decoded =
+				PullRequestReviewersCreatePullRequestReviewerBody.decode(raw);
+			const vote = nonnull(decoded.vote);
+			recorder.votes.push({
+				reviewerId: String(reviewerId),
+				vote,
+			});
+			if (String(reviewerId) === AZURE_REVIEWER_ID) {
+				return HttpResponse.json({
+					...getPullRequestReviewersCreatePullRequestReviewerResponseMock(),
+					id: AZURE_REVIEWER_ID,
 					vote,
 				});
-				switch (String(reviewerId)) {
-					case AZURE_REVIEWER_ID:
-						return HttpResponse.json({
-							...getPullRequestReviewersCreatePullRequestReviewerResponseMock(),
-							id: AZURE_REVIEWER_ID,
-							vote,
-						});
-					default:
-						return HttpResponse.json(
-							{
-								message: `Invalid argument value.\r\nParameter name: The identity ${String(reviewerId)} is not recognized.`,
-							},
-							{ status: 400 },
-						);
-				}
-			},
-		),
+			}
+			return HttpResponse.json(
+				{
+					message: `Invalid argument value.\r\nParameter name: The identity ${String(reviewerId)} is not recognized.`,
+				},
+				{ status: 400 },
+			);
+		},
+	);
+
+function createAzureOutcomeRecorderHandlers(recorder: AzureOutcomeRecorder) {
+	return [
+		createRecordedThreadHandler(recorder),
+		createRecordedReviewerHandler(recorder),
 	];
 }
 
-export function createFailedAzureConnectionDataHandler() {
-	return http.get(
-		"https://dev.azure.com/:organization/_apis/connectionData",
-		() =>
-			HttpResponse.json(
-				{
-					message:
-						"TF400813: The user is not authorized to access this resource.",
-				},
-				{ status: 403 },
-			),
-	);
-}
-
-export function createAzureHandlers(repo: ScenarioRepo) {
+const createAzurePullRequestHandler = (repo: ScenarioRepo) => {
 	const baseAzure = getPullRequestsGetPullRequestResponseMock({
 		pullRequestId: 42,
 		description: "Refine helper\n\nSecond body.\n\nAdd y export\n\nFirst body.",
@@ -272,28 +140,49 @@ export function createAzureHandlers(repo: ScenarioRepo) {
 		targetRefName: "refs/heads/main",
 	});
 	const baseAzureRepo = baseAzure.repository ?? {};
+	return getPullRequestsGetPullRequestMockHandler({
+		...baseAzure,
+		createdBy: { ...baseAzure.createdBy, uniqueName: "author@example.com" },
+		lastMergeTargetCommit: {
+			...baseAzure.lastMergeTargetCommit,
+			commitId: repo.baseCommit,
+		},
+		lastMergeSourceCommit: {
+			...baseAzure.lastMergeSourceCommit,
+			commitId: repo.headCommit,
+		},
+		repository: {
+			...baseAzureRepo,
+			project: {
+				...baseAzureRepo.project,
+				id: "00000000-0000-0000-0000-000000000000",
+			},
+		},
+	});
+};
+
+const createApprovedAzureEvaluationsHandler = () => {
 	const baseEval = nonnull(getEvaluationsListResponseMock().value[0]);
 	const baseEvalConfig = baseEval.configuration ?? {};
-	return [
-		getPullRequestsGetPullRequestMockHandler({
-			...baseAzure,
-			createdBy: { ...baseAzure.createdBy, uniqueName: "author@example.com" },
-			lastMergeTargetCommit: {
-				...baseAzure.lastMergeTargetCommit,
-				commitId: repo.baseCommit,
-			},
-			lastMergeSourceCommit: {
-				...baseAzure.lastMergeSourceCommit,
-				commitId: repo.headCommit,
-			},
-			repository: {
-				...baseAzureRepo,
-				project: {
-					...baseAzureRepo.project,
-					id: "00000000-0000-0000-0000-000000000000",
+	return getEvaluationsListMockHandler({
+		count: 1,
+		value: [
+			{
+				...baseEval,
+				status: "approved",
+				configuration: {
+					...baseEvalConfig,
+					isBlocking: true,
+					type: { ...baseEvalConfig.type, displayName: "Build" },
 				},
 			},
-		}),
+		],
+	});
+};
+
+function createAzureHandlers(repo: ScenarioRepo) {
+	return [
+		createAzurePullRequestHandler(repo),
 		getItemsListMockHandler(({ request }) => {
 			const url = new URL(request.url);
 			const version = nonnull(
@@ -301,20 +190,7 @@ export function createAzureHandlers(repo: ScenarioRepo) {
 			);
 			return repo.zipForCommit(version);
 		}),
-		getEvaluationsListMockHandler({
-			count: 1,
-			value: [
-				{
-					...baseEval,
-					status: "approved",
-					configuration: {
-						...baseEvalConfig,
-						isBlocking: true,
-						type: { ...baseEvalConfig.type, displayName: "Build" },
-					},
-				},
-			],
-		}),
+		createApprovedAzureEvaluationsHandler(),
 		getPullRequestThreadsListMockHandler({ count: 0, value: [] }),
 		getPullRequestThreadsCreateMockHandler({
 			...getPullRequestThreadsCreateResponseMock(),
@@ -334,22 +210,28 @@ export function createAzureHandlers(repo: ScenarioRepo) {
 			"https://dev.azure.com/:organization/:project/_apis/git/repositories/:repositoryId/pullRequests/:pullRequestId/reviewers/:reviewerId",
 			({ params }) => {
 				const { reviewerId } = params;
-				switch (String(reviewerId)) {
-					case AZURE_REVIEWER_ID:
-						return HttpResponse.json({
-							...getPullRequestReviewersCreatePullRequestReviewerResponseMock(),
-							id: AZURE_REVIEWER_ID,
-							vote: 10,
-						});
-					default:
-						return HttpResponse.json(
-							{
-								message: `Invalid argument value.\r\nParameter name: The identity ${String(reviewerId)} is not recognized.`,
-							},
-							{ status: 400 },
-						);
+				if (String(reviewerId) === AZURE_REVIEWER_ID) {
+					return HttpResponse.json({
+						...getPullRequestReviewersCreatePullRequestReviewerResponseMock(),
+						id: AZURE_REVIEWER_ID,
+						vote: 10,
+					});
 				}
+				return HttpResponse.json(
+					{
+						message: `Invalid argument value.\r\nParameter name: The identity ${String(reviewerId)} is not recognized.`,
+					},
+					{ status: 400 },
+				);
 			},
 		),
 	];
 }
+
+export {
+	AZURE_REVIEWER_ID,
+	type AzureOutcomeRecorder,
+	createAzureAlreadyReviewedHandler,
+	createAzureHandlers,
+	createAzureOutcomeRecorderHandlers,
+};

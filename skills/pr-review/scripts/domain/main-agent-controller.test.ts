@@ -158,8 +158,7 @@ it("MainAgentController.prepare forwards non-ready adapter resolutions without p
 	assert.equal(workdir.readAudits().length, 0);
 });
 
-it("MainAgentController prepares a ready snapshot, tracks pending probes, and dispatches via the adapter once slices are recorded", async () => {
-	mockBookFetch();
+function setupReadyAdapterMock() {
 	const snapshot = sampleSnapshot();
 	const posted: Array<{ readonly outcome: Outcome; readonly ledger: Ledger }> =
 		[];
@@ -177,7 +176,6 @@ it("MainAgentController prepares a ready snapshot, tracks pending probes, and di
 			return Promise.resolve("local://review-42");
 		},
 	};
-	const token = nonnull(AccessToken.from("unit-token").data);
 	mock.method(HostAdapterFactory, "fromWithToken", () =>
 		okAdapterParse(adapter),
 	);
@@ -189,6 +187,13 @@ it("MainAgentController prepares a ready snapshot, tracks pending probes, and di
 		pullRequest: snapshot,
 		adapter,
 	}));
+	return posted;
+}
+
+it("MainAgentController prepares a ready snapshot, tracks pending probes, and dispatches via the adapter once slices are recorded", async () => {
+	mockBookFetch();
+	const posted = setupReadyAdapterMock();
+	const token = nonnull(AccessToken.from("unit-token").data);
 
 	const controller = MainAgentController.create();
 	const workdir = freshWorkdir();

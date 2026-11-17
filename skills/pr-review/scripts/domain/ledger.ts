@@ -23,19 +23,19 @@ interface RuleIdReference {
 	readonly id: Rule["id"];
 }
 
-export interface RulesProbe {
+interface RulesProbe {
 	readonly surface: Surface;
 	readonly rulebook: { readonly rules: readonly RuleIdReference[] };
 }
 
-export interface ContextProbe {
+interface ContextProbe {
 	readonly surface: Surface;
 	readonly rulesets: readonly { readonly url: RulesetUrl }[];
 }
 
-export type LedgerProbe = RulesProbe | ContextProbe;
+type LedgerProbe = RulesProbe | ContextProbe;
 
-export function ruleName(row: Row): RuleHeading | Rule["id"] {
+function ruleName(row: Row): RuleHeading | Rule["id"] {
 	if ("bookRule" in row) {
 		return row.bookRule.heading;
 	}
@@ -49,13 +49,13 @@ function rowRuleRef(row: Row): RuleRef {
 	return row.rule;
 }
 
-export interface ResolvedSurfaceLine {
+interface ResolvedSurfaceLine {
 	readonly path: Path;
 	readonly side: Side;
 	readonly line: LineNumber;
 }
 
-export const resolveSurfaceLine = (
+const resolveSurfaceLine = (
 	lineId: SurfaceLineId | undefined,
 	files: readonly SurfaceFile[],
 ): ResolvedSurfaceLine | null => {
@@ -81,7 +81,7 @@ export const resolveSurfaceLine = (
 	};
 };
 
-export const violationInside = (
+const violationInside = (
 	violation: Violation,
 	files: readonly SurfaceFile[],
 ): boolean =>
@@ -164,10 +164,9 @@ function refineViolations(
 	ledger: Ledger,
 	ctx: z.RefinementCtx,
 ): void {
-	for (const row of ledger.rows) {
-		if (row.verdict !== "violation") {
-			continue;
-		}
+	for (const row of ledger.rows.filter(
+		(entry) => entry.verdict === "violation",
+	)) {
 		const expectedRule = JSON.stringify(rowRuleRef(row));
 		const mismatchedRule = row.violations.find(
 			(violation) => JSON.stringify(violation.rule) !== expectedRule,
@@ -211,3 +210,6 @@ export const ledgerFor = (probe: LedgerProbe) =>
 			refineViolations(probe, ledger, ctx);
 		}
 	});
+
+export type { ContextProbe, LedgerProbe, RulesProbe };
+export { resolveSurfaceLine, ruleName, violationInside };

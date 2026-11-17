@@ -30,6 +30,11 @@ interface SurfaceCarrier {
 const filesOf = (document: SurfaceCarrier): readonly SurfaceFile[] =>
 	document.surface?.files ?? document.review?.files ?? [];
 
+interface OutcomeEntry {
+	readonly document: CitationDocument & SurfaceCarrier;
+	readonly ledger: Ledger;
+}
+
 export function alreadyOpen(
 	violation: Violation,
 	cite: string,
@@ -49,11 +54,6 @@ export function alreadyOpen(
 	);
 }
 
-interface OutcomeEntry {
-	readonly document: CitationDocument & SurfaceCarrier;
-	readonly ledger: Ledger;
-}
-
 export function settled<ThreadItem extends ThreadCandidate>(
 	entries: readonly OutcomeEntry[],
 	threads: readonly ThreadItem[],
@@ -61,10 +61,9 @@ export function settled<ThreadItem extends ThreadCandidate>(
 	const carried = new Set<ThreadItem>();
 	for (const { document, ledger } of entries) {
 		const files = filesOf(document);
-		for (const row of ledger.rows) {
-			if (row.verdict !== "violation") {
-				continue;
-			}
+		for (const row of ledger.rows.filter(
+			(entry) => entry.verdict === "violation",
+		)) {
 			const cite = citation(document, row);
 			for (const violation of row.violations) {
 				for (const thread of threads.filter((candidate) =>
@@ -111,14 +110,14 @@ export function outcome<
 	for (const finding of fresh) {
 		if (isNullOrEmpty(finding.resolved)) {
 			atPullRequest.push(finding);
-			continue;
+		} else {
+			inline.push({
+				path: finding.resolved.path,
+				side: finding.resolved.side,
+				lines: { start: finding.resolved.line, end: finding.resolved.line },
+				body: finding.body,
+			});
 		}
-		inline.push({
-			path: finding.resolved.path,
-			side: finding.resolved.side,
-			lines: { start: finding.resolved.line, end: finding.resolved.line },
-			body: finding.body,
-		});
 	}
 	const decided = verdict(ledger);
 	const summary: Summary = [

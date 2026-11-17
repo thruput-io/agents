@@ -30,10 +30,15 @@ import { IndexSchema, withText } from "./ruleset.ts";
 import type { ProbeDocument } from "./sub-agent-controller.ts";
 import type { PersistedAudit } from "./workdir.ts";
 
-export interface NamedProbe {
+interface NamedProbe {
 	readonly name: string;
 	readonly probe: ProbeDocument;
 	readonly auditDocument: AgentInstructions;
+}
+
+interface BundledProbes {
+	readonly probes: readonly NamedProbe[];
+	readonly rulesets: readonly ExternalRulebook[];
 }
 
 const SKILL_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -81,90 +86,65 @@ function loadBundledRulesets(): Promise<readonly ExternalRulebook[]> {
 	);
 }
 
-export const toAgentInstructions = (
-	probe: ProbeDocument,
+const toContextInstructions = (
+	probe: Extract<ProbeDocument, { readonly kind: "context" }>,
+	prose: AgentInstructions["instructions"],
+	overview: AgentInstructions["surface"],
 ): AgentInstructions => {
-	const prose = probe.instructions ?? Instructions.Prose;
-	const overview = surfaceOverview(probe.surface);
-	if (probe.kind === "context") {
-		const spec = Instructions.forKind("context");
-		return {
-			instructions: prose,
-			task: spec.task() as Extract<
-				AgentInstructions,
-				{ readonly kind: "context" }
-			>["task"],
-			permissions: spec.permissions() as Extract<
-				AgentInstructions,
-				{ readonly kind: "context" }
-			>["permissions"],
-			kind: "context",
-			change: probe.change,
-			surface: overview,
-			rulesets: [...toRulebookSummaries(probe.rulesets)],
-			checkout: nonnull(probe.checkout),
-		};
-	}
-	if (probe.kind === "rules") {
-		const spec = Instructions.forKind("rules");
-		return {
-			instructions: prose,
-			task: spec.task() as Extract<
-				AgentInstructions,
-				{ readonly kind: "rules" }
-			>["task"],
-			permissions: spec.permissions() as Extract<
-				AgentInstructions,
-				{ readonly kind: "rules" }
-			>["permissions"],
-			kind: "rules",
-			change: probe.change,
-			surface: overview,
-			ruleset: probe.rulebook.toRuleset(),
-		};
-	}
-	if (probe.kind === "dead-code") {
-		const spec = Instructions.forKind("dead-code");
-		return {
-			instructions: prose,
-			task: spec.task() as Extract<
-				AgentInstructions,
-				{ readonly kind: "dead-code" }
-			>["task"],
-			permissions: spec.permissions() as Extract<
-				AgentInstructions,
-				{ readonly kind: "dead-code" }
-			>["permissions"],
-			kind: "dead-code",
-			change: probe.change,
-			surface: overview,
-			ruleset: probe.rulebook.toRuleset(),
-			checkout: nonnull(probe.checkout),
-		};
-	}
-	const spec = Instructions.forKind("reuse");
+	const spec = Instructions.forKind("context");
 	return {
 		instructions: prose,
 		task: spec.task() as Extract<
 			AgentInstructions,
-			{ readonly kind: "reuse" }
+			{ readonly kind: "context" }
 		>["task"],
 		permissions: spec.permissions() as Extract<
 			AgentInstructions,
-			{ readonly kind: "reuse" }
+			{ readonly kind: "context" }
 		>["permissions"],
-		kind: "reuse",
+		kind: "context",
 		change: probe.change,
 		surface: overview,
-		ruleset: probe.rulebook.toRuleset(),
+		rulesets: [...toRulebookSummaries(probe.rulesets)],
 		checkout: nonnull(probe.checkout),
 	};
 };
 
-export interface BundledProbes {
-	readonly probes: readonly NamedProbe[];
-	readonly rulesets: readonly ExternalRulebook[];
-}
+const toRulebookInstructions = (
+	probe: Exclude<ProbeDocument, { readonly kind: "context" }>,
+	prose: AgentInstructions["instructions"],
+	overview: AgentInstructions["surface"],
+): AgentInstructions => {
+	const spec = Instructions.forKind(probe.kind);
+	const base = {
+		instructions: prose,
+		task: spec.task() as Extract<
+			AgentInstructions,
+			{ readonly kind: "rules" | "dead-code" | "reuse" }
+		>["task"],
+		permissions: spec.permissions() as Extract<
+			AgentInstructions,
+			{ readonly kind: "rules" | "dead-code" | "reuse" }
+		>["permissions"],
+		kind: probe.kind,
+		change: probe.change,
+		surface: overview,
+		ruleset: probe.rulebook.toRuleset(),
+	};
+	if (probe.kind === "rules") {
+		return base as AgentInstructions;
+	}
+	return { ...base, checkout: nonnull(probe.checkout) } as AgentInstructions;
+};
+
+const toAgentInstructions = (probe: ProbeDocument): AgentInstructions => {
+	const prose = probe.instructions ?? Instructions.PROSE;
+	const overview = surfaceOverview(probe.surface);
+	if (probe.kind === "context") {
+		return toContextInstructions(probe, prose, overview);
+	}
+	return toRulebookInstructions(probe, prose, overview);
+};
 
 const BUNDLED_EXTRA_BY_KIND: Record<
 	ProbeDocument["kind"],
@@ -178,7 +158,7 @@ const BUNDLED_EXTRA_BY_KIND: Record<
 	reuse: () => ({}),
 };
 
-export async function loadBundledProbes(
+async function loadBundledProbes(
 	change: Change,
 	surface: Surface,
 	checkout: Checkout,
@@ -243,7 +223,7 @@ const fromAuditDocument = (
 	};
 };
 
-export function loadPersistedProbes(
+function loadPersistedProbes(
 	audits: readonly PersistedAudit[],
 	surface: Surface,
 	rulesets: readonly ExternalRulebook[],
@@ -254,3 +234,6 @@ export function loadPersistedProbes(
 		auditDocument: document,
 	}));
 }
+
+export type { NamedProbe };
+export { loadBundledProbes, loadPersistedProbes, toAgentInstructions };

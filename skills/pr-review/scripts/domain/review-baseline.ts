@@ -13,7 +13,7 @@ import { narrowSurface, threadRanges, wholeSurface } from "./surface.ts";
 
 type SurfaceSpec = ReturnType<typeof wholeSurface>;
 
-export interface ReviewBaseline {
+interface ReviewBaseline {
 	commitsToFetch: (
 		baseCommit: HeadCommit,
 		headCommit: HeadCommit,
@@ -27,30 +27,15 @@ export interface ReviewBaseline {
 	alreadyReviewed: (headCommit: HeadCommit) => AdapterResolution;
 }
 
-class InitialReview implements ReviewBaseline {
-	commitsToFetch(
-		baseCommit: HeadCommit,
-		headCommit: HeadCommit,
-	): readonly HeadCommit[] {
-		return [baseCommit, headCommit];
-	}
-
-	surfaceSpec(
-		_snapshotDir: SnapshotDirectory,
-		_headCommit: HeadCommit,
-		files: readonly ChangedFile[],
-	): SurfaceSpec {
-		return wholeSurface({ files });
-	}
-
-	alreadyReviewed(headCommit: HeadCommit): AdapterResolution {
-		return {
-			kind: "already-reviewed",
-			headCommit,
-			location: "",
-		};
-	}
-}
+const initialReview: ReviewBaseline = {
+	commitsToFetch: (baseCommit, headCommit) => [baseCommit, headCommit],
+	surfaceSpec: (_snapshotDir, _headCommit, files) => wholeSurface({ files }),
+	alreadyReviewed: (headCommit) => ({
+		kind: "already-reviewed",
+		headCommit,
+		location: "",
+	}),
+};
 
 class IncrementalReview implements ReviewBaseline {
 	readonly #priorCommit: HeadCommit;
@@ -88,21 +73,19 @@ class IncrementalReview implements ReviewBaseline {
 	}
 }
 
-export function reviewBaselineFrom(
-	priorCommit: HeadCommit | null,
-): ReviewBaseline {
+function reviewBaselineFrom(priorCommit: HeadCommit | null): ReviewBaseline {
 	if (isNullOrEmpty(priorCommit)) {
-		return new InitialReview();
+		return initialReview;
 	}
 	return new IncrementalReview(priorCommit);
 }
 
-export type RefusalRecorder = (
+type RefusalRecorder = (
 	headCommit: HeadCommit,
 	reason: Summary,
 ) => Promise<Summary | HostError>;
 
-export function refusalRecorder(
+function refusalRecorder(
 	existingRefusal: Summary | null,
 	post: RefusalRecorder,
 ): RefusalRecorder {
@@ -111,3 +94,6 @@ export function refusalRecorder(
 	}
 	return post;
 }
+
+export type { RefusalRecorder, ReviewBaseline };
+export { refusalRecorder, reviewBaselineFrom };

@@ -13,7 +13,11 @@ import { isNullOrEmpty } from "./nullish.ts";
 import { ours } from "./rulebook.ts";
 
 const PASSED = new Set(["success", "skipped", "neutral"]);
-const PRIOR = / probes at ([0-9a-f]{40})\b/u;
+const PRIOR = / probes at (?<commit>[0-9a-f]{40})\b/u;
+const TOTAL_COUNT_KEY = "total_count";
+const CHECK_RUNS_KEY = "check_runs";
+const GitHubCheckRunTransportSchema =
+	ChecksListForRefResponse.shape.check_runs.element;
 
 export const GitHubPullRequestCodec = z.codec(
 	PullsGetResponse,
@@ -51,17 +55,14 @@ export const GitHubCreatedReviewCodec = z.codec(
 	},
 );
 
-const GitHubCheckRunTransportSchema =
-	ChecksListForRefResponse.shape.check_runs.element;
-
 export const GitHubCheckRunsCodec = z.codec(
 	ChecksListForRefResponse,
 	z.array(GitHubCheckRunTransportSchema),
 	{
 		decode: (wire) => wire.check_runs,
 		encode: (checkRuns) => ({
-			total_count: checkRuns.length,
-			check_runs: checkRuns,
+			[TOTAL_COUNT_KEY]: checkRuns.length,
+			[CHECK_RUNS_KEY]: checkRuns,
 		}),
 	},
 );
@@ -96,10 +97,13 @@ export const failedChecks = (
 export const refusalReasons = (
 	mergeable: string | null | undefined,
 	failed: readonly Summary[],
-): Summary[] => [
-	...(mergeable === "dirty" ? ["pull request has merge conflicts"] : []),
-	...failed,
-];
+): Summary[] => {
+	const reasons: Summary[] = [];
+	if (mergeable === "dirty") {
+		reasons.push("pull request has merge conflicts");
+	}
+	return [...reasons, ...failed];
+};
 
 export function postedAt(
 	reviews: readonly Pick<PullRequestReview, "state" | "body" | "html_url">[],

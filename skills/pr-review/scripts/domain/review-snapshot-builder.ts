@@ -14,20 +14,20 @@ function linesAtHead(
 	path: Path,
 ): NumberedLines {
 	const content = snapshotDir.readTextFile(path);
-	return isNullOrEmpty(content) ? {} : numbered(content);
+	if (isNullOrEmpty(content)) {
+		return {};
+	}
+	return numbered(content);
 }
 
-export async function buildReviewSnapshot(
-	review: CodeUnderReview,
+function collectFileCounts(
 	snapshotDir: SnapshotDirectory,
 	input: ReviewSnapshotInput,
-	refuse: RefusalRecorder,
-): Promise<AdapterResolution> {
-	const numstatEntries = parseNumstat(
+	linesByPath: Map<Path, NumberedLines>,
+) {
+	return parseNumstat(
 		snapshotDir.numstat(input.baseCommit, input.headCommit),
-	);
-	const linesByPath = new Map<Path, NumberedLines>();
-	const fileCounts = numstatEntries.map((entry) => {
+	).map((entry) => {
 		const lines = linesAtHead(snapshotDir, entry.path);
 		linesByPath.set(entry.path, lines);
 		return {
@@ -37,19 +37,43 @@ export async function buildReviewSnapshot(
 			deleted: entry.deleted,
 		};
 	});
+}
+
+async function resolveOversizedResult(
+	fileCounts: ReturnType<typeof collectFileCounts>,
+	input: ReviewSnapshotInput,
+	refuse: RefusalRecorder,
+): Promise<AdapterResolution | null> {
 	const oversizedReasons = tooLarge(fileCounts);
-	if (oversizedReasons.length > 0) {
-		const reason = oversizedReasons.join(", ");
-		const refusalResult = await refuse(input.headCommit, reason);
-		if (typeof refusalResult !== "string") {
-			return refusalResult;
-		}
-		return {
-			kind: "too-large",
-			headCommit: input.headCommit,
-			files: oversizedFiles(fileCounts),
-			location: refusalResult,
-		};
+	if (oversizedReasons.length === 0) {
+		return null;
+	}
+	const refusalResult = await refuse(
+		input.headCommit,
+		oversizedReasons.join(", "),
+	);
+	if (typeof refusalResult !== "string") {
+		return refusalResult;
+	}
+	return {
+		kind: "too-large",
+		headCommit: input.headCommit,
+		files: oversizedFiles(fileCounts),
+		location: refusalResult,
+	};
+}
+
+export async function buildReviewSnapshot(
+	review: CodeUnderReview,
+	snapshotDir: SnapshotDirectory,
+	input: ReviewSnapshotInput,
+	refuse: RefusalRecorder,
+): Promise<AdapterResolution> {
+	const linesByPath = new Map<Path, NumberedLines>();
+	const fileCounts = collectFileCounts(snapshotDir, input, linesByPath);
+	const oversized = await resolveOversizedResult(fileCounts, input, refuse);
+	if (!isNullOrEmpty(oversized)) {
+		return oversized;
 	}
 	const diffText = snapshotDir.diff(input.baseCommit, input.headCommit);
 	const files = changedFiles(diffText);

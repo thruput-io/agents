@@ -22,8 +22,6 @@ import {
 	type Rulebook,
 } from "./contracts.g.ts";
 
-export type { PersistedPullRequest } from "./contracts.g.ts";
-
 const PULL_REQUEST_FILE = "pull-request.json";
 const RULESETS_FILE = "rulesets.json";
 
@@ -40,7 +38,7 @@ export class LedgerDirectory {
 		this.#path = path;
 	}
 
-	static readonly Schema = z.codec(
+	static readonly SCHEMA = z.codec(
 		CheckoutSchema,
 		z.custom<LedgerDirectory>(
 			(val): val is LedgerDirectory => val instanceof LedgerDirectory,
@@ -52,7 +50,7 @@ export class LedgerDirectory {
 	);
 
 	static from(raw: Checkout): z.ZodSafeParseResult<LedgerDirectory> {
-		return LedgerDirectory.Schema.safeDecode(raw);
+		return LedgerDirectory.SCHEMA.safeDecode(raw);
 	}
 
 	initialize(): void {
@@ -134,3 +132,5 @@ export class LedgerDirectory {
 		return this.#path;
 	}
 }
+
+export type { PersistedPullRequest } from "./contracts.g.ts";

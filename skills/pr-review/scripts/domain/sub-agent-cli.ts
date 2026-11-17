@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import {
 	failCli,
@@ -29,17 +27,11 @@ import {
 import { resolveDefinition } from "./define.ts";
 import type { Instructions } from "./instructions.ts";
 import { isNullOrEmpty } from "./nullish.ts";
+import type { LedgerSubmission } from "./probe-ledger.ts";
 import type { Rulebook } from "./rulebook.ts";
-import {
-	type AckResult,
-	SUBAGENT_DEADLINE_MS,
-	SubAgentController,
-} from "./sub-agent-controller.ts";
-import type { LedgerSubmission } from "./sub-agent-ledger.ts";
+import { type AckResult, SubAgentController } from "./sub-agent-controller.ts";
+import { subAgentHelpPayload } from "./sub-agent-help.ts";
 import { Workdir } from "./workdir.ts";
-
-const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const REVIEW_SCHEMAS_DIR = resolve(SCRIPT_DIR, "../../schemas/review");
 
 type ProbeRules =
 	| { readonly kind: "rulebook"; readonly rulebook: Rulebook }
@@ -48,7 +40,7 @@ type ProbeRules =
 			readonly rulesets: readonly ExternalRulebook[];
 	  };
 
-export interface SubAgentCliTarget {
+interface SubAgentCliTarget {
 	workdir: () => Workdir;
 	instructions: () => Instructions;
 	change: () => Change;
@@ -71,64 +63,17 @@ const readJsonInput = (
 	| { readonly ok: true; readonly value: unknown }
 	| { readonly ok: false; readonly error: string } => {
 	try {
-		const raw =
-			arg.trimStart().startsWith("{") || !existsSync(arg)
-				? arg
-				: readFileSync(arg, "utf-8");
+		let raw = arg;
+		if (!arg.trimStart().startsWith("{") && existsSync(arg)) {
+			raw = readFileSync(arg, "utf-8");
+		}
 		return { ok: true, value: JSON.parse(raw) as unknown };
 	} catch (error) {
-		return {
-			ok: false,
-			error: error instanceof Error ? error.message : String(error),
-		};
+		if (error instanceof Error) {
+			return { ok: false, error: error.message };
+		}
+		return { ok: false, error: String(error) };
 	}
-};
-
-const subAgentHelpPayload = () => {
-	const subAgentSchema = JSON.parse(
-		readFileSync(
-			resolve(REVIEW_SCHEMAS_DIR, "sub-agent-controller.schema.json"),
-			"utf8",
-		),
-	) as {
-		readonly $defs: {
-			readonly AckPayload: unknown;
-			readonly ProbeReport: unknown;
-		};
-	};
-	const ledgerSchema = JSON.parse(
-		readFileSync(resolve(REVIEW_SCHEMAS_DIR, "ledger.schema.json"), "utf8"),
-	) as {
-		readonly $defs: {
-			readonly Violation: unknown;
-			readonly RuleViolationRow: unknown;
-			readonly RulePassRow: unknown;
-			readonly BookRuleViolationRow: unknown;
-			readonly BookRulePassRow: unknown;
-		};
-	};
-	return {
-		usage: [
-			"review-tool-probe -h | --help",
-			'review-tool-probe define "<term>" [depth]',
-			"review-tool-probe inspect <session> <probe>",
-			"review-tool-probe ack <session> <probe> '<ack-json-or-file>'",
-			"review-tool-probe next <session> <probe>",
-			"review-tool-probe prev <session> <probe>",
-			'review-tool-probe ruleset <session> <probe> "<url>" [page]',
-			"review-tool-probe report <session> <probe> '{\"oneRowPerRuleInOrder\":[...]}'",
-		],
-		deadlineMs: SUBAGENT_DEADLINE_MS,
-		ackSchema: subAgentSchema.$defs.AckPayload,
-		reportSchema: subAgentSchema.$defs.ProbeReport,
-		rowSchemas: {
-			Violation: ledgerSchema.$defs.Violation,
-			RuleViolationRow: ledgerSchema.$defs.RuleViolationRow,
-			RulePassRow: ledgerSchema.$defs.RulePassRow,
-			BookRuleViolationRow: ledgerSchema.$defs.BookRuleViolationRow,
-			BookRulePassRow: ledgerSchema.$defs.BookRulePassRow,
-		},
-	};
 };
 
 const parseIntegerArg = (
@@ -139,7 +84,55 @@ const parseIntegerArg = (
 		return fallback;
 	}
 	const parsed = Number(raw);
-	return Number.isInteger(parsed) ? parsed : raw;
+	if (Number.isInteger(parsed)) {
+		return parsed;
+	}
+	return raw;
+};
+
+const toAckCommand = (
+	session: string | undefined,
+	probe: string | undefined,
+	thirdArg: string | undefined,
+): RawCommandResult => {
+	if (isNullOrEmpty(thirdArg)) {
+		return {
+			ok: false,
+			error: `Missing ack JSON payload. ${ACK_FAILURE_GUIDE}`,
+		};
+	}
+	const parsedJson = readJsonInput(thirdArg);
+	if (!parsedJson.ok) {
+		return {
+			ok: false,
+			error: `Malformed JSON for ack: ${parsedJson.error}. ${ACK_FAILURE_GUIDE}`,
+		};
+	}
+	return {
+		ok: true,
+		raw: { command: "ack", session, probe, payload: parsedJson.value },
+	};
+};
+
+const toReportCommand = (
+	session: string | undefined,
+	probe: string | undefined,
+	thirdArg: string | undefined,
+): RawCommandResult => {
+	if (isNullOrEmpty(thirdArg)) {
+		return { ok: true, raw: { command: "report", session, probe } };
+	}
+	const parsedJson = readJsonInput(thirdArg);
+	if (!parsedJson.ok) {
+		return {
+			ok: false,
+			error: `Malformed JSON for report: ${parsedJson.error}`,
+		};
+	}
+	return {
+		ok: true,
+		raw: { command: "report", session, probe, report: parsedJson.value },
+	};
 };
 
 const toRawSubAgentCommand = (args: readonly string[]): RawCommandResult => {
@@ -170,52 +163,10 @@ const toRawSubAgentCommand = (args: readonly string[]): RawCommandResult => {
 		};
 	}
 	if (command === "ack") {
-		if (isNullOrEmpty(thirdArg)) {
-			return {
-				ok: false,
-				error: `Missing ack JSON payload. ${ACK_FAILURE_GUIDE}`,
-			};
-		}
-		const parsedJson = readJsonInput(thirdArg);
-		if (!parsedJson.ok) {
-			return {
-				ok: false,
-				error: `Malformed JSON for ack: ${parsedJson.error}. ${ACK_FAILURE_GUIDE}`,
-			};
-		}
-		return {
-			ok: true,
-			raw: {
-				command,
-				session: firstArg,
-				probe: secondArg,
-				payload: parsedJson.value,
-			},
-		};
+		return toAckCommand(firstArg, secondArg, thirdArg);
 	}
 	if (command === "report") {
-		if (isNullOrEmpty(thirdArg)) {
-			return {
-				ok: true,
-				raw: { command, session: firstArg, probe: secondArg },
-			};
-		}
-		const parsedJson = readJsonInput(thirdArg);
-		if (!parsedJson.ok) {
-			return {
-				ok: false,
-				error: `Malformed JSON for report: ${parsedJson.error}`,
-			};
-		}
-		return {
-			ok: true,
-			raw: {
-				command,
-				session: firstArg,
-				probe: secondArg,
-				report: parsedJson.value,
-			},
-		};
+		return toReportCommand(firstArg, secondArg, thirdArg);
 	}
 	return { ok: true, raw: { command } };
 };
@@ -237,35 +188,18 @@ const writePageResponse = (page: { readonly success: boolean }): number => {
 	return failCli();
 };
 
-export function runSubAgentCli(
-	forSession: (session: Checkout, name: Checkout) => SubAgentCliTarget,
-	args: readonly string[],
-): number {
-	const dispatchedCli = parseSchemaCli(args, {
-		schema: SubAgentCommandSchema,
-		help: subAgentHelpPayload,
-		toRaw: toRawSubAgentCommand,
-		missingCommandUsage:
-			"Usage: review-tool-probe <define|inspect|ack|next|prev|ruleset|report> ...\n",
-		onInvalidCommand: (command, details) => {
-			if (command === "ack") {
-				return failWithJsonError(`${details}\n${ACK_FAILURE_GUIDE}`);
-			}
-			return failWithJsonError(details);
-		},
-	});
-	if (dispatchedCli.kind === "done") {
-		return dispatchedCli.exitCode;
-	}
-	const cmd = dispatchedCli.command;
-	if (cmd.command === "define") {
-		return runDefineCli(cmd.term, cmd.depth);
-	}
-	const parsedWorkdir = Workdir.fromSession(cmd.session);
-	if (!parsedWorkdir.success) {
-		return failWithJsonError(z.prettifyError(parsedWorkdir.error));
-	}
-	const sub = forSession(cmd.session, cmd.probe);
+const MISSING_COMMAND_USAGE = [
+	"Usage: review-tool-probe <define|inspect|ack|",
+	"next|prev|ruleset|report> ...\n",
+].join("");
+
+const dispatchSubAgentAction = (
+	sub: SubAgentCliTarget,
+	cmd: Exclude<
+		z.infer<typeof SubAgentCommandSchema>,
+		{ readonly command: "define" }
+	>,
+): number => {
 	if (cmd.command === "inspect") {
 		writeJson(sub.inspect());
 		return 0;
@@ -306,8 +240,41 @@ export function runSubAgentCli(
 	};
 	writeJson(response);
 	return 0;
+};
+
+function runSubAgentCli(
+	forSession: (session: Checkout, name: Checkout) => SubAgentCliTarget,
+	args: readonly string[],
+): number {
+	const dispatchedCli = parseSchemaCli(args, {
+		schema: SubAgentCommandSchema,
+		help: subAgentHelpPayload,
+		toRaw: toRawSubAgentCommand,
+		missingCommandUsage: MISSING_COMMAND_USAGE,
+		onInvalidCommand: (command, details) => {
+			if (command === "ack") {
+				return failWithJsonError(`${details}\n${ACK_FAILURE_GUIDE}`);
+			}
+			return failWithJsonError(details);
+		},
+	});
+	if (dispatchedCli.kind === "done") {
+		return dispatchedCli.exitCode;
+	}
+	const cmd = dispatchedCli.command;
+	if (cmd.command === "define") {
+		return runDefineCli(cmd.term, cmd.depth);
+	}
+	const parsedWorkdir = Workdir.fromSession(cmd.session);
+	if (!parsedWorkdir.success) {
+		return failWithJsonError(z.prettifyError(parsedWorkdir.error));
+	}
+	return dispatchSubAgentAction(forSession(cmd.session, cmd.probe), cmd);
 }
 
 if (import.meta.main || isCliEntrypoint(import.meta.url)) {
 	runSubAgentCli(SubAgentController.forSession, process.argv.slice(2));
 }
+
+export type { SubAgentCliTarget };
+export { runSubAgentCli };

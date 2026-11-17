@@ -1,3 +1,4 @@
+import { env } from "node:process";
 import { GraphQLClient } from "graphql-request";
 import {
 	checksListForRef,
@@ -11,7 +12,7 @@ import {
 	type HostAdapter,
 	type HostHttpResponse,
 	type HostTransport,
-	hasOAuthScope,
+	hasOauthScope,
 	isJsonResponse,
 	tokenHttpTransport,
 	transportFromEnv,
@@ -19,6 +20,7 @@ import {
 import type { GithubPullRequest } from "./code-under-review.ts";
 import type {
 	GitHub,
+	HeadCommit,
 	HostError,
 	Ledger,
 	Outcome,
@@ -59,7 +61,7 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 		this.#transport = transport;
 	}
 	static from(review: GithubPullRequest): GitHubAdapter {
-		const { GH_TOKEN } = process.env;
+		const { GH_TOKEN } = env;
 		return new GitHubAdapter(
 			review,
 			transportFromEnv(GH_TOKEN, (token) => token.forGitHub()),
@@ -77,6 +79,114 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 	#hostError(res: HostHttpResponse): HostError {
 		return buildHostError(this.host(), res, this.#transport);
 	}
+	async #resolveSnapshot(
+		snapshotDir: SnapshotDirectory,
+		pr: ReturnType<typeof GitHubPullRequestCodec.decode>,
+		headCommit: HeadCommit,
+		init: ReturnType<HostTransport["requestInit"]>,
+	): Promise<AdapterResolution> {
+		const host = this.host();
+		const change = changeOf(host, pr);
+		const client = new GraphQLClient(GRAPHQL_URL, init);
+		const [checksRes, reviewsRes, threadsRes] = await Promise.all([
+			checksListForRef(host.owner, host.repository, headCommit, {}, init),
+			pullsListReviews(host.owner, host.repository, host.number, {}, init),
+			fetchGitHubThreads(client, host, change.author),
+		]);
+		if (!isJsonResponse(checksRes)) {
+			return this.#hostError(checksRes);
+		}
+		if (!isJsonResponse(reviewsRes)) {
+			return this.#hostError(reviewsRes);
+		}
+		if (!threadsRes.ok) {
+			return this.#hostError(threadsRes);
+		}
+		if (!threadsRes.viewerCanUpdate) {
+			return this.#hostError({
+				status: 403,
+				headers: new Headers(),
+				data: {
+					message: "Viewer does not have permission to update pull request.",
+				},
+			});
+		}
+		return this.#finalizeResolution({
+			snapshotDir,
+			pr,
+			headCommit,
+			change,
+			init,
+			reviews: GitHubReviewsCodec.decode(reviewsRes.data),
+			checksData: checksRes.data,
+			threads: threadsRes.threads,
+		});
+	}
+	async #finalizeResolution(input: {
+		readonly snapshotDir: SnapshotDirectory;
+		readonly pr: ReturnType<typeof GitHubPullRequestCodec.decode>;
+		readonly headCommit: HeadCommit;
+		readonly change: ReturnType<typeof changeOf>;
+		readonly init: ReturnType<HostTransport["requestInit"]>;
+		readonly reviews: ReturnType<typeof GitHubReviewsCodec.decode>;
+		readonly checksData: Parameters<typeof GitHubCheckRunsCodec.decode>[0];
+		readonly threads: Parameters<typeof buildReviewSnapshot>[2]["threads"];
+	}): Promise<AdapterResolution> {
+		const {
+			snapshotDir,
+			pr,
+			headCommit,
+			change,
+			init,
+			reviews,
+			checksData,
+			threads,
+		} = input;
+		const host = this.host();
+		const already = postedAt(reviews, headCommit);
+		if (!isNullOrEmpty(already)) {
+			return { kind: "already-reviewed", headCommit, location: already };
+		}
+		const refuse = refusalRecorder(refusedIn(reviews, headCommit), (c, msg) =>
+			refuseGitHubReview({
+				host,
+				init,
+				headCommit: c,
+				reason: msg,
+				onError: (res) => this.#hostError(res),
+			}),
+		);
+		const reasons = refusalReasons(
+			pr.mergeable_state,
+			failedChecks(GitHubCheckRunsCodec.decode(checksData)),
+		);
+		if (reasons.length > 0) {
+			const reason = reasons.join(", ");
+			const location = await refuse(headCommit, reason);
+			if (typeof location !== "string") {
+				return location;
+			}
+			return { kind: "refused", headCommit, reason, location };
+		}
+		const baseCommit = baseCommitOf(pr);
+		const baseline = reviewBaselineFrom(priorOf(reviews));
+		const zipArchives = await downloadGitHubCommitZips({
+			host,
+			commits: baseline.commitsToFetch(baseCommit, headCommit),
+			init,
+			token: this.#transport,
+		});
+		if (!Array.isArray(zipArchives)) {
+			return zipArchives;
+		}
+		await snapshotDir.loadCommitZips(zipArchives, true);
+		return buildReviewSnapshot(
+			this.#review,
+			snapshotDir,
+			{ baseCommit, headCommit, change, baseline, threads },
+			refuse,
+		);
+	}
 	async resolve(snapshotDir: SnapshotDirectory): Promise<AdapterResolution> {
 		const host = this.host();
 		const init = this.#transport.requestInit();
@@ -91,7 +201,7 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 		}
 		if (
 			!(
-				hasOAuthScope(prRes.headers, ["repo", "public_repo"]) &&
+				hasOauthScope(prRes.headers, ["repo", "public_repo"]) &&
 				this.#transport.hasScope(["repo", "public_repo"])
 			)
 		) {
@@ -125,83 +235,7 @@ export class GitHubAdapter implements HostAdapter<GitHub> {
 					)(commit, reason),
 			});
 		}
-		const change = changeOf(host, pr);
-		const client = new GraphQLClient(GRAPHQL_URL, init);
-		const [checksRes, reviewsRes, threadsRes] = await Promise.all([
-			checksListForRef(host.owner, host.repository, headCommit, {}, init),
-			pullsListReviews(host.owner, host.repository, host.number, {}, init),
-			fetchGitHubThreads(client, host, change.author),
-		]);
-		if (!isJsonResponse(checksRes)) {
-			return this.#hostError(checksRes);
-		}
-		if (!isJsonResponse(reviewsRes)) {
-			return this.#hostError(reviewsRes);
-		}
-		if (!threadsRes.ok) {
-			return this.#hostError(threadsRes);
-		}
-		if (!threadsRes.viewerCanUpdate) {
-			return this.#hostError({
-				status: 403,
-				headers: prRes.headers,
-				data: {
-					message: "Viewer does not have permission to update pull request.",
-				},
-			});
-		}
-		const reviews = GitHubReviewsCodec.decode(reviewsRes.data);
-		const already = postedAt(reviews, headCommit);
-		if (!isNullOrEmpty(already)) {
-			return { kind: "already-reviewed", headCommit, location: already };
-		}
-		const existingRefusal = refusedIn(reviews, headCommit);
-		const refuse = refusalRecorder(existingRefusal, (commit, reason) =>
-			refuseGitHubReview({
-				host,
-				init,
-				headCommit: commit,
-				reason,
-				onError: (res) => this.#hostError(res),
-			}),
-		);
-		const reasons = refusalReasons(
-			pr.mergeable_state,
-			failedChecks(GitHubCheckRunsCodec.decode(checksRes.data)),
-		);
-		if (reasons.length > 0) {
-			const reason = reasons.join(", ");
-			const location = await refuse(headCommit, reason);
-			if (typeof location !== "string") {
-				return location;
-			}
-			return { kind: "refused", headCommit, reason, location };
-		}
-		const baseCommit = baseCommitOf(pr);
-		const baseline = reviewBaselineFrom(priorOf(reviews));
-		const commits = baseline.commitsToFetch(baseCommit, headCommit);
-		const zipArchives = await downloadGitHubCommitZips({
-			host,
-			commits,
-			init,
-			token: this.#transport,
-		});
-		if (!Array.isArray(zipArchives)) {
-			return zipArchives;
-		}
-		await snapshotDir.loadCommitZips(zipArchives, true);
-		return buildReviewSnapshot(
-			this.#review,
-			snapshotDir,
-			{
-				baseCommit,
-				headCommit,
-				change,
-				baseline,
-				threads: threadsRes.threads,
-			},
-			refuse,
-		);
+		return this.#resolveSnapshot(snapshotDir, pr, headCommit, init);
 	}
 	post(outcome: Outcome, ledger: Ledger): Promise<Summary | HostError> {
 		return postGitHubReview({

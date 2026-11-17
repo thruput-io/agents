@@ -74,14 +74,15 @@ export class MainAgentController {
 				.some(
 					(name) => !isNullOrEmpty(workdir.ledgerDirectory().readSlice(name)),
 				);
-			return diskUpdated
-				? this.#bind(
-						workdir,
-						existing.adapter,
-						existing.pullRequest,
-						existing.probes,
-					)
-				: existing;
+			if (diskUpdated) {
+				return this.#bind(
+					workdir,
+					existing.adapter,
+					existing.pullRequest,
+					existing.probes,
+				);
+			}
+			return existing;
 		}
 		const persisted = workdir.ledgerDirectory().readPullRequest();
 		const { pullRequest, adapter } = HostAdapterFactory.rehydrate(persisted);

@@ -18,8 +18,8 @@ import { Instructions } from "./instructions.ts";
 import { coordinateLedgers } from "./main-agent-ledger.ts";
 import { isNullOrEmpty, nonnull } from "./nullish.ts";
 import { paginateSurface } from "./pagination.ts";
+import type { LedgerSubmission, SubAgentLedger } from "./probe-ledger.ts";
 import { loadPersistedProbes, toAgentInstructions } from "./probe-loader.ts";
-import type { LedgerSubmission, SubAgentLedger } from "./sub-agent-ledger.ts";
 import {
 	inMemoryProbeStorage,
 	type ProbeBehavior,
@@ -31,13 +31,8 @@ import {
 } from "./sub-agent-probe.ts";
 import { Workdir } from "./workdir.ts";
 
-export type { ProbeDocument } from "./sub-agent-probe.ts";
-
-export type AckResult =
-	| { readonly success: true; readonly data: AckStatus }
-	| { readonly success: false; readonly error: string };
-
-export const SUBAGENT_DEADLINE_MS = DeadlineMsSchema.decode(undefined);
+const SHA1_HEX_LENGTH = 40;
+const ZERO_COMMIT_SHA = "0".repeat(SHA1_HEX_LENGTH);
 
 interface SubAgentControllerInit {
 	readonly workdir: Workdir;
@@ -56,6 +51,14 @@ const customFailure = (
 	z
 		.custom<LedgerSubmission>(() => false, { path: [path], message })
 		.safeDecode(null as never);
+
+export type { ProbeDocument } from "./sub-agent-probe.ts";
+
+export type AckResult =
+	| { readonly success: true; readonly data: AckStatus }
+	| { readonly success: false; readonly error: string };
+
+export const SUBAGENT_DEADLINE_MS = DeadlineMsSchema.decode(undefined);
 
 export class SubAgentController {
 	readonly #workdir: Workdir;
@@ -85,7 +88,7 @@ export class SubAgentController {
 	): SubAgentController {
 		const checkout = workdir.snapshotDirectory().toString();
 		const surface: Surface = {
-			headCommit: "0".repeat(40),
+			headCommit: ZERO_COMMIT_SHA,
 			files: [...ledger.pullRequest().surface()],
 		};
 		const behavior = probeBehaviorFor(

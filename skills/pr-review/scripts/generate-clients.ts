@@ -49,47 +49,53 @@ const HOSTS = [
 	},
 ] as const;
 
-for (const spec of HOSTS) {
-	const input = {
-		target: spec.target,
-		filters: { mode: "include" as const, tags: [...spec.tags] },
-	};
-	const contentTypeOverride =
-		spec.excludeContentTypes.length > 0
-			? { contentType: { exclude: [...spec.excludeContentTypes] } }
-			: {};
-	await generate({
-		input,
-		output: {
-			target: `./clients/${spec.name}.g.ts`,
-			client: "fetch",
-			mode: "single",
-			baseUrl: spec.baseUrl,
-			override: {
-				requestOptions: { headers: { accept: "application/json" } },
-				...contentTypeOverride,
-				mock: { exactOptional: true, required: true },
-			},
-			mock: {
-				inline: true,
-				generators: [
-					{
-						type: "msw",
-						useExamples: spec.useExamples,
-						delay: false,
-						baseUrl: spec.baseUrl,
+await Promise.all(
+	HOSTS.map(async (spec) => {
+		const input = {
+			target: spec.target,
+			filters: { mode: "include" as const, tags: [...spec.tags] },
+		};
+		let contentTypeOverride = {};
+		if (spec.excludeContentTypes.length > 0) {
+			contentTypeOverride = {
+				contentType: { exclude: [...spec.excludeContentTypes] },
+			};
+		}
+		await Promise.all([
+			generate({
+				input,
+				output: {
+					target: `./clients/${spec.name}.g.ts`,
+					client: "fetch",
+					mode: "single",
+					baseUrl: spec.baseUrl,
+					override: {
+						requestOptions: { headers: { accept: "application/json" } },
+						...contentTypeOverride,
+						mock: { exactOptional: true, required: true },
 					},
-				],
-			},
-		},
-	});
-	await generate({
-		input,
-		output: {
-			target: `./clients/${spec.name}.zod.g.ts`,
-			client: "zod",
-			mode: "single",
-			override: { ...contentTypeOverride, zod: ZOD_OPTIONS },
-		},
-	});
-}
+					mock: {
+						inline: true,
+						generators: [
+							{
+								type: "msw",
+								useExamples: spec.useExamples,
+								delay: false,
+								baseUrl: spec.baseUrl,
+							},
+						],
+					},
+				},
+			}),
+			generate({
+				input,
+				output: {
+					target: `./clients/${spec.name}.zod.g.ts`,
+					client: "zod",
+					mode: "single",
+					override: { ...contentTypeOverride, zod: ZOD_OPTIONS },
+				},
+			}),
+		]);
+	}),
+);

@@ -10,8 +10,14 @@ export const isNullOrEmpty = <T>(
 ): value is null | undefined | "" =>
 	value === null || value === undefined || value === "";
 
-export const emptyAsNull = (value: string | null | undefined): string | null =>
-	value === "" || value === undefined ? null : value;
+export const emptyAsNull = (
+	value: string | null | undefined,
+): string | null => {
+	if (value === "" || value === undefined) {
+		return null;
+	}
+	return value;
+};
 
 export const nonEmptyString = (value: string | null | undefined): string =>
 	nonnull(emptyAsNull(value));
