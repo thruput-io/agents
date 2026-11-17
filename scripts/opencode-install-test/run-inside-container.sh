@@ -12,9 +12,29 @@ git config --global url."file:///tmp/thruput-agents".insteadOf "https://github.c
 git -C /home/node/workspace init -q -b main
 
 agentplugins add thruput-io/agents < /dev/null
+rm -rf /tmp/thruput-agents/skills/pr-review/rules /tmp/thruput-agents/skills/pr-review/schemas
+cp -RL /tmp/thruput-agents/rules /tmp/thruput-agents/skills/pr-review/rules
+cp -RL /tmp/thruput-agents/schemas /tmp/thruput-agents/skills/pr-review/schemas
+tarball=$(npm pack /tmp/thruput-agents/skills/pr-review --pack-destination /tmp)
+npm install -g "/tmp/$tarball" --no-audit --no-fund
 
-opencode api post /api/session --header 'x-opencode-directory:/home/node/workspace' --data '{}' > /dev/null
-plugins_json=$(opencode api get /api/plugin --header 'x-opencode-directory:/home/node/workspace')
-skills_json=$(opencode api get /api/skill --header 'x-opencode-directory:/home/node/workspace')
+cd /home/node/workspace
+export OPENCODE_SERVER_PASSWORD="opencode-test-password"
+export OPENCODE_PASSWORD="opencode-test-password"
+opencode serve --port 4096 > /tmp/opencode.log 2>&1 &
+server_pid=$!
+trap 'kill "$server_pid" 2>/dev/null || true' EXIT
 
-PLUGINS_JSON="$plugins_json" SKILLS_JSON="$skills_json" node /home/node/source/scripts/opencode-install-test/assert-install.mjs
+sleep 2
+opencode api post /api/session --server http://127.0.0.1:4096 --header 'x-opencode-directory:/home/node/workspace' --data '{}' > /dev/null
+
+skills_json='{"data":[]}'
+for _ in $(seq 1 15); do
+  skills_json=$(opencode api get /api/skill --server http://127.0.0.1:4096 --header 'x-opencode-directory:/home/node/workspace')
+  if ! printf '%s' "$skills_json" | grep -q '"data":\[\]'; then
+    break
+  fi
+  sleep 1
+done
+
+SKILLS_JSON="$skills_json" node /home/node/source/scripts/opencode-install-test/assert-install.mjs
