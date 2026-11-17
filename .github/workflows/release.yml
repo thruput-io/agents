@@ -58,9 +58,10 @@ jobs:
           cp -RL schemas skills/pr-review/schemas
           npm --prefix skills/pr-review version "$version" --no-git-tag-version --allow-same-version
           npm --prefix skills/pr-review publish
-          tarball=$(npm pack ./skills/pr-review --pack-destination /tmp)
-          cp "/tmp/$tarball" /tmp/thruput-review-tool.tgz
-          gh release upload "v$version" /tmp/thruput-review-tool.tgz --clobber
+          pkg_dir=$(mktemp -d)
+          tarball=$(npm pack ./skills/pr-review --pack-destination "$pkg_dir")
+          cp "$pkg_dir/$tarball" "$pkg_dir/thruput-review-tool.tgz"
+          gh release upload "v$version" "$pkg_dir/thruput-review-tool.tgz" --clobber
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
