@@ -95,16 +95,15 @@ const runCliProcess = async <T>(
 ): Promise<{ readonly exitCode: number; readonly payload: T }> => {
 	const { PR_REVIEW_TEST_BIN_DIR: testBinDir } = process.env;
 	const child = spawn(join(nonnull(testBinDir), commandName), [...args], {
-			env: {
-				...process.env,
-				NODE_OPTIONS: `--import ${PRELOAD_PATH}`,
-				PR_REVIEW_MOCK_BRIDGE_URL: mockBridgeUrl(),
-				GH_TOKEN: scenarioToken,
-				AZURE_DEVOPS_EXT_PAT: scenarioToken,
-			},
-			stdio: ["ignore", "pipe", "pipe"],
+		env: {
+			...process.env,
+			NODE_OPTIONS: `--import ${PRELOAD_PATH}`,
+			PR_REVIEW_MOCK_BRIDGE_URL: mockBridgeUrl(),
+			GH_TOKEN: scenarioToken,
+			AZURE_DEVOPS_EXT_PAT: scenarioToken,
 		},
-	);
+		stdio: ["ignore", "pipe", "pipe"],
+	});
 	const stdoutChunks: Buffer[] = [];
 	const stderrChunks: Buffer[] = [];
 	child.stdout.on("data", (chunk: Buffer) => stdoutChunks.push(chunk));
