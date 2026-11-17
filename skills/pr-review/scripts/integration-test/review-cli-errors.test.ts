@@ -1,27 +1,71 @@
 import assert from "node:assert/strict";
-import { test as it } from "node:test";
+import { rmSync } from "node:fs";
+import { after, before, beforeEach, test as it } from "node:test";
 import { PrepareResponseSchema } from "../domain/contracts.g.ts";
 import { DIFF_LIMIT_EXCEEDED } from "../domain/limits.ts";
 import { nonnull } from "../domain/nullish.ts";
 import {
-	createAzureAlreadyReviewedHandler,
 	createAzureExistingRefusalHandler,
 	createRejectedAzurePolicyHandler,
-} from "./azure-mocks.ts";
+} from "./azure-error-mocks.ts";
+import { createAzureAlreadyReviewedHandler } from "./azure-mocks.ts";
+import { createFailedGitHubChecksHandler } from "./github-error-mocks.ts";
 import {
-	createFailedGitHubChecksHandler,
 	createGitHubAlreadyReviewedHandler,
 	createGitHubExistingRefusalHandler,
 	createInProgressGitHubChecksHandlers,
 	createOversizedGitHubPullHandlers,
 } from "./github-mocks.ts";
-import { mockServer, resetHostMocks } from "./mock-server.ts";
-import { scenarioToken, setupReviewCliHarness } from "./review-cli-harness.ts";
-import { invokeMainCli } from "./scenario.ts";
+import {
+	mockServer,
+	resetHostMocks,
+	scenarioToken,
+	startMockBridge,
+	stopMockBridge,
+} from "./mock-server.ts";
+import {
+	cleanupReviewToolForTest,
+	installReviewToolForTest,
+	invokeMainCli,
+} from "./scenario-cli.ts";
+import { createScenarioRepo } from "./scenario-repo.ts";
 
-const repo = setupReviewCliHarness();
+const repo = createScenarioRepo();
+const TOKEN_STRING = scenarioToken;
 
-it("Review CLI returns typed errors for invalid-target, too-large, already-reviewed, and refused (with idempotent refusal)", async () => {
+before(async () => {
+	installReviewToolForTest();
+	await startMockBridge();
+});
+
+beforeEach(() => {
+	resetHostMocks(repo);
+});
+
+after(async () => {
+	await stopMockBridge();
+	cleanupReviewToolForTest();
+	rmSync(repo.rootDir, { recursive: true, force: true });
+});
+
+const captureRequestPaths = async (
+	run: () => Promise<void>,
+): Promise<readonly string[]> => {
+	const seenPaths: string[] = [];
+	const onRequest = ({ request }: { readonly request: Request }) => {
+		seenPaths.push(new URL(request.url).pathname);
+	};
+	mockServer.events.on("request:start", onRequest);
+	try {
+		await run();
+	} finally {
+		mockServer.events.removeListener("request:start", onRequest);
+		resetHostMocks(repo);
+	}
+	return seenPaths;
+};
+
+it("Review CLI returns invalid-target and too-large errors for oversized local Git diffs", async () => {
 	const invalid = await invokeMainCli(
 		["prepare", "invalid-target", repo.workdirFor("err-invalid").toString()],
 		PrepareResponseSchema,
@@ -61,56 +105,71 @@ it("Review CLI returns typed errors for invalid-target, too-large, already-revie
 	>;
 	assert.deepEqual(diffError.files, ["part-a.ts", "part-b.ts", "part-c.ts"]);
 	assert.equal(diffError.location.includes(DIFF_LIMIT_EXCEEDED), true);
+});
 
-	const remoteErrorCases = [
-		{
-			label: "gh-already",
-			target: repo.githubTarget,
-			handlers: [createGitHubAlreadyReviewedHandler(repo.headCommit)],
-			expectedKind: "already-reviewed" as const,
-		},
-		{
-			label: "az-already",
-			target: repo.azureTarget,
-			handlers: [createAzureAlreadyReviewedHandler(repo.headCommit)],
-			expectedKind: "already-reviewed" as const,
-		},
-		{
-			label: "gh-refused",
-			target: repo.githubTarget,
-			handlers: [
-				createFailedGitHubChecksHandler("ci"),
-				createGitHubExistingRefusalHandler(repo.headCommit),
-			],
-			expectedKind: "refused" as const,
-		},
-		{
-			label: "az-refused",
-			target: repo.azureTarget,
-			handlers: [
-				createRejectedAzurePolicyHandler(),
-				createAzureExistingRefusalHandler(repo.headCommit),
-			],
-			expectedKind: "refused" as const,
-		},
-	] as const;
+it("Review CLI returns already-reviewed errors for GitHub and AzureDevOps", async () => {
+	mockServer.use(createGitHubAlreadyReviewedHandler(repo.headCommit));
+	const ghAlready = await invokeMainCli(
+		[
+			"prepare",
+			repo.githubTarget,
+			repo.workdirFor("err-gh-already").toString(),
+			TOKEN_STRING,
+		],
+		PrepareResponseSchema,
+	);
+	assert.equal(ghAlready.payload.success, false);
+	assert.equal(ghAlready.payload.error.kind, "already-reviewed");
 
-	for (const errorCase of remoteErrorCases) {
-		mockServer.use(...errorCase.handlers);
-		const response = await invokeMainCli(
-			[
-				"prepare",
-				errorCase.target,
-				repo.workdirFor(`err-${errorCase.label}`).toString(),
-				scenarioToken,
-			],
-			PrepareResponseSchema,
-		);
-		assert.equal(response.payload.success, false);
-		assert.equal(response.payload.error.kind, errorCase.expectedKind);
-	}
+	mockServer.use(createAzureAlreadyReviewedHandler(repo.headCommit));
+	const azAlready = await invokeMainCli(
+		[
+			"prepare",
+			repo.azureTarget,
+			repo.workdirFor("err-az-already").toString(),
+			TOKEN_STRING,
+		],
+		PrepareResponseSchema,
+	);
+	assert.equal(azAlready.payload.success, false);
+	assert.equal(azAlready.payload.error.kind, "already-reviewed");
+});
 
-	resetHostMocks(repo);
+it("Review CLI returns refused errors for GitHub and AzureDevOps", async () => {
+	mockServer.use(
+		createFailedGitHubChecksHandler("ci"),
+		createGitHubExistingRefusalHandler(repo.headCommit),
+	);
+	const ghRefused = await invokeMainCli(
+		[
+			"prepare",
+			repo.githubTarget,
+			repo.workdirFor("err-gh-refused").toString(),
+			TOKEN_STRING,
+		],
+		PrepareResponseSchema,
+	);
+	assert.equal(ghRefused.payload.success, false);
+	assert.equal(ghRefused.payload.error.kind, "refused");
+
+	mockServer.use(
+		createRejectedAzurePolicyHandler(),
+		createAzureExistingRefusalHandler(repo.headCommit),
+	);
+	const azRefused = await invokeMainCli(
+		[
+			"prepare",
+			repo.azureTarget,
+			repo.workdirFor("err-az-refused").toString(),
+			TOKEN_STRING,
+		],
+		PrepareResponseSchema,
+	);
+	assert.equal(azRefused.payload.success, false);
+	assert.equal(azRefused.payload.error.kind, "refused");
+});
+
+it("Review CLI posts idempotent refusal for in-progress checks and rejects oversized GitHub PRs", async () => {
 	const postedRefusals: string[] = [];
 	mockServer.use(
 		...createInProgressGitHubChecksHandlers("check", postedRefusals),
@@ -145,7 +204,7 @@ it("Review CLI returns typed errors for invalid-target, too-large, already-revie
 			"prepare",
 			repo.githubTarget,
 			repo.workdirFor("err-gh-too-large").toString(),
-			scenarioToken,
+			TOKEN_STRING,
 		],
 		PrepareResponseSchema,
 	);
@@ -159,5 +218,72 @@ it("Review CLI returns typed errors for invalid-target, too-large, already-revie
 			>
 		).files,
 		["src/huge.ts"],
+	);
+});
+
+it("Review CLI short-circuits oversized GitHub PRs without requesting check-runs, GraphQL, or zipballs", async () => {
+	let oversizedKind = "";
+	const oversizedPaths = await captureRequestPaths(async () => {
+		mockServer.use(...createOversizedGitHubPullHandlers(repo));
+		const oversized = await invokeMainCli(
+			[
+				"prepare",
+				repo.githubTarget,
+				repo.workdirFor("shortcircuit-too-large").toString(),
+				TOKEN_STRING,
+			],
+			PrepareResponseSchema,
+		);
+		if (!oversized.payload.success) {
+			oversizedKind = oversized.payload.error.kind;
+		}
+	});
+	assert.equal(oversizedKind, "too-large");
+	assert.equal(
+		oversizedPaths.some((path) => path.includes("/check-runs")),
+		false,
+	);
+	assert.equal(
+		oversizedPaths.some((path) => path.includes("/graphql")),
+		false,
+	);
+	assert.equal(
+		oversizedPaths.some((path) => path.includes("/zipball/")),
+		false,
+	);
+});
+
+it("Review CLI short-circuits already-reviewed GitHub PRs without requesting check-runs, GraphQL, or zipballs", async () => {
+	let alreadyKind = "";
+	const alreadyPaths = await captureRequestPaths(async () => {
+		mockServer.use(
+			...createOversizedGitHubPullHandlers(repo),
+			createGitHubAlreadyReviewedHandler(repo.headCommit),
+		);
+		const alreadyReviewed = await invokeMainCli(
+			[
+				"prepare",
+				repo.githubTarget,
+				repo.workdirFor("shortcircuit-already-reviewed").toString(),
+				TOKEN_STRING,
+			],
+			PrepareResponseSchema,
+		);
+		if (!alreadyReviewed.payload.success) {
+			alreadyKind = alreadyReviewed.payload.error.kind;
+		}
+	});
+	assert.equal(alreadyKind, "already-reviewed");
+	assert.equal(
+		alreadyPaths.some((path) => path.includes("/check-runs")),
+		false,
+	);
+	assert.equal(
+		alreadyPaths.some((path) => path.includes("/graphql")),
+		false,
+	);
+	assert.equal(
+		alreadyPaths.some((path) => path.includes("/zipball/")),
+		false,
 	);
 });

@@ -1,3 +1,4 @@
+import { env } from "node:process";
 import { http } from "msw";
 import { setupServer } from "msw/node";
 import { z } from "zod";
@@ -9,7 +10,7 @@ const BridgeResponseSchema = z.object({
 	bodyBase64: z.string(),
 });
 
-const { PR_REVIEW_MOCK_BRIDGE_URL: bridgeUrlRaw } = process.env;
+const { PR_REVIEW_MOCK_BRIDGE_URL: bridgeUrlRaw } = env;
 const bridgeUrl = nonnull(bridgeUrlRaw);
 
 const forwardToBridge = async ({

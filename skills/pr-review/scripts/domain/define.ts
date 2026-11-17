@@ -9,7 +9,7 @@ import {
 } from "./contracts.g.ts";
 import { isNullOrEmpty, nonnull } from "./nullish.ts";
 
-const CITATION = /\[\[([^\]]+)\]\]/gu;
+const CITATION = /\[\[(?<term>[^\]]+)\]\]/gu;
 const SKILL_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const DEFAULT_DEFINITIONS_PATH = join(SKILL_DIR, "rules", "Definitions.yaml");
 
@@ -54,7 +54,7 @@ export function resolveDefinition(
 	}
 	const visited = new Map<string, Definition>([[root.id, root]]);
 	let frontier: readonly Definition[] = [root];
-	for (let level = 0; level < depth; level++) {
+	for (let level = 0; level < depth; level += 1) {
 		const next: Definition[] = [];
 		for (const current of frontier) {
 			for (const refId of referencedTerms(current)) {

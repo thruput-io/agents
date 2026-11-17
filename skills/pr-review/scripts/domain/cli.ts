@@ -4,7 +4,7 @@ import { z } from "zod";
 import { isNullOrEmpty } from "./nullish.ts";
 
 export const isCliEntrypoint = (metaUrl: string): boolean => {
-	const entryArg = process.argv[1];
+	const [, entryArg] = process.argv;
 	if (isNullOrEmpty(entryArg)) {
 		return false;
 	}

@@ -1,14 +1,19 @@
+import { env } from "node:process";
 import {
 	cleanupReviewToolForTest,
 	installReviewToolForTest,
-} from "./scenario.ts";
+} from "./scenario-cli.ts";
 
-export function globalSetup(): void {
-	Object.assign(process.env, {
-		PR_REVIEW_TEST_BIN_DIR: installReviewToolForTest(),
+const TEST_BIN_DIR_KEY = "PR_REVIEW_TEST_BIN_DIR";
+
+function globalSetup(): void {
+	Object.assign(env, {
+		[TEST_BIN_DIR_KEY]: installReviewToolForTest(),
 	});
 }
 
-export function globalTeardown(): void {
+function globalTeardown(): void {
 	cleanupReviewToolForTest();
 }
+
+export { globalSetup, globalTeardown };

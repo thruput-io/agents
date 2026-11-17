@@ -1,4 +1,5 @@
 import type { CodeUnderReview } from "./code-under-review.ts";
+import { ContextSubAgentLedger } from "./context-sub-agent-ledger.ts";
 import type {
 	ContextKind,
 	DeadCodeKind,
@@ -7,27 +8,23 @@ import type {
 	ReuseKind,
 	RulesKind,
 } from "./contracts.g.ts";
+import { DeadCodeSubAgentLedger } from "./dead-code-sub-agent-ledger.ts";
 import { Instructions, type ProbePermissions } from "./instructions.ts";
 import type { ContextProbe, RulesProbe } from "./ledger.ts";
 import type { LedgerDirectory } from "./ledger-directory.ts";
 import { merge } from "./ledger-table.ts";
 import { isNullOrEmpty, nonnull } from "./nullish.ts";
 import { outcome } from "./outcome.ts";
+import type { OnReport, SubAgentLedger } from "./probe-ledger.ts";
+import { ReuseSubAgentLedger } from "./reuse-sub-agent-ledger.ts";
 import type { CitationRule } from "./rulebook.ts";
-import {
-	ContextSubAgentLedger,
-	DeadCodeSubAgentLedger,
-	type OnReport,
-	ReuseSubAgentLedger,
-	RulesSubAgentLedger,
-	type SubAgentLedger,
-} from "./sub-agent-ledger.ts";
+import { RulesSubAgentLedger } from "./rules-sub-agent-ledger.ts";
 
 type CitationRulesProbe = RulesProbe & {
 	readonly rulebook: { readonly rules: readonly CitationRule[] };
 };
 
-export type CoordinatedProbeSpec =
+type CoordinatedProbeSpec =
 	| {
 			readonly name: string;
 			readonly kind: RulesKind | DeadCodeKind | ReuseKind;
@@ -50,7 +47,7 @@ interface MainAgentLedgerState {
 	>;
 }
 
-export class MainAgentLedger {
+class MainAgentLedger {
 	readonly #directory: LedgerDirectory;
 	readonly #pullRequest: CodeUnderReview;
 	readonly #state: MainAgentLedgerState;
@@ -128,6 +125,45 @@ const rulesLedgerFactories = {
 	reuse: ReuseSubAgentLedger.withCallback,
 } as const;
 
+function settleIfComplete(
+	directory: LedgerDirectory,
+	pullRequest: CodeUnderReview,
+	specs: readonly CoordinatedProbeSpec[],
+	state: {
+		readonly recorded: Map<number, Ledger>;
+		readonly completed: Set<string>;
+		readonly submitted: Map<
+			string,
+			{ readonly ledger: Ledger; readonly outcome: Outcome }
+		>;
+	},
+): { readonly ledger: Ledger; readonly outcome: Outcome } | null {
+	for (const [index, spec] of specs.entries()) {
+		if (!state.recorded.has(index)) {
+			const existing = directory.readSlice(spec.name);
+			if (!isNullOrEmpty(existing)) {
+				state.recorded.set(index, existing);
+				state.completed.add(spec.name);
+			}
+		}
+	}
+	if (state.recorded.size < specs.length) {
+		return null;
+	}
+	const entries = specs.map((entry, idx) => ({
+		document: entry.probe,
+		ledger: nonnull(state.recorded.get(idx)),
+	}));
+	const merged = merge(entries.map((entry) => entry.ledger));
+	const finalOutcome = outcome(entries, pullRequest.threads().threads);
+	const result = { ledger: merged, outcome: finalOutcome };
+	state.submitted.set("submitted", result);
+	return result;
+}
+
+export type { CoordinatedProbeSpec };
+export { MainAgentLedger };
+
 export function coordinateLedgers(
 	directory: LedgerDirectory,
 	pullRequest: CodeUnderReview,
@@ -142,32 +178,12 @@ export function coordinateLedgers(
 		string,
 		{ readonly ledger: Ledger; readonly outcome: Outcome }
 	>();
-	const settleIfComplete = (): {
-		readonly ledger: Ledger;
-		readonly outcome: Outcome;
-	} | null => {
-		for (const [index, spec] of specs.entries()) {
-			if (!recorded.has(index)) {
-				const existing = directory.readSlice(spec.name);
-				if (!isNullOrEmpty(existing)) {
-					recorded.set(index, existing);
-					completed.add(spec.name);
-				}
-			}
-		}
-		if (recorded.size < specs.length) {
-			return null;
-		}
-		const entries = specs.map((entry, idx) => ({
-			document: entry.probe,
-			ledger: nonnull(recorded.get(idx)),
-		}));
-		const merged = merge(entries.map((entry) => entry.ledger));
-		const finalOutcome = outcome(entries, pullRequest.threads().threads);
-		const result = { ledger: merged, outcome: finalOutcome };
-		submitted.set("submitted", result);
-		return result;
-	};
+	const settle = () =>
+		settleIfComplete(directory, pullRequest, specs, {
+			recorded,
+			completed,
+			submitted,
+		});
 	const mainLedger = MainAgentLedger.from(directory, pullRequest, {
 		probeNames: specs.map((spec) => spec.name),
 		permissionsByProbe: new Map(
@@ -177,7 +193,7 @@ export function coordinateLedgers(
 			]),
 		),
 		sync: () => {
-			settleIfComplete();
+			settle();
 		},
 		completed,
 		submitted,
@@ -187,7 +203,7 @@ export function coordinateLedgers(
 			directory.writeSlice(spec.name, ledger);
 			recorded.set(index, ledger);
 			completed.add(spec.name);
-			const settled = settleIfComplete();
+			const settled = settle();
 			if (isNullOrEmpty(settled)) {
 				return { kind: "recorded", ledger };
 			}

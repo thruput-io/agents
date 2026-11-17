@@ -41,9 +41,9 @@ const EDITABLE_STATUS_BY_WIRE: Readonly<
 	active: "active",
 };
 const REFUSAL_PATTERN =
-	/^\*\*Verdict: request-changes\*\*\n\nNot reviewed at ([0-9a-f]{40}) against \[the rules\]\([^)]+\): ([\s\S]+)\.$/u;
+	/^\*\*Verdict: request-changes\*\*\n\nNot reviewed at (?<commit>[0-9a-f]{40}) against \[the rules\]\([^)]+\): (?<reason>[\s\S]+)\.$/u;
 
-export const AzureTextThreadCodec = z.codec(
+const AzureTextThreadCodec = z.codec(
 	PullRequestThreadsCreateBody,
 	ThreadBodySchema,
 	{
@@ -61,10 +61,10 @@ export const AzureTextThreadCodec = z.codec(
 	},
 );
 
-export const text = (content: ThreadBody): GitPullRequestCommentThread =>
+const text = (content: ThreadBody): GitPullRequestCommentThread =>
 	AzureTextThreadCodec.encode(content) as GitPullRequestCommentThread;
 
-export const AzureInlineThreadCodec = z.codec(
+const AzureInlineThreadCodec = z.codec(
 	PullRequestThreadsCreateBody,
 	InlineFindingSchema,
 	{
@@ -83,9 +83,7 @@ export const AzureInlineThreadCodec = z.codec(
 	},
 );
 
-export const threadPayload = (
-	finding: InlineFinding,
-): GitPullRequestCommentThread =>
+const threadPayload = (finding: InlineFinding): GitPullRequestCommentThread =>
 	AzureInlineThreadCodec.encode(finding) as GitPullRequestCommentThread;
 
 const AzureRefusalThreadCodec = z.codec(
@@ -109,6 +107,8 @@ const AzureRefusalThreadCodec = z.codec(
 			),
 	},
 );
+
+const AzureEditableThreadStatusSchema = z.enum(["active", "closed"]);
 
 export const refusalText = (
 	headCommit: HeadCommit,
@@ -138,7 +138,6 @@ export const AzureVoteCodec = z.codec(
 export const votePayload = (verdict: ReviewVerdict): IdentityRefWithVote =>
 	AzureVoteCodec.encode(verdict) as IdentityRefWithVote;
 
-const AzureEditableThreadStatusSchema = z.enum(["active", "closed"]);
 export type AzureEditableThreadStatus = z.infer<
 	typeof AzureEditableThreadStatusSchema
 >;
@@ -156,3 +155,5 @@ export const threadStatusPayload = (
 	status: AzureEditableThreadStatus,
 ): GitPullRequestCommentThread =>
 	AzureThreadStatusCodec.encode(status) as GitPullRequestCommentThread;
+
+export { AzureInlineThreadCodec, AzureTextThreadCodec, text, threadPayload };

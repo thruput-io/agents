@@ -16,17 +16,19 @@ import {
 
 const GITHUB_FILE = "https://github.com/";
 const GITHUB_BLOB = /^https:\/\/github\.com\/[^/]+\/[^/]+\/blob\/.+$/u;
+const CANONICAL_URL_KEY = "canonical_url";
+const WHEN_TO_USE_KEY = "when_to_use";
 
 export const IndexSchema = z.array(
 	z
 		.object({
-			canonical_url: RulesetUrlSchema.refine(
+			[CANONICAL_URL_KEY]: RulesetUrlSchema.refine(
 				(url) => GITHUB_BLOB.test(url),
 				"is not a file on github.com",
 			),
 			title: RulesetTitleSchema,
 			focus: RulesetFocusSchema,
-			when_to_use: RulesetUseSchema,
+			[WHEN_TO_USE_KEY]: RulesetUseSchema,
 		})
 		.transform(
 			(

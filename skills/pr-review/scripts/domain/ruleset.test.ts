@@ -3,16 +3,21 @@ import { test as it } from "node:test";
 import { z } from "zod";
 import { type IndexEntry, IndexSchema, withText } from "./ruleset.ts";
 
+const WHEN_TO_USE_KEY = "when_to_use";
+const REVIEW_CHECKLIST_KEY = "review_checklist";
+const TREE_URL_KEY = "tree_url";
+const CANONICAL_URL_KEY = "canonical_url";
+
 const index = [
 	{
 		id: "ddd",
 		title: "Domain-Driven Design",
 		author: "Eric Evans",
 		focus: "Domain Modeling",
-		when_to_use: "Strategic modeling.",
-		review_checklist: "Guard aggregates.",
-		tree_url: "https://books.example/ddd",
-		canonical_url:
+		[WHEN_TO_USE_KEY]: "Strategic modeling.",
+		[REVIEW_CHECKLIST_KEY]: "Guard aggregates.",
+		[TREE_URL_KEY]: "https://books.example/ddd",
+		[CANONICAL_URL_KEY]:
 			"https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md",
 	},
 ] as const;
@@ -33,7 +38,9 @@ it("an index entry is read from its canonical GitHub file and fetched from its r
 });
 
 it("an index entry that is not a file on github.com is refused with the reason", () => {
-	const bad = [{ ...index[0], canonical_url: "https://books.example/ddd.md" }];
+	const bad = [
+		{ ...index[0], [CANONICAL_URL_KEY]: "https://books.example/ddd.md" },
+	];
 	assert.throws(
 		() => IndexSchema.decode(bad),
 		(error: Error) =>

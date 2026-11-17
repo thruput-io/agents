@@ -18,8 +18,9 @@ interface SchemaDocument {
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_FILE = resolve(SCRIPT_DIR, "domain/contracts.g.ts");
 const SCHEMAS_DIR = resolve(SCRIPT_DIR, "../../../schemas");
-const PASCAL_CASE_PATTERN = /(?:^|[^a-zA-Z0-9]+)([a-zA-Z0-9])/gu;
+const PASCAL_CASE_PATTERN = /(?:^|[^a-zA-Z0-9]+)(?<char>[a-zA-Z0-9])/gu;
 const DEREFERENCE_PASSES = 4;
+const DEFAULT_DEADLINE_MS = 300_000;
 
 const toPascalCase = (raw: string): string =>
 	raw.replace(PASCAL_CASE_PATTERN, (_, character: string) =>
@@ -40,7 +41,7 @@ const customOverride = (
 	if (
 		(typeof schemaObject.const === "string" &&
 			schemaObject.const.includes(" ")) ||
-		schemaObject.const === 300_000
+		schemaObject.const === DEFAULT_DEADLINE_MS
 	) {
 		const literal = JSON.stringify(schemaObject.const);
 		return `z.literal(${literal}).default(${literal})`;
@@ -74,30 +75,51 @@ const rawByPath = new Map<string, SchemaDocument>(
 );
 const resolvedByPath = new Map<string, SchemaDocument>(rawByPath);
 
-for (let pass = 0; pass < DEREFERENCE_PASSES; pass++) {
-	for (const target of allFiles) {
-		const baseDir = dirname(target);
-		const filesystem = allFiles.map((filePath) => ({
-			isEntrypoint: filePath === target,
-			filename: relative(baseDir, filePath).replaceAll("\\", "/"),
-			dir: dirname(filePath),
-			references: [] as string[],
-			specification: structuredClone(
-				(filePath === target
-					? rawByPath.get(filePath)
-					: resolvedByPath.get(filePath)) ?? {},
-			),
-		}));
-		const { schema, errors } = await dereference(filesystem);
+const specFor = (
+	filePath: string,
+	target: string,
+	resolvedMap: ReadonlyMap<string, SchemaDocument>,
+): SchemaDocument => {
+	if (filePath === target) {
+		return rawByPath.get(filePath) ?? {};
+	}
+	return resolvedMap.get(filePath) ?? {};
+};
+
+const runDereferencePass = async (
+	pass: number,
+	resolvedMap: Map<string, SchemaDocument>,
+): Promise<void> => {
+	if (pass >= DEREFERENCE_PASSES) {
+		return;
+	}
+	const results = await Promise.all(
+		allFiles.map(async (target) => {
+			const baseDir = dirname(target);
+			const filesystem = allFiles.map((filePath) => ({
+				isEntrypoint: filePath === target,
+				filename: relative(baseDir, filePath).replaceAll("\\", "/"),
+				dir: dirname(filePath),
+				references: [] as string[],
+				specification: structuredClone(specFor(filePath, target, resolvedMap)),
+			}));
+			const { schema, errors } = await dereference(filesystem);
+			return { target, schema, errors };
+		}),
+	);
+	for (const { target, schema, errors } of results) {
 		if ((errors ?? []).length === 0 && schema !== undefined) {
-			resolvedByPath.set(target, schema as SchemaDocument);
+			resolvedMap.set(target, schema as SchemaDocument);
 		} else if (pass === DEREFERENCE_PASSES - 1) {
 			throw new Error(
 				`Failed to dereference ${target}: ${JSON.stringify(errors)}`,
 			);
 		}
 	}
-}
+	await runDereferencePass(pass + 1, resolvedMap);
+};
+
+await runDereferencePass(0, resolvedByPath);
 
 const reviewPaths = readdirSync(join(SCHEMAS_DIR, "review"), {
 	recursive: true,

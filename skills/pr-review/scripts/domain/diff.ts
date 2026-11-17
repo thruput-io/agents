@@ -11,7 +11,8 @@ import {
 } from "./contracts.g.ts";
 import { emptyAsNull, isNullOrEmpty } from "./nullish.ts";
 
-const HUNK_START = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/u;
+const HUNK_START =
+	/^@@ -(?<oldStart>\d+)(?:,\d+)? \+(?<newStart>\d+)(?:,\d+)? @@/u;
 const DIFF_GIT_HEADER = /^(?=diff --git )/mu;
 const DIFF_PATH_PREFIX = /^[ab]\//u;
 
@@ -22,7 +23,37 @@ interface ParsedHunks {
 	removed: RemovedLines[];
 }
 
-export function parseHunks(lines: readonly string[]): ParsedHunks {
+const pushAddedLine = (added: LineRange[], currentLine: LineNumber): void => {
+	const lastAdded = added.at(-1);
+	if (!isNullOrEmpty(lastAdded) && lastAdded.end === currentLine - 1) {
+		added.splice(-1, 1, { start: lastAdded.start, end: currentLine });
+	} else {
+		added.push({ start: currentLine, end: currentLine });
+	}
+};
+
+const pushRemovedLine = (
+	removed: RemovedLines[],
+	oldLine: LineNumber,
+	removedText: RemovedContent,
+): void => {
+	const lastRemoved = removed.at(-1);
+	if (!isNullOrEmpty(lastRemoved) && lastRemoved.end === oldLine - 1) {
+		removed.splice(-1, 1, {
+			...lastRemoved,
+			end: oldLine,
+			content: `${lastRemoved.content}\n${removedText}`,
+		});
+	} else {
+		removed.push({
+			start: oldLine,
+			end: oldLine,
+			content: removedText,
+		});
+	}
+};
+
+function parseHunks(lines: readonly string[]): ParsedHunks {
 	const added: LineRange[] = [];
 	const removed: RemovedLines[] = [];
 	let oldLine: LineNumber = 1;
@@ -33,29 +64,10 @@ export function parseHunks(lines: readonly string[]): ParsedHunks {
 			oldLine = toLineNumber(Number(match[1]));
 			currentLine = toLineNumber(Number(match[2]));
 		} else if (line.startsWith("+")) {
-			const lastAdded = added.at(-1);
-			if (!isNullOrEmpty(lastAdded) && lastAdded.end === currentLine - 1) {
-				added.splice(-1, 1, { start: lastAdded.start, end: currentLine });
-			} else {
-				added.push({ start: currentLine, end: currentLine });
-			}
+			pushAddedLine(added, currentLine);
 			currentLine += 1;
 		} else if (line.startsWith("-")) {
-			const removedText: RemovedContent = line.slice(1);
-			const lastRemoved = removed.at(-1);
-			if (!isNullOrEmpty(lastRemoved) && lastRemoved.end === oldLine - 1) {
-				removed.splice(-1, 1, {
-					...lastRemoved,
-					end: oldLine,
-					content: `${lastRemoved.content}\n${removedText}`,
-				});
-			} else {
-				removed.push({
-					start: oldLine,
-					end: oldLine,
-					content: removedText,
-				});
-			}
+			pushRemovedLine(removed, oldLine, line.slice(1));
 			oldLine += 1;
 		} else if (line.startsWith(" ")) {
 			oldLine += 1;
@@ -83,10 +95,12 @@ function fileOfSection(section: string): ChangedFile[] {
 	const firstHunkIndex = sectionLines.findIndex((line) =>
 		HUNK_START.test(line),
 	);
-	const headerLines =
-		firstHunkIndex === -1
-			? sectionLines
-			: sectionLines.slice(0, firstHunkIndex);
+	let headerLines = sectionLines;
+	let hunkLines: string[] = [];
+	if (firstHunkIndex !== -1) {
+		headerLines = sectionLines.slice(0, firstHunkIndex);
+		hunkLines = sectionLines.slice(firstHunkIndex);
+	}
 	const [path] = [
 		...pathsFromHeader(headerLines, "+++ "),
 		...pathsFromHeader(headerLines, "--- "),
@@ -94,8 +108,6 @@ function fileOfSection(section: string): ChangedFile[] {
 	if (isNullOrEmpty(path)) {
 		return [];
 	}
-	const hunkLines =
-		firstHunkIndex === -1 ? [] : sectionLines.slice(firstHunkIndex);
 	return [{ path, ...parseHunks(hunkLines) }];
 }
 
@@ -105,7 +117,7 @@ const parseDiff = (text: string): ChangedFile[] =>
 		.filter((section) => section.startsWith("diff --git "))
 		.flatMap(fileOfSection);
 
-export interface NumstatEntry {
+interface NumstatEntry {
 	readonly path: Path;
 	readonly added: number;
 	readonly deleted: number;
@@ -116,33 +128,34 @@ const countNumstatValue = (raw: string | undefined): number => {
 		return 0;
 	}
 	const parsed = Number(raw);
-	return Number.isFinite(parsed) ? parsed : 0;
+	if (Number.isFinite(parsed)) {
+		return parsed;
+	}
+	return 0;
 };
 
-export function parseNumstat(numstatText: string): NumstatEntry[] {
+function parseNumstat(numstatText: string): NumstatEntry[] {
 	const entries: NumstatEntry[] = [];
 	for (const line of numstatText.split("\n")) {
-		if (line.length === 0) {
-			continue;
+		if (line.length > 0) {
+			const parts = line.split("\t");
+			const filePath = parts.slice(2).join("\t");
+			if (filePath.length > 0) {
+				entries.push({
+					path: PathSchema.decode(filePath),
+					added: countNumstatValue(parts[0]),
+					deleted: countNumstatValue(parts[1]),
+				});
+			}
 		}
-		const parts = line.split("\t");
-		const filePath = parts.slice(2).join("\t");
-		if (filePath.length === 0) {
-			continue;
-		}
-		entries.push({
-			path: PathSchema.decode(filePath),
-			added: countNumstatValue(parts[0]),
-			deleted: countNumstatValue(parts[1]),
-		});
 	}
 	return entries;
 }
 
-export const changedFiles = (text: string): ChangedFile[] =>
+const changedFiles = (text: string): ChangedFile[] =>
 	z.array(ChangedFileSchema).decode(parseDiff(text));
 
-export const intersect = (
+const intersect = (
 	rangesA: readonly LineRange[],
 	rangesB: readonly LineRange[],
 ): LineRange[] =>
@@ -155,7 +168,7 @@ export const intersect = (
 			.filter((range) => range.start <= range.end),
 	);
 
-export function union(
+function union(
 	rangesA: readonly LineRange[],
 	rangesB: readonly LineRange[],
 ): LineRange[] {
@@ -176,3 +189,5 @@ export function union(
 	}
 	return merged;
 }
+
+export { changedFiles, intersect, parseHunks, parseNumstat, union };

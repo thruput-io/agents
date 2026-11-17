@@ -1,8 +1,10 @@
+import type { z } from "zod";
 import {
 	pullsListFiles,
 	pullsListReviews,
 	reposDownloadZipballArchive,
 } from "../../clients/github.g.ts";
+import type { PullsGetResponse } from "../../clients/github.zod.g.ts";
 import {
 	type AdapterResolution,
 	buildBinaryHostError,
@@ -32,51 +34,61 @@ import type { CommitZipArchive } from "./snapshot-directory.ts";
 
 const PULL_FILES_PER_PAGE = 100;
 const MAX_PULL_FILE_PAGES = 3;
+const PER_PAGE_PARAM = "per_page";
 
-export interface GitHubPullCounts {
-	readonly additions: number;
-	readonly deletions: number;
-	readonly changed_files: number;
-}
+type GitHubPullCounts = Pick<
+	z.infer<typeof PullsGetResponse>,
+	"additions" | "deletions" | "changed_files"
+>;
 
-export const exceedsPullCounts = (pr: GitHubPullCounts): boolean =>
+const exceedsPullCounts = (pr: GitHubPullCounts): boolean =>
 	pr.changed_files > MAX_CHANGED_FILES ||
 	pr.additions > MAX_ADDED_LINES ||
 	pr.additions + pr.deletions > MAX_DIFF_LINES;
 
-const listPullFiles = async (input: {
+const fetchPullFilesPage = async (
+	input: {
+		readonly host: GitHub;
+		readonly init: RequestInit;
+		readonly onError: (error: HostHttpResponse) => HostError;
+	},
+	page: number,
+	accumulated: FileLineCount[],
+): Promise<FileLineCount[] | HostError> => {
+	const { host, init, onError } = input;
+	const filesRes = await pullsListFiles(
+		host.owner,
+		host.repository,
+		host.number,
+		{ [PER_PAGE_PARAM]: PULL_FILES_PER_PAGE, page },
+		init,
+	);
+	if (!isJsonResponse(filesRes)) {
+		return onError(filesRes);
+	}
+	const pageFiles = GitHubPullFilesCodec.decode(filesRes.data);
+	for (const file of pageFiles) {
+		accumulated.push({
+			path: file.filename,
+			lines: file.additions,
+			added: file.additions,
+			deleted: file.deletions,
+		});
+	}
+	if (pageFiles.length < PULL_FILES_PER_PAGE || page >= MAX_PULL_FILE_PAGES) {
+		return accumulated;
+	}
+	return fetchPullFilesPage(input, page + 1, accumulated);
+};
+
+const listPullFiles = (input: {
 	readonly host: GitHub;
 	readonly init: RequestInit;
 	readonly onError: (error: HostHttpResponse) => HostError;
-}): Promise<FileLineCount[] | HostError> => {
-	const { host, init, onError } = input;
-	const fileCounts: FileLineCount[] = [];
-	for (let page = 1; page <= MAX_PULL_FILE_PAGES; page += 1) {
-		const filesRes = await pullsListFiles(
-			host.owner,
-			host.repository,
-			host.number,
-			{ per_page: PULL_FILES_PER_PAGE, page },
-			init,
-		);
-		if (!isJsonResponse(filesRes)) {
-			return onError(filesRes);
-		}
-		const pageFiles = GitHubPullFilesCodec.decode(filesRes.data);
-		for (const file of pageFiles) {
-			fileCounts.push({
-				path: file.filename,
-				lines: file.additions,
-				added: file.additions,
-				deleted: file.deletions,
-			});
-		}
-		if (pageFiles.length < PULL_FILES_PER_PAGE) {
-			break;
-		}
-	}
-	return fileCounts;
-};
+}): Promise<FileLineCount[] | HostError> => fetchPullFilesPage(input, 1, []);
+
+export type { GitHubPullCounts };
+export { exceedsPullCounts };
 
 export const resolveOversizedGitHubPull = async (input: {
 	readonly host: GitHub;

@@ -19,7 +19,7 @@ import {
 import { isNullOrEmpty } from "./nullish.ts";
 import { ours as written } from "./rulebook.ts";
 
-const PRIOR = / probes at ([0-9a-f]{40})\b/u;
+const PRIOR = / probes at (?<commit>[0-9a-f]{40})\b/u;
 const STATE_BY_STATUS: Readonly<Record<string, ThreadState>> = {
 	active: "open",
 	fixed: "resolved-by-author",
@@ -33,7 +33,7 @@ const STATUS_BY_STATE: Readonly<Record<ThreadState, CommentThreadStatus>> = {
 const AzureThreadTransportSchema =
 	PullRequestThreadsListResponse.shape.value.element;
 
-export const AzureThreadsListCodec = z.codec(
+const AzureThreadsListCodec = z.codec(
 	PullRequestThreadsListResponse,
 	z.array(AzureThreadTransportSchema),
 	{
@@ -42,21 +42,26 @@ export const AzureThreadsListCodec = z.codec(
 	},
 );
 
-export type AzureThreadRecord = Pick<
+type AzureThreadRecord = Pick<
 	z.infer<typeof AzureThreadTransportSchema>,
 	"id" | "status" | "threadContext" | "comments"
 >;
 
-export const onLines = (
-	record: Pick<AzureThreadRecord, "threadContext">,
-): boolean => Boolean(record.threadContext?.filePath);
+const onLines = (record: Pick<AzureThreadRecord, "threadContext">): boolean =>
+	Boolean(record.threadContext?.filePath);
 
 const firstComment = (record: Pick<AzureThreadRecord, "comments">): string =>
 	record.comments?.[0]?.content ?? "";
 
+const pullRequestThreads = (rawThreads: readonly AzureThreadRecord[]) =>
+	rawThreads.filter((record) => !onLines(record) && isOurThread(record));
+
 export const isOurThread = (
 	record: Pick<AzureThreadRecord, "comments">,
 ): boolean => written(firstComment(record));
+
+export type { AzureThreadRecord };
+export { AzureThreadsListCodec, onLines };
 
 export const AzureThreadCodec = z.codec(
 	AzureThreadTransportSchema,
@@ -94,9 +99,6 @@ export function thread(record: AzureThreadRecord): Thread {
 	return AzureThreadCodec.decode(record);
 }
 
-const pullRequestThreads = (rawThreads: readonly AzureThreadRecord[]) =>
-	rawThreads.filter((record) => !onLines(record) && isOurThread(record));
-
 export function refusedOf(
 	rawThreads: readonly AzureThreadRecord[],
 	headCommit: HeadCommit,
@@ -104,7 +106,10 @@ export function refusedOf(
 	const found = pullRequestThreads(rawThreads).find((record) =>
 		firstComment(record).includes(`Not reviewed at ${headCommit} `),
 	);
-	return isNullOrEmpty(found) ? null : String(found.id);
+	if (isNullOrEmpty(found)) {
+		return null;
+	}
+	return String(found.id);
 }
 
 export const staleRefusals = (

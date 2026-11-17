@@ -10,22 +10,23 @@ import type {
 } from "./contracts.g.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 
-export type NumberedLines = Readonly<Record<string, LineText>>;
-
-export function numbered(text: string): NumberedLines {
-	const rawLines = text.split("\n");
-	const lines = isNullOrEmpty(rawLines.at(-1))
-		? rawLines.slice(0, -1)
-		: rawLines;
-	return Object.fromEntries(
-		lines.map((line, index): [string, LineText] => [String(index + 1), line]),
-	);
-}
-
 const isInsideRanges = (
 	ranges: readonly LineRange[],
 	line: LineNumber,
 ): boolean => ranges.some((range) => range.start <= line && line <= range.end);
+
+export type NumberedLines = Readonly<Record<string, LineText>>;
+
+export function numbered(text: string): NumberedLines {
+	const rawLines = text.split("\n");
+	let lines = rawLines;
+	if (isNullOrEmpty(rawLines.at(-1))) {
+		lines = rawLines.slice(0, -1);
+	}
+	return Object.fromEntries(
+		lines.map((line, index): [string, LineText] => [String(index + 1), line]),
+	);
+}
 
 export function fragments(
 	file: { readonly path: Path; readonly lines: NumberedLines },

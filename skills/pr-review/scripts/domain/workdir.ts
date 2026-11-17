@@ -17,7 +17,7 @@ import {
 import { LedgerDirectory } from "./ledger-directory.ts";
 import { SnapshotDirectory } from "./snapshot-directory.ts";
 
-export interface PersistedAudit {
+interface PersistedAudit {
 	readonly name: Checkout;
 	readonly document: AgentInstructions;
 }
@@ -141,23 +141,25 @@ export class Workdir {
 		});
 	}
 
-	static readonly Schema = Workdir.#codec(prepareFreshDirectory);
-	static readonly ExistingSchema = Workdir.#codec(verifyExistingDirectory);
+	static readonly SCHEMA = Workdir.#codec(prepareFreshDirectory);
+	static readonly EXISTING_SCHEMA = Workdir.#codec(verifyExistingDirectory);
 
 	static from(raw: Checkout): z.ZodSafeParseResult<Workdir> {
-		return Workdir.Schema.safeDecode(raw);
+		return Workdir.SCHEMA.safeDecode(raw);
 	}
 
 	static open(raw: Checkout): z.ZodSafeParseResult<Workdir> {
-		return Workdir.ExistingSchema.safeDecode(raw);
+		return Workdir.EXISTING_SCHEMA.safeDecode(raw);
 	}
 
 	static fromSession(raw: string): z.ZodSafeParseResult<Workdir> {
-		const decoded = raw.startsWith(SESSION_PREFIX)
-			? Buffer.from(raw.slice(SESSION_PREFIX.length), "base64url").toString(
-					"utf-8",
-				)
-			: raw;
+		let decoded = raw;
+		if (raw.startsWith(SESSION_PREFIX)) {
+			decoded = Buffer.from(
+				raw.slice(SESSION_PREFIX.length),
+				"base64url",
+			).toString("utf-8");
+		}
 		return Workdir.open(decoded);
 	}
 
@@ -170,9 +172,10 @@ export class Workdir {
 	}
 
 	warning(): string | null {
-		return this.#symlinked
-			? `Workdir path '${this.#path}' traverses a symlink; prefer a canonical non-symlinked directory.`
-			: null;
+		if (this.#symlinked) {
+			return `Workdir path '${this.#path}' traverses a symlink; prefer a canonical non-symlinked directory.`;
+		}
+		return null;
 	}
 
 	ledgerDirectory(): LedgerDirectory {
@@ -213,3 +216,5 @@ export class Workdir {
 		return this.#path;
 	}
 }
+
+export type { PersistedAudit };

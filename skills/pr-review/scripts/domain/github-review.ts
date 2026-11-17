@@ -20,28 +20,37 @@ import {
 import { SITE } from "./rulebook.ts";
 
 const HOST_SIDE_OF = { head: "RIGHT", base: "LEFT" } as const;
-const DOMAIN_SIDE_OF: Readonly<Record<string, Side>> = {
-	RIGHT: "head",
-	LEFT: "base",
-};
+const DOMAIN_SIDE_OF = new Map<string, Side>([
+	["RIGHT", "head"],
+	["LEFT", "base"],
+]);
 const EVENT_OF = {
 	approve: PullsCreateReviewBodyEvent.APPROVE,
 	"request-changes": PullsCreateReviewBodyEvent.REQUEST_CHANGES,
 } as const;
-const VERDICT_OF: Readonly<Record<string, ReviewVerdict>> = {
-	APPROVE: "approve",
-	REQUEST_CHANGES: "request-changes",
-};
-const LEDGER_DETAILS_PREFIX =
-	"\n\n<details>\n<summary>Review ledger</summary>\n\n";
+const VERDICT_OF = new Map<string, ReviewVerdict>([
+	["APPROVE", "approve"],
+	["REQUEST_CHANGES", "request-changes"],
+]);
+const LEDGER_DETAILS_PREFIX = [
+	"",
+	"",
+	"<details>",
+	"<summary>Review ledger</summary>",
+	"",
+	"",
+].join("\n");
 const LEDGER_DETAILS_SUFFIX = "\n\n</details>";
 const REFUSAL_BODY_PATTERN =
-	/^\*\*Verdict: request-changes\*\*\n\nNot reviewed at ([0-9a-f]{40}) against \[the rules\]\([^)]+\): ([\s\S]+)\.$/u;
+	/^\*\*Verdict: request-changes\*\*\n\nNot reviewed at (?<commit>[0-9a-f]{40}) against \[the rules\]\([^)]+\): (?<reason>[\s\S]+)\.$/u;
+const START_LINE_KEY = "start_line";
+const START_SIDE_KEY = "start_side";
+const COMMIT_ID_KEY = "commit_id";
 
 const GitHubReviewCommentTransportSchema =
 	PullsCreateReviewBody.shape.comments.unwrap().element;
 
-export const GitHubReviewCommentCodec = z.codec(
+const GitHubReviewCommentCodec = z.codec(
 	GitHubReviewCommentTransportSchema,
 	InlineFindingSchema,
 	{
@@ -49,7 +58,7 @@ export const GitHubReviewCommentCodec = z.codec(
 			const end = wire.line ?? 1;
 			return {
 				path: wire.path,
-				side: DOMAIN_SIDE_OF[wire.side ?? "RIGHT"] ?? "head",
+				side: DOMAIN_SIDE_OF.get(wire.side ?? "RIGHT") ?? "head",
 				lines: {
 					start: wire.start_line ?? end,
 					end,
@@ -65,8 +74,8 @@ export const GitHubReviewCommentCodec = z.codec(
 			}
 			return {
 				path: finding.path,
-				start_line: start,
-				start_side: side,
+				[START_LINE_KEY]: start,
+				[START_SIDE_KEY]: side,
 				line: end,
 				side,
 				body: finding.body,
@@ -75,12 +84,10 @@ export const GitHubReviewCommentCodec = z.codec(
 	},
 );
 
-export const comment = (
-	finding: InlineFinding,
-): PullsCreateReviewBodyCommentsItem =>
+const comment = (finding: InlineFinding): PullsCreateReviewBodyCommentsItem =>
 	GitHubReviewCommentCodec.encode(finding);
 
-export const GitHubReviewPayloadCodec = z.codec(
+const GitHubReviewPayloadCodec = z.codec(
 	PullsCreateReviewBody,
 	z.object({
 		outcome: OutcomeSchema,
@@ -90,19 +97,23 @@ export const GitHubReviewPayloadCodec = z.codec(
 		decode: (wire) => {
 			const rawBody = wire.body ?? "";
 			const splitIndex = rawBody.indexOf(LEDGER_DETAILS_PREFIX);
-			const summary = splitIndex >= 0 ? rawBody.slice(0, splitIndex) : rawBody;
-			const ledgerTable =
-				splitIndex >= 0 && rawBody.endsWith(LEDGER_DETAILS_SUFFIX)
-					? rawBody.slice(
-							splitIndex + LEDGER_DETAILS_PREFIX.length,
-							rawBody.length - LEDGER_DETAILS_SUFFIX.length,
-						)
-					: "";
+			let summary = rawBody;
+			let ledgerTable = "";
+			if (splitIndex >= 0) {
+				summary = rawBody.slice(0, splitIndex);
+				if (rawBody.endsWith(LEDGER_DETAILS_SUFFIX)) {
+					ledgerTable = rawBody.slice(
+						splitIndex + LEDGER_DETAILS_PREFIX.length,
+						rawBody.length - LEDGER_DETAILS_SUFFIX.length,
+					);
+				}
+			}
 			return {
 				outcome: {
 					headCommit: wire.commit_id ?? "",
 					verdict:
-						VERDICT_OF[wire.event ?? "REQUEST_CHANGES"] ?? "request-changes",
+						VERDICT_OF.get(wire.event ?? "REQUEST_CHANGES") ??
+						"request-changes",
 					summary,
 					inline: (wire.comments ?? []).map((item) =>
 						GitHubReviewCommentCodec.decode(item),
@@ -119,7 +130,7 @@ export const GitHubReviewPayloadCodec = z.codec(
 				`<details>\n<summary>Review ledger</summary>\n\n${ledgerTable}\n\n</details>`,
 			].join("\n\n");
 			return {
-				commit_id: outcome.headCommit,
+				[COMMIT_ID_KEY]: outcome.headCommit,
 				event: EVENT_OF[outcome.verdict],
 				body,
 				comments: outcome.inline.map(comment),
@@ -128,7 +139,7 @@ export const GitHubReviewPayloadCodec = z.codec(
 	},
 );
 
-export const payload = (
+const payload = (
 	outcome: Outcome,
 	ledgerTable: string,
 ): PullsCreateReviewBodyType =>
@@ -149,7 +160,7 @@ const GitHubRefusalPayloadCodec = z.codec(
 			};
 		},
 		encode: ({ headCommit, reason }) => ({
-			commit_id: headCommit,
+			[COMMIT_ID_KEY]: headCommit,
 			event: PullsCreateReviewBodyEvent.REQUEST_CHANGES,
 			body: `**Verdict: request-changes**\n\nNot reviewed at ${headCommit} against [the rules](${SITE}): ${reason}.`,
 		}),
@@ -161,3 +172,5 @@ export const refusalPayload = (
 	reason: Summary,
 ): PullsCreateReviewBodyType =>
 	GitHubRefusalPayloadCodec.encode({ headCommit, reason });
+
+export { comment, GitHubReviewCommentCodec, GitHubReviewPayloadCodec, payload };

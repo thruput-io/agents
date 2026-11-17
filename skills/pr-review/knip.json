@@ -1,10 +1,16 @@
 {
 	"$schema": "https://unpkg.com/knip@5/schema.json",
 	"entry": [
-		"scripts/integration-test/msw-child-preload.ts",
-		"scripts/integration-test/global-setup.ts",
-		"scripts/**/*.test.ts"
+		"scripts/domain/controller-cli.ts",
+		"scripts/domain/sub-agent-cli.ts",
+		"scripts/integration-test/global-setup.ts"
 	],
-	"ignoreDependencies": ["tsx"],
-	"project": ["scripts/**/*.ts"]
+	"ignoreDependencies": [
+		"@faker-js/faker",
+		"@graphql-tools/mock",
+		"@graphql-tools/schema",
+		"msw",
+		"tsx"
+	],
+	"project": ["scripts/domain/*.ts", "!scripts/domain/*.test.ts"]
 }

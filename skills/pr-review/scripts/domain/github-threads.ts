@@ -15,9 +15,12 @@ import {
 import { isNullOrEmpty } from "./nullish.ts";
 import { ours } from "./rulebook.ts";
 
-const SIDE_OF = { RIGHT: "head", LEFT: "base" } as const;
+const SIDE_OF = new Map<string, "head" | "base">([
+	["RIGHT", "head"],
+	["LEFT", "base"],
+]);
 
-export const REVIEW_THREADS_QUERY = `
+const REVIEW_THREADS_QUERY = `
 query ReviewThreads($owner: String!, $name: String!, $number: Int!, $after: String) {
   repository(owner: $owner, name: $name) {
     pullRequest(number: $number) {
@@ -35,7 +38,7 @@ query ReviewThreads($owner: String!, $name: String!, $number: Int!, $after: Stri
 }
 `;
 
-export const RESOLVE_REVIEW_THREAD_MUTATION = `
+const RESOLVE_REVIEW_THREAD_MUTATION = `
 mutation ResolveReviewThread($threadId: ID!) {
   resolveReviewThread(input: { threadId: $threadId }) {
     thread { id isResolved }
@@ -43,7 +46,7 @@ mutation ResolveReviewThread($threadId: ID!) {
 }
 `;
 
-export const UNRESOLVE_REVIEW_THREAD_MUTATION = `
+const UNRESOLVE_REVIEW_THREAD_MUTATION = `
 mutation UnresolveReviewThread($threadId: ID!) {
   unresolveReviewThread(input: { threadId: $threadId }) {
     thread { id isResolved }
@@ -83,7 +86,7 @@ const RawThreadsPageSchema = z.object({
 	}),
 });
 
-export const ThreadsPage = z.codec(
+const ThreadsPage = z.codec(
 	RawThreadsPageSchema,
 	ReviewThreadsConnectionSchema,
 	{
@@ -100,9 +103,9 @@ export const ThreadsPage = z.codec(
 	},
 );
 
-export type GitHubThreadNode = z.infer<typeof ThreadNode>;
+type GitHubThreadNode = z.infer<typeof ThreadNode>;
 
-export const isReviewableThreadNode = (node: GitHubThreadNode): boolean =>
+const isReviewableThreadNode = (node: GitHubThreadNode): boolean =>
 	!isNullOrEmpty(node.line) && ours(node.comments.nodes[0]?.body ?? "");
 
 const threadState = (
@@ -118,20 +121,20 @@ const threadState = (
 	return "resolved";
 };
 
-export function thread(node: GitHubThreadNode, author: Developer): Thread {
+function thread(node: GitHubThreadNode, author: Developer): Thread {
 	const end = node.line ?? 1;
 	const state = threadState(node, author);
 	return {
 		id: node.id,
 		path: node.path,
-		side: SIDE_OF[node.diffSide],
+		side: SIDE_OF.get(node.diffSide) ?? "head",
 		lines: { start: node.startLine ?? end, end },
 		state,
 		body: node.comments.nodes[0]?.body ?? "",
 	};
 }
 
-export type FetchGitHubThreadsResult =
+type FetchGitHubThreadsResult =
 	| {
 			readonly ok: true;
 			readonly viewerCanUpdate: boolean;
@@ -172,49 +175,76 @@ const extractClientErrorData = (response: unknown): unknown => {
 	return undefined;
 };
 
-export async function fetchGitHubThreads(
+const fetchThreadsPage = async (
+	client: GraphQLClient,
+	host: GitHub,
+	author: Developer,
+	state: {
+		readonly after: string | null;
+		readonly viewerCanUpdate: boolean;
+		readonly collected: Thread[];
+	},
+): Promise<FetchGitHubThreadsResult> => {
+	try {
+		const response = await client.rawRequest(REVIEW_THREADS_QUERY, {
+			owner: host.owner,
+			name: host.repository,
+			number: host.number,
+			after: state.after,
+		});
+		const rawData = response.data as z.input<
+			typeof RawThreadsPageSchema
+		>["data"];
+		const viewerCanUpdate =
+			state.viewerCanUpdate &&
+			rawData.repository.pullRequest.viewerCanUpdate !== false;
+		const page = ThreadsPage.decode({ data: rawData });
+		for (const node of page.nodes.filter(isReviewableThreadNode)) {
+			state.collected.push(thread(node, author));
+		}
+		const { hasNextPage, endCursor } = page.pageInfo;
+		if (!hasNextPage) {
+			return { ok: true, viewerCanUpdate, threads: state.collected };
+		}
+		return fetchThreadsPage(client, host, author, {
+			after: endCursor,
+			viewerCanUpdate,
+			collected: state.collected,
+		});
+	} catch (error) {
+		if (error instanceof ClientError) {
+			return {
+				ok: false,
+				status: error.response.status,
+				headers: error.response.headers ?? new Headers(),
+				data: extractClientErrorData(error.response),
+			};
+		}
+		throw error;
+	}
+};
+
+export function fetchGitHubThreads(
 	client: GraphQLClient,
 	host: GitHub,
 	author: Developer,
 ): Promise<FetchGitHubThreadsResult> {
-	const collected: Thread[] = [];
-	let after: string | null = null;
-	let hasNextPage = true;
-	let viewerCanUpdate = true;
-	while (hasNextPage) {
-		try {
-			const response = await client.rawRequest(REVIEW_THREADS_QUERY, {
-				owner: host.owner,
-				name: host.repository,
-				number: host.number,
-				after,
-			});
-			const rawData = response.data as z.input<
-				typeof RawThreadsPageSchema
-			>["data"];
-			if (rawData.repository.pullRequest.viewerCanUpdate === false) {
-				viewerCanUpdate = false;
-			}
-			const page = ThreadsPage.decode({ data: rawData });
-			for (const node of page.nodes.filter(isReviewableThreadNode)) {
-				collected.push(thread(node, author));
-			}
-			hasNextPage = page.pageInfo.hasNextPage;
-			after = page.pageInfo.endCursor;
-		} catch (error) {
-			if (error instanceof ClientError) {
-				return {
-					ok: false,
-					status: error.response.status,
-					headers: error.response.headers ?? new Headers(),
-					data: extractClientErrorData(error.response),
-				};
-			}
-			throw error;
-		}
-	}
-	return { ok: true, viewerCanUpdate, threads: collected };
+	return fetchThreadsPage(client, host, author, {
+		after: null,
+		viewerCanUpdate: true,
+		collected: [],
+	});
 }
+
+export type { FetchGitHubThreadsResult, GitHubThreadNode };
+export {
+	isReviewableThreadNode,
+	RESOLVE_REVIEW_THREAD_MUTATION,
+	REVIEW_THREADS_QUERY,
+	ThreadsPage,
+	thread,
+	UNRESOLVE_REVIEW_THREAD_MUTATION,
+};
 
 export type MutateGitHubThreadsResult =
 	| { readonly ok: true }

@@ -1,25 +1,21 @@
 import { z } from "zod";
 import {
-	type AzureDevOps,
-	AzureDevOpsSchema,
 	type Fragment,
-	type Git,
 	type GitHub,
 	GitHubSchema,
-	GitSchema,
 	type Host,
 	type SurfaceFile,
 	type Threads,
 } from "./contracts.g.ts";
 
-export type ReviewState = readonly [
+type ReviewState = readonly [
 	readonly SurfaceFile[],
 	readonly Fragment[],
 	Threads,
 ];
 const EMPTY_REVIEW: ReviewState = [[], [], { threads: [] }];
 
-export interface CodeUnderReview {
+interface CodeUnderReview {
 	host: () => Host;
 	surface: () => readonly SurfaceFile[];
 	fragments: () => readonly Fragment[];
@@ -34,7 +30,7 @@ export class GithubPullRequest implements CodeUnderReview {
 		this.#host = host;
 		this.#state = state;
 	}
-	static readonly Schema = z.codec(
+	static readonly SCHEMA = z.codec(
 		GitHubSchema,
 		z.custom<GithubPullRequest>(
 			(val): val is GithubPullRequest => val instanceof GithubPullRequest,
@@ -45,7 +41,7 @@ export class GithubPullRequest implements CodeUnderReview {
 		},
 	);
 	static from(raw: GitHub): z.ZodSafeParseResult<GithubPullRequest> {
-		return GithubPullRequest.Schema.safeDecode(raw);
+		return GithubPullRequest.SCHEMA.safeDecode(raw);
 	}
 	host(): GitHub {
 		return this.#host;
@@ -64,74 +60,5 @@ export class GithubPullRequest implements CodeUnderReview {
 	}
 }
 
-export class AzureMergeRequest implements CodeUnderReview {
-	readonly #host: AzureDevOps;
-	readonly #state: ReviewState;
-	private constructor(host: AzureDevOps, state: ReviewState) {
-		this.#host = host;
-		this.#state = state;
-	}
-	static readonly Schema = z.codec(
-		AzureDevOpsSchema,
-		z.custom<AzureMergeRequest>(
-			(val): val is AzureMergeRequest => val instanceof AzureMergeRequest,
-		),
-		{
-			decode: (host) => new AzureMergeRequest(host, EMPTY_REVIEW),
-			encode: (review) => review.host(),
-		},
-	);
-	static from(raw: AzureDevOps): z.ZodSafeParseResult<AzureMergeRequest> {
-		return AzureMergeRequest.Schema.safeDecode(raw);
-	}
-	host(): AzureDevOps {
-		return this.#host;
-	}
-	surface(): readonly SurfaceFile[] {
-		return this.#state[0];
-	}
-	fragments(): readonly Fragment[] {
-		return this.#state[1];
-	}
-	threads(): Threads {
-		return this.#state[2];
-	}
-	withReview(...state: ReviewState): AzureMergeRequest {
-		return new AzureMergeRequest(this.#host, state);
-	}
-}
-
-export class GitDiff implements CodeUnderReview {
-	readonly #host: Git;
-	readonly #state: ReviewState;
-	private constructor(host: Git, state: ReviewState) {
-		this.#host = host;
-		this.#state = state;
-	}
-	static readonly Schema = z.codec(
-		GitSchema,
-		z.custom<GitDiff>((val): val is GitDiff => val instanceof GitDiff),
-		{
-			decode: (host) => new GitDiff(host, EMPTY_REVIEW),
-			encode: (review) => review.host(),
-		},
-	);
-	static from(raw: Git): z.ZodSafeParseResult<GitDiff> {
-		return GitDiff.Schema.safeDecode(raw);
-	}
-	host(): Git {
-		return this.#host;
-	}
-	surface(): readonly SurfaceFile[] {
-		return this.#state[0];
-	}
-	fragments(): readonly Fragment[] {
-		return this.#state[1];
-	}
-	threads(): Threads {
-		return this.#state[2];
-	}
-	withReview(...state: ReviewState): GitDiff {
-		return new GitDiff(this.#host, state);
-	}
-}
+export type { CodeUnderReview, ReviewState };
+export { EMPTY_REVIEW };

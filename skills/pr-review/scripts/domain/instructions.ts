@@ -41,7 +41,7 @@ type ProbeKind =
 	| ContextKind
 	| AgentInstructions["kind"];
 type Task = RulesTask | DeadCodeTask | ReuseTask | ContextTask;
-export type ProbePermissions =
+type ProbePermissions =
 	| RulesPermissions
 	| DeadCodePermissions
 	| ReusePermissions
@@ -71,8 +71,17 @@ const PERMISSIONS_BY_KIND: {
 	context: ContextPermissionsSchema.decode(undefined),
 };
 
+const CHECKOUT_FIELDS_BY_KIND: Record<
+	RulesKind | ReuseKind | DeadCodeKind,
+	(checkout: Checkout) => { readonly checkout?: Checkout }
+> = {
+	rules: () => ({}),
+	"dead-code": (checkout) => ({ checkout }),
+	reuse: (checkout) => ({ checkout }),
+};
+
 export class Instructions {
-	static readonly Prose: InstructionsProse =
+	static readonly PROSE: InstructionsProse =
 		InstructionsProseSchema.decode(undefined);
 	readonly #prose: InstructionsProse;
 	readonly #task: Task;
@@ -88,7 +97,7 @@ export class Instructions {
 	}
 	static forKind(kind: ProbeKind): Instructions {
 		return new Instructions(
-			Instructions.Prose,
+			Instructions.PROSE,
 			TASK_BY_KIND[kind],
 			PERMISSIONS_BY_KIND[kind],
 		);
@@ -115,15 +124,6 @@ export const toRulebookSummaries = (
 		totalPages: paginateText(text).length,
 	}));
 
-const CHECKOUT_FIELDS_BY_KIND: Record<
-	RulesKind | ReuseKind | DeadCodeKind,
-	(checkout: Checkout) => { readonly checkout?: Checkout }
-> = {
-	rules: () => ({}),
-	"dead-code": (checkout) => ({ checkout }),
-	reuse: (checkout) => ({ checkout }),
-};
-
 export function instructions<RulebookSlice>(
 	context: {
 		readonly change: Change;
@@ -143,7 +143,7 @@ export function instructions<RulebookSlice>(
 		...probes.map((probe) => ({
 			name: probe.name,
 			document: {
-				instructions: Instructions.Prose,
+				instructions: Instructions.PROSE,
 				task: TASK_BY_KIND[probe.kind],
 				permissions: PERMISSIONS_BY_KIND[probe.kind],
 				kind: probe.kind,
@@ -156,7 +156,7 @@ export function instructions<RulebookSlice>(
 		{
 			name: "context",
 			document: {
-				instructions: Instructions.Prose,
+				instructions: Instructions.PROSE,
 				task: TASK_BY_KIND.context,
 				permissions: PERMISSIONS_BY_KIND.context,
 				kind: "context" as const,
@@ -172,3 +172,5 @@ export function instructions<RulebookSlice>(
 		document: probe.document,
 	}));
 }
+
+export type { ProbePermissions };

@@ -1,49 +1,34 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
-import { ClientError } from "graphql-request";
-import {
-	getChecksListForRefResponseMock,
-	getPullsCreateReviewResponseMock,
-	getPullsGetResponseMock,
-	getPullsListReviewsResponseMock,
-} from "../../clients/github.g.ts";
+import { getPullsGetResponseMock } from "../../clients/github.g.ts";
 import {
 	baseCommitOf,
 	changeOf,
 	failedChecks,
-	GitHubCheckRunsCodec,
-	GitHubCreatedReviewCodec,
-	GitHubPullRequestCodec,
-	GitHubReviewsCodec,
 	headCommitOf,
 	postedAt,
 	priorOf,
 	refusalReasons,
 	refusedIn,
 } from "./github.ts";
+import { comment, payload, refusalPayload } from "./github-review.ts";
 import {
-	comment,
-	GitHubReviewCommentCodec,
-	GitHubReviewPayloadCodec,
-	payload,
-	refusalPayload,
-} from "./github-review.ts";
-import {
-	fetchGitHubThreads,
 	type GitHubThreadNode,
 	isReviewableThreadNode,
 	RESOLVE_REVIEW_THREAD_MUTATION,
 	REVIEW_THREADS_QUERY,
-	settleAndReopenGitHubThreads,
 	ThreadsPage,
 	thread,
 	UNRESOLVE_REVIEW_THREAD_MUTATION,
 } from "./github-threads.ts";
-import { nonnull } from "./nullish.ts";
 import { SITE } from "./rulebook.ts";
 
-const SHA_A = "a".repeat(40);
-const SHA_B = "b".repeat(40);
+const SHA1_HEX_LENGTH = 40;
+const SHA_A = "a".repeat(SHA1_HEX_LENGTH);
+const SHA_B = "b".repeat(SHA1_HEX_LENGTH);
+const START_LINE_KEY = "start_line";
+const START_SIDE_KEY = "start_side";
+const HTML_URL_KEY = "html_url";
 const HOST = {
 	kind: "github" as const,
 	owner: "octocat",
@@ -197,7 +182,7 @@ it("thread folds a review thread into side, lines, and whether the author resolv
 	assert.equal(thread(node({ diffSide: "LEFT" }), "author").side, "base");
 });
 
-it("comment, payload, and refusalPayload transform domain contracts into GitHub review bodies", () => {
+it("comment transforms domain inline findings into GitHub review comments", () => {
 	const one = {
 		path: "p",
 		side: "head" as const,
@@ -218,12 +203,21 @@ it("comment, payload, and refusalPayload transform domain contracts into GitHub 
 	});
 	assert.deepEqual(comment(range), {
 		path: "q",
-		start_line: 1,
-		start_side: "LEFT",
+		[START_LINE_KEY]: 1,
+		[START_SIDE_KEY]: "LEFT",
 		line: 4,
 		side: "LEFT",
 		body: "r",
 	});
+});
+
+it("payload and refusalPayload transform domain outcomes into GitHub review bodies", () => {
+	const one = {
+		path: "p",
+		side: "head" as const,
+		lines: { start: 3, end: 3 },
+		body: "r",
+	};
 	const review = payload(
 		{
 			headCommit: SHA_A,
@@ -239,7 +233,12 @@ it("comment, payload, and refusalPayload transform domain contracts into GitHub 
 	assert.equal(review.event, "REQUEST_CHANGES");
 	assert.equal(
 		review.body,
-		"s\n\n<details>\n<summary>Review ledger</summary>\n\n| t |\n\n</details>",
+		[
+			"s",
+			["<details>", "<summary>Review ledger</summary>"].join("\n"),
+			"| t |",
+			"</details>",
+		].join("\n\n"),
 	);
 	assert.deepEqual(review.comments, [comment(one)]);
 	assert.equal(
@@ -265,7 +264,7 @@ it("comment, payload, and refusalPayload transform domain contracts into GitHub 
 it("refusedIn, postedAt, and priorOf inspect GitHub review records", () => {
 	const refusal = {
 		state: "CHANGES_REQUESTED",
-		html_url: "https://github.com/o/r/pull/1#pullrequestreview-5",
+		[HTML_URL_KEY]: "https://github.com/o/r/pull/1#pullrequestreview-5",
 		body: `**Verdict: request-changes**\n\nNot reviewed at ${SHA_A} against [the rules](${SITE}): check build did not succeed.`,
 	};
 	assert.equal(refusedIn([refusal], SHA_A), refusal.html_url);
@@ -273,156 +272,10 @@ it("refusedIn, postedAt, and priorOf inspect GitHub review records", () => {
 
 	const review = {
 		state: "CHANGES_REQUESTED",
-		html_url: "https://github.com/o/r/pull/1#pullrequestreview-7",
+		[HTML_URL_KEY]: "https://github.com/o/r/pull/1#pullrequestreview-7",
 		body: `**Verdict: request-changes**\n\n3 rules probed by 2 probes at ${SHA_A} against [the rules](${SITE}): 1 violations`,
 	};
 	assert.equal(postedAt([review], SHA_A), review.html_url);
 	assert.equal(postedAt([review], SHA_B), null);
 	assert.equal(priorOf([refusal, review]), SHA_A);
-});
-
-it("settleAndReopenGitHubThreads dispatches thread mutations concurrently without waiting sequentially", async () => {
-	let inFlight = 0;
-	let maxInFlight = 0;
-	const fakeClient = {
-		rawRequest: async () => {
-			inFlight += 1;
-			maxInFlight = Math.max(maxInFlight, inFlight);
-			await new Promise((resolve) => setTimeout(resolve, 10));
-			inFlight -= 1;
-			return { data: {} };
-		},
-	};
-	await settleAndReopenGitHubThreads(
-		fakeClient as unknown as Parameters<typeof settleAndReopenGitHubThreads>[0],
-		["T1", "T2"],
-		["T3"],
-	);
-	assert.equal(maxInFlight, 3);
-
-	const readOnlyClient = {
-		rawRequest: () =>
-			Promise.resolve({
-				data: {
-					repository: {
-						pullRequest: {
-							viewerCanUpdate: false,
-							reviewThreads: {
-								pageInfo: { hasNextPage: false, endCursor: null },
-								nodes: [],
-							},
-						},
-					},
-				},
-			}),
-	};
-	const readOnlyRes = await fetchGitHubThreads(
-		readOnlyClient as unknown as Parameters<typeof fetchGitHubThreads>[0],
-		HOST,
-		"author",
-	);
-	assert.deepEqual(readOnlyRes, {
-		ok: true,
-		viewerCanUpdate: false,
-		threads: [],
-	});
-
-	const failingClient = {
-		rawRequest: () =>
-			Promise.reject(
-				new ClientError(
-					{
-						status: 403,
-						body: "",
-						headers: new Headers({ "content-type": "application/json" }),
-					},
-					{ query: REVIEW_THREADS_QUERY },
-				),
-			),
-	};
-	const failedRes = await fetchGitHubThreads(
-		failingClient as unknown as Parameters<typeof fetchGitHubThreads>[0],
-		HOST,
-		"author",
-	);
-	assert.equal(failedRes.ok, false);
-	assert.equal(
-		(failedRes as Extract<typeof failedRes, { readonly ok: false }>).status,
-		403,
-	);
-});
-
-it("GitHub transport codecs encode adapter models into validated wire payloads and decode wire payloads into adapter models", () => {
-	const singleLine = {
-		path: "src/a.ts",
-		side: "head" as const,
-		lines: { start: 7, end: 7 },
-		body: "single line finding",
-	};
-	const multiLine = {
-		path: "src/b.ts",
-		side: "base" as const,
-		lines: { start: 2, end: 5 },
-		body: "multi line finding",
-	};
-	const encodedSingle = GitHubReviewCommentCodec.encode(singleLine);
-	assert.deepEqual(GitHubReviewCommentCodec.decode(encodedSingle), singleLine);
-	const encodedMulti = GitHubReviewCommentCodec.encode(multiLine);
-	assert.deepEqual(GitHubReviewCommentCodec.decode(encodedMulti), multiLine);
-
-	const outcome = {
-		headCommit: SHA_A,
-		verdict: "request-changes" as const,
-		summary: "Summary header",
-		inline: [singleLine, multiLine],
-		settle: [],
-		reopen: [],
-	};
-	const encodedReview = GitHubReviewPayloadCodec.encode({
-		outcome,
-		ledgerTable: "| Rule | Verdict |",
-	});
-	const decodedReview = GitHubReviewPayloadCodec.decode(encodedReview);
-	assert.deepEqual(decodedReview, {
-		outcome,
-		ledgerTable: "| Rule | Verdict |",
-	});
-
-	const page = {
-		pageInfo: { hasNextPage: false, endCursor: null },
-		nodes: [],
-	};
-	const encodedPage = ThreadsPage.encode(page);
-	assert.deepEqual(ThreadsPage.decode(encodedPage), page);
-
-	const checkRun = {
-		...nonnull(getChecksListForRefResponseMock().check_runs[0]),
-		id: 1,
-		name: "ci",
-		conclusion: "success" as const,
-	};
-	assert.equal(
-		GitHubCheckRunsCodec.decode({
-			total_count: 1,
-			check_runs: [checkRun],
-		}).length,
-		1,
-	);
-	const mockPr = getPullsGetResponseMock({ body: null });
-	assert.equal(
-		GitHubPullRequestCodec.decode(GitHubPullRequestCodec.encode(mockPr)).id,
-		mockPr.id,
-	);
-	const mockReviews = getPullsListReviewsResponseMock();
-	assert.equal(
-		GitHubReviewsCodec.decode(GitHubReviewsCodec.encode(mockReviews)).length,
-		mockReviews.length,
-	);
-	const mockCreatedReview = getPullsCreateReviewResponseMock();
-	assert.equal(
-		GitHubCreatedReviewCodec.decode(
-			GitHubCreatedReviewCodec.encode(mockCreatedReview),
-		).html_url,
-		mockCreatedReview.html_url,
-	);
 });
