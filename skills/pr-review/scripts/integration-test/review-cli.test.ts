@@ -44,6 +44,8 @@ import {
 	stopMockBridge,
 } from "./mock-server.ts";
 import {
+	cleanupReviewToolForTest,
+	installReviewToolForTest,
 	invokeMainCli,
 	reportForProbe,
 	reportForReReviewProbe,
@@ -55,6 +57,7 @@ const repo = createScenarioRepo();
 const TOKEN_STRING = scenarioToken;
 
 before(async () => {
+	installReviewToolForTest();
 	await startMockBridge();
 });
 
@@ -64,6 +67,7 @@ beforeEach(() => {
 
 after(async () => {
 	await stopMockBridge();
+	cleanupReviewToolForTest();
 	rmSync(repo.rootDir, { recursive: true, force: true });
 });
 

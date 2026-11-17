@@ -1,4 +1,7 @@
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
+import { cpSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { z } from "zod";
 import {
@@ -41,34 +44,66 @@ const expectEqual = <T>(actual: T, expected: T, message: string): void => {
 	nonnull(outcomes[String(actual === expected)])();
 };
 
-const CONTROLLER_CLI_PATH = fileURLToPath(
-	new URL("../domain/controller-cli.ts", import.meta.url),
-);
-const SUB_AGENT_CLI_PATH = fileURLToPath(
-	new URL("../domain/sub-agent-cli.ts", import.meta.url),
-);
+const SKILL_DIR = fileURLToPath(new URL("../..", import.meta.url));
 const PRELOAD_PATH = fileURLToPath(
 	new URL("./msw-child-preload.ts", import.meta.url),
 );
 
+let installedBinDir = "";
+let installRootDir = "";
+
+export function installReviewToolForTest(): void {
+	installRootDir = mkdtempSync(join(tmpdir(), "pr-review-bin-"));
+	const stageDir = join(installRootDir, "pkg");
+	const prefixDir = join(installRootDir, "prefix");
+	cpSync(SKILL_DIR, stageDir, {
+		recursive: true,
+		dereference: true,
+		filter: (src) => !src.includes("node_modules"),
+	});
+	const tarball = execFileSync(
+		"npm",
+		["pack", stageDir, "--pack-destination", installRootDir],
+		{ encoding: "utf8" },
+	)
+		.trim()
+		.split("\n")
+		.pop();
+	execFileSync(
+		"npm",
+		[
+			"install",
+			"-g",
+			"--prefix",
+			prefixDir,
+			join(installRootDir, nonnull(tarball)),
+			"--no-audit",
+			"--no-fund",
+		],
+		{ encoding: "utf8" },
+	);
+	installedBinDir = join(prefixDir, "bin");
+}
+
+export function cleanupReviewToolForTest(): void {
+	rmSync(installRootDir, { recursive: true, force: true });
+}
+
 const runCliProcess = async <T>(
-	entrypoint: string,
+	commandName: string,
 	args: readonly string[],
 	schema: z.ZodType<T>,
 ): Promise<{ readonly exitCode: number; readonly payload: T }> => {
-	const child = spawn(
-		process.execPath,
-		["--import", PRELOAD_PATH, entrypoint, ...args],
-		{
-			env: {
-				...process.env,
-				PR_REVIEW_MOCK_BRIDGE_URL: mockBridgeUrl(),
-				GH_TOKEN: scenarioToken,
-				AZURE_DEVOPS_EXT_PAT: scenarioToken,
-			},
-			stdio: ["ignore", "pipe", "pipe"],
+	const child = spawn(join(installedBinDir, commandName), [...args], {
+		env: {
+			...process.env,
+			NODE_OPTIONS: `--import ${PRELOAD_PATH}`,
+			PR_REVIEW_MOCK_BRIDGE_URL: mockBridgeUrl(),
+			GH_TOKEN: scenarioToken,
+			AZURE_DEVOPS_EXT_PAT: scenarioToken,
 		},
-	);
+		stdio: ["ignore", "pipe", "pipe"],
+	});
 	const stdoutChunks: Buffer[] = [];
 	const stderrChunks: Buffer[] = [];
 	child.stdout.on("data", (chunk: Buffer) => stdoutChunks.push(chunk));
@@ -102,13 +137,13 @@ export const invokeMainCli = <T>(
 	args: readonly string[],
 	schema: z.ZodType<T>,
 ): Promise<{ readonly exitCode: number; readonly payload: T }> =>
-	runCliProcess(CONTROLLER_CLI_PATH, args, schema);
+	runCliProcess("review-tool", args, schema);
 
 const invokeSubCli = <T>(
 	args: readonly string[],
 	schema: z.ZodType<T>,
 ): Promise<{ readonly exitCode: number; readonly payload: T }> =>
-	runCliProcess(SUB_AGENT_CLI_PATH, args, schema);
+	runCliProcess("review-tool-probe", args, schema);
 
 interface ProbeDriver {
 	ackPayload: (probeName: string) => Record<string, unknown>;
