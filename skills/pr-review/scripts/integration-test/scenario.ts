@@ -49,10 +49,9 @@ const PRELOAD_PATH = fileURLToPath(
 	new URL("./msw-child-preload.ts", import.meta.url),
 );
 
-let installedBinDir = "";
 let installRootDir = "";
 
-export function installReviewToolForTest(): void {
+export function installReviewToolForTest(): string {
 	installRootDir = mkdtempSync(join(tmpdir(), "pr-review-bin-"));
 	const stageDir = join(installRootDir, "pkg");
 	const prefixDir = join(installRootDir, "prefix");
@@ -82,7 +81,7 @@ export function installReviewToolForTest(): void {
 		],
 		{ encoding: "utf8" },
 	);
-	installedBinDir = join(prefixDir, "bin");
+	return join(prefixDir, "bin");
 }
 
 export function cleanupReviewToolForTest(): void {
@@ -94,16 +93,18 @@ const runCliProcess = async <T>(
 	args: readonly string[],
 	schema: z.ZodType<T>,
 ): Promise<{ readonly exitCode: number; readonly payload: T }> => {
-	const child = spawn(join(installedBinDir, commandName), [...args], {
-		env: {
-			...process.env,
-			NODE_OPTIONS: `--import ${PRELOAD_PATH}`,
-			PR_REVIEW_MOCK_BRIDGE_URL: mockBridgeUrl(),
-			GH_TOKEN: scenarioToken,
-			AZURE_DEVOPS_EXT_PAT: scenarioToken,
+	const { PR_REVIEW_TEST_BIN_DIR: testBinDir } = process.env;
+	const child = spawn(join(nonnull(testBinDir), commandName), [...args], {
+			env: {
+				...process.env,
+				NODE_OPTIONS: `--import ${PRELOAD_PATH}`,
+				PR_REVIEW_MOCK_BRIDGE_URL: mockBridgeUrl(),
+				GH_TOKEN: scenarioToken,
+				AZURE_DEVOPS_EXT_PAT: scenarioToken,
+			},
+			stdio: ["ignore", "pipe", "pipe"],
 		},
-		stdio: ["ignore", "pipe", "pipe"],
-	});
+	);
 	const stdoutChunks: Buffer[] = [];
 	const stderrChunks: Buffer[] = [];
 	child.stdout.on("data", (chunk: Buffer) => stdoutChunks.push(chunk));

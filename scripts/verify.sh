@@ -14,6 +14,30 @@ git -C "$PROJECT_ROOT" ls-files -z '*.sh' | xargs -0 -I{} shellcheck "$PROJECT_R
 "${jsonschema[@]}" validate "$PROJECT_ROOT/schemas/governance/definitions.schema.json" "$PROJECT_ROOT/skills/pr-review/rules/Definitions.yaml" --resolve "$PROJECT_ROOT/schemas"
 
 npm --prefix "$PROJECT_ROOT/skills/pr-review" ci --no-audit --no-fund
-npm --prefix "$PROJECT_ROOT/skills/pr-review" run verify
-npx --yes @agentplugins/cli@0.6.1 audit "$PROJECT_ROOT"
-"$PROJECT_ROOT/scripts/verify-opencode-install.sh"
+npm --prefix "$PROJECT_ROOT/skills/pr-review" run codegen
+
+npm --prefix "$PROJECT_ROOT/skills/pr-review" run knip &
+knip_pid=$!
+npm --prefix "$PROJECT_ROOT/skills/pr-review" run lint &
+lint_pid=$!
+npm --prefix "$PROJECT_ROOT/skills/pr-review" run typecheck &
+typecheck_pid=$!
+npm --prefix "$PROJECT_ROOT/skills/pr-review" run test:unit &
+unit_pid=$!
+npx --yes @agentplugins/cli@0.6.1 audit "$PROJECT_ROOT" &
+audit_pid=$!
+
+wait "$knip_pid"
+wait "$lint_pid"
+wait "$typecheck_pid"
+wait "$unit_pid"
+wait "$audit_pid"
+
+npm --prefix "$PROJECT_ROOT/skills/pr-review" run test:integration &
+pr_review_pid=$!
+trap 'kill "$pr_review_pid" 2>/dev/null || true' EXIT
+"$PROJECT_ROOT/scripts/verify-opencode-install.sh" &
+opencode_pid=$!
+
+wait "$opencode_pid"
+wait "$pr_review_pid"

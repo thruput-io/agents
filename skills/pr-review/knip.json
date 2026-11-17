@@ -2,6 +2,7 @@
 	"$schema": "https://unpkg.com/knip@5/schema.json",
 	"entry": [
 		"scripts/integration-test/msw-child-preload.ts",
+		"scripts/integration-test/global-setup.ts",
 		"scripts/**/*.test.ts"
 	],
 	"ignoreDependencies": ["tsx"],

@@ -27,7 +27,9 @@
 		"lint:fix": "biome check --write --unsafe",
 		"fix": "npm run codegen && npm run knip:fix && npm run lint:fix && npm run verify",
 		"typecheck": "tsc --noEmit",
-		"test": "node --test 'scripts/**/*.test.ts'",
+		"test:unit": "node --test 'scripts/domain/*.test.ts'",
+		"test:integration": "node --test --test-global-setup=scripts/integration-test/global-setup.ts 'scripts/integration-test/*.test.ts'",
+		"test": "node --test --test-global-setup=scripts/integration-test/global-setup.ts 'scripts/**/*.test.ts'",
 		"verify": "npm run codegen && npm run knip && npm run lint && npm run typecheck && npm test"
 	},
 	"dependencies": {
