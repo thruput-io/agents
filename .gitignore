@@ -3,5 +3,6 @@ _site/
 build/
 .DS_Store
 .idea/
+.claude/
 node_modules/
 *.g.*
