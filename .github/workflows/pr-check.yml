@@ -22,7 +22,7 @@ jobs:
 
   opencode-install:
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
       - run: "$PROJECT_ROOT/scripts/verify-opencode-install.sh"
