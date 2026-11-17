@@ -11,11 +11,6 @@ git config --global url."file:///tmp/thruput-agents".insteadOf "https://github.c
 
 git -C /home/node/workspace init -q -b main
 
-agentplugins add thruput-io/agents < /dev/null
-rm -rf /tmp/thruput-agents/skills/pr-review/rules /tmp/thruput-agents/skills/pr-review/schemas
-cp -RL /tmp/thruput-agents/rules /tmp/thruput-agents/skills/pr-review/rules
-cp -RL /tmp/thruput-agents/schemas /tmp/thruput-agents/skills/pr-review/schemas
-tarball=$(npm pack /tmp/thruput-agents/skills/pr-review --pack-destination /tmp)
-npm install -g "/tmp/$tarball" --no-audit --no-fund
-
+agentplugins add -y thruput-io/agents
+agentplugins setup thruput -y
 node /home/node/source/scripts/opencode-install-test/assert-install.mjs

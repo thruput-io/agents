@@ -3,12 +3,7 @@
   "name": "thruput",
   "version": "0.0.0",
   "description": "Agentic workflows, engineering rules, and autonomous developer skills for Thruput",
-  "hooks": {
-    "setup": {
-      "handler": {
-        "type": "command",
-        "command": "./install.sh"
-      }
-    }
+  "adapterOverrides": {
+    "opencode": "opencode/thruput.ts"
   }
 }
