@@ -10,9 +10,13 @@ import { createAzureHandlers } from "./azure-mocks.ts";
 import { createGitHubHandlers } from "./github-mocks.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
 
-faker.seed(42);
+const FAKER_SEED = 42;
+const HTTP_OK = 200;
+const HTTP_INTERNAL_SERVER_ERROR = 500;
 
-export const mockServer = setupServer();
+faker.seed(FAKER_SEED);
+
+const mockServer = setupServer();
 
 const createRulesetTextHandler = () =>
 	http.get(
@@ -20,7 +24,7 @@ const createRulesetTextHandler = () =>
 		() => HttpResponse.text("# Book Rules\n\n## R1\n\n## R2\n\n## R3\n"),
 	);
 
-export const resetHostMocks = (repo: ScenarioRepo): void => {
+const resetHostMocks = (repo: ScenarioRepo): void => {
 	mockServer.resetHandlers(
 		createRulesetTextHandler(),
 		...createGitHubHandlers(repo),
@@ -28,7 +32,7 @@ export const resetHostMocks = (repo: ScenarioRepo): void => {
 	);
 };
 
-export const scenarioToken = "test-token";
+const scenarioToken = "test-token";
 
 const BridgeRequestSchema = z.object({
 	url: z.string().url(),
@@ -48,23 +52,21 @@ const withoutBody = (method: string, headers: Headers): RequestInit => ({
 	headers,
 });
 
-const INIT_BY_METHOD: Readonly<
-	Record<
-		string,
-		(
-			method: string,
-			headers: Headers,
-			body: Uint8Array<ArrayBuffer>,
-		) => RequestInit
-	>
-> = {
-	GET: withoutBody,
-	HEAD: withoutBody,
-	POST: withBody,
-	PUT: withBody,
-	PATCH: withBody,
-	DELETE: withBody,
-};
+const INIT_BY_METHOD = new Map<
+	string,
+	(
+		method: string,
+		headers: Headers,
+		body: Uint8Array<ArrayBuffer>,
+	) => RequestInit
+>([
+	["GET", withoutBody],
+	["HEAD", withoutBody],
+	["POST", withBody],
+	["PUT", withBody],
+	["PATCH", withBody],
+	["DELETE", withBody],
+]);
 
 const readBody = async (req: IncomingMessage): Promise<string> => {
 	const chunks: Buffer[] = [];
@@ -92,13 +94,13 @@ const handleBridgeRequest = async (
 	);
 	const upstream = await fetch(
 		parsed.url,
-		nonnull(INIT_BY_METHOD[parsed.method])(parsed.method, headers, body),
+		nonnull(INIT_BY_METHOD.get(parsed.method))(parsed.method, headers, body),
 	);
 	const responseBytes = Buffer.from(await upstream.arrayBuffer());
 	const responseHeaders = [...upstream.headers.entries()].filter(
 		([name]) => name.toLowerCase() !== "content-encoding",
 	);
-	res.statusCode = 200;
+	res.statusCode = HTTP_OK;
 	res.setHeader("content-type", "application/json");
 	res.end(
 		JSON.stringify({
@@ -113,11 +115,11 @@ let activeBridge: { readonly server: Server; readonly url: string } | undefined;
 
 const BridgeAddressSchema = z.object({ port: z.number().int().positive() });
 
-export const startMockBridge = async (): Promise<string> => {
+const startMockBridge = async (): Promise<string> => {
 	mockServer.listen();
 	const server = createServer((req, res) => {
 		handleBridgeRequest(req, res).catch((err: unknown) => {
-			res.statusCode = 500;
+			res.statusCode = HTTP_INTERNAL_SERVER_ERROR;
 			res.end(String(err));
 		});
 	});
@@ -130,11 +132,20 @@ export const startMockBridge = async (): Promise<string> => {
 	return url;
 };
 
-export const mockBridgeUrl = (): string => nonnull(activeBridge).url;
+const mockBridgeUrl = (): string => nonnull(activeBridge).url;
 
-export const stopMockBridge = async (): Promise<void> => {
+const stopMockBridge = async (): Promise<void> => {
 	const bridge = nonnull(activeBridge);
 	activeBridge = undefined;
 	await promisify(bridge.server.close.bind(bridge.server))();
 	mockServer.close();
+};
+
+export {
+	mockBridgeUrl,
+	mockServer,
+	resetHostMocks,
+	scenarioToken,
+	startMockBridge,
+	stopMockBridge,
 };

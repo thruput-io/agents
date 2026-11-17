@@ -1,12 +1,4 @@
-import { z } from "zod";
-import type { AccessToken } from "./access-token.ts";
-import {
-	AzureMergeRequest,
-	type CodeUnderReview,
-	GitDiff,
-	GithubPullRequest,
-	type ReviewState,
-} from "./code-under-review.ts";
+import type { CodeUnderReview, ReviewState } from "./code-under-review.ts";
 import type {
 	Fragment,
 	Host,
@@ -14,10 +6,9 @@ import type {
 	SurfaceFile,
 	Threads,
 } from "./contracts.g.ts";
-import { TargetSchema } from "./host.ts";
 import type { SnapshotDirectory } from "./snapshot-directory.ts";
 
-export class CodeUnderReviewSnapshot implements CodeUnderReview {
+class CodeUnderReviewSnapshot implements CodeUnderReview {
 	readonly #review: CodeUnderReview;
 	readonly #snapShot: SnapshotDirectory;
 	private constructor(review: CodeUnderReview, snapShot: SnapshotDirectory) {
@@ -53,35 +44,17 @@ export class CodeUnderReviewSnapshot implements CodeUnderReview {
 	}
 }
 
-const HostReviewSchema = z.union([
-	GithubPullRequest.Schema,
-	AzureMergeRequest.Schema,
-	GitDiff.Schema,
-]);
-const FactorySchema = TargetSchema.pipe(HostReviewSchema);
-
-export class CodeUnderReviewFactory {
-	private constructor() {}
-	static from(url: string): z.ZodSafeParseResult<CodeUnderReview> {
-		return FactorySchema.safeDecode(url);
-	}
-	static fromWithToken(
-		url: string,
-		_token: AccessToken,
-	): z.ZodSafeParseResult<CodeUnderReview> {
-		return FactorySchema.safeDecode(url);
-	}
-}
-
-export function rendered(outcome: Outcome, ledgerTable: string): string {
+function rendered(outcome: Outcome, ledgerTable: string): string {
 	const findings = outcome.inline.map(
 		(finding) =>
 			`- \`${finding.path}:${finding.lines.start}-${finding.lines.end}\` (${finding.side}): ${finding.body}`,
 	);
-	const sections = [
-		outcome.summary,
-		...(findings.length === 0 ? [] : [findings.join("\n")]),
-		ledgerTable,
-	];
+	const sections = [outcome.summary];
+	if (findings.length > 0) {
+		sections.push(findings.join("\n"));
+	}
+	sections.push(ledgerTable);
 	return `${sections.join("\n\n")}\n`;
 }
+
+export { CodeUnderReviewSnapshot, rendered };

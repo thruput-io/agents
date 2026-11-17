@@ -12,6 +12,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { env } from "node:process";
 import { z } from "zod";
 import {
 	type Checkout,
@@ -23,7 +24,8 @@ import { nonnull } from "./nullish.ts";
 
 const COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/u;
 const HEADS_PREFIX = /^refs\/heads\//u;
-const MAX_GIT_STDOUT_BYTES = 4 * 1024 * 1024;
+const MAX_GIT_STDOUT_BYTES = 4_194_304;
+const GIT_TERMINAL_PROMPT_ENV = "GIT_TERMINAL_PROMPT";
 
 export interface CommitZipArchive {
 	readonly sha: string;
@@ -35,7 +37,7 @@ export class SnapshotDirectory {
 	private constructor(path: Checkout) {
 		this.#path = path;
 	}
-	static readonly Schema = z.codec(
+	static readonly SCHEMA = z.codec(
 		CheckoutSchema,
 		z.custom<SnapshotDirectory>(
 			(val): val is SnapshotDirectory => val instanceof SnapshotDirectory,
@@ -46,7 +48,7 @@ export class SnapshotDirectory {
 		},
 	);
 	static from(raw: Checkout): z.ZodSafeParseResult<SnapshotDirectory> {
-		return SnapshotDirectory.Schema.safeDecode(raw);
+		return SnapshotDirectory.SCHEMA.safeDecode(raw);
 	}
 	#resetDirectory(): void {
 		rmSync(this.#path, { recursive: true, force: true });
@@ -56,7 +58,7 @@ export class SnapshotDirectory {
 		return execFileSync("git", ["-C", this.#path, ...args], {
 			encoding: "utf8",
 			maxBuffer: MAX_GIT_STDOUT_BYTES,
-			env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+			env: { ...env, [GIT_TERMINAL_PROMPT_ENV]: "0" },
 		});
 	}
 	git(args: readonly string[]): string {
@@ -95,10 +97,10 @@ export class SnapshotDirectory {
 				writeFileSync(archivePath, bytes);
 				execFileSync("unzip", ["-q", archivePath, "-d", extractDir]);
 				const topEntries = readdirSync(extractDir);
-				const sourceRoot =
-					stripTopLevelDir && topEntries.length === 1
-						? join(extractDir, nonnull(topEntries[0]))
-						: extractDir;
+				let sourceRoot = extractDir;
+				if (stripTopLevelDir && topEntries.length === 1) {
+					sourceRoot = join(extractDir, nonnull(topEntries[0]));
+				}
 				for (const item of readdirSync(sourceRoot)) {
 					cpSync(join(sourceRoot, item), join(this.#path, item), {
 						recursive: true,
@@ -113,9 +115,10 @@ export class SnapshotDirectory {
 		}
 	}
 	#refOf(sha: string): string {
-		return existsSync(join(this.#path, ".git", "refs", "snapshots", sha))
-			? `refs/snapshots/${sha}`
-			: sha;
+		if (existsSync(join(this.#path, ".git", "refs", "snapshots", sha))) {
+			return `refs/snapshots/${sha}`;
+		}
+		return sha;
 	}
 	numstat(fromCommit: string, toCommit: string): string {
 		return this.git([
@@ -134,9 +137,10 @@ export class SnapshotDirectory {
 		]);
 	}
 	resolveRef(ref: string): string {
-		const target = COMMIT_SHA_PATTERN.test(ref)
-			? ref
-			: `refs/remotes/origin/${ref.replace(HEADS_PREFIX, "")}`;
+		let target = `refs/remotes/origin/${ref.replace(HEADS_PREFIX, "")}`;
+		if (COMMIT_SHA_PATTERN.test(ref)) {
+			target = ref;
+		}
 		return this.git(["rev-parse", target]).trim();
 	}
 	readTextFile(relativePath: Path): string | null {
@@ -145,7 +149,10 @@ export class SnapshotDirectory {
 			return null;
 		}
 		const raw = readFileSync(fullPath);
-		return raw.includes(0) ? null : raw.toString("utf8");
+		if (raw.includes(0)) {
+			return null;
+		}
+		return raw.toString("utf8");
 	}
 	equals(other: SnapshotDirectory): boolean {
 		return this.#path === other.#path;

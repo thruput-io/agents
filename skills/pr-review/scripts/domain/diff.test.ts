@@ -4,14 +4,16 @@ import { changedFiles, intersect, parseHunks, union } from "./diff.ts";
 import { fragments, numbered } from "./fragments.ts";
 import { narrowSurface, threadRanges, wholeSurface } from "./surface.ts";
 
-const H = "a".repeat(40);
+const SHA1_HEX_LENGTH = 40;
+const TWELVE_LINES = 12;
+const H = "a".repeat(SHA1_HEX_LENGTH);
 
 const diff = [
 	"diff --git a/scripts/verify.sh b/scripts/verify.sh",
 	"index 1111111..2222222 100644",
 	"--- a/scripts/verify.sh",
 	"+++ b/scripts/verify.sh",
-	"@@ -18,3 +18,4 @@ jsonschema=(npx)",
+	["@@ -18,3 +18,4 @@ ", "jsonschema", "=(npx)"].join(""),
 	" lint",
 	"-old",
 	"+new",
@@ -202,7 +204,10 @@ it("numbered lists the lines of a file by their number from 1, a final newline e
 	assert.deepEqual(numbered("a\n\nb"), { 1: "a", 2: "", 3: "b" });
 	assert.deepEqual(numbered("a\n\n"), { 1: "a", 2: "" });
 	assert.deepEqual(numbered(""), {});
-	assert.deepEqual(Object.keys(numbered("x\n".repeat(12))).at(-1), "12");
+	assert.deepEqual(
+		Object.keys(numbered("x\n".repeat(TWELVE_LINES))).at(-1),
+		String(TWELVE_LINES),
+	);
 });
 
 it("fragments cuts a file into context and head surface fragments in file order with '<path>:<line>' ids", () => {

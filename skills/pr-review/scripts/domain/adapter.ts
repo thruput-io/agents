@@ -22,41 +22,45 @@ import type { ReviewBaseline } from "./review-baseline.ts";
 import type { CodeUnderReviewSnapshot } from "./review-snapshot.ts";
 import type { SnapshotDirectory } from "./snapshot-directory.ts";
 
-export interface HostHttpResponse {
+const HTTP_OK = 200;
+const HTTP_NON_AUTHORITATIVE = 203;
+const HTTP_MULTIPLE_CHOICES = 300;
+const HTTP_BAD_REQUEST = 400;
+const HTTP_UNAUTHORIZED = 401;
+const HTTP_FORBIDDEN = 403;
+
+interface HostHttpResponse {
 	readonly status: number;
 	readonly headers: Headers;
 	readonly data?: unknown;
 }
 
-export function isJsonResponse<Res extends HostHttpResponse>(
+function isJsonResponse<Res extends HostHttpResponse>(
 	res: Res,
 ): res is Extract<Res, { readonly status: 200 }> {
 	return (
-		res.status >= 200 &&
-		res.status < 300 &&
-		res.status !== 203 &&
+		res.status >= HTTP_OK &&
+		res.status < HTTP_MULTIPLE_CHOICES &&
+		res.status !== HTTP_NON_AUTHORITATIVE &&
 		(res.headers.get("content-type") ?? "").toLowerCase().includes("json")
 	);
 }
 
-export function isBinaryResponse(
+function isBinaryResponse(
 	res: HostHttpResponse,
 ): res is HostHttpResponse & { readonly status: 200; readonly data: Blob } {
 	const contentType = (res.headers.get("content-type") ?? "").toLowerCase();
 	return (
-		res.status >= 200 &&
-		res.status < 300 &&
-		res.status !== 203 &&
+		res.status >= HTTP_OK &&
+		res.status < HTTP_MULTIPLE_CHOICES &&
+		res.status !== HTTP_NON_AUTHORITATIVE &&
 		res.data instanceof Blob &&
 		!contentType.includes("json") &&
 		!contentType.includes("html")
 	);
 }
 
-export function hasOAuthScope(
-	headers: Headers,
-	accepted: readonly string[],
-): boolean {
+function hasOauthScope(headers: Headers, accepted: readonly string[]): boolean {
 	const raw = headers.get("x-oauth-scopes");
 	if (isNullOrEmpty(raw) && raw !== "") {
 		return true;
@@ -68,7 +72,7 @@ export function hasOAuthScope(
 	return accepted.some((scope) => granted.includes(scope));
 }
 
-export interface HostTransport {
+interface HostTransport {
 	requestInit: () => { readonly headers: Readonly<Record<string, string>> };
 	requestInitWithHeaders: (headers: Readonly<Record<string, string>>) => {
 		readonly headers: Readonly<Record<string, string>>;
@@ -77,7 +81,7 @@ export interface HostTransport {
 	authGuidance: (envVar: string) => string;
 }
 
-export function anonymousHttpTransport(): HostTransport {
+function anonymousHttpTransport(): HostTransport {
 	return {
 		requestInit: () => ({ headers: { accept: "application/json" } }),
 		requestInitWithHeaders: (headers) => ({
@@ -89,7 +93,7 @@ export function anonymousHttpTransport(): HostTransport {
 	};
 }
 
-export function tokenHttpTransport(token: AccessToken): HostTransport {
+function tokenHttpTransport(token: AccessToken): HostTransport {
 	return {
 		requestInit: () => token.requestInit(),
 		requestInitWithHeaders: (headers) => token.requestInitWithHeaders(headers),
@@ -98,7 +102,7 @@ export function tokenHttpTransport(token: AccessToken): HostTransport {
 	};
 }
 
-export function transportFromEnv(
+function transportFromEnv(
 	raw: string | undefined,
 	normalize: (token: AccessToken) => AccessToken,
 ): HostTransport {
@@ -171,9 +175,9 @@ const HOST_INFO: Readonly<
 };
 
 const isAuthFailure = (status: number, contentType: string): boolean =>
-	status === 203 ||
-	status === 401 ||
-	status === 403 ||
+	status === HTTP_NON_AUTHORITATIVE ||
+	status === HTTP_UNAUTHORIZED ||
+	status === HTTP_FORBIDDEN ||
 	!contentType.includes("json");
 
 function hostErrorMessage(
@@ -210,7 +214,7 @@ export function hostErrorReason(
 			transport.authGuidance(envVar),
 		);
 	}
-	if (res.status === 400) {
+	if (res.status === HTTP_BAD_REQUEST) {
 		return formatter.badRequest(hostLabel, contentType);
 	}
 	return formatter.other(hostLabel, res.status, contentType);
@@ -259,6 +263,20 @@ export type AdapterResolution =
 	| TooLarge
 	| Refused
 	| HostError;
+
+export type { HostHttpResponse, HostTransport };
+export {
+	anonymousHttpTransport,
+	HTTP_FORBIDDEN,
+	HTTP_MULTIPLE_CHOICES,
+	HTTP_NON_AUTHORITATIVE,
+	HTTP_OK,
+	hasOauthScope,
+	isBinaryResponse,
+	isJsonResponse,
+	tokenHttpTransport,
+	transportFromEnv,
+};
 
 export interface ReviewSnapshotInput {
 	readonly baseCommit: HeadCommit;

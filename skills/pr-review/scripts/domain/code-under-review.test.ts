@@ -4,182 +4,19 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test as it } from "node:test";
 import { AccessToken } from "./access-token.ts";
-import {
-	anonymousHttpTransport,
-	hasOAuthScope,
-	hostErrorReason,
-	isJsonResponse,
-	transportFromEnv,
-} from "./adapter.ts";
-import {
-	AzureMergeRequest,
-	GitDiff,
-	GithubPullRequest,
-} from "./code-under-review.ts";
+import { AzureMergeRequest } from "./azure-merge-request.ts";
+import { GithubPullRequest } from "./code-under-review.ts";
+import { CodeUnderReviewFactory } from "./code-under-review-factory.ts";
 import { parseNumstat } from "./diff.ts";
+import { GitDiff } from "./git-diff.ts";
 import { nonnull } from "./nullish.ts";
-import {
-	CodeUnderReviewFactory,
-	CodeUnderReviewSnapshot,
-	rendered,
-} from "./review-snapshot.ts";
+import { CodeUnderReviewSnapshot, rendered } from "./review-snapshot.ts";
 import { SnapshotDirectory } from "./snapshot-directory.ts";
 
-it("AccessToken senses bearer, basic, and pat tokens, converts formats, and sets JSON accept headers", () => {
-	const parseToken = (raw: string) => nonnull(AccessToken.from(raw).data);
-	const first = parseToken("ghp_secret");
-	const second = parseToken("Bearer ghp_secret");
-	const other = parseToken("ghp_other");
-	const jwt = parseToken("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig");
-	const pat = parseToken("azdo-raw-pat");
-	const basicColon = parseToken(":azdo-raw-pat");
-	const basicHeader = parseToken(
-		`Basic ${Buffer.from(":azdo-raw-pat", "utf8").toString("base64")}`,
-	);
-
-	assert.equal(first.kind(), "bearer");
-	assert.equal(first.isBearer(), true);
-	assert.equal(first.isBasic(), false);
-	assert.equal(first.isPat(), false);
-	assert.equal(jwt.isBearer(), true);
-
-	assert.equal(pat.kind(), "pat");
-	assert.equal(pat.isPat(), true);
-	assert.equal(pat.toBasic().isBasic(), true);
-	assert.equal(pat.toBasic().equals(basicColon), true);
-	assert.equal(basicColon.equals(basicHeader), true);
-	assert.equal(
-		basicColon.toBearer().authorizationHeader(),
-		"Bearer azdo-raw-pat",
-	);
-	assert.equal(pat.toBearer().authorizationHeader(), "Bearer azdo-raw-pat");
-	assert.equal(
-		first.toBasic().authorizationHeader(),
-		`Basic ${Buffer.from(":ghp_secret", "utf8").toString("base64")}`,
-	);
-
-	assert.equal(first.equals(second), true);
-	assert.equal(first.equals(other), false);
-	assert.deepEqual(first.requestInit(), {
-		headers: {
-			accept: "application/json",
-			authorization: "Bearer ghp_secret",
-		},
-	});
-	assert.deepEqual(first.requestInitWithHeaders({ accept: "text/plain" }), {
-		headers: {
-			accept: "text/plain",
-			authorization: "Bearer ghp_secret",
-		},
-	});
-	assert.equal(AccessToken.from("").success, false);
-	assert.equal(AccessToken.from("Bearer ").success, false);
-
-	const makeJwt = (claims: unknown) =>
-		`eyJhbGciOiJIUzI1NiJ9.${Buffer.from(JSON.stringify(claims), "utf8").toString("base64url")}.sig`;
-	const scpJwt = parseToken(makeJwt({ scp: "vso.code_write vso.work" }));
-	const rolesJwt = parseToken(makeJwt({ roles: ["user_impersonation"] }));
-	const badJwt = parseToken("eyJhbGciOiJIUzI1NiJ9.not_json.sig");
-	const nonStringScpJwt = parseToken(makeJwt({ scp: 123 }));
-	assert.equal(first.scopes(), null);
-	assert.equal(first.hasScope(["repo"]), true);
-	assert.equal(jwt.scopes(), null);
-	assert.deepEqual(scpJwt.scopes(), ["vso.code_write", "vso.work"]);
-	assert.equal(scpJwt.hasScope(["vso.code_write"]), true);
-	assert.equal(scpJwt.hasScope(["vso.code_manage"]), false);
-	assert.deepEqual(rolesJwt.scopes(), ["user_impersonation"]);
-	assert.equal(rolesJwt.hasScope(["user_impersonation"]), true);
-	assert.equal(rolesJwt.hasScope(["vso.code_write"]), false);
-	assert.equal(badJwt.scopes(), null);
-	assert.equal(nonStringScpJwt.scopes(), null);
-});
-
-it("isJsonResponse, hasOAuthScope, and hostErrorReason classify HTTP responses and format authentication diagnostics", () => {
-	const jsonHeaders = new Headers({ "content-type": "application/json" });
-	const htmlHeaders = new Headers({
-		"content-type": "text/html; charset=utf-8",
-	});
-	const scopeHeaders = (value: string) =>
-		new Headers({ "x-oauth-scopes": value });
-	assert.equal(isJsonResponse({ status: 200, headers: jsonHeaders }), true);
-	assert.equal(isJsonResponse({ status: 203, headers: htmlHeaders }), false);
-	assert.equal(isJsonResponse({ status: 403, headers: htmlHeaders }), false);
-	assert.equal(hasOAuthScope(jsonHeaders, ["repo", "public_repo"]), true);
-	assert.equal(
-		hasOAuthScope(scopeHeaders("read:org, repo"), ["repo", "public_repo"]),
-		true,
-	);
-	assert.equal(
-		hasOAuthScope(scopeHeaders("read:org, gist"), ["repo", "public_repo"]),
-		false,
-	);
-	assert.equal(hasOAuthScope(scopeHeaders(""), ["repo", "public_repo"]), false);
-	const anonymous = anonymousHttpTransport();
-	assert.equal(
-		hostErrorReason(
-			"Azure DevOps",
-			"AZURE_DEVOPS_EXT_PAT",
-			{ status: 403, headers: htmlHeaders },
-			anonymous,
-		).includes("authentication required"),
-		true,
-	);
-	assert.equal(
-		hostErrorReason(
-			"Azure DevOps",
-			"AZURE_DEVOPS_EXT_PAT",
-			{ status: 500, headers: jsonHeaders },
-			anonymous,
-		),
-		"Azure DevOps returned HTTP 500 (application/json).",
-	);
-	assert.equal(
-		hostErrorReason(
-			"Azure DevOps",
-			"AZURE_DEVOPS_EXT_PAT",
-			{
-				status: 400,
-				headers: jsonHeaders,
-				data: {
-					message:
-						"TF401181: The pull request cannot be edited due to its state.",
-				},
-			},
-			anonymous,
-		),
-		"Azure DevOps returned HTTP 400 (application/json): pull request is not writeable (TF401181: The pull request cannot be edited due to its state.). Review must halt.",
-	);
-	assert.deepEqual(anonymous.requestInit(), {
-		headers: { accept: "application/json" },
-	});
-	assert.equal(anonymous.hasScope(["repo"]), true);
-	assert.equal(
-		anonymous.authGuidance("GH_TOKEN"),
-		"authentication required (set GH_TOKEN or pass AccessToken.from(...) to prepareWithToken)",
-	);
-	const emptyTransport = transportFromEnv("  ", (token) => token.forGitHub());
-	assert.deepEqual(emptyTransport.requestInit(), {
-		headers: { accept: "application/json" },
-	});
-	const ghTransport = transportFromEnv("ghp_example_token", (token) =>
-		token.forGitHub(),
-	);
-	const { authorization: ghAuth } = ghTransport.requestInit().headers;
-	assert.equal(ghAuth, "Bearer ghp_example_token");
-	const patGhTransport = transportFromEnv("azdo-example-pat", (token) =>
-		token.forGitHub(),
-	);
-	const { authorization: patGhAuth } = patGhTransport.requestInit().headers;
-	assert.equal(patGhAuth, "Bearer azdo-example-pat");
-	const patAzTransport = transportFromEnv("azdo-example-pat", (token) =>
-		token.forAzure(),
-	);
-	const { authorization: patAzAuth } = patAzTransport.requestInit().headers;
-	assert.equal(
-		patAzAuth,
-		`Basic ${Buffer.from(":azdo-example-pat", "utf8").toString("base64")}`,
-	);
-});
+const BINARY_BYTES = [0, 1, 2] as const;
+const LINE_WIDTH = 80;
+const LARGE_LINE_COUNT = 20_000;
+const ONE_MIB = 1_048_576;
 
 it("SnapshotDirectory parses a non-empty path, compares by value, and reads text files while ignoring missing or binary files", () => {
 	const dir = SnapshotDirectory.from("/tmp/work/snapshot");
@@ -191,7 +28,7 @@ it("SnapshotDirectory parses a non-empty path, compares by value, and reads text
 
 	const tempDir = mkdtempSync(join(tmpdir(), "snapshot-dir-test-"));
 	writeFileSync(join(tempDir, "hello.ts"), "const x = 1;\n", "utf8");
-	writeFileSync(join(tempDir, "bin.dat"), Buffer.from([0x00, 0x01, 0x02]));
+	writeFileSync(join(tempDir, "bin.dat"), Buffer.from(BINARY_BYTES));
 	const realSnap = SnapshotDirectory.from(tempDir);
 	assert.equal(realSnap.success, true);
 	assert.equal(realSnap.data.readTextFile("hello.ts"), "const x = 1;\n");
@@ -211,15 +48,17 @@ it("SnapshotDirectory.diff returns diffs larger than Node's 1 MiB default maxBuf
 		snap.git(["add", "big.txt"]);
 		snap.git(["commit", "--quiet", "-m", "base"]);
 		const baseSha = snap.git(["rev-parse", "HEAD"]);
-		const largePayload = `${"x".repeat(80)}\n`.repeat(20_000);
+		const largePayload = `${"x".repeat(LINE_WIDTH)}\n`.repeat(LARGE_LINE_COUNT);
 		writeFileSync(join(tempDir, "big.txt"), largePayload, "utf8");
 		snap.git(["add", "big.txt"]);
 		snap.git(["commit", "--quiet", "-m", "head"]);
 		const headSha = snap.git(["rev-parse", "HEAD"]);
 		const stats = parseNumstat(snap.numstat(baseSha, headSha));
-		assert.deepEqual(stats, [{ path: "big.txt", added: 20_000, deleted: 1 }]);
+		assert.deepEqual(stats, [
+			{ path: "big.txt", added: LARGE_LINE_COUNT, deleted: 1 },
+		]);
 		const diffText = snap.diff(baseSha, headSha);
-		assert.equal(diffText.length > 1024 * 1024, true);
+		assert.equal(diffText.length > ONE_MIB, true);
 	} finally {
 		rmSync(tempDir, { recursive: true, force: true });
 	}

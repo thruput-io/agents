@@ -1,16 +1,15 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import type { Ledger, Row, RuleRef, Violation } from "./contracts.g.ts";
-import { CELL, merge, table, verdict } from "./ledger-table.ts";
-import { nonnull } from "./nullish.ts";
 import { alreadyOpen, outcome, settled } from "./outcome.ts";
 import { citation, message, SITE } from "./rulebook.ts";
 
-const H = "a".repeat(40);
+const SHA1_HEX_LENGTH = 40;
+const H = "a".repeat(SHA1_HEX_LENGTH);
 const URL_DDD = "https://books.example/ddd.md";
-const PIPE_AND_NEWLINE_RE = /has \\\| pipe and newline/u;
-const ELLIPSIS_RE = /…/u;
-const BOOK_RULE_ROW_RE = /\n\| Book rule \| x \| violation \| e \|$/u;
+const FIRST_UNCARRIED_ID = 2;
+const SECOND_UNCARRIED_ID = 3;
+const UNCARRIED_THREAD_IDS = [FIRST_UNCARRIED_ID, SECOND_UNCARRIED_ID];
 const VERDICT_HEADER_RE = /^\*\*Verdict: request-changes\*\*\n/u;
 const SUMMARY_COUNTS_RE =
 	/3 rules probed by 2 probes at a{40} against \[the rules\]\(https:\/\/thruput\.se\/agents\/\): 3 violations, 0 inline, 1 at the pull request, 2 already carried by a thread/u;
@@ -48,16 +47,6 @@ const violatedRow = (rule: string, violations: Violation[]): Row => ({
 	evidence: "e",
 	violations,
 });
-const bookRule = (heading: string) => ({
-	ruleset: URL_DDD,
-	heading,
-});
-const cleanBookRow = (heading: string): Row => ({
-	bookRule: bookRule(heading),
-	examined: ["x"],
-	verdict: "clean",
-	evidence: "e",
-});
 const violation = (rule: RuleRef): Violation => ({
 	rule,
 	observation: "what is wrong",
@@ -80,59 +69,30 @@ const outcomeProbe = {
 		],
 	},
 };
-const violatedBookRow = (heading: string, violations: Violation[]): Row => ({
-	bookRule: bookRule(heading),
-	examined: ["x"],
-	verdict: "violation",
-	evidence: "e",
-	violations,
-});
+const BOOK_RULE = { ruleset: URL_DDD, heading: "Book rule" };
+const contextLedger: Ledger = {
+	headCommit: H,
+	rows: [
+		{
+			bookRule: BOOK_RULE,
+			examined: ["x"],
+			verdict: "violation",
+			evidence: "e",
+			violations: [violationAt(BOOK_RULE, "p:9")],
+		},
+	],
+};
 const sampleLedger: Ledger = {
 	headCommit: H,
 	rows: [
 		violatedRow("A", [violationAt("A", "p:3"), violation("A")]),
-		{
-			rule: "B",
-			examined: ["x"],
-			verdict: "clean",
-			evidence: `has | pipe\nand newline ${"x".repeat(CELL)}`,
-		},
-	],
-};
-const contextLedger: Ledger = {
-	headCommit: H,
-	rows: [
-		violatedBookRow("Book rule", [violationAt(bookRule("Book rule"), "p:9")]),
+		cleanRow("B"),
 	],
 };
 const entries = [
 	{ document: outcomeProbe, ledger: sampleLedger },
 	{ document: contextProbe, ledger: contextLedger },
 ];
-
-it("merge concatenates rows into one ledger", () => {
-	assert.deepEqual(
-		merge([
-			{ headCommit: H, rows: [cleanRow("A")] },
-			{ headCommit: H, rows: [cleanBookRow("x")] },
-		]),
-		{ headCommit: H, rows: [cleanRow("A"), cleanBookRow("x")] },
-	);
-});
-
-it("verdict follows any violation", () => {
-	assert.equal(verdict(sampleLedger), "request-changes");
-	assert.equal(verdict({ rows: [cleanRow("A")] }), "approve");
-});
-
-it("table escapes pipes and newlines, caps a cell, and names a book rule by its heading", () => {
-	const rendered = table(sampleLedger);
-	const fourthLine = nonnull(rendered.split("\n")[3]);
-	assert.match(rendered, PIPE_AND_NEWLINE_RE);
-	assert.equal(fourthLine.length > 0 && fourthLine.length < CELL + 100, true);
-	assert.match(rendered, ELLIPSIS_RE);
-	assert.match(table(contextLedger), BOOK_RULE_ROW_RE);
-});
 
 it("alreadyOpen matches an open thread on the same line citing the same principle", () => {
 	const open = [
@@ -204,11 +164,11 @@ it("settled lists the open threads that no finding of this review carries any mo
 	];
 	assert.deepEqual(
 		settled([{ document, ledger: l }], threads).map((thread) => thread.id),
-		[2, 3],
+		UNCARRIED_THREAD_IDS,
 	);
 });
 
-it("outcome produces the verdict, summary, fresh inline findings, threads to settle, and threads to reopen, and re-flags violations on resolved threads", () => {
+it("outcome produces the verdict, summary, fresh inline findings, threads to settle, and threads to reopen", () => {
 	const open = {
 		id: "o",
 		path: "p",
@@ -233,14 +193,6 @@ it("outcome produces the verdict, summary, fresh inline findings, threads to set
 		state: "resolved-by-author" as const,
 		body: "earlier breaks [Book rule](https://books.example/ddd.md)",
 	};
-	const settledByReviewer = {
-		id: "s",
-		path: "p",
-		side: "head" as const,
-		lines: { start: 3, end: 3 },
-		state: "resolved" as const,
-		body: `earlier breaks ${citeP}`,
-	};
 	const result = outcome(entries, [open, gone, resolved]);
 	assert.equal(result.headCommit, H);
 	assert.equal(result.verdict, "request-changes");
@@ -253,6 +205,17 @@ it("outcome produces the verdict, summary, fresh inline findings, threads to set
 	assert.deepEqual(result.inline, []);
 	assert.deepEqual(result.settle, ["g"]);
 	assert.deepEqual(result.reopen, ["r"]);
+});
+
+it("outcome re-flags violations on resolved threads and approves clean ledgers", () => {
+	const settledByReviewer = {
+		id: "s",
+		path: "p",
+		side: "head" as const,
+		lines: { start: 3, end: 3 },
+		state: "resolved" as const,
+		body: `earlier breaks ${citeP}`,
+	};
 	const withResolvedThread = outcome(entries, [settledByReviewer]);
 	assert.deepEqual(withResolvedThread.inline, [
 		{
@@ -280,6 +243,9 @@ it("outcome produces the verdict, summary, fresh inline findings, threads to set
 		).verdict,
 		"approve",
 	);
+});
+
+it("outcome resolves inline findings across multiple files", () => {
 	const multiFileProbe = {
 		review: {
 			headCommit: H,

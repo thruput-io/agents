@@ -22,7 +22,7 @@ import type { MainAgentLedger } from "./main-agent-ledger.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 import { Workdir } from "./workdir.ts";
 
-export interface MainAgentCliDriver {
+interface MainAgentCliDriver {
 	prepare: (
 		target: string,
 		workdir: Workdir,
@@ -65,15 +65,17 @@ const writePrepared = (workdir: Workdir, ledger: MainAgentLedger): number => {
 	const permissions = Object.fromEntries(
 		pending.map((name) => [name, ledger.permissions(name)]),
 	);
-	const response: PrepareResponse = isNullOrEmpty(warning)
-		? { success: true, session, pending: [...pending], permissions }
-		: {
-				success: true,
-				session,
-				pending: [...pending],
-				permissions,
-				warning,
-			};
+	const baseResponse = {
+		success: true as const,
+		session,
+		pending: [...pending],
+		permissions,
+	};
+	if (isNullOrEmpty(warning)) {
+		writeJson(baseResponse);
+		return 0;
+	}
+	const response: PrepareResponse = { ...baseResponse, warning };
 	writeJson(response);
 	return 0;
 };
@@ -107,7 +109,78 @@ const toRawControllerCommand = (args: readonly string[]): RawCommandResult => {
 	return { ok: true, raw: { command } };
 };
 
-export async function runMainAgentCli(
+const handlePrepare = async (
+	controller: MainAgentCliDriver,
+	cmd: {
+		readonly url: string;
+		readonly workdir: string;
+		readonly token?: string | undefined;
+	},
+): Promise<number> => {
+	const parsedWorkdir = Workdir.from(cmd.workdir);
+	if (!parsedWorkdir.success) {
+		return failWithJson({
+			success: false,
+			error: {
+				kind: "invalid-workdir",
+				message: z.prettifyError(parsedWorkdir.error),
+			},
+		} satisfies PrepareResponse);
+	}
+	if (isNullOrEmpty(cmd.token)) {
+		const result = await controller.prepare(cmd.url, parsedWorkdir.data);
+		if (!result.success) {
+			writeJson(result satisfies PrepareResponse);
+			return 0;
+		}
+		return writePrepared(
+			parsedWorkdir.data,
+			controller.ledger(parsedWorkdir.data),
+		);
+	}
+	const parsedToken = AccessToken.from(cmd.token);
+	if (!parsedToken.success) {
+		return failWithJson({
+			success: false,
+			error: {
+				kind: "invalid-token",
+				message: z.prettifyError(parsedToken.error),
+			},
+		} satisfies PrepareResponse);
+	}
+	const result = await controller.prepareWithToken(
+		cmd.url,
+		parsedWorkdir.data,
+		parsedToken.data,
+	);
+	if (!result.success) {
+		writeJson(result satisfies PrepareResponse);
+		return 0;
+	}
+	return writePrepared(
+		parsedWorkdir.data,
+		controller.ledger(parsedWorkdir.data),
+	);
+};
+
+const handleDispatch = async (
+	controller: MainAgentCliDriver,
+	workdir: Workdir,
+	token: string | undefined,
+): Promise<number> => {
+	if (isNullOrEmpty(token)) {
+		writeJson(await controller.dispatch(workdir));
+		return 0;
+	}
+	const parsedToken = AccessToken.from(token);
+	if (!parsedToken.success) {
+		return failCli(`${z.prettifyError(parsedToken.error)}\n`);
+	}
+	writeJson(await controller.dispatchWithToken(workdir, parsedToken.data));
+	return 0;
+};
+
+async function runMainAgentCli(
 	controller: MainAgentCliDriver,
 	args: readonly string[],
 ): Promise<number> {
@@ -129,54 +202,7 @@ export async function runMainAgentCli(
 	}
 	const cmd = dispatchedCli.command;
 	if (cmd.command === "prepare") {
-		const parsedWorkdir = Workdir.from(cmd.workdir);
-		if (!parsedWorkdir.success) {
-			const response: PrepareResponse = {
-				success: false,
-				error: {
-					kind: "invalid-workdir",
-					message: z.prettifyError(parsedWorkdir.error),
-				},
-			};
-			return failWithJson(response);
-		}
-		if (!isNullOrEmpty(cmd.token)) {
-			const parsedToken = AccessToken.from(cmd.token);
-			if (!parsedToken.success) {
-				const response: PrepareResponse = {
-					success: false,
-					error: {
-						kind: "invalid-token",
-						message: z.prettifyError(parsedToken.error),
-					},
-				};
-				return failWithJson(response);
-			}
-			const result = await controller.prepareWithToken(
-				cmd.url,
-				parsedWorkdir.data,
-				parsedToken.data,
-			);
-			if (!result.success) {
-				const response: PrepareResponse = result;
-				writeJson(response);
-				return 0;
-			}
-			return writePrepared(
-				parsedWorkdir.data,
-				controller.ledger(parsedWorkdir.data),
-			);
-		}
-		const result = await controller.prepare(cmd.url, parsedWorkdir.data);
-		if (!result.success) {
-			const response: PrepareResponse = result;
-			writeJson(response);
-			return 0;
-		}
-		return writePrepared(
-			parsedWorkdir.data,
-			controller.ledger(parsedWorkdir.data),
-		);
+		return await handlePrepare(controller, cmd);
 	}
 	const parsedWorkdir = Workdir.open(cmd.workdir);
 	if (!parsedWorkdir.success) {
@@ -194,25 +220,12 @@ export async function runMainAgentCli(
 		writeJson(status);
 		return 0;
 	}
-	if (!isNullOrEmpty(cmd.token)) {
-		const parsedToken = AccessToken.from(cmd.token);
-		if (!parsedToken.success) {
-			return failCli(`${z.prettifyError(parsedToken.error)}\n`);
-		}
-		const dispatched: DispatchResult = await controller.dispatchWithToken(
-			parsedWorkdir.data,
-			parsedToken.data,
-		);
-		writeJson(dispatched);
-		return 0;
-	}
-	const dispatched: DispatchResult = await controller.dispatch(
-		parsedWorkdir.data,
-	);
-	writeJson(dispatched);
-	return 0;
+	return await handleDispatch(controller, parsedWorkdir.data, cmd.token);
 }
 
 if (import.meta.main || isCliEntrypoint(import.meta.url)) {
 	await runMainAgentCli(MainAgentController.create(), process.argv.slice(2));
 }
+
+export type { MainAgentCliDriver };
+export { runMainAgentCli };

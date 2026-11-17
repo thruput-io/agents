@@ -11,11 +11,17 @@ import {
 	tooLarge,
 } from "./limits.ts";
 
+const EXPECTED_MAX_FILE_LINES = 1000;
+const EXPECTED_MAX_ADDED_LINES = 1600;
+const EXPECTED_MAX_CHANGED_FILES = 250;
+const EXPECTED_MAX_DIFF_LINES = 8000;
+const OVER_CHANGED_FILES_COUNT = 251;
+
 it("tooLarge enforces hard file, added, deleted, and file-count limits without exempting tests, lockfiles, or docs", () => {
-	assert.equal(MAX_FILE_LINES, 1000);
-	assert.equal(MAX_ADDED_LINES, 1600);
-	assert.equal(MAX_CHANGED_FILES, 250);
-	assert.equal(MAX_DIFF_LINES, 8000);
+	assert.equal(MAX_FILE_LINES, EXPECTED_MAX_FILE_LINES);
+	assert.equal(MAX_ADDED_LINES, EXPECTED_MAX_ADDED_LINES);
+	assert.equal(MAX_CHANGED_FILES, EXPECTED_MAX_CHANGED_FILES);
+	assert.equal(MAX_DIFF_LINES, EXPECTED_MAX_DIFF_LINES);
 
 	const perFileCase = [
 		{ path: "a.cs", lines: 1001, added: 50 },
@@ -55,13 +61,16 @@ it("tooLarge enforces hard file, added, deleted, and file-count limits without e
 	assert.deepEqual(tooLarge(deletionsLimitCase), [DIFF_LIMIT_EXCEEDED]);
 	assert.deepEqual(oversizedFiles(deletionsLimitCase), ["package-lock.json"]);
 
-	const manyFilesCase = Array.from({ length: 251 }, (_, i) => ({
-		path: `docs/file-${i}.md`,
-		lines: 1,
-		added: 1,
-	}));
+	const manyFilesCase = Array.from(
+		{ length: OVER_CHANGED_FILES_COUNT },
+		(_, i) => ({
+			path: `docs/file-${i}.md`,
+			lines: 1,
+			added: 1,
+		}),
+	);
 	assert.deepEqual(tooLarge(manyFilesCase), [DIFF_LIMIT_EXCEEDED]);
-	assert.equal(oversizedFiles(manyFilesCase).length, 251);
+	assert.equal(oversizedFiles(manyFilesCase).length, OVER_CHANGED_FILES_COUNT);
 
 	assert.deepEqual(tooLarge([]), []);
 	assert.deepEqual(oversizedFiles([]), []);

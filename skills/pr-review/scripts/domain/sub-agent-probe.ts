@@ -1,4 +1,5 @@
 import type { CodeUnderReview } from "./code-under-review.ts";
+import { ContextSubAgentLedger } from "./context-sub-agent-ledger.ts";
 import type {
 	AckPayload,
 	Change,
@@ -21,24 +22,25 @@ import type {
 	RulesTask,
 	Surface,
 } from "./contracts.g.ts";
+import { DeadCodeSubAgentLedger } from "./dead-code-sub-agent-ledger.ts";
 import type { CoordinatedProbeSpec } from "./main-agent-ledger.ts";
 import { isNullOrEmpty, nonnull } from "./nullish.ts";
 import { paginateText } from "./pagination.ts";
+import type { SubAgentLedger } from "./probe-ledger.ts";
+import { ReuseSubAgentLedger } from "./reuse-sub-agent-ledger.ts";
 import type { Rulebook } from "./rulebook.ts";
-import {
-	ContextSubAgentLedger,
-	DeadCodeSubAgentLedger,
-	ReuseSubAgentLedger,
-	RulesSubAgentLedger,
-	type SubAgentLedger,
-} from "./sub-agent-ledger.ts";
+import { RulesSubAgentLedger } from "./rules-sub-agent-ledger.ts";
 import type { Workdir } from "./workdir.ts";
 
 type LedgerDirectory = ReturnType<Workdir["ledgerDirectory"]>;
 
 const CONTEXT_BOOK_RULE_ROWS = 3;
 
-export type ProbeDocument =
+type AckValidationResult =
+	| { readonly success: true }
+	| { readonly success: false; readonly error: string };
+
+type ProbeDocument =
 	| {
 			readonly instructions?: InstructionsProse;
 			readonly task?: RulesTask | ReuseTask | DeadCodeTask;
@@ -63,18 +65,14 @@ export type ProbeDocument =
 			readonly checkout?: Checkout;
 	  };
 
-export type ProbeRules =
+type ProbeRules =
 	| { readonly kind: "rulebook"; readonly rulebook: Rulebook }
 	| {
 			readonly kind: "rulesets";
 			readonly rulesets: readonly ExternalRulebook[];
 	  };
 
-type AckValidationResult =
-	| { readonly success: true }
-	| { readonly success: false; readonly error: string };
-
-export interface ProbeBehavior {
+interface ProbeBehavior {
 	readonly probe: ProbeDocument;
 	readonly rules: ProbeRules;
 	toLedger: (
@@ -86,7 +84,7 @@ export interface ProbeBehavior {
 	ruleset: (url: RulesetUrl, page: number) => RulesetPageResponse;
 }
 
-export interface ProbeStorage {
+interface ProbeStorage {
 	readCursor: () => number | null;
 	writeCursor: (index: number) => void;
 	readAck: () => number | null;
@@ -229,6 +227,8 @@ export function probeBehaviorFor(
 	}
 	return rulebookProbeBehavior(probe, checkoutDir);
 }
+
+export type { ProbeBehavior, ProbeDocument, ProbeRules, ProbeStorage };
 
 export function inMemoryProbeStorage(): ProbeStorage {
 	return {

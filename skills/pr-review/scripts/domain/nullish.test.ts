@@ -16,7 +16,7 @@ it("nonnull returns defined non-null values and throws on null or undefined", ()
 	assert.throws(() => nonnull(undefined), REQUIRED_RE);
 });
 
-it("isNullOrEmpty detects null, undefined, and empty string", () => {
+it("empty check detects null, undefined, and empty string", () => {
 	assert.equal(isNullOrEmpty(null), true);
 	assert.equal(isNullOrEmpty(undefined), true);
 	assert.equal(isNullOrEmpty(""), true);

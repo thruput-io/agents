@@ -31,10 +31,12 @@ import {
 } from "./contracts.g.ts";
 import { isNullOrEmpty, nonEmptyString } from "./nullish.ts";
 
-const GITHUB = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/u;
+const GITHUB =
+	/^https:\/\/github\.com\/(?<owner>[^/]+)\/(?<repository>[^/]+)\/pull\/(?<number>\d+)/u;
 const AZURE_DEVOPS =
-	/^https:\/\/dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+)\/pullrequest\/(\d+)/u;
-const GIT_RANGE = /^(.+)@([^.]+(?:\.[^.]+)*)\.\.([^.].*)$/u;
+	/^https:\/\/dev\.azure\.com\/(?<organization>[^/]+)\/(?<project>[^/]+)\/_git\/(?<repository>[^/]+)\/pullrequest\/(?<id>\d+)/u;
+const GIT_RANGE =
+	/^(?<repository>.+)@(?<base>[^.]+(?:\.[^.]+)*)\.\.(?<head>[^.].*)$/u;
 
 const toGitHub = (match: RegExpExecArray): GitHub => {
 	const kind: GitHubKind = GitHubKindSchema.decode("github");

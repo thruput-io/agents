@@ -21,7 +21,21 @@ import {
 import { PullsCreateReviewBody } from "../../clients/github.zod.g.ts";
 import { nonnull } from "../domain/nullish.ts";
 import { SITE } from "../domain/rulebook.ts";
+import {
+	createForbiddenGitHubGraphQlHandler,
+	createForbiddenGitHubZipballHandler,
+} from "./github-error-mocks.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
+
+const TOTAL_COUNT_KEY = "total_count";
+const CHECK_RUNS_KEY = "check_runs";
+const MERGEABLE_STATE_KEY = "mergeable_state";
+const CHANGED_FILES_KEY = "changed_files";
+const HTML_URL_KEY = "html_url";
+const COMMIT_ID_KEY = "commit_id";
+const PULL_REQUEST_MOCK_KEY = "PullRequest";
+const THREAD_CONN_MOCK_KEY = ["PullRequestReviewThread", "Connection"].join("");
+const SHORT_SHA_LENGTH = 7;
 
 const GRAPHQL_SDL_PATH = resolve(
 	dirname(fileURLToPath(import.meta.url)),
@@ -37,8 +51,8 @@ const emptyThreadConnection = () => ({
 const mockedGraphQlSchema = addMocksToSchema({
 	schema: executableGraphQlSchema,
 	mocks: {
-		PullRequest: () => ({ viewerCanUpdate: true }),
-		PullRequestReviewThreadConnection: emptyThreadConnection,
+		[PULL_REQUEST_MOCK_KEY]: () => ({ viewerCanUpdate: true }),
+		[THREAD_CONN_MOCK_KEY]: emptyThreadConnection,
 	},
 });
 
@@ -60,108 +74,7 @@ const createGraphQlHandler = () =>
 		return HttpResponse.json(result);
 	});
 
-export function createFailedGitHubChecksHandler(name: string) {
-	const baseRun = nonnull(getChecksListForRefResponseMock().check_runs[0]);
-	return getChecksListForRefMockHandler({
-		total_count: 1,
-		check_runs: [{ ...baseRun, name, conclusion: "failure" }],
-	});
-}
-
-export function createForbiddenHtmlGitHubHandler() {
-	return http.get(
-		"https://api.github.com/repos/:owner/:repo/pulls/:pull_number",
-		() =>
-			new HttpResponse("<!DOCTYPE html><html>Forbidden</html>", {
-				status: 403,
-				headers: { "content-type": "text/html; charset=utf-8" },
-			}),
-	);
-}
-
-export function createReadOnlyOAuthScopesGitHubHandler(repo: ScenarioRepo) {
-	const basePull = getPullsGetResponseMock({
-		number: 42,
-		mergeable_state: "clean",
-		additions: 10,
-		deletions: 2,
-		changed_files: 2,
-	});
-	return http.get(
-		"https://api.github.com/repos/:owner/:repo/pulls/:pull_number",
-		() =>
-			HttpResponse.json(
-				{
-					...basePull,
-					user: { ...basePull.user, login: "author@example.com" },
-					base: { ...basePull.base, ref: "main", sha: repo.baseCommit },
-					head: {
-						...basePull.head,
-						ref: "feature",
-						sha: repo.headCommit,
-					},
-				},
-				{
-					status: 200,
-					headers: { "x-oauth-scopes": "read:org, gist" },
-				},
-			),
-	);
-}
-
-export function createReadOnlyViewerGitHubGraphQlHandler() {
-	return http.post("https://api.github.com/graphql", () =>
-		HttpResponse.json({
-			data: {
-				repository: {
-					pullRequest: {
-						viewerCanUpdate: false,
-						reviewThreads: {
-							pageInfo: { hasNextPage: false, endCursor: null },
-							nodes: [],
-						},
-					},
-				},
-			},
-		}),
-	);
-}
-
-export function createForbiddenGitHubGraphQlHandler() {
-	return http.post("https://api.github.com/graphql", () =>
-		HttpResponse.json(
-			{ message: "Resource not accessible by integration" },
-			{ status: 403 },
-		),
-	);
-}
-
-export function createForbiddenGitHubZipballHandler() {
-	return http.get(
-		"https://api.github.com/repos/:owner/:repo/zipball/:ref",
-		() =>
-			HttpResponse.json(
-				{ message: "Repository archive access denied" },
-				{ status: 403 },
-			),
-	);
-}
-
-export function createFailedGitHubCreateReviewHandler() {
-	return http.post(
-		"https://api.github.com/repos/:owner/:repo/pulls/:pull_number/reviews",
-		() =>
-			HttpResponse.json(
-				{
-					message:
-						"Validation Failed: PullRequestReview can only have one pending review per pull request",
-				},
-				{ status: 422 },
-			),
-	);
-}
-
-export interface GitHubReviewRecord {
+interface GitHubReviewRecord {
 	readonly event: string;
 	readonly commitId: string;
 	readonly body: string;
@@ -173,9 +86,7 @@ export interface GitHubReviewRecord {
 	}>;
 }
 
-export function createGitHubReviewRecorderHandler(
-	recorded: GitHubReviewRecord[],
-) {
+function createGitHubReviewRecorderHandler(recorded: GitHubReviewRecord[]) {
 	return http.post(
 		"https://api.github.com/repos/:owner/:repo/pulls/:pull_number/reviews",
 		async ({ request }) => {
@@ -196,7 +107,7 @@ export function createGitHubReviewRecorderHandler(
 			});
 			return HttpResponse.json(
 				getPullsCreateReviewResponseMock({
-					html_url:
+					[HTML_URL_KEY]:
 						"https://github.com/octocat/hello-world/pull/42#pullrequestreview-101",
 				}),
 			);
@@ -204,15 +115,15 @@ export function createGitHubReviewRecorderHandler(
 	);
 }
 
-export function createInProgressGitHubChecksHandlers(
+function createInProgressGitHubChecksHandlers(
 	name: string,
 	postedReviews: string[],
 ) {
 	const baseRun = nonnull(getChecksListForRefResponseMock().check_runs[0]);
 	return [
 		getChecksListForRefMockHandler({
-			total_count: 1,
-			check_runs: [
+			[TOTAL_COUNT_KEY]: 1,
+			[CHECK_RUNS_KEY]: [
 				{ ...baseRun, name, status: "in_progress", conclusion: null },
 			],
 		}),
@@ -226,7 +137,7 @@ export function createInProgressGitHubChecksHandlers(
 				postedReviews.push(`${nonnull(body.event)}:${nonnull(body.body)}`);
 				return HttpResponse.json(
 					getPullsCreateReviewResponseMock({
-						html_url:
+						[HTML_URL_KEY]:
 							"https://github.com/octocat/hello-world/pull/42#pullrequestreview-99",
 					}),
 				);
@@ -235,18 +146,18 @@ export function createInProgressGitHubChecksHandlers(
 	];
 }
 
-export function createGitHubAlreadyReviewedHandler(headCommit: string) {
+function createGitHubAlreadyReviewedHandler(headCommit: string) {
 	const baseReview = nonnull(getPullsListReviewsResponseMock()[0]);
 	return getPullsListReviewsMockHandler([
 		{
 			...baseReview,
-			commit_id: headCommit,
+			[COMMIT_ID_KEY]: headCommit,
 			body: `**Verdict: approve**\n\n1 rules probed by 1 probes at ${headCommit} against [the rules](${SITE}): 0 violations`,
 		},
 	]);
 }
 
-export function createGitHubExistingRefusalHandler(headCommit: string) {
+function createGitHubExistingRefusalHandler(headCommit: string) {
 	const baseReview = nonnull(getPullsListReviewsResponseMock()[0]);
 	return getPullsListReviewsMockHandler([
 		{
@@ -256,13 +167,13 @@ export function createGitHubExistingRefusalHandler(headCommit: string) {
 	]);
 }
 
-export function createOversizedGitHubPullHandlers(repo: ScenarioRepo) {
+function createOversizedGitHubPullHandlers(repo: ScenarioRepo) {
 	const basePull = getPullsGetResponseMock({
 		number: 42,
-		mergeable_state: "clean",
+		[MERGEABLE_STATE_KEY]: "clean",
 		additions: 2000,
 		deletions: 300_000,
-		changed_files: 125,
+		[CHANGED_FILES_KEY]: 125,
 	});
 	const baseFile = nonnull(getPullsListFilesResponseMock()[0]);
 	return [
@@ -291,14 +202,14 @@ export function createOversizedGitHubPullHandlers(repo: ScenarioRepo) {
 	];
 }
 
-export function createGitHubHandlers(repo: ScenarioRepo) {
+function createGitHubHandlers(repo: ScenarioRepo) {
 	const basePull = getPullsGetResponseMock({
 		number: 42,
 		body: "Refine helper\n\nSecond body.\n\nAdd y export\n\nFirst body.",
-		mergeable_state: "clean",
+		[MERGEABLE_STATE_KEY]: "clean",
 		additions: 10,
 		deletions: 2,
-		changed_files: 2,
+		[CHANGED_FILES_KEY]: 2,
 	});
 	const baseRun = nonnull(getChecksListForRefResponseMock().check_runs[0]);
 	return [
@@ -314,19 +225,32 @@ export function createGitHubHandlers(repo: ScenarioRepo) {
 		}),
 		getReposDownloadZipballArchiveMockHandler(({ params }) => {
 			const ref = String(params.ref);
-			return repo.zipForCommit(ref, `octocat-hello-world-${ref.slice(0, 7)}/`);
+			return repo.zipForCommit(
+				ref,
+				`octocat-hello-world-${ref.slice(0, SHORT_SHA_LENGTH)}/`,
+			);
 		}),
 		getChecksListForRefMockHandler({
-			total_count: 1,
-			check_runs: [{ ...baseRun, name: "ci", conclusion: "success" }],
+			[TOTAL_COUNT_KEY]: 1,
+			[CHECK_RUNS_KEY]: [{ ...baseRun, name: "ci", conclusion: "success" }],
 		}),
 		getPullsListReviewsMockHandler([]),
 		getPullsCreateReviewMockHandler(
 			getPullsCreateReviewResponseMock({
-				html_url:
+				[HTML_URL_KEY]:
 					"https://github.com/octocat/hello-world/pull/42#pullrequestreview-1",
 			}),
 		),
 		createGraphQlHandler(),
 	];
 }
+
+export {
+	createGitHubAlreadyReviewedHandler,
+	createGitHubExistingRefusalHandler,
+	createGitHubHandlers,
+	createGitHubReviewRecorderHandler,
+	createInProgressGitHubChecksHandlers,
+	createOversizedGitHubPullHandlers,
+	type GitHubReviewRecord,
+};
