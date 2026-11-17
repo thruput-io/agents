@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-npm install -g @thruput-io/review-tool --registry=https://npm.pkg.github.com --no-audit --no-fund
+npm install -g https://github.com/thruput-io/agents/releases/latest/download/thruput-review-tool.tgz --no-audit --no-fund
