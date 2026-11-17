@@ -124,7 +124,9 @@ function rulebookProbeDriver(
 			rulesInOrder: inspected.ruleset.rules.map((r) => r.id),
 			observationFormat: "<observation> breaks <principle>",
 		}),
-		verifyBeforeReport: async () => undefined,
+		verifyBeforeReport: async () => {
+			await Promise.resolve();
+		},
 		initialRows: () =>
 			inspected.ruleset.rules.map((rule) => ({
 				rule: rule.id,

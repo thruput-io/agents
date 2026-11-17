@@ -104,9 +104,9 @@ const splitFileFragments = (
 	return chunks;
 };
 
-export function paginateSurface(
+function paginateSurfaceWithin(
 	files: readonly SurfaceFile[],
-	maxBytes = MAX_PAGE_JSON_BYTES,
+	maxBytes: number,
 ): readonly SurfacePage[] {
 	const grouped = files.map((file, index) => ({
 		fileIndex: index + 1,
@@ -142,19 +142,26 @@ export function paginateSurface(
 	return pages;
 }
 
-export const surfaceOverview = (
-	surface: Surface,
-	maxBytes = MAX_PAGE_JSON_BYTES,
-): SurfaceOverview => ({
+function paginateSurface(
+	files: readonly SurfaceFile[],
+): readonly SurfacePage[] {
+	return paginateSurfaceWithin(files, MAX_PAGE_JSON_BYTES);
+}
+
+const surfaceOverview = (surface: Surface): SurfaceOverview => ({
 	headCommit: surface.headCommit,
 	changedFiles: surface.files.length,
-	totalPages: paginateSurface(surface.files, maxBytes).length,
+	totalPages: paginateSurfaceWithin(surface.files, MAX_PAGE_JSON_BYTES).length,
 });
 
-export function paginateText(
-	text: string,
-	maxBytes = MAX_PAGE_JSON_BYTES - TEXT_PAGE_ENVELOPE_RESERVE_BYTES,
-): readonly string[] {
+function paginateText(text: string): readonly string[] {
+	return paginateTextWithin(
+		text,
+		MAX_PAGE_JSON_BYTES - TEXT_PAGE_ENVELOPE_RESERVE_BYTES,
+	);
+}
+
+function paginateTextWithin(text: string, maxBytes: number): readonly string[] {
 	if (Buffer.byteLength(JSON.stringify(text), "utf8") <= maxBytes) {
 		return [text];
 	}
@@ -178,3 +185,5 @@ export function paginateText(
 	}
 	return pages;
 }
+
+export { paginateSurface, paginateText, surfaceOverview };
