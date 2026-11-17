@@ -91,11 +91,18 @@ it("Review CLI handles GitHub re-review with narrowed surface, GraphQL paginatio
 		workdir.ledgerDirectory().readPullRequest().threads.threads.length,
 		EXPECTED_THREAD_COUNT,
 	);
-	for (const entry of inspected) {
-		assert.equal(entry.change.description, "Re-review body");
-		assert.equal(entry.instructions.length, EXPECTED_PROSE_LENGTH);
-		assert.equal("checkout" in entry, entry.kind !== "rules");
-	}
+	assert.deepEqual(
+		inspected.map((entry) => ({
+			description: entry.change.description,
+			instructionsLength: entry.instructions.length,
+			hasCheckout: "checkout" in entry,
+		})),
+		inspected.map((entry) => ({
+			description: "Re-review body",
+			instructionsLength: EXPECTED_PROSE_LENGTH,
+			hasCheckout: entry.kind !== "rules",
+		})),
+	);
 	assert.equal(dispatch.exitCode, 0);
 	assert.equal(dispatch.payload.kind, "submitted");
 	assert.deepEqual(ghRecorder.settledThreadIds, ["T_open_fixed"]);
@@ -123,10 +130,16 @@ it("Review CLI handles Azure re-review with narrowed surface, thread updates, an
 		workdir.ledgerDirectory().readPullRequest().threads.threads.length,
 		EXPECTED_THREAD_COUNT,
 	);
-	for (const entry of inspected) {
-		assert.equal(entry.change.description, "Re-review body");
-		assert.equal(entry.instructions.length, EXPECTED_PROSE_LENGTH);
-	}
+	assert.deepEqual(
+		inspected.map((entry) => ({
+			description: entry.change.description,
+			instructionsLength: entry.instructions.length,
+		})),
+		inspected.map(() => ({
+			description: "Re-review body",
+			instructionsLength: EXPECTED_PROSE_LENGTH,
+		})),
+	);
 	assert.equal(dispatch.exitCode, 0);
 	assert.equal(dispatch.payload.kind, "submitted");
 	assert.deepEqual(azRecorder.patchedThreads[0], {

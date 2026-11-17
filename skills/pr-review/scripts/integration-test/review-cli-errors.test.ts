@@ -222,7 +222,6 @@ it("Review CLI posts idempotent refusal for in-progress checks and rejects overs
 });
 
 it("Review CLI short-circuits oversized GitHub PRs without requesting check-runs, GraphQL, or zipballs", async () => {
-	let oversizedKind = "";
 	const oversizedPaths = await captureRequestPaths(async () => {
 		mockServer.use(...createOversizedGitHubPullHandlers(repo));
 		const oversized = await invokeMainCli(
@@ -234,11 +233,9 @@ it("Review CLI short-circuits oversized GitHub PRs without requesting check-runs
 			],
 			PrepareResponseSchema,
 		);
-		if (!oversized.payload.success) {
-			oversizedKind = oversized.payload.error.kind;
-		}
+		assert.equal(oversized.payload.success, false);
+		assert.equal(oversized.payload.error.kind, "too-large");
 	});
-	assert.equal(oversizedKind, "too-large");
 	assert.equal(
 		oversizedPaths.some((path) => path.includes("/check-runs")),
 		false,
@@ -254,7 +251,6 @@ it("Review CLI short-circuits oversized GitHub PRs without requesting check-runs
 });
 
 it("Review CLI short-circuits already-reviewed GitHub PRs without requesting check-runs, GraphQL, or zipballs", async () => {
-	let alreadyKind = "";
 	const alreadyPaths = await captureRequestPaths(async () => {
 		mockServer.use(
 			...createOversizedGitHubPullHandlers(repo),
@@ -269,11 +265,9 @@ it("Review CLI short-circuits already-reviewed GitHub PRs without requesting che
 			],
 			PrepareResponseSchema,
 		);
-		if (!alreadyReviewed.payload.success) {
-			alreadyKind = alreadyReviewed.payload.error.kind;
-		}
+		assert.equal(alreadyReviewed.payload.success, false);
+		assert.equal(alreadyReviewed.payload.error.kind, "already-reviewed");
 	});
-	assert.equal(alreadyKind, "already-reviewed");
 	assert.equal(
 		alreadyPaths.some((path) => path.includes("/check-runs")),
 		false,

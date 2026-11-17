@@ -212,12 +212,14 @@ it("MainAgentController prepares a ready snapshot, tracks pending probes, and di
 	assert.deepEqual(beforeDispatch.remaining, pendingNames);
 	assert.equal(posted.length, 0);
 
-	for (const audit of workdir.readAudits()) {
+	const written = workdir.readAudits().map((audit) => {
 		workdir.ledgerDirectory().writeSlice(audit.name, {
 			headCommit: HEAD_COMMIT,
 			rows: stubPassingRowsForAudit(audit.document),
 		});
-	}
+		return audit.name;
+	});
+	assert.deepEqual(written, pendingNames);
 
 	const freshController = MainAgentController.create();
 	const submitted = await freshController.dispatchWithToken(workdir, token);

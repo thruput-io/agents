@@ -150,12 +150,10 @@ function rulebookProbeDriver(
 }
 
 function probeDriverFor(inspected: InspectedProbePayload): ProbeDriver {
-	switch (inspected.kind) {
-		case "context":
-			return contextProbeDriver(inspected);
-		default:
-			return rulebookProbeDriver(inspected);
+	if (inspected.kind === "context") {
+		return contextProbeDriver(inspected);
 	}
+	return rulebookProbeDriver(inspected);
 }
 
 export { type ProbeDriver, probeDriverFor };
