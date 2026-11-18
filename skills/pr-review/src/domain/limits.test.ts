@@ -1,0 +1,78 @@
+import assert from "node:assert/strict";
+import { test as it } from "node:test";
+import {
+	DIFF_LIMIT_EXCEEDED,
+	FILE_LIMIT_EXCEEDED,
+	MAX_ADDED_LINES,
+	MAX_CHANGED_FILES,
+	MAX_DIFF_LINES,
+	MAX_FILE_LINES,
+	oversizedFiles,
+	tooLarge,
+} from "./limits.ts";
+
+const EXPECTED_MAX_FILE_LINES = 1000;
+const EXPECTED_MAX_ADDED_LINES = 1600;
+const EXPECTED_MAX_CHANGED_FILES = 250;
+const EXPECTED_MAX_DIFF_LINES = 8000;
+const OVER_CHANGED_FILES_COUNT = 251;
+
+it("tooLarge enforces hard file, added, deleted, and file-count limits without exempting tests, lockfiles, or docs", () => {
+	assert.equal(MAX_FILE_LINES, EXPECTED_MAX_FILE_LINES);
+	assert.equal(MAX_ADDED_LINES, EXPECTED_MAX_ADDED_LINES);
+	assert.equal(MAX_CHANGED_FILES, EXPECTED_MAX_CHANGED_FILES);
+	assert.equal(MAX_DIFF_LINES, EXPECTED_MAX_DIFF_LINES);
+
+	const perFileCase = [
+		{ path: "a.cs", lines: 1001, added: 50, deleted: 0 },
+		{ path: "b.cs", lines: 1000, added: 50, deleted: 0 },
+		{ path: "tests/big.test.ts", lines: 1005, added: 10, deleted: 0 },
+		{ path: "package-lock.json", lines: 1200, added: 10, deleted: 0 },
+		{ path: "docs/huge.md", lines: 1002, added: 10, deleted: 0 },
+	];
+	assert.deepEqual(tooLarge(perFileCase), [
+		`a.cs is 1001 lines long (${FILE_LIMIT_EXCEEDED})`,
+		`tests/big.test.ts is 1005 lines long (${FILE_LIMIT_EXCEEDED})`,
+		`package-lock.json is 1200 lines long (${FILE_LIMIT_EXCEEDED})`,
+		`docs/huge.md is 1002 lines long (${FILE_LIMIT_EXCEEDED})`,
+	]);
+	assert.deepEqual(oversizedFiles(perFileCase), [
+		"a.cs",
+		"tests/big.test.ts",
+		"package-lock.json",
+		"docs/huge.md",
+	]);
+
+	const addedLimitCase = [
+		{ path: "a.cs", lines: 600, added: 600, deleted: 0 },
+		{ path: "package-lock.json", lines: 600, added: 600, deleted: 0 },
+		{ path: "docs/notes.md", lines: 500, added: 401, deleted: 0 },
+	];
+	assert.deepEqual(tooLarge(addedLimitCase), [DIFF_LIMIT_EXCEEDED]);
+	assert.deepEqual(oversizedFiles(addedLimitCase), [
+		"a.cs",
+		"package-lock.json",
+		"docs/notes.md",
+	]);
+
+	const deletionsLimitCase = [
+		{ path: "package-lock.json", lines: 0, added: 0, deleted: 8001 },
+	];
+	assert.deepEqual(tooLarge(deletionsLimitCase), [DIFF_LIMIT_EXCEEDED]);
+	assert.deepEqual(oversizedFiles(deletionsLimitCase), ["package-lock.json"]);
+
+	const manyFilesCase = Array.from(
+		{ length: OVER_CHANGED_FILES_COUNT },
+		(_, i) => ({
+			path: `docs/file-${i}.md`,
+			lines: 1,
+			added: 1,
+			deleted: 0,
+		}),
+	);
+	assert.deepEqual(tooLarge(manyFilesCase), [DIFF_LIMIT_EXCEEDED]);
+	assert.equal(oversizedFiles(manyFilesCase).length, OVER_CHANGED_FILES_COUNT);
+
+	assert.deepEqual(tooLarge([]), []);
+	assert.deepEqual(oversizedFiles([]), []);
+});

@@ -1,0 +1,186 @@
+import { z } from "zod";
+import {
+	CommentCommentType,
+	CommentThreadStatus,
+	type GitPullRequestCommentThread,
+	type IdentityRefWithVote,
+} from "../../../clients/azure-git.g.ts";
+import {
+	PullRequestReviewersCreatePullRequestReviewerBody,
+	PullRequestThreadsCreateBody,
+	PullRequestThreadsUpdateBody,
+} from "../../../clients/azure-git.zod.g.ts";
+import {
+	type HeadCommit,
+	HeadCommitSchema,
+	type InlineFinding,
+	InlineFindingSchema,
+	type ReviewVerdict,
+	ReviewVerdictSchema,
+	type Summary,
+	SummarySchema,
+	type ThreadBody,
+	ThreadBodySchema,
+} from "../../domain/contracts.g.ts";
+import { SITE } from "../../domain/rulebook.ts";
+import {
+	decodeAzureThreadContext,
+	encodeAzureThreadContext,
+} from "./azure-thread-context.ts";
+
+const AZURE_VOTE_APPROVED = 10;
+const AZURE_VOTE_REJECTED = -10;
+const AZURE_VOTE_BY_VERDICT: Readonly<Record<ReviewVerdict, number>> = {
+	approve: AZURE_VOTE_APPROVED,
+	"request-changes": AZURE_VOTE_REJECTED,
+};
+const EDITABLE_STATUS_BY_WIRE: Readonly<
+	Record<string, AzureEditableThreadStatus>
+> = {
+	closed: "closed",
+	active: "active",
+};
+const REFUSAL_PATTERN =
+	/^\*\*Verdict: request-changes\*\*\n\nNot reviewed at (?<commit>[0-9a-f]{40}) against \[the rules\]\([^)]+\): (?<reason>[\s\S]+)\.$/u;
+
+const orEmpty = (value: string | null | undefined): string => {
+	if (value === undefined || value === null) {
+		return "";
+	}
+	return value;
+};
+
+const firstCommentText = (
+	wire: Pick<z.infer<typeof PullRequestThreadsCreateBody>, "comments">,
+): string => orEmpty(wire.comments?.[0]?.content);
+
+const editableStatusOf = (
+	status: string | null | undefined,
+): AzureEditableThreadStatus => {
+	if (status === undefined || status === null) {
+		return "active";
+	}
+	const mapped = EDITABLE_STATUS_BY_WIRE[status];
+	if (mapped === undefined) {
+		return "active";
+	}
+	return mapped;
+};
+
+const AzureTextThreadCodec = z.codec(
+	PullRequestThreadsCreateBody,
+	ThreadBodySchema,
+	{
+		decode: (wire) => firstCommentText(wire),
+		encode: (content) => ({
+			comments: [
+				{
+					parentCommentId: 0,
+					commentType: CommentCommentType.text,
+					content,
+				},
+			],
+			status: CommentThreadStatus.active,
+		}),
+	},
+);
+
+const text = (content: ThreadBody): GitPullRequestCommentThread =>
+	AzureTextThreadCodec.encode(content) as GitPullRequestCommentThread;
+
+const AzureInlineThreadCodec = z.codec(
+	PullRequestThreadsCreateBody,
+	InlineFindingSchema,
+	{
+		decode: (wire) => ({
+			...decodeAzureThreadContext(wire.threadContext),
+			body: firstCommentText(wire),
+		}),
+		encode: (finding) => ({
+			...AzureTextThreadCodec.encode(finding.body),
+			threadContext: encodeAzureThreadContext(
+				finding.path,
+				finding.side,
+				finding.lines,
+			),
+		}),
+	},
+);
+
+const threadPayload = (finding: InlineFinding): GitPullRequestCommentThread =>
+	AzureInlineThreadCodec.encode(finding) as GitPullRequestCommentThread;
+
+const AzureRefusalThreadCodec = z.codec(
+	PullRequestThreadsCreateBody,
+	z.object({
+		headCommit: HeadCommitSchema,
+		reason: SummarySchema,
+	}),
+	{
+		decode: (wire) => {
+			const body = firstCommentText(wire);
+			const match = REFUSAL_PATTERN.exec(body);
+			if (match === null) {
+				return { headCommit: "", reason: "" };
+			}
+			return {
+				headCommit: orEmpty(match[1]),
+				reason: orEmpty(match[2]),
+			};
+		},
+		encode: ({ headCommit, reason }) =>
+			AzureTextThreadCodec.encode(
+				`**Verdict: request-changes**\n\nNot reviewed at ${headCommit} against [the rules](${SITE}): ${reason}.`,
+			),
+	},
+);
+
+const AzureEditableThreadStatusSchema = z.enum(["active", "closed"]);
+
+export const refusalText = (
+	headCommit: HeadCommit,
+	reason: Summary,
+): GitPullRequestCommentThread =>
+	AzureRefusalThreadCodec.encode({
+		headCommit,
+		reason,
+	}) as GitPullRequestCommentThread;
+
+export const AzureVoteCodec = z.codec(
+	PullRequestReviewersCreatePullRequestReviewerBody,
+	ReviewVerdictSchema,
+	{
+		decode: (wire) => {
+			if (wire.vote !== undefined && wire.vote !== null && wire.vote > 0) {
+				return "approve";
+			}
+			return "request-changes";
+		},
+		encode: (verdict) => ({
+			vote: AZURE_VOTE_BY_VERDICT[verdict],
+		}),
+	},
+);
+
+export const votePayload = (verdict: ReviewVerdict): IdentityRefWithVote =>
+	AzureVoteCodec.encode(verdict) as IdentityRefWithVote;
+
+export type AzureEditableThreadStatus = z.infer<
+	typeof AzureEditableThreadStatusSchema
+>;
+
+export const AzureThreadStatusCodec = z.codec(
+	PullRequestThreadsUpdateBody,
+	AzureEditableThreadStatusSchema,
+	{
+		decode: (wire) => editableStatusOf(wire.status),
+		encode: (status) => ({ status }),
+	},
+);
+
+export const threadStatusPayload = (
+	status: AzureEditableThreadStatus,
+): GitPullRequestCommentThread =>
+	AzureThreadStatusCodec.encode(status) as GitPullRequestCommentThread;
+
+export { AzureInlineThreadCodec, AzureTextThreadCodec, text, threadPayload };
