@@ -50,8 +50,31 @@ type AzureThreadRecord = Pick<
 const onLines = (record: Pick<AzureThreadRecord, "threadContext">): boolean =>
 	Boolean(record.threadContext?.filePath);
 
-const firstComment = (record: Pick<AzureThreadRecord, "comments">): string =>
-	record.comments?.[0]?.content ?? "";
+const firstComment = (record: Pick<AzureThreadRecord, "comments">): string => {
+	const content = record.comments?.[0]?.content;
+	if (content === undefined || content === null) {
+		return "";
+	}
+	return content;
+};
+
+const threadIdText = (id: number | null | undefined): string => {
+	if (id === undefined || id === null) {
+		return "";
+	}
+	return String(id);
+};
+
+const threadStateOf = (status: string | null | undefined): ThreadState => {
+	if (status === undefined || status === null) {
+		return "resolved";
+	}
+	const mapped = STATE_BY_STATUS[status];
+	if (mapped === undefined) {
+		return "resolved";
+	}
+	return mapped;
+};
 
 const pullRequestThreads = (rawThreads: readonly AzureThreadRecord[]) =>
 	rawThreads.filter((record) => !onLines(record) && isOurThread(record));
@@ -70,9 +93,9 @@ export const AzureThreadCodec = z.codec(
 		decode: (record) => {
 			const decoded = decodeAzureThreadContext(record.threadContext);
 			return {
-				id: String(record.id ?? ""),
+				id: threadIdText(record.id),
 				...decoded,
-				state: STATE_BY_STATUS[record.status ?? ""] ?? "resolved",
+				state: threadStateOf(record.status),
 				body: firstComment(record),
 			};
 		},
@@ -125,11 +148,20 @@ export const staleRefusals = (
 
 export const priorOf = (
 	rawThreads: readonly AzureThreadRecord[],
-): HeadCommit | null =>
-	pullRequestThreads(rawThreads)
+): HeadCommit | null => {
+	const lastMatch = pullRequestThreads(rawThreads)
 		.map((record) => PRIOR.exec(firstComment(record)))
 		.filter((match) => !isNullOrEmpty(match))
-		.at(-1)?.[1] ?? null;
+		.at(-1);
+	if (lastMatch === undefined || lastMatch === null) {
+		return null;
+	}
+	const [, commit] = lastMatch;
+	if (commit === undefined) {
+		return null;
+	}
+	return commit;
+};
 
 export function unposted(
 	outcome: Outcome,

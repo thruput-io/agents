@@ -24,6 +24,13 @@ const CHECK_RUNS_KEY = "check_runs";
 const GitHubCheckRunTransportSchema =
 	ChecksListForRefResponse.shape.check_runs.element;
 
+const stringOrEmpty = (value: string | null | undefined): string => {
+	if (isNullOrEmpty(value)) {
+		return "";
+	}
+	return value;
+};
+
 export const GitHubPullRequestCodec = z.codec(
 	PullsGetResponse,
 	PullsGetResponse,
@@ -82,7 +89,7 @@ export const changeOf = (
 ): Change => ({
 	host,
 	author: pullRequest.user.login,
-	description: pullRequest.body ?? "",
+	description: stringOrEmpty(pullRequest.body),
 });
 
 export const baseCommitOf = (pullRequest: {
@@ -114,35 +121,48 @@ export function postedAt(
 	reviews: readonly Pick<PullRequestReview, "state" | "body" | "html_url">[],
 	headCommit: HeadCommit,
 ): Summary | null {
-	return (
-		reviews.find(
-			(review) =>
-				review.state !== "PENDING" &&
-				ours(review.body) &&
-				review.body.includes(`probes at ${headCommit} `),
-		)?.html_url ?? null
+	const match = reviews.find(
+		(review) =>
+			review.state !== "PENDING" &&
+			ours(review.body) &&
+			review.body.includes(`probes at ${headCommit} `),
 	);
+	if (match === undefined) {
+		return null;
+	}
+	return match.html_url;
 }
 
 export function refusedIn(
 	reviews: readonly Pick<PullRequestReview, "state" | "body" | "html_url">[],
 	headCommit: HeadCommit,
 ): Summary | null {
-	return (
-		reviews.find(
-			(review) =>
-				review.state !== "PENDING" &&
-				ours(review.body) &&
-				review.body.includes(`Not reviewed at ${headCommit} `),
-		)?.html_url ?? null
+	const match = reviews.find(
+		(review) =>
+			review.state !== "PENDING" &&
+			ours(review.body) &&
+			review.body.includes(`Not reviewed at ${headCommit} `),
 	);
+	if (match === undefined) {
+		return null;
+	}
+	return match.html_url;
 }
 
 export const priorOf = (
 	reviews: readonly Pick<PullRequestReview, "state" | "body">[],
-): HeadCommit | null =>
-	reviews
+): HeadCommit | null => {
+	const latest = reviews
 		.filter((review) => review.state !== "PENDING" && ours(review.body))
 		.map((review) => PRIOR.exec(review.body))
 		.filter((match) => !isNullOrEmpty(match))
-		.at(-1)?.[1] ?? null;
+		.at(-1);
+	if (latest === undefined || latest === null) {
+		return null;
+	}
+	const [, commit] = latest;
+	if (commit === undefined) {
+		return null;
+	}
+	return commit;
+};

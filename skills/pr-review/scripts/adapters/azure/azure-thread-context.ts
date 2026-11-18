@@ -34,29 +34,48 @@ const CONTEXT_BY_SIDE: Readonly<
 	}),
 };
 
+const pathOf = (context: AzureThreadContext): string => {
+	const filePath = context?.filePath;
+	if (filePath === undefined || filePath === null) {
+		return "";
+	}
+	return filePath.replace(LEADING_SLASH, "");
+};
+
+const lineOr = (
+	position: { readonly line?: number | null | undefined } | null | undefined,
+	fallback: number,
+): number => {
+	const line = position?.line;
+	if (line === undefined || line === null) {
+		return fallback;
+	}
+	return line;
+};
+
 export function decodeAzureThreadContext(context: AzureThreadContext): {
 	readonly path: string;
 	readonly side: Side;
 	readonly lines: { readonly start: number; readonly end: number };
 } {
-	const path = (context?.filePath ?? "").replace(LEADING_SLASH, "");
+	const path = pathOf(context);
 	if (
 		context !== undefined &&
 		context !== null &&
 		!isNullOrEmpty(context.rightFileEnd)
 	) {
-		const end = context.rightFileEnd.line ?? 1;
+		const end = lineOr(context.rightFileEnd, 1);
 		return {
 			path,
 			side: "head",
-			lines: { start: context.rightFileStart?.line ?? end, end },
+			lines: { start: lineOr(context.rightFileStart, end), end },
 		};
 	}
-	const end = context?.leftFileEnd?.line ?? 1;
+	const end = lineOr(context?.leftFileEnd, 1);
 	return {
 		path,
 		side: "base",
-		lines: { start: context?.leftFileStart?.line ?? end, end },
+		lines: { start: lineOr(context?.leftFileStart, end), end },
 	};
 }
 

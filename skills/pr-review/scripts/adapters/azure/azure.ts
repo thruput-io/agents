@@ -15,6 +15,31 @@ import {
 const AzureEvaluationTransportSchema =
 	EvaluationsListResponse.shape.value.element;
 
+const orEmpty = (value: string | null | undefined): string => {
+	if (value === undefined || value === null) {
+		return "";
+	}
+	return value;
+};
+
+const threadIdText = (id: number | null | undefined): string => {
+	if (id === undefined || id === null) {
+		return "";
+	}
+	return String(id);
+};
+
+const projectIdOf = (
+	host: AzureDevOps,
+	pullRequest: Pick<AzurePullRequest, "repository">,
+): string => {
+	const id = pullRequest.repository?.project?.id;
+	if (id === undefined || id === null) {
+		return host.project;
+	}
+	return id;
+};
+
 export const KIND = "azure-devops" as const;
 
 export type AzurePullRequest = z.infer<
@@ -47,33 +72,33 @@ export const AzureCreatedThreadIdCodec = z.codec(
 	PullRequestThreadsCreateResponse,
 	SummarySchema,
 	{
-		decode: (wire) => String(wire.id ?? ""),
+		decode: (wire) => threadIdText(wire.id),
 		encode: (id) => ({ id: Number(id) }),
 	},
 );
 
 export const headCommitOf = (
 	pullRequest: Pick<AzurePullRequest, "lastMergeSourceCommit">,
-): HeadCommit => pullRequest.lastMergeSourceCommit?.commitId ?? "";
+): HeadCommit => orEmpty(pullRequest.lastMergeSourceCommit?.commitId);
 
 export const changeOf = (
 	host: AzureDevOps,
 	pullRequest: Pick<AzurePullRequest, "createdBy" | "description">,
 ): Change => ({
 	host,
-	author: pullRequest.createdBy?.uniqueName ?? "",
-	description: pullRequest.description ?? "",
+	author: orEmpty(pullRequest.createdBy?.uniqueName),
+	description: orEmpty(pullRequest.description),
 });
 
 export const artifactIdOf = (
 	host: AzureDevOps,
 	pullRequest: Pick<AzurePullRequest, "repository">,
 ): Summary =>
-	`vstfs:///CodeReview/CodeReviewId/${pullRequest.repository?.project?.id ?? host.project}/${host.id}`;
+	`vstfs:///CodeReview/CodeReviewId/${projectIdOf(host, pullRequest)}/${host.id}`;
 
 export const targetCommitOf = (
 	pullRequest: Pick<AzurePullRequest, "lastMergeTargetCommit">,
-): HeadCommit => pullRequest.lastMergeTargetCommit?.commitId ?? "";
+): HeadCommit => orEmpty(pullRequest.lastMergeTargetCommit?.commitId);
 
 export const blockingBuildPolicies = (
 	policies: readonly Pick<AzureEvaluationRecord, "status" | "configuration">[],

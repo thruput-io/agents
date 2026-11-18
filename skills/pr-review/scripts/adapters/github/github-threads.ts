@@ -105,8 +105,31 @@ const ThreadsPage = z.codec(
 
 type GitHubThreadNode = z.infer<typeof ThreadNode>;
 
+const firstCommentBodyOf = (node: GitHubThreadNode): string => {
+	const [first] = node.comments.nodes;
+	if (first === undefined) {
+		return "";
+	}
+	return first.body;
+};
+
+const numberOr = (value: number | null, fallback: number): number => {
+	if (value === null) {
+		return fallback;
+	}
+	return value;
+};
+
+const sideOf = (diffSide: GitHubThreadNode["diffSide"]): "head" | "base" => {
+	const mapped = SIDE_OF.get(diffSide);
+	if (mapped === undefined) {
+		return "head";
+	}
+	return mapped;
+};
+
 const isReviewableThreadNode = (node: GitHubThreadNode): boolean =>
-	!isNullOrEmpty(node.line) && ours(node.comments.nodes[0]?.body ?? "");
+	!isNullOrEmpty(node.line) && ours(firstCommentBodyOf(node));
 
 const threadState = (
 	node: GitHubThreadNode,
@@ -122,15 +145,15 @@ const threadState = (
 };
 
 function thread(node: GitHubThreadNode, author: Developer): Thread {
-	const end = node.line ?? 1;
+	const end = numberOr(node.line, 1);
 	const state = threadState(node, author);
 	return {
 		id: node.id,
 		path: node.path,
-		side: SIDE_OF.get(node.diffSide) ?? "head",
-		lines: { start: node.startLine ?? end, end },
+		side: sideOf(node.diffSide),
+		lines: { start: numberOr(node.startLine, end), end },
 		state,
-		body: node.comments.nodes[0]?.body ?? "",
+		body: firstCommentBodyOf(node),
 	};
 }
 
@@ -153,6 +176,25 @@ const GraphQlErrorResponseSchema = z.object({
 	errors: z.array(z.object({ message: SummarySchema })).optional(),
 });
 
+const directErrorMessageOf = (
+	data: z.infer<typeof GraphQlErrorResponseSchema>,
+): string | undefined => {
+	if (data.message !== undefined) {
+		return data.message;
+	}
+	if (data.errors !== undefined && data.errors[0] !== undefined) {
+		return data.errors[0].message;
+	}
+	return undefined;
+};
+
+const responseHeadersOf = (headers: Headers | undefined): Headers => {
+	if (headers === undefined) {
+		return new Headers();
+	}
+	return headers;
+};
+
 const extractClientErrorData = (response: unknown): unknown => {
 	const parsed = GraphQlErrorResponseSchema.safeDecode(
 		response as z.input<typeof GraphQlErrorResponseSchema>,
@@ -160,8 +202,7 @@ const extractClientErrorData = (response: unknown): unknown => {
 	if (!parsed.success) {
 		return undefined;
 	}
-	const directMessage =
-		parsed.data.message ?? parsed.data.errors?.[0]?.message ?? undefined;
+	const directMessage = directErrorMessageOf(parsed.data);
 	if (!isNullOrEmpty(directMessage)) {
 		return { message: directMessage };
 	}
@@ -216,7 +257,7 @@ const fetchThreadsPage = async (
 			return {
 				ok: false,
 				status: error.response.status,
-				headers: error.response.headers ?? new Headers(),
+				headers: responseHeadersOf(error.response.headers),
 				data: extractClientErrorData(error.response),
 			};
 		}
@@ -275,7 +316,7 @@ export async function settleAndReopenGitHubThreads(
 			return {
 				ok: false,
 				status: error.response.status,
-				headers: error.response.headers ?? new Headers(),
+				headers: responseHeadersOf(error.response.headers),
 				data: extractClientErrorData(error.response),
 			};
 		}

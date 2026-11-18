@@ -43,11 +43,35 @@ const EDITABLE_STATUS_BY_WIRE: Readonly<
 const REFUSAL_PATTERN =
 	/^\*\*Verdict: request-changes\*\*\n\nNot reviewed at (?<commit>[0-9a-f]{40}) against \[the rules\]\([^)]+\): (?<reason>[\s\S]+)\.$/u;
 
+const orEmpty = (value: string | null | undefined): string => {
+	if (value === undefined || value === null) {
+		return "";
+	}
+	return value;
+};
+
+const firstCommentText = (
+	wire: Pick<z.infer<typeof PullRequestThreadsCreateBody>, "comments">,
+): string => orEmpty(wire.comments?.[0]?.content);
+
+const editableStatusOf = (
+	status: string | null | undefined,
+): AzureEditableThreadStatus => {
+	if (status === undefined || status === null) {
+		return "active";
+	}
+	const mapped = EDITABLE_STATUS_BY_WIRE[status];
+	if (mapped === undefined) {
+		return "active";
+	}
+	return mapped;
+};
+
 const AzureTextThreadCodec = z.codec(
 	PullRequestThreadsCreateBody,
 	ThreadBodySchema,
 	{
-		decode: (wire) => wire.comments?.[0]?.content ?? "",
+		decode: (wire) => firstCommentText(wire),
 		encode: (content) => ({
 			comments: [
 				{
@@ -70,7 +94,7 @@ const AzureInlineThreadCodec = z.codec(
 	{
 		decode: (wire) => ({
 			...decodeAzureThreadContext(wire.threadContext),
-			body: wire.comments?.[0]?.content ?? "",
+			body: firstCommentText(wire),
 		}),
 		encode: (finding) => ({
 			...AzureTextThreadCodec.encode(finding.body),
@@ -94,11 +118,14 @@ const AzureRefusalThreadCodec = z.codec(
 	}),
 	{
 		decode: (wire) => {
-			const body = wire.comments?.[0]?.content ?? "";
+			const body = firstCommentText(wire);
 			const match = REFUSAL_PATTERN.exec(body);
+			if (match === null) {
+				return { headCommit: "", reason: "" };
+			}
 			return {
-				headCommit: match?.[1] ?? "",
-				reason: match?.[2] ?? "",
+				headCommit: orEmpty(match[1]),
+				reason: orEmpty(match[2]),
 			};
 		},
 		encode: ({ headCommit, reason }) =>
@@ -124,7 +151,7 @@ export const AzureVoteCodec = z.codec(
 	ReviewVerdictSchema,
 	{
 		decode: (wire) => {
-			if ((wire.vote ?? 0) > 0) {
+			if (wire.vote !== undefined && wire.vote !== null && wire.vote > 0) {
 				return "approve";
 			}
 			return "request-changes";
@@ -146,7 +173,7 @@ export const AzureThreadStatusCodec = z.codec(
 	PullRequestThreadsUpdateBody,
 	AzureEditableThreadStatusSchema,
 	{
-		decode: (wire) => EDITABLE_STATUS_BY_WIRE[wire.status ?? ""] ?? "active",
+		decode: (wire) => editableStatusOf(wire.status),
 		encode: (status) => ({ status }),
 	},
 );

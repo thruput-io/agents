@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
+import { nonnull } from "../../domain/nullish.ts";
 import { SITE } from "../../domain/rulebook.ts";
 import {
 	AzureEvaluationsListCodec,
@@ -52,8 +53,8 @@ it("Azure thread and vote codecs encode adapter models into validated wire paylo
 	const domainThread = AzureThreadCodec.decode({
 		id: SAMPLE_THREAD_ID,
 		status: "active",
-		threadContext: wireInline.threadContext ?? null,
-		comments: wireInline.comments ?? null,
+		threadContext: nonnull(wireInline.threadContext),
+		comments: nonnull(wireInline.comments),
 	});
 	assert.equal(domainThread.id, String(SAMPLE_THREAD_ID));
 	assert.equal(domainThread.path, "service.ts");

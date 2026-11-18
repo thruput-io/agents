@@ -50,17 +50,92 @@ const COMMIT_ID_KEY = "commit_id";
 const GitHubReviewCommentTransportSchema =
 	PullsCreateReviewBody.shape.comments.unwrap().element;
 
+const stringOrEmpty = (value: string | null | undefined): string => {
+	if (value === null || value === undefined) {
+		return "";
+	}
+	return value;
+};
+
+const endLineOf = (line: number | undefined): number => {
+	if (line === undefined) {
+		return 1;
+	}
+	return line;
+};
+
+const startLineOf = (
+	startLine: number | undefined,
+	endLine: number,
+): number => {
+	if (startLine === undefined) {
+		return endLine;
+	}
+	return startLine;
+};
+
+const domainSideOf = (side: string | undefined): Side => {
+	if (side === undefined) {
+		return "head";
+	}
+	const mapped = DOMAIN_SIDE_OF.get(side);
+	if (mapped === undefined) {
+		return "head";
+	}
+	return mapped;
+};
+
+const verdictOf = (event: string | undefined): ReviewVerdict => {
+	if (event === undefined) {
+		return "request-changes";
+	}
+	const mapped = VERDICT_OF.get(event);
+	if (mapped === undefined) {
+		return "request-changes";
+	}
+	return mapped;
+};
+
+const commentsOf = (
+	comments: readonly PullsCreateReviewBodyCommentsItem[] | undefined,
+): readonly PullsCreateReviewBodyCommentsItem[] => {
+	if (comments === undefined) {
+		return [];
+	}
+	return comments;
+};
+
+const refusalHeadCommitOf = (
+	commitId: string | undefined,
+	match: RegExpExecArray | null,
+): HeadCommit => {
+	if (commitId !== undefined) {
+		return commitId;
+	}
+	if (match !== null && match[1] !== undefined) {
+		return match[1];
+	}
+	return "";
+};
+
+const refusalReasonOf = (match: RegExpExecArray | null): Summary => {
+	if (match !== null && match[2] !== undefined) {
+		return match[2];
+	}
+	return "";
+};
+
 const GitHubReviewCommentCodec = z.codec(
 	GitHubReviewCommentTransportSchema,
 	InlineFindingSchema,
 	{
 		decode: (wire) => {
-			const end = wire.line ?? 1;
+			const end = endLineOf(wire.line);
 			return {
 				path: wire.path,
-				side: DOMAIN_SIDE_OF.get(wire.side ?? "RIGHT") ?? "head",
+				side: domainSideOf(wire.side),
 				lines: {
-					start: wire.start_line ?? end,
+					start: startLineOf(wire.start_line, end),
 					end,
 				},
 				body: wire.body,
@@ -95,7 +170,7 @@ const GitHubReviewPayloadCodec = z.codec(
 	}),
 	{
 		decode: (wire) => {
-			const rawBody = wire.body ?? "";
+			const rawBody = stringOrEmpty(wire.body);
 			const splitIndex = rawBody.indexOf(LEDGER_DETAILS_PREFIX);
 			let summary = rawBody;
 			let ledgerTable = "";
@@ -110,12 +185,10 @@ const GitHubReviewPayloadCodec = z.codec(
 			}
 			return {
 				outcome: {
-					headCommit: wire.commit_id ?? "",
-					verdict:
-						VERDICT_OF.get(wire.event ?? "REQUEST_CHANGES") ??
-						"request-changes",
+					headCommit: stringOrEmpty(wire.commit_id),
+					verdict: verdictOf(wire.event),
 					summary,
-					inline: (wire.comments ?? []).map((item) =>
+					inline: commentsOf(wire.comments).map((item) =>
 						GitHubReviewCommentCodec.decode(item),
 					),
 					settle: [],
@@ -153,10 +226,10 @@ const GitHubRefusalPayloadCodec = z.codec(
 	}),
 	{
 		decode: (wire) => {
-			const match = REFUSAL_BODY_PATTERN.exec(wire.body ?? "");
+			const match = REFUSAL_BODY_PATTERN.exec(stringOrEmpty(wire.body));
 			return {
-				headCommit: wire.commit_id ?? match?.[1] ?? "",
-				reason: match?.[2] ?? "",
+				headCommit: refusalHeadCommitOf(wire.commit_id, match),
+				reason: refusalReasonOf(match),
 			};
 		},
 		encode: ({ headCommit, reason }) => ({
