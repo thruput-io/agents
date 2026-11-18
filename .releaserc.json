@@ -15,7 +15,14 @@
       "@semantic-release/github",
       {
         "assets": [
-          { "path": "dist/thruput-review-tool.tgz", "label": "thruput-review-tool.tgz" }
+          {
+            "path": "skills/pr-review/dist/bin/review-tool.mjs",
+            "label": "review-tool.mjs"
+          },
+          {
+            "path": "skills/pr-review/dist/bin/review-tool-probe.mjs",
+            "label": "review-tool-probe.mjs"
+          }
         ]
       }
     ]
