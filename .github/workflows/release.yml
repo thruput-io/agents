@@ -44,9 +44,19 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
     steps:
-      - run: gh workflow run build-and-push.yml -R thruput-io/reviewer --ref main
+      - id: distribute
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.DISTRIBUTION_APP_ID }}
+          private-key: ${{ secrets.DISTRIBUTION_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: reviewer
+      - name: tell reviewer there is a release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.distribute.outputs.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY_OWNER/reviewer/dispatches" \
+            -f event_type=release -f "client_payload[repository]=$GITHUB_REPOSITORY"
 
   pages:
     needs: site
