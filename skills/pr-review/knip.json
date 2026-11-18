@@ -1,9 +1,6 @@
 {
 	"$schema": "https://unpkg.com/knip@5/schema.json",
-	"entry": [
-		"scripts/client/controller-cli.ts",
-		"scripts/client/sub-agent-cli.ts"
-	],
+	"entry": ["src/client/controller-cli.ts", "src/client/sub-agent-cli.ts"],
 	"ignoreBinaries": ["esbuild"],
 	"ignoreDependencies": [
 		"@faker-js/faker",
@@ -13,10 +10,11 @@
 		"tsx"
 	],
 	"project": [
-		"scripts/client/*.ts",
-		"scripts/controller/*.ts",
-		"scripts/adapters/**/*.ts",
-		"scripts/domain/*.ts",
-		"!scripts/**/*.test.ts"
+		"src/client/*.ts",
+		"src/controller/*.ts",
+		"src/adapters/**/*.ts",
+		"src/io/*.ts",
+		"src/domain/*.ts",
+		"!src/**/*.test.ts"
 	]
 }

@@ -16,7 +16,7 @@ interface SchemaDocument {
 }
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const OUTPUT_FILE = resolve(SCRIPT_DIR, "domain/contracts.g.ts");
+const OUTPUT_FILE = resolve(SCRIPT_DIR, "../src/domain/contracts.g.ts");
 const SCHEMAS_DIR = resolve(SCRIPT_DIR, "../../../schemas");
 const PASCAL_CASE_PATTERN = /(?:^|[^a-zA-Z0-9]+)(?<char>[a-zA-Z0-9])/gu;
 const DEREFERENCE_PASSES = 4;
