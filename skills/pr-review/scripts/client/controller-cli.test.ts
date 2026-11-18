@@ -5,12 +5,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test as it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { runMainAgentCli } from "../client/controller-cli.ts";
-import { runSubAgentCli } from "../client/sub-agent-cli.ts";
+import { HostAdapterFactory } from "../adapters/adapter-factory.ts";
 import { MainAgentController } from "../controller/controller.ts";
 import { SubAgentController } from "../controller/sub-agent-controller.ts";
+import { runMainAgentCli } from "./controller-cli.ts";
+import { runSubAgentCli } from "./sub-agent-cli.ts";
 
-const CLIENT_DIR = fileURLToPath(new URL("../client", import.meta.url));
+const CLIENT_DIR = fileURLToPath(new URL(".", import.meta.url));
 const MAX_CLI_OUTPUT_BYTES = 9000;
 
 it("sub-agent-controller define resolves [[term]]s with default depth 1, configurable depth, and unknown-term errors", () => {
@@ -60,11 +61,13 @@ it("sub-agent-controller define resolves [[term]]s with default depth 1, configu
 });
 
 it("controller CLIs support -h / --help with row schemas and execute correctly through symlinks", async () => {
-	const freshMain = MainAgentController.create();
+	const freshMain = MainAgentController.create(HostAdapterFactory);
 	assert.equal(await runMainAgentCli(freshMain, ["-h"]), 0);
 	assert.equal(await runMainAgentCli(freshMain, ["--help"]), 0);
-	assert.equal(runSubAgentCli(SubAgentController.forSession, ["-h"]), 0);
-	assert.equal(runSubAgentCli(SubAgentController.forSession, ["--help"]), 0);
+	const openProbe = (session: string, name: string) =>
+		SubAgentController.forSession(session, name, HostAdapterFactory);
+	assert.equal(runSubAgentCli(openProbe, ["-h"]), 0);
+	assert.equal(runSubAgentCli(openProbe, ["--help"]), 0);
 
 	const tempRoot = mkdtempSync(join(tmpdir(), "cli-symlink-"));
 	const linkedSubCli = join(tempRoot, "review-tool-probe");

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { z } from "zod";
+import { HostAdapterFactory } from "../adapters/adapter-factory.ts";
 import { MainAgentController } from "../controller/controller.ts";
 import { AccessToken } from "../domain/access-token.ts";
 import {
@@ -224,7 +225,10 @@ async function runMainAgentCli(
 }
 
 if (import.meta.main || isCliEntrypoint(import.meta.url)) {
-	await runMainAgentCli(MainAgentController.create(), process.argv.slice(2));
+	await runMainAgentCli(
+		MainAgentController.create(HostAdapterFactory),
+		process.argv.slice(2),
+	);
 }
 
 export type { MainAgentCliDriver };

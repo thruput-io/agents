@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { HostAdapterFactory } from "../adapters/adapter-factory.ts";
 import type { CodeUnderReview } from "../domain/code-under-review.ts";
 import {
 	type AckPayload,
@@ -14,6 +13,7 @@ import {
 	type RulesetUrl,
 	type Surface,
 } from "../domain/contracts.g.ts";
+import type { HostAdapterPort } from "../domain/host-adapter.ts";
 import { Instructions } from "../domain/instructions.ts";
 import { coordinateLedgers } from "../domain/main-agent-ledger.ts";
 import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
@@ -148,10 +148,11 @@ export class SubAgentController {
 	static forWorkdir(
 		workdir: Workdir,
 		name: Checkout,
+		adapters: HostAdapterPort,
 		now: () => number = Date.now,
 	): SubAgentController {
 		const persisted = workdir.ledgerDirectory().readPullRequest();
-		const { pullRequest } = HostAdapterFactory.rehydrate(persisted);
+		const { pullRequest } = adapters.rehydrate(persisted);
 		const rulesets = workdir.ledgerDirectory().readRulesets();
 		const probes = loadPersistedProbes(
 			workdir.readAudits(),
@@ -187,13 +188,14 @@ export class SubAgentController {
 	static forSession(
 		sessionOrWorkdir: Checkout,
 		name: Checkout,
+		adapters: HostAdapterPort,
 		now: () => number = Date.now,
 	): SubAgentController {
 		const parsed = Workdir.fromSession(sessionOrWorkdir);
 		if (!parsed.success) {
 			throw new Error(z.prettifyError(parsed.error));
 		}
-		return SubAgentController.forWorkdir(parsed.data, name, now);
+		return SubAgentController.forWorkdir(parsed.data, name, adapters, now);
 	}
 
 	workdir(): Workdir {

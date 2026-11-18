@@ -5,11 +5,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test as it } from "node:test";
 import { fileURLToPath } from "node:url";
-import type { SubAgentController } from "../controller/sub-agent-controller.ts";
-import { Instructions } from "./instructions.ts";
-import { nonnull } from "./nullish.ts";
-import { Rulebook } from "./rulebook.ts";
-import { Workdir } from "./workdir.ts";
+import { Instructions } from "../domain/instructions.ts";
+import { nonnull } from "../domain/nullish.ts";
+import { Rulebook } from "../domain/rulebook.ts";
+import { Workdir } from "../domain/workdir.ts";
+import type { SubAgentController } from "./sub-agent-controller.ts";
 
 const SHA1_HEX_LENGTH = 40;
 const H = "a".repeat(SHA1_HEX_LENGTH);

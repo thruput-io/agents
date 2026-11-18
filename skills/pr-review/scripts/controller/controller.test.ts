@@ -9,14 +9,15 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test as it } from "node:test";
+import { HostAdapterFactory } from "../adapters/adapter-factory.ts";
 import { CodeUnderReviewFactory } from "../adapters/code-under-review-factory.ts";
-import { MainAgentController } from "../controller/controller.ts";
-import { SubAgentController } from "../controller/sub-agent-controller.ts";
-import { LedgerDirectory } from "./ledger-directory.ts";
-import { nonnull } from "./nullish.ts";
-import { Rulebook } from "./rulebook.ts";
-import { RulesSubAgentLedger } from "./rules-sub-agent-ledger.ts";
-import { Workdir } from "./workdir.ts";
+import { LedgerDirectory } from "../domain/ledger-directory.ts";
+import { nonnull } from "../domain/nullish.ts";
+import { Rulebook } from "../domain/rulebook.ts";
+import { RulesSubAgentLedger } from "../domain/rules-sub-agent-ledger.ts";
+import { Workdir } from "../domain/workdir.ts";
+import { MainAgentController } from "./controller.ts";
+import { SubAgentController } from "./sub-agent-controller.ts";
 
 const SHA1_HEX_LENGTH = 40;
 const H = "a".repeat(SHA1_HEX_LENGTH);
@@ -242,7 +243,7 @@ it("SubAgentController requires ack before report and MainAgentController reject
 	]);
 	assert.equal(result.success, true);
 	assert.equal(result.data.kind, "recorded");
-	const mainController = MainAgentController.create();
+	const mainController = MainAgentController.create(HostAdapterFactory);
 	const invalidPrep = await mainController.prepare("not-a-url", workdir);
 	assert.equal(invalidPrep.success, false);
 	assert.equal(invalidPrep.error.kind, "invalid-target");

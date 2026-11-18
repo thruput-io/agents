@@ -1,9 +1,12 @@
 import { z } from "zod";
-import { HostAdapterFactory } from "../adapters/adapter-factory.ts";
 import type { AccessToken } from "../domain/access-token.ts";
 import type { CodeUnderReview } from "../domain/code-under-review.ts";
 import type { DispatchResult, PrepareError } from "../domain/contracts.g.ts";
-import type { AdapterResolution, HostAdapter } from "../domain/host-adapter.ts";
+import type {
+	AdapterResolution,
+	HostAdapter,
+	HostAdapterPort,
+} from "../domain/host-adapter.ts";
 import {
 	type CoordinatedProbeSpec,
 	coordinateLedgers,
@@ -31,12 +34,15 @@ interface PreparedSession {
 }
 
 export class MainAgentController {
+	readonly #adapters: HostAdapterPort;
 	readonly #sessions = new Map<string, PreparedSession>();
 
-	private constructor() {}
+	private constructor(adapters: HostAdapterPort) {
+		this.#adapters = adapters;
+	}
 
-	static create(): MainAgentController {
-		return new MainAgentController();
+	static create(adapters: HostAdapterPort): MainAgentController {
+		return new MainAgentController(adapters);
 	}
 
 	#bind(
@@ -85,7 +91,7 @@ export class MainAgentController {
 			return existing;
 		}
 		const persisted = workdir.ledgerDirectory().readPullRequest();
-		const { pullRequest, adapter } = HostAdapterFactory.rehydrate(persisted);
+		const { pullRequest, adapter } = this.#adapters.rehydrate(persisted);
 		const rulesets = workdir.ledgerDirectory().readRulesets();
 		const probes = loadPersistedProbes(
 			workdir.readAudits(),
@@ -138,7 +144,7 @@ export class MainAgentController {
 	}
 
 	prepare(url: string, workdir: Workdir): Promise<PrepareResult> {
-		return this.#prepareWith(workdir, HostAdapterFactory.from(url));
+		return this.#prepareWith(workdir, this.#adapters.from(url));
 	}
 
 	prepareWithToken(
@@ -146,10 +152,7 @@ export class MainAgentController {
 		workdir: Workdir,
 		token: AccessToken,
 	): Promise<PrepareResult> {
-		return this.#prepareWith(
-			workdir,
-			HostAdapterFactory.fromWithToken(url, token),
-		);
+		return this.#prepareWith(workdir, this.#adapters.fromWithToken(url, token));
 	}
 
 	ledger(workdir: Workdir): MainAgentLedger {
@@ -186,7 +189,7 @@ export class MainAgentController {
 		token: AccessToken,
 	): Promise<DispatchResult> {
 		const persisted = workdir.ledgerDirectory().readPullRequest();
-		const { pullRequest, adapter } = HostAdapterFactory.rehydrateWithToken(
+		const { pullRequest, adapter } = this.#adapters.rehydrateWithToken(
 			persisted,
 			token,
 		);

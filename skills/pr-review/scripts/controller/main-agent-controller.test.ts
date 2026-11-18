@@ -5,14 +5,14 @@ import { join } from "node:path";
 import { after, afterEach, test as it, mock } from "node:test";
 import { z } from "zod";
 import { HostAdapterFactory } from "../adapters/adapter-factory.ts";
-import { MainAgentController } from "../controller/controller.ts";
-import { AccessToken } from "./access-token.ts";
-import { GithubPullRequest } from "./code-under-review.ts";
-import type { Change, Ledger, Outcome, Row } from "./contracts.g.ts";
-import type { AdapterResolution, HostAdapter } from "./host-adapter.ts";
-import { nonnull } from "./nullish.ts";
-import { CodeUnderReviewSnapshot } from "./review-snapshot.ts";
-import { Workdir } from "./workdir.ts";
+import { AccessToken } from "../domain/access-token.ts";
+import { GithubPullRequest } from "../domain/code-under-review.ts";
+import type { Change, Ledger, Outcome, Row } from "../domain/contracts.g.ts";
+import type { AdapterResolution, HostAdapter } from "../domain/host-adapter.ts";
+import { nonnull } from "../domain/nullish.ts";
+import { CodeUnderReviewSnapshot } from "../domain/review-snapshot.ts";
+import { Workdir } from "../domain/workdir.ts";
+import { MainAgentController } from "./controller.ts";
 
 const HEAD_COMMIT = "1111111111111111111111111111111111111111";
 
@@ -127,7 +127,7 @@ after(() => {
 });
 
 it("MainAgentController.prepare returns invalid-target when HostAdapterFactory rejects the target", async () => {
-	const controller = MainAgentController.create();
+	const controller = MainAgentController.create(HostAdapterFactory);
 	const result = await controller.prepare("not-a-target", freshWorkdir());
 	assert.equal(result.success, false);
 	assert.equal(result.error.kind, "invalid-target");
@@ -144,7 +144,7 @@ it("MainAgentController.prepare forwards non-ready adapter resolutions without p
 			}),
 		),
 	);
-	const controller = MainAgentController.create();
+	const controller = MainAgentController.create(HostAdapterFactory);
 	const result = await controller.prepare(
 		"https://github.com/org/repo/pull/1",
 		workdir,
@@ -195,7 +195,7 @@ it("MainAgentController prepares a ready snapshot, tracks pending probes, and di
 	const posted = setupReadyAdapterMock();
 	const token = nonnull(AccessToken.from("unit-token").data);
 
-	const controller = MainAgentController.create();
+	const controller = MainAgentController.create(HostAdapterFactory);
 	const workdir = freshWorkdir();
 	const prepared = await controller.prepareWithToken(
 		"https://github.com/org/repo/pull/42",
@@ -221,7 +221,7 @@ it("MainAgentController prepares a ready snapshot, tracks pending probes, and di
 	});
 	assert.deepEqual(written, pendingNames);
 
-	const freshController = MainAgentController.create();
+	const freshController = MainAgentController.create(HostAdapterFactory);
 	const submitted = await freshController.dispatchWithToken(workdir, token);
 	assert.equal(submitted.kind, "submitted");
 	assert.equal(submitted.location, "local://review-42");

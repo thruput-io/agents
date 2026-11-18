@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync } from "node:fs";
 import { z } from "zod";
+import { HostAdapterFactory } from "../adapters/adapter-factory.ts";
 import {
 	type AckResult,
 	SubAgentController,
@@ -276,7 +277,11 @@ function runSubAgentCli(
 }
 
 if (import.meta.main || isCliEntrypoint(import.meta.url)) {
-	runSubAgentCli(SubAgentController.forSession, process.argv.slice(2));
+	runSubAgentCli(
+		(session, name) =>
+			SubAgentController.forSession(session, name, HostAdapterFactory),
+		process.argv.slice(2),
+	);
 }
 
 export type { SubAgentCliTarget };

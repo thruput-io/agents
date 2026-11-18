@@ -3,15 +3,16 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test as it } from "node:test";
+import { HostAdapterFactory } from "../adapters/adapter-factory.ts";
 import { CodeUnderReviewFactory } from "../adapters/code-under-review-factory.ts";
 import { runMainAgentCli } from "../client/controller-cli.ts";
 import { runSubAgentCli } from "../client/sub-agent-cli.ts";
-import { MainAgentController } from "../controller/controller.ts";
-import { SubAgentController } from "../controller/sub-agent-controller.ts";
-import { Instructions } from "./instructions.ts";
-import { nonnull } from "./nullish.ts";
-import { Rulebook } from "./rulebook.ts";
-import { Workdir } from "./workdir.ts";
+import { Instructions } from "../domain/instructions.ts";
+import { nonnull } from "../domain/nullish.ts";
+import { Rulebook } from "../domain/rulebook.ts";
+import { Workdir } from "../domain/workdir.ts";
+import { MainAgentController } from "./controller.ts";
+import { SubAgentController } from "./sub-agent-controller.ts";
 
 const SHA1_HEX_LENGTH = 40;
 const H = "a".repeat(SHA1_HEX_LENGTH);
@@ -133,13 +134,18 @@ it("SubAgentController.forSession rehydrates a probe, rejects tampered audit, an
 			"utf8",
 		);
 		assert.throws(() =>
-			SubAgentController.forSession(sessionToken, "01-purpose"),
+			SubAgentController.forSession(
+				sessionToken,
+				"01-purpose",
+				HostAdapterFactory,
+			),
 		);
 		writeFileSync(auditFile, originalAudit, "utf8");
 
 		const rehydratedSub = SubAgentController.forSession(
 			sessionToken,
 			"01-purpose",
+			HostAdapterFactory,
 		);
 		assert.deepEqual(rehydratedSub.change(), sampleChange);
 		assert.deepEqual(rehydratedSub.codeUnderReview().surface(), sampleSurface);
@@ -157,6 +163,7 @@ it("SubAgentController enforces ack and 5-minute deadline across rehydrated sess
 		const rehydratedSub = SubAgentController.forSession(
 			sessionToken,
 			"01-purpose",
+			HostAdapterFactory,
 			() => currentClock,
 		);
 		const beforeAck = rehydratedSub.report([
@@ -168,7 +175,8 @@ it("SubAgentController enforces ack and 5-minute deadline across rehydrated sess
 			},
 		]);
 		assert.equal(beforeAck.success, false);
-		const beforeAckMain = MainAgentController.create().ledger(workdir);
+		const beforeAckMain =
+			MainAgentController.create(HostAdapterFactory).ledger(workdir);
 		assert.deepEqual(beforeAckMain.acknowledged(), []);
 		assert.deepEqual(beforeAckMain.unacknowledged(), ["01-purpose"]);
 
@@ -178,7 +186,8 @@ it("SubAgentController enforces ack and 5-minute deadline across rehydrated sess
 			observationFormat: "<observation> breaks <principle>",
 		});
 		assert.equal(rehydratedAck.success, true);
-		const afterAckMain = MainAgentController.create().ledger(workdir);
+		const afterAckMain =
+			MainAgentController.create(HostAdapterFactory).ledger(workdir);
 		assert.deepEqual(afterAckMain.acknowledged(), ["01-purpose"]);
 		assert.deepEqual(afterAckMain.unacknowledged(), []);
 
@@ -198,37 +207,23 @@ it("SubAgentController enforces ack and 5-minute deadline across rehydrated sess
 	}
 });
 
+const runSubCli = (args: readonly string[]): number =>
+	runSubAgentCli(
+		(session, name) =>
+			SubAgentController.forSession(session, name, HostAdapterFactory),
+		args,
+	);
+
 it("Sub-agent CLI handles inspect, next, prev, and rejects mismatched ack rules", () => {
 	const tempRoot = mkdtempSync(join(tmpdir(), "controller-cli-nav-"));
 	try {
 		const workdir = setupRehydratedWorkdir(tempRoot);
 		const sessionToken = workdir.sessionToken();
+		assert.equal(runSubCli(["inspect", sessionToken, "01-purpose"]), 0);
+		assert.equal(runSubCli(["next", sessionToken, "01-purpose"]), 0);
+		assert.equal(runSubCli(["prev", sessionToken, "01-purpose"]), 0);
 		assert.equal(
-			runSubAgentCli(SubAgentController.forSession, [
-				"inspect",
-				sessionToken,
-				"01-purpose",
-			]),
-			0,
-		);
-		assert.equal(
-			runSubAgentCli(SubAgentController.forSession, [
-				"next",
-				sessionToken,
-				"01-purpose",
-			]),
-			0,
-		);
-		assert.equal(
-			runSubAgentCli(SubAgentController.forSession, [
-				"prev",
-				sessionToken,
-				"01-purpose",
-			]),
-			0,
-		);
-		assert.equal(
-			runSubAgentCli(SubAgentController.forSession, [
+			runSubCli([
 				"ack",
 				sessionToken,
 				"01-purpose",
@@ -251,9 +246,9 @@ it("Sub-agent and main-agent CLIs handle ack, report, and status", async () => {
 	try {
 		const workdir = setupRehydratedWorkdir(tempRoot);
 		const sessionToken = workdir.sessionToken();
-		const freshMain = MainAgentController.create();
+		const freshMain = MainAgentController.create(HostAdapterFactory);
 		assert.equal(
-			runSubAgentCli(SubAgentController.forSession, [
+			runSubCli([
 				"ack",
 				sessionToken,
 				"01-purpose",
@@ -266,7 +261,7 @@ it("Sub-agent and main-agent CLIs handle ack, report, and status", async () => {
 			0,
 		);
 		assert.equal(
-			runSubAgentCli(SubAgentController.forSession, [
+			runSubCli([
 				"report",
 				sessionToken,
 				"01-purpose",

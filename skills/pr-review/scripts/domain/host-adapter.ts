@@ -1,3 +1,6 @@
+import type { z } from "zod";
+import type { AccessToken } from "./access-token.ts";
+import type { CodeUnderReview } from "./code-under-review.ts";
 import type {
 	AlreadyReviewed,
 	Change,
@@ -11,6 +14,7 @@ import type {
 	Thread,
 	TooLarge,
 } from "./contracts.g.ts";
+import type { PersistedPullRequest } from "./ledger-directory.ts";
 import type { ReviewBaseline } from "./review-baseline.ts";
 import type { CodeUnderReviewSnapshot } from "./review-snapshot.ts";
 import type { SnapshotDirectory } from "./snapshot-directory.ts";
@@ -41,4 +45,28 @@ interface HostAdapter<HostType extends Host = Host> {
 	post: (outcome: Outcome, ledger: Ledger) => Promise<Summary | HostError>;
 }
 
-export type { AdapterResolution, HostAdapter, ReviewSnapshotInput };
+interface HostAdapterPort {
+	from: (url: string) => z.ZodSafeParseResult<HostAdapter>;
+	fromWithToken: (
+		url: string,
+		token: AccessToken,
+	) => z.ZodSafeParseResult<HostAdapter>;
+	rehydrate: (persisted: PersistedPullRequest) => {
+		readonly pullRequest: CodeUnderReview;
+		readonly adapter: HostAdapter;
+	};
+	rehydrateWithToken: (
+		persisted: PersistedPullRequest,
+		token: AccessToken,
+	) => {
+		readonly pullRequest: CodeUnderReview;
+		readonly adapter: HostAdapter;
+	};
+}
+
+export type {
+	AdapterResolution,
+	HostAdapter,
+	HostAdapterPort,
+	ReviewSnapshotInput,
+};
