@@ -1,12 +1,18 @@
 import assert from "node:assert/strict";
+import { dirname, resolve } from "node:path";
 import { test as it } from "node:test";
+import { fileURLToPath } from "node:url";
 import { projectFiles } from "archunit";
 
+const TSCONFIG_PATH = resolve(
+	dirname(fileURLToPath(import.meta.url)),
+	"../tsconfig.json",
+);
 const TRANSPORT_IMPORT_RE =
 	/\b(?:from\s+["']node:(?:fs|child_process|http|https)["']|fetch\s*\()/u;
 
 it("src has no circular dependencies", async () => {
-	const violations = await projectFiles()
+	const violations = await projectFiles(TSCONFIG_PATH)
 		.inFolder("src/**")
 		.should()
 		.haveNoCycles()
@@ -15,7 +21,7 @@ it("src has no circular dependencies", async () => {
 });
 
 it("domain layer is pure and does not depend on io, controller, adapters, client, or transport APIs", async () => {
-	const layerViolations = await projectFiles()
+	const layerViolations = await projectFiles(TSCONFIG_PATH)
 		.inFolder("src/domain/**")
 		.shouldNot()
 		.dependOnFiles()
@@ -25,7 +31,7 @@ it("domain layer is pure and does not depend on io, controller, adapters, client
 		.check();
 	assert.deepEqual(layerViolations, []);
 
-	const transportViolations = await projectFiles()
+	const transportViolations = await projectFiles(TSCONFIG_PATH)
 		.inFolder("src/domain/**")
 		.should()
 		.adhereTo(
@@ -37,7 +43,7 @@ it("domain layer is pure and does not depend on io, controller, adapters, client
 });
 
 it("io layer only depends on domain and io", async () => {
-	const violations = await projectFiles()
+	const violations = await projectFiles(TSCONFIG_PATH)
 		.inFolder("src/io/**")
 		.shouldNot()
 		.dependOnFiles()
@@ -47,7 +53,7 @@ it("io layer only depends on domain and io", async () => {
 });
 
 it("adapters layer only depends on domain, io, adapters, and generated clients", async () => {
-	const violations = await projectFiles()
+	const violations = await projectFiles(TSCONFIG_PATH)
 		.inFolder("src/adapters/**")
 		.shouldNot()
 		.dependOnFiles()
@@ -57,7 +63,7 @@ it("adapters layer only depends on domain, io, adapters, and generated clients",
 });
 
 it("controller layer does not depend on client, and controller tests do not depend on adapters", async () => {
-	const clientViolations = await projectFiles()
+	const clientViolations = await projectFiles(TSCONFIG_PATH)
 		.inFolder("src/controller/**")
 		.shouldNot()
 		.dependOnFiles()
@@ -65,7 +71,7 @@ it("controller layer does not depend on client, and controller tests do not depe
 		.check();
 	assert.deepEqual(clientViolations, []);
 
-	const adapterTestViolations = await projectFiles()
+	const adapterTestViolations = await projectFiles(TSCONFIG_PATH)
 		.inPath("src/controller/*.test.ts")
 		.shouldNot()
 		.dependOnFiles()
@@ -75,7 +81,7 @@ it("controller layer does not depend on client, and controller tests do not depe
 });
 
 it("client UI layer only depends on domain, io, controller, and client (never adapters)", async () => {
-	const violations = await projectFiles()
+	const violations = await projectFiles(TSCONFIG_PATH)
 		.inFolder("src/client/**")
 		.shouldNot()
 		.dependOnFiles()

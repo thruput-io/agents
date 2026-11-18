@@ -6,8 +6,7 @@
 		"@faker-js/faker",
 		"@graphql-tools/mock",
 		"@graphql-tools/schema",
-		"msw",
-		"tsx"
+		"msw"
 	],
 	"project": [
 		"src/client/*.ts",
