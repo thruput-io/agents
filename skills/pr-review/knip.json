@@ -4,6 +4,7 @@
 		"scripts/domain/controller-cli.ts",
 		"scripts/domain/sub-agent-cli.ts"
 	],
+	"ignoreBinaries": ["esbuild"],
 	"ignoreDependencies": [
 		"@faker-js/faker",
 		"@graphql-tools/mock",

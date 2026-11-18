@@ -53,6 +53,7 @@ jobs:
           version=$(git describe --tags | sed 's/^v//')
           npm --prefix skills/pr-review ci --no-audit --no-fund
           npm --prefix skills/pr-review run codegen
+          npm --prefix skills/pr-review run build
           rm -rf skills/pr-review/rules skills/pr-review/schemas
           cp -RL rules skills/pr-review/rules
           cp -RL schemas skills/pr-review/schemas

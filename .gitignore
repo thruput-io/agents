@@ -5,4 +5,5 @@ build/
 .idea/
 .claude/
 node_modules/
+dist/
 *.g.*
