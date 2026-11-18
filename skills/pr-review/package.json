@@ -6,17 +6,11 @@
 		"registry": "https://npm.pkg.github.com"
 	},
 	"bin": {
-		"review-tool": "./bin/review-tool",
-		"review-tool-probe": "./bin/review-tool-probe"
+		"review-tool": "./dist/bin/review-tool.mjs",
+		"review-tool-probe": "./dist/bin/review-tool-probe.mjs"
 	},
 	"files": [
-		"bin/*",
-		"scripts/client/*.ts",
-		"scripts/controller/*.ts",
-		"scripts/adapters/**/*.ts",
-		"scripts/domain/*.ts",
-		"!scripts/**/*.test.ts",
-		"clients/*.ts",
+		"dist/bin/*.mjs",
 		"rules/",
 		"schemas/",
 		"references/agent-rules-books-search-index.json",
@@ -24,14 +18,15 @@
 	],
 	"scripts": {
 		"codegen": "node scripts/generate-contracts.ts && node scripts/generate-clients.ts",
+		"build": "esbuild scripts/client/controller-cli.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/bin/review-tool.mjs && esbuild scripts/client/sub-agent-cli.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/bin/review-tool-probe.mjs && chmod +x dist/bin/review-tool.mjs dist/bin/review-tool-probe.mjs",
 		"knip": "knip",
 		"knip:fix": "knip --fix",
 		"lint": "biome check --error-on-warnings",
 		"lint:fix": "biome check --write --unsafe",
-		"fix": "npm run codegen && npm run knip:fix && npm run lint:fix && npm run verify",
+		"fix": "npm run codegen && npm run build && npm run knip:fix && npm run lint:fix && npm run verify",
 		"typecheck": "tsc --noEmit",
 		"test": "node --test 'scripts/**/*.test.ts'",
-		"verify": "npm run codegen && npm run knip && npm run lint && npm run typecheck && npm test"
+		"verify": "npm run codegen && npm run build && npm run knip && npm run lint && npm run typecheck && npm test"
 	},
 	"dependencies": {
 		"@faker-js/faker": "10.6.0",
