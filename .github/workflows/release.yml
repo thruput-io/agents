@@ -58,7 +58,6 @@ jobs:
           cp -RL rules skills/pr-review/rules
           cp -RL schemas skills/pr-review/schemas
           npm --prefix skills/pr-review version "$version" --no-git-tag-version --allow-same-version
-          npm publish ./skills/pr-review
           pkg_dir=$(mktemp -d)
           tarball=$(npm pack ./skills/pr-review --pack-destination "$pkg_dir")
           cp "$pkg_dir/$tarball" "$pkg_dir/thruput-review-tool.tgz"
