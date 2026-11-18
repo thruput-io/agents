@@ -192,11 +192,28 @@ export function probeBehaviorFor(
 export type { ProbeBehavior, ProbeRules, ProbeStorage };
 
 export function inMemoryProbeStorage(): ProbeStorage {
+	const state = new Map<"cursor" | "ack", number>();
 	return {
-		readCursor: () => null,
-		writeCursor: () => undefined,
-		readAck: () => null,
-		writeAck: () => undefined,
+		readCursor: () => {
+			const cursor = state.get("cursor");
+			if (cursor === undefined) {
+				return null;
+			}
+			return cursor;
+		},
+		writeCursor: (index) => {
+			state.set("cursor", index);
+		},
+		readAck: () => {
+			const acknowledgedAt = state.get("ack");
+			if (acknowledgedAt === undefined) {
+				return null;
+			}
+			return acknowledgedAt;
+		},
+		writeAck: (acknowledgedAt) => {
+			state.set("ack", acknowledgedAt);
+		},
 	};
 }
 

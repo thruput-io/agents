@@ -74,8 +74,6 @@ export class SubAgentController {
 	readonly #behavior: ProbeBehavior;
 	readonly #storage: ProbeStorage;
 	readonly #now: () => number;
-	#acknowledgedAt: number | null = null;
-	#cursor: number | null = null;
 
 	private constructor(init: SubAgentControllerInit) {
 		this.#workdir = init.workdir;
@@ -223,11 +221,14 @@ export class SubAgentController {
 	}
 
 	#readCursor(): number {
-		return this.#cursor ?? this.#storage.readCursor() ?? -1;
+		const cursor = this.#storage.readCursor();
+		if (cursor === null) {
+			return -1;
+		}
+		return cursor;
 	}
 
 	#writeCursor(index: number): void {
-		this.#cursor = index;
 		this.#storage.writeCursor(index);
 	}
 
@@ -273,7 +274,6 @@ export class SubAgentController {
 			return check;
 		}
 		const acknowledgedAt = this.#now();
-		this.#acknowledgedAt = acknowledgedAt;
 		this.#storage.writeAck(acknowledgedAt);
 		return {
 			success: true,
@@ -286,7 +286,7 @@ export class SubAgentController {
 	}
 
 	report(rows: readonly Row[]): z.ZodSafeParseResult<LedgerSubmission> {
-		const ackTime = this.#acknowledgedAt ?? this.#storage.readAck();
+		const ackTime = this.#storage.readAck();
 		if (isNullOrEmpty(ackTime)) {
 			return customFailure(
 				"ack",

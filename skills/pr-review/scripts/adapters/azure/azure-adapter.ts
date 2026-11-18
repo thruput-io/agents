@@ -75,7 +75,6 @@ const AZURE_WRITE_SCOPES = [
 export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 	readonly #review: AzureMergeRequest;
 	readonly #transport: HostTransport;
-	#reviewerId: string | null = null;
 	private constructor(review: AzureMergeRequest, transport: HostTransport) {
 		this.#review = review;
 		this.#transport = transport;
@@ -110,15 +109,8 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 			onError: (res) => this.#hostError(res),
 		};
 	}
-	async #ensureReviewerId(): Promise<string | HostError> {
-		if (!isNullOrEmpty(this.#reviewerId)) {
-			return this.#reviewerId;
-		}
-		const resolved = await resolveAzureReviewerId(this.#postContext());
-		if (typeof resolved === "string") {
-			this.#reviewerId = resolved;
-		}
-		return resolved;
+	#ensureReviewerId(): Promise<string | HostError> {
+		return resolveAzureReviewerId(this.#postContext());
 	}
 	async resolve(snapshotDir: SnapshotDirectory): Promise<AdapterResolution> {
 		const host = this.host();
