@@ -27,7 +27,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: npx --yes semantic-release
+      - run: |
+          npm --prefix skills/pr-review ci --no-audit --no-fund
+          ./scripts/pack-review-tool.sh dist/thruput-review-tool.tgz
+          npx --yes semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -37,37 +40,8 @@ jobs:
     with:
       artifact: github-pages
 
-  publish-npm:
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          registry-url: https://npm.pkg.github.com
-          scope: "@thruput-io"
-      - run: |
-          version=$(git describe --tags | sed 's/^v//')
-          npm --prefix skills/pr-review ci --no-audit --no-fund
-          npm --prefix skills/pr-review run codegen
-          npm --prefix skills/pr-review run build
-          rm -rf skills/pr-review/rules skills/pr-review/schemas
-          cp -RL rules skills/pr-review/rules
-          cp -RL schemas skills/pr-review/schemas
-          npm --prefix skills/pr-review version "$version" --no-git-tag-version --allow-same-version
-          pkg_dir=$(mktemp -d)
-          tarball=$(npm pack ./skills/pr-review --pack-destination "$pkg_dir")
-          cp "$pkg_dir/$tarball" "$pkg_dir/thruput-review-tool.tgz"
-          gh release upload "v$version" "$pkg_dir/thruput-review-tool.tgz" --clobber
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   trigger-reviewer:
-    needs: publish-npm
+    needs: release
     runs-on: ubuntu-latest
     steps:
       - run: gh workflow run build-and-push.yml -R thruput-io/reviewer --ref main
