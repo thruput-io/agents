@@ -7,7 +7,7 @@ import type {
 	Rule,
 	RuleHeading,
 } from "./contracts.g.ts";
-import { ruleName } from "./ledger.ts";
+import { ruleName } from "./ledger-rows.ts";
 import { nonnull } from "./nullish.ts";
 
 const CELL = 400;

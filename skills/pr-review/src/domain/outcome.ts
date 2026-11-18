@@ -11,7 +11,7 @@ import type {
 	ThreadState,
 	Violation,
 } from "./contracts.g.ts";
-import { resolveSurfaceLine } from "./ledger.ts";
+import { resolveSurfaceLine } from "./ledger-rows.ts";
 import { merge, verdict } from "./ledger-table.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 import { type CitationDocument, citation, message, SITE } from "./rulebook.ts";

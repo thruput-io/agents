@@ -1,145 +1,28 @@
 import assert from "node:assert/strict";
-import {
-	existsSync,
-	mkdtempSync,
-	rmSync,
-	symlinkSync,
-	writeFileSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { test as it } from "node:test";
-import { z } from "zod";
-import {
-	GithubPullRequest,
-	rehydrateCodeUnderReview,
-} from "../domain/code-under-review.ts";
-import { nonnull } from "../domain/nullish.ts";
-import { Rulebook } from "../domain/rulebook.ts";
-import type { HostAdapter, HostAdapterPort } from "../io/host-adapter.ts";
-import {
-	LedgerDirectory,
-	type PersistedPullRequest,
-} from "../io/ledger-directory.ts";
-import { RulesSubAgentLedger } from "../io/rules-sub-agent-ledger.ts";
-import { Workdir } from "../io/workdir.ts";
+import type { WorkspacePort } from "../domain/ports.ts";
+import type { Rulebook } from "../domain/rulebook.ts";
+import { RulesSubAgentLedger } from "../domain/rules-sub-agent-ledger.ts";
 import { MainAgentController } from "./controller.ts";
+import {
+	createReviewedPr,
+	createStubAdapterPort,
+	createStubLoadProbes,
+	defaultStubAdapter,
+	H,
+	sampleChange,
+	sampleRulebook,
+	sampleSurface,
+} from "./controller-fixtures.test.ts";
+import { createMemoryWorkspace } from "./memory-workspace.test.ts";
 import { SubAgentController } from "./sub-agent-controller.ts";
 
-const SHA1_HEX_LENGTH = 40;
-const H = "a".repeat(SHA1_HEX_LENGTH);
 const EXPECTED_PROSE_LENGTH = 9;
 const FIVE_MINUTES_MS = 300_000;
 
-const sampleRulebook = () =>
-	nonnull(
-		Rulebook.slice(
-			[
-				{
-					id: "Stated purpose",
-					body: "State the [[Purpose]] of every [[Change]].",
-					parent: "You aren't gonna need it",
-					marker: "MUST",
-					group: "Purpose",
-				},
-			],
-			{
-				principles: [
-					{
-						id: "You aren't gonna need it",
-						body: "Always implement things when you actually need them.",
-						parent: "Code is a liability, not an asset",
-					},
-				],
-			},
-		).data,
-	);
-
-const sampleFile = {
-	path: "a.ts",
-	fragments: [
-		{
-			kind: "surface" as const,
-			side: "head" as const,
-			lines: [
-				{
-					idToReportViolationOn: "a.ts:1",
-					text: "const x = 1;",
-				},
-			],
-		},
-	],
-};
-const sampleSurface = [sampleFile];
-const sampleChange = {
-	host: {
-		kind: "github" as const,
-		owner: "thruput-io",
-		repository: "agents",
-		number: 14,
-	},
-	author: "author",
-	description: "Body",
-};
-
-const createReviewedPr = () => {
-	const pr = nonnull(GithubPullRequest.from(sampleChange.host).data);
-	return pr.withReview(sampleSurface, sampleFile.fragments, {
-		threads: [],
-	});
-};
-
-const stubAdapter: HostAdapter = {
-	host: () => sampleChange.host,
-	resolve: () =>
-		Promise.resolve({
-			kind: "already-reviewed",
-			headCommit: H,
-			location: "stub://review",
-		}),
-	post: () => Promise.resolve("stub://review"),
-};
-
-const rejectUrl = (url: string) =>
-	z
-		.url()
-		.transform(() => stubAdapter)
-		.safeDecode(url);
-
-const rehydrateStub = (persisted: PersistedPullRequest) => ({
-	pullRequest: rehydrateCodeUnderReview(persisted),
-	adapter: stubAdapter,
-});
-
-const stubAdapterPort: HostAdapterPort = {
-	from: rejectUrl,
-	fromWithToken: rejectUrl,
-	rehydrate: rehydrateStub,
-	rehydrateWithToken: rehydrateStub,
-};
-
-it("Workdir parses an absolute path and derives its sibling LedgerDirectory and snapshot subdirectory", () => {
-	const workdir = Workdir.from("/tmp/review/workspace");
-	const same = Workdir.from("/tmp/review/workspace");
-	const expectedSibling = LedgerDirectory.from("/tmp/review/ledger");
-	assert.equal(workdir.success, true);
-	assert.equal(same.success, true);
-	assert.equal(expectedSibling.success, true);
-	assert.equal(workdir.data.equals(same.data), true);
-	assert.equal(workdir.data.toString(), "/tmp/review/workspace");
-	assert.equal(
-		workdir.data.ledgerDirectory().equals(expectedSibling.data),
-		true,
-	);
-	assert.equal(
-		workdir.data.snapshotDirectory().toString(),
-		"/tmp/review/workspace/snapshot",
-	);
-});
-
 const probeFor = (
 	kind: "rules" | "dead-code" | "reuse",
-	workdir = nonnull(Workdir.from("/tmp/review/workspace").data),
+	workdir: WorkspacePort,
 ) =>
 	SubAgentController.forProbe(workdir, createReviewedPr(), {
 		kind,
@@ -149,7 +32,7 @@ const probeFor = (
 	});
 
 it("SubAgentController exposes instructions, change, rules, and codeUnderReview for its probe", () => {
-	const workdir = nonnull(Workdir.from("/tmp/review/workspace").data);
+	const workdir = createMemoryWorkspace("/tmp/review/workspace");
 	const sub = probeFor("rules", workdir);
 	assert.equal(sub.workdir().equals(workdir), true);
 	assert.deepEqual(sub.change(), sampleChange);
@@ -174,7 +57,7 @@ it("SubAgentController exposes instructions, change, rules, and codeUnderReview 
 });
 
 it("SubAgentController sets probe-kind permissions and checkout paths", () => {
-	const workdir = nonnull(Workdir.from("/tmp/review/workspace").data);
+	const workdir = createMemoryWorkspace("/tmp/review/workspace");
 	const rulesSub = probeFor("rules", workdir);
 	const contextSub = SubAgentController.forProbe(workdir, createReviewedPr(), {
 		kind: "context",
@@ -218,7 +101,7 @@ it("SubAgentController sets probe-kind permissions and checkout paths", () => {
 });
 
 it("SubAgentController requires ack before report and MainAgentController rejects invalid targets", async () => {
-	const workdir = nonnull(Workdir.from("/tmp/review/workspace").data);
+	const workdir = createMemoryWorkspace("/tmp/review/workspace");
 	const sub = probeFor("rules", workdir);
 	const subLedger = RulesSubAgentLedger.from(
 		workdir.ledgerDirectory(),
@@ -252,49 +135,11 @@ it("SubAgentController requires ack before report and MainAgentController reject
 	const result = sub.report([cleanRow]);
 	assert.equal(result.success, true);
 	assert.equal(result.data.kind, "recorded");
-	const mainController = MainAgentController.create(stubAdapterPort);
+	const mainController = MainAgentController.create(
+		createStubAdapterPort(defaultStubAdapter),
+		createStubLoadProbes(),
+	);
 	const invalidPrep = await mainController.prepare("not-a-url", workdir);
 	assert.equal(invalidPrep.success, false);
 	assert.equal(invalidPrep.error.kind, "invalid-target");
-});
-
-it("Workdir immediately writes to establish it is operational, fails on unwriteable path, and warns when traversing a symlink", () => {
-	const tempRoot = mkdtempSync(join(tmpdir(), "workdir-operational-"));
-	const realDir = join(tempRoot, "real-workspace");
-	const symlinkDir = join(tempRoot, "symlink-workspace");
-	const blockerFile = join(tempRoot, "not-a-dir");
-	writeFileSync(blockerFile, "file", "utf8");
-
-	const realWorkdir = Workdir.from(realDir);
-	assert.equal(realWorkdir.success, true);
-	assert.equal(existsSync(join(realDir, ".operational")), true);
-	assert.equal(existsSync(join(tempRoot, "ledger", ".operational")), true);
-	assert.equal(realWorkdir.data.isSymlinked(), false);
-	assert.equal(realWorkdir.data.warning(), null);
-
-	symlinkSync(realDir, symlinkDir);
-	const linkedWorkdir = Workdir.open(symlinkDir);
-	assert.equal(linkedWorkdir.success, true);
-	assert.equal(linkedWorkdir.data.isSymlinked(), true);
-	assert.equal(linkedWorkdir.data.warning()?.includes("symlink"), true);
-
-	const staleLedgerFile = join(tempRoot, "ledger", "stale-slice.json");
-	writeFileSync(staleLedgerFile, '{"stale":true}', "utf8");
-	const refreshedWorkdir = Workdir.from(
-		join(symlinkDir, "nested", "workspace"),
-	);
-	assert.equal(refreshedWorkdir.success, true);
-	assert.equal(refreshedWorkdir.data.isSymlinked(), true);
-	assert.equal(
-		existsSync(join(symlinkDir, "nested", "ledger", "stale-slice.json")),
-		false,
-	);
-	const parentWorkdir = Workdir.from(realDir);
-	assert.equal(parentWorkdir.success, true);
-	assert.equal(existsSync(staleLedgerFile), false);
-
-	const unwriteableWorkdir = Workdir.from(join(blockerFile, "child"));
-	assert.equal(unwriteableWorkdir.success, false);
-
-	rmSync(tempRoot, { recursive: true, force: true });
 });

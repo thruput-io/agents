@@ -100,8 +100,7 @@ const handleBridgeRequest = async (
 	const responseHeaders = [...upstream.headers.entries()].filter(
 		([name]) => name.toLowerCase() !== "content-encoding",
 	);
-	res.statusCode = HTTP_OK;
-	res.setHeader("content-type", "application/json");
+	res.writeHead(HTTP_OK, { "content-type": "application/json" });
 	res.end(
 		JSON.stringify({
 			status: upstream.status,
@@ -119,7 +118,7 @@ const startMockBridge = async (): Promise<string> => {
 	mockServer.listen();
 	const server = createServer((req, res) => {
 		handleBridgeRequest(req, res).catch((err: unknown) => {
-			res.statusCode = HTTP_INTERNAL_SERVER_ERROR;
+			res.writeHead(HTTP_INTERNAL_SERVER_ERROR);
 			res.end(String(err));
 		});
 	});

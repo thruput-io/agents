@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
+import { hostErrorReason } from "./http-error.ts";
 import {
 	anonymousHttpTransport,
 	hasOauthScope,
-	hostErrorReason,
 	isJsonResponse,
 	transportFromEnv,
 } from "./http-transport.ts";

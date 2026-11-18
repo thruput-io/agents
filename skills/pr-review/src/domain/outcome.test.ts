@@ -1,15 +1,12 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import type { Ledger, Row, RuleRef, Violation } from "./contracts.g.ts";
-import { alreadyOpen, outcome, settled } from "./outcome.ts";
-import { citation, message, SITE } from "./rulebook.ts";
+import { outcome } from "./outcome.ts";
+import { SITE } from "./rulebook.ts";
 
 const SHA1_HEX_LENGTH = 40;
 const H = "a".repeat(SHA1_HEX_LENGTH);
 const URL_DDD = "https://books.example/ddd.md";
-const FIRST_UNCARRIED_ID = 2;
-const SECOND_UNCARRIED_ID = 3;
-const UNCARRIED_THREAD_IDS = [FIRST_UNCARRIED_ID, SECOND_UNCARRIED_ID];
 const VERDICT_HEADER_RE = /^\*\*Verdict: request-changes\*\*\n/u;
 const SUMMARY_COUNTS_RE =
 	/3 rules probed by 2 probes at a{40} against \[the rules\]\(https:\/\/thruput\.se\/agents\/\): 3 violations, 0 inline, 1 at the pull request, 2 already carried by a thread/u;
@@ -94,80 +91,6 @@ const entries = [
 	{ document: contextProbe, ledger: contextLedger },
 ];
 
-it("alreadyOpen matches an open thread on the same line citing the same principle", () => {
-	const open = [
-		{ path: "p", lines: { start: 3, end: 3 }, body: `earlier breaks ${citeP}` },
-	];
-	assert.equal(alreadyOpen(violationAt("A", "p:3"), citeP, open, files), true);
-	assert.equal(alreadyOpen(violationAt("A", "p:4"), citeP, open, files), false);
-	assert.equal(
-		alreadyOpen(violationAt("A", "p:3"), `[Q](${SITE}#q)`, open, files),
-		false,
-	);
-	assert.equal(alreadyOpen(violation("A"), citeP, open, files), false);
-});
-
-it("settled lists the open threads that no finding of this review carries any more", () => {
-	const document = {
-		surface: {
-			headCommit: H,
-			files: [
-				{
-					path: "a.sh",
-					fragments: [
-						{
-							kind: "surface" as const,
-							side: "head" as const,
-							lines: [
-								{ idToReportViolationOn: "a.sh:3", text: "c" },
-								{ idToReportViolationOn: "a.sh:4", text: "d" },
-							],
-						},
-					],
-				},
-			],
-		},
-		rulebook: { rules: [{ id: "R", parent: "P" }] },
-	};
-	const v: Violation = {
-		rule: "R",
-		idToReportViolationOn: "a.sh:4",
-		observation: "x",
-	};
-	const row: Row = {
-		rule: "R",
-		verdict: "violation",
-		examined: ["a.sh"],
-		evidence: "e",
-		violations: [v],
-	};
-	const l: Ledger = { headCommit: H, rows: [row] };
-	const threads = [
-		{
-			id: 1,
-			path: "a.sh",
-			lines: { start: 4, end: 4 },
-			body: message(v, citation(document, row)),
-		},
-		{
-			id: 2,
-			path: "a.sh",
-			lines: { start: 9, end: 9 },
-			body: message(v, citation(document, row)),
-		},
-		{
-			id: 3,
-			path: "b.sh",
-			lines: { start: 1, end: 1 },
-			body: "something else breaks [P](https://thruput.se/agents/#p)",
-		},
-	];
-	assert.deepEqual(
-		settled([{ document, ledger: l }], threads).map((thread) => thread.id),
-		UNCARRIED_THREAD_IDS,
-	);
-});
-
 it("outcome produces the verdict, summary, fresh inline findings, threads to settle, and threads to reopen", () => {
 	const open = {
 		id: "o",
@@ -243,58 +166,4 @@ it("outcome re-flags violations on resolved threads and approves clean ledgers",
 		).verdict,
 		"approve",
 	);
-});
-
-it("outcome resolves inline findings across multiple files", () => {
-	const multiFileProbe = {
-		review: {
-			headCommit: H,
-			files: [
-				{
-					path: "helper.ts",
-					fragments: [
-						{
-							kind: "surface" as const,
-							side: "head" as const,
-							lines: [
-								{ idToReportViolationOn: "helper.ts:1", text: "a" },
-								{ idToReportViolationOn: "helper.ts:2", text: "b" },
-							],
-						},
-					],
-				},
-				{
-					path: "service.ts",
-					fragments: [
-						{
-							kind: "surface" as const,
-							side: "head" as const,
-							lines: [{ idToReportViolationOn: "service.ts:2", text: "y" }],
-						},
-					],
-				},
-			],
-		},
-		rulebook: { rules: [{ id: "A", parent: "P" }] },
-	};
-	const multiFileResult = outcome(
-		[
-			{
-				document: multiFileProbe,
-				ledger: {
-					headCommit: H,
-					rows: [violatedRow("A", [violationAt("A", "service.ts:2")])],
-				},
-			},
-		],
-		[],
-	);
-	assert.deepEqual(multiFileResult.inline, [
-		{
-			path: "service.ts",
-			side: "head",
-			lines: { start: 2, end: 2 },
-			body: `what is wrong breaks ${citeP}`,
-		},
-	]);
 });

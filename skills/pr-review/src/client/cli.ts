@@ -38,8 +38,18 @@ export const failCli = (message?: string): number => {
 	if (!isNullOrEmpty(message)) {
 		process.stderr.write(message);
 	}
-	process.exitCode = 1;
 	return 1;
+};
+
+export const exitWithCode = (exitCode: number): void => {
+	if (exitCode === 0) {
+		return;
+	}
+	process.stdout.write("", () => {
+		process.stderr.write("", () => {
+			process.exit(exitCode);
+		});
+	});
 };
 
 export const failWithJson = (payload: object): number => {

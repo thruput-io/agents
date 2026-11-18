@@ -3,8 +3,8 @@ import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { env } from "node:process";
+import { Workdir } from "../adapters/fs/workdir.ts";
 import { nonnull } from "../domain/nullish.ts";
-import { Workdir } from "../io/workdir.ts";
 
 const EXECUTABLE_MODE = 0o755;
 const LARGE_FILE_LINES = 1005;

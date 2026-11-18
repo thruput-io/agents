@@ -29,8 +29,8 @@ const fail = (message: string): never => {
 };
 
 const expectEqual = <T>(actual: T, expected: T, message: string): void => {
-	const outcomes: Readonly<Record<string, () => void>> = {
-		true: () => undefined,
+	const outcomes: Readonly<Record<string, () => number>> = {
+		true: () => 0,
 		false: () =>
 			fail(`${message} (expected ${String(expected)}, got ${String(actual)})`),
 	};

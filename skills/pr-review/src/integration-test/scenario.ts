@@ -1,3 +1,4 @@
+import type { Workdir } from "../adapters/fs/workdir.ts";
 import {
 	type AckSuccess,
 	AckSuccessSchema,
@@ -12,7 +13,6 @@ import {
 	type SurfacePage,
 } from "../domain/contracts.g.ts";
 import { nonnull } from "../domain/nullish.ts";
-import type { Workdir } from "../io/workdir.ts";
 import {
 	expectEqual,
 	type InspectedProbePayload,

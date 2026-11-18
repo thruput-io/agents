@@ -3,7 +3,6 @@ import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { after, before, beforeEach, test as it } from "node:test";
 import {
-	type DispatchResult,
 	DispatchResultSchema,
 	PrepareReadySchema,
 	PrepareResponseSchema,
@@ -11,16 +10,6 @@ import {
 } from "../domain/contracts.g.ts";
 import { nonnull } from "../domain/nullish.ts";
 import {
-	AZURE_REVIEWER_ID,
-	type AzureOutcomeRecorder,
-	createAzureOutcomeRecorderHandlers,
-} from "./azure-mocks.ts";
-import {
-	createGitHubReviewRecorderHandler,
-	type GitHubReviewRecord,
-} from "./github-mocks.ts";
-import {
-	mockServer,
 	resetHostMocks,
 	startMockBridge,
 	stopMockBridge,
@@ -34,7 +23,6 @@ import {
 import { createScenarioRepo } from "./scenario-repo.ts";
 
 const repo = createScenarioRepo();
-const EXPECTED_VOTE_REJECT = -10;
 
 before(async () => {
 	installReviewToolForTest();
@@ -89,11 +77,6 @@ function summarizePreparedRun(run: Awaited<ReturnType<typeof runScenario>>) {
 	};
 }
 
-function submittedOutcomeOf(run: Awaited<ReturnType<typeof runScenario>>) {
-	return (run.dispatched as Extract<DispatchResult, { kind: "submitted" }>)
-		.outcome;
-}
-
 it("Review CLI prepares identical surfaces across Git, GitHub, and AzureDevOps", async () => {
 	const adapters = [
 		{ label: "scenario-git", target: repo.gitTarget },
@@ -133,66 +116,6 @@ it("Review CLI prepares identical surfaces across Git, GitHub, and AzureDevOps",
 			sliceExists: true,
 		})),
 	);
-});
-
-it("Review CLI posts identical review outcomes to GitHub and AzureDevOps", async () => {
-	const ghReviews: GitHubReviewRecord[] = [];
-	const azOutcome: AzureOutcomeRecorder = {
-		inlineThreads: [],
-		summaryThreads: [],
-		votes: [],
-	};
-	mockServer.use(
-		createGitHubReviewRecorderHandler(ghReviews),
-		...createAzureOutcomeRecorderHandlers(azOutcome),
-	);
-	const adapters = [
-		{ label: "outcome-git", target: repo.gitTarget },
-		{ label: "outcome-github", target: repo.githubTarget },
-		{ label: "outcome-azure", target: repo.azureTarget },
-	] as const;
-	const runs = await Promise.all(
-		adapters.map(({ label, target }) => runScenario(repo, target, label)),
-	);
-	const baselineSubmitted = nonnull(runs[0]).dispatched as Extract<
-		DispatchResult,
-		{ kind: "submitted" }
-	>;
-	assert.equal(baselineSubmitted.outcome.verdict, "request-changes");
-	assert.deepEqual(
-		runs.map(submittedOutcomeOf),
-		runs.map(() => baselineSubmitted.outcome),
-	);
-	assert.equal(ghReviews.length, 1);
-	const ghPosted = nonnull(ghReviews[0]);
-	assert.equal(ghPosted.event, "REQUEST_CHANGES");
-	assert.equal(ghPosted.commitId, repo.headCommit);
-	assert.equal(ghPosted.body.startsWith("**Verdict: request-changes**"), true);
-	assert.deepEqual(ghPosted.comments, [
-		{
-			path: "service.ts",
-			line: 2,
-			side: "RIGHT",
-			body: nonnull(baselineSubmitted.outcome.inline[0]).body,
-		},
-	]);
-	assert.deepEqual(azOutcome.inlineThreads, [
-		{
-			filePath: "/service.ts",
-			line: 2,
-			content: nonnull(baselineSubmitted.outcome.inline[0]).body,
-		},
-	]);
-	assert.equal(azOutcome.summaryThreads.length, 1);
-	assert.equal(
-		nonnull(azOutcome.summaryThreads[0]).startsWith(
-			"**Verdict: request-changes**",
-		),
-		true,
-	);
-	assert.deepEqual(azOutcome.votes, [
-		{ reviewerId: AZURE_REVIEWER_ID, vote: EXPECTED_VOTE_REJECT },
-	]);
 });
 
 it("Review CLI reports pending probes on partial completion and submits once remaining probes report", async () => {

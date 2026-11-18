@@ -148,7 +148,6 @@ function createAzureReReviewHandlers(
 		sourceRefName: "refs/heads/feature-v2",
 		targetRefName: "refs/heads/main",
 	});
-	const baseAzureRepo = baseAzure.repository ?? {};
 	return [
 		getPullRequestsGetPullRequestMockHandler({
 			...baseAzure,
@@ -162,9 +161,7 @@ function createAzureReReviewHandlers(
 				commitId: repo.headCommitV2,
 			},
 			repository: {
-				...baseAzureRepo,
 				project: {
-					...baseAzureRepo.project,
 					id: "00000000-0000-0000-0000-000000000000",
 				},
 			},

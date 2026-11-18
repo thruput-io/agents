@@ -2,19 +2,11 @@ import type { z } from "zod";
 import {
 	type Ledger,
 	LedgerSchema,
-	type LineNumber,
-	type Path,
-	type Row,
 	type Rule,
-	type RuleHeading,
-	type RuleRef,
 	type RulesetUrl,
-	type Side,
 	type Surface,
-	type SurfaceFile,
-	type SurfaceLineId,
-	type Violation,
 } from "./contracts.g.ts";
+import { rowRuleRef, ruleName, violationInside } from "./ledger-rows.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 
 const ESCALATION_ROWS = 3;
@@ -34,59 +26,6 @@ interface ContextProbe {
 }
 
 type LedgerProbe = RulesProbe | ContextProbe;
-
-function ruleName(row: Row): RuleHeading | Rule["id"] {
-	if ("bookRule" in row) {
-		return row.bookRule.heading;
-	}
-	return row.rule;
-}
-
-function rowRuleRef(row: Row): RuleRef {
-	if ("bookRule" in row) {
-		return row.bookRule;
-	}
-	return row.rule;
-}
-
-interface ResolvedSurfaceLine {
-	readonly path: Path;
-	readonly side: Side;
-	readonly line: LineNumber;
-}
-
-const resolveSurfaceLine = (
-	lineId: SurfaceLineId | undefined,
-	files: readonly SurfaceFile[],
-): ResolvedSurfaceLine | null => {
-	if (isNullOrEmpty(lineId)) {
-		return null;
-	}
-	const file = files.find(
-		(candidate) =>
-			lineId.startsWith(`${candidate.path}:`) &&
-			candidate.fragments.some(
-				(fragment) =>
-					fragment.kind === "surface" &&
-					fragment.lines.some((line) => line.idToReportViolationOn === lineId),
-			),
-	);
-	if (isNullOrEmpty(file)) {
-		return null;
-	}
-	return {
-		path: file.path,
-		side: "head",
-		line: Number(lineId.slice(file.path.length + 1)),
-	};
-};
-
-const violationInside = (
-	violation: Violation,
-	files: readonly SurfaceFile[],
-): boolean =>
-	isNullOrEmpty(violation.idToReportViolationOn) ||
-	!isNullOrEmpty(resolveSurfaceLine(violation.idToReportViolationOn, files));
 
 function issue(ctx: z.RefinementCtx, message: string): false {
 	ctx.addIssue({ code: "custom", message });
@@ -212,4 +151,3 @@ export const ledgerFor = (probe: LedgerProbe) =>
 	});
 
 export type { ContextProbe, LedgerProbe, RulesProbe };
-export { resolveSurfaceLine, ruleName, violationInside };

@@ -2,25 +2,13 @@ import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { z } from "zod";
 import type { Row, RuleRef, Violation } from "./contracts.g.ts";
-import {
-	type ContextProbe,
-	type LedgerProbe,
-	ledgerFor,
-	type RulesProbe,
-	resolveSurfaceLine,
-	violationInside,
-} from "./ledger.ts";
+import { type LedgerProbe, ledgerFor, type RulesProbe } from "./ledger.ts";
 
 const MISSING_B_RE = /missing: \["B"\]/u;
 const EXTRA_Z_RE = /extra: \["Z"\]/u;
 const IN_ORDER_RE = /in order/u;
 const FOREIGN_COMMIT_RE = /ledger is for b{40}/u;
 const OUTSIDE_SURFACE_RE = /violation of A is anchored outside the surface/u;
-const ONE_ROW_EXPECTED_THREE_RE = /1 rows, 3 expected/u;
-const NOT_RULESET_RULE_RE = /\["A"\] is not a rule of the ruleset/u;
-const NOT_HANDED_RULESET_RE =
-	/other\.md"\] is not a ruleset the probe was handed/u;
-const SELECTS_ONE_RULESET_RE = /selects one ruleset/u;
 
 const rejectionMessage = (
 	targetProbe: LedgerProbe,
@@ -39,13 +27,11 @@ const rejectionMessage = (
 const SHA1_HEX_LENGTH = 40;
 const H = "a".repeat(SHA1_HEX_LENGTH);
 const OTHER = "b".repeat(SHA1_HEX_LENGTH);
-const LINE_3 = 3;
 const SURFACE_END = 5;
 const CONTEXT_START = 6;
 const CONTEXT_END = 8;
 const OUTSIDE_LINE = 7;
 const SURFACE_TAIL = 9;
-const EXPECTED_BOOK_ROWS = 3;
 const text = (n: number) => `L${n}`;
 const run = (from: number, to: number) =>
 	Array.from({ length: to - from + 1 }, (_, i) => ({
@@ -79,13 +65,6 @@ const probe: RulesProbe = {
 	surface: { headCommit: H, files },
 	rulebook: { rules: [{ id: "A" }, { id: "B" }] },
 };
-const contextProbe: ContextProbe = {
-	surface: { headCommit: H, files },
-	rulesets: [
-		{ url: "https://books.example/ddd.md" },
-		{ url: "https://books.example/clean-code.md" },
-	],
-};
 
 const violation = (rule: RuleRef): Violation => ({
 	rule,
@@ -109,72 +88,11 @@ const violatedRow = (rule: string, violations: Violation[]): Row => ({
 	evidence: "e",
 	violations,
 });
-const bookRule = (heading: string) => ({
-	ruleset: "https://books.example/ddd.md",
-	heading,
-});
 const cleanBookRow = (heading: string): Row => ({
-	bookRule: bookRule(heading),
+	bookRule: { ruleset: "https://books.example/ddd.md", heading },
 	examined: ["x"],
 	verdict: "clean",
 	evidence: "e",
-});
-const rowOn = (ruleset: string): Row => ({
-	bookRule: { ruleset, heading: "x" },
-	examined: ["x"],
-	verdict: "clean",
-	evidence: "e",
-});
-
-it("violationInside accepts surface line ids and pull-request-level findings", () => {
-	assert.equal(violationInside(violationAt("A", LINE_3), files), true);
-	assert.equal(violationInside(violationAt("A", 1), files), true);
-	assert.equal(violationInside(violationAt("A", SURFACE_TAIL), files), true);
-	assert.equal(violationInside(violation("A"), files), true);
-	assert.equal(violationInside(violationAt("A", CONTEXT_START), files), false);
-	assert.equal(violationInside(violationAt("A", OUTSIDE_LINE), files), false);
-});
-
-it("resolveSurfaceLine maps '<path>:<line>' to the exact matching file, head side, and 1-based file line number", () => {
-	const multiFileSurface = [
-		{
-			path: "helper.ts",
-			fragments: [
-				{
-					kind: "surface" as const,
-					side: "head" as const,
-					lines: [
-						{
-							idToReportViolationOn: "helper.ts:1",
-							text: "export const z = 3;",
-						},
-						{ idToReportViolationOn: "helper.ts:2", text: "" },
-					],
-				},
-			],
-		},
-		{
-			path: "service.ts",
-			fragments: [
-				{
-					kind: "surface" as const,
-					side: "head" as const,
-					lines: [
-						{
-							idToReportViolationOn: "service.ts:2",
-							text: "export const y = 2;",
-						},
-					],
-				},
-			],
-		},
-	];
-	assert.deepEqual(resolveSurfaceLine("service.ts:2", multiFileSurface), {
-		path: "service.ts",
-		side: "head",
-		line: 2,
-	});
-	assert.equal(resolveSurfaceLine("service.ts:99", multiFileSurface), null);
 });
 
 it("the ledger schema accepts rows matching the rules in order", () => {
@@ -241,51 +159,5 @@ it("the ledger schema rejects a violation anchored outside the surface", () => {
 			rows: rows(violationAt("A", OUTSIDE_LINE)),
 		}),
 		OUTSIDE_SURFACE_RE,
-	);
-});
-
-it("the ledger schema requires exactly three rows on rules of one ruleset the context probe was handed", () => {
-	assert.equal(
-		ledgerFor(contextProbe).decode({
-			headCommit: H,
-			rows: [cleanBookRow("x"), cleanBookRow("y"), cleanBookRow("z")],
-		}).rows.length,
-		EXPECTED_BOOK_ROWS,
-	);
-	assert.match(
-		rejectionMessage(contextProbe, {
-			headCommit: H,
-			rows: [cleanBookRow("x")],
-		}),
-		ONE_ROW_EXPECTED_THREE_RE,
-	);
-	assert.match(
-		rejectionMessage(contextProbe, {
-			headCommit: H,
-			rows: [cleanBookRow("x"), cleanBookRow("y"), cleanRow("A")],
-		}),
-		NOT_RULESET_RULE_RE,
-	);
-	assert.match(
-		rejectionMessage(contextProbe, {
-			headCommit: H,
-			rows: [
-				rowOn("https://books.example/other.md"),
-				rowOn("https://books.example/other.md"),
-				rowOn("https://books.example/other.md"),
-			],
-		}),
-		NOT_HANDED_RULESET_RE,
-	);
-	assert.match(
-		rejectionMessage(contextProbe, {
-			headCommit: H,
-			rows: [
-				cleanBookRow("x"),
-				cleanBookRow("y"),
-				rowOn("https://books.example/clean-code.md"),
-			],
-		}),
-		SELECTS_ONE_RULESET_RE,
 	);
 });

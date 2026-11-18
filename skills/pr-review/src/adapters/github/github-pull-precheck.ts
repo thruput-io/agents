@@ -11,6 +11,7 @@ import type {
 	HostError,
 	Summary,
 } from "../../domain/contracts.g.ts";
+import type { AdapterResolution } from "../../domain/host-adapter.ts";
 import {
 	DIFF_LIMIT_EXCEEDED,
 	type FileLineCount,
@@ -21,10 +22,9 @@ import {
 	tooLarge,
 } from "../../domain/limits.ts";
 import { isNullOrEmpty } from "../../domain/nullish.ts";
-import type { AdapterResolution } from "../../io/host-adapter.ts";
-import type { CommitZipArchive } from "../../io/snapshot-directory.ts";
+import type { CommitZipArchive } from "../../domain/ports.ts";
+import { buildBinaryHostError } from "../http-error.ts";
 import {
-	buildBinaryHostError,
 	type HostHttpResponse,
 	type HostTransport,
 	isBinaryResponse,

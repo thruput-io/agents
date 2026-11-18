@@ -1,4 +1,5 @@
 import type { CodeUnderReview } from "../domain/code-under-review.ts";
+import { ContextSubAgentLedger } from "../domain/context-sub-agent-ledger.ts";
 import type {
 	AckPayload,
 	Checkout,
@@ -6,19 +7,16 @@ import type {
 	RulesetPageResponse,
 	RulesetUrl,
 } from "../domain/contracts.g.ts";
+import { DeadCodeSubAgentLedger } from "../domain/dead-code-sub-agent-ledger.ts";
+import type { CoordinatedProbeSpec } from "../domain/main-agent-ledger.ts";
 import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
 import { paginateText } from "../domain/pagination.ts";
+import type { LedgerStore } from "../domain/ports.ts";
+import type { ProbeDocument } from "../domain/probe-document.ts";
+import type { SubAgentLedger } from "../domain/probe-ledger.ts";
+import { ReuseSubAgentLedger } from "../domain/reuse-sub-agent-ledger.ts";
 import type { Rulebook } from "../domain/rulebook.ts";
-import { ContextSubAgentLedger } from "../io/context-sub-agent-ledger.ts";
-import { DeadCodeSubAgentLedger } from "../io/dead-code-sub-agent-ledger.ts";
-import type { CoordinatedProbeSpec } from "../io/main-agent-ledger.ts";
-import type { ProbeDocument } from "../io/probe-document.ts";
-import type { SubAgentLedger } from "../io/probe-ledger.ts";
-import { ReuseSubAgentLedger } from "../io/reuse-sub-agent-ledger.ts";
-import { RulesSubAgentLedger } from "../io/rules-sub-agent-ledger.ts";
-import type { Workdir } from "../io/workdir.ts";
-
-type LedgerDirectory = ReturnType<Workdir["ledgerDirectory"]>;
+import { RulesSubAgentLedger } from "../domain/rules-sub-agent-ledger.ts";
 
 const CONTEXT_BOOK_RULE_ROWS = 3;
 
@@ -37,19 +35,12 @@ interface ProbeBehavior {
 	readonly probe: ProbeDocument;
 	readonly rules: ProbeRules;
 	toLedger: (
-		directory: LedgerDirectory,
+		directory: LedgerStore,
 		pullRequest: CodeUnderReview,
 	) => SubAgentLedger;
 	toCoordinatedSpec: (name: Checkout) => CoordinatedProbeSpec;
 	validateAck: (payload: AckPayload) => AckValidationResult;
 	ruleset: (url: RulesetUrl, page: number) => RulesetPageResponse;
-}
-
-interface ProbeStorage {
-	readCursor: () => number | null;
-	writeCursor: (index: number) => void;
-	readAck: () => number | null;
-	writeAck: (acknowledgedAt: number) => void;
 }
 
 const rulesProbeLedgers = {
@@ -97,6 +88,35 @@ const HYDRATE_RULEBOOK_PROBE: Readonly<
 	}),
 };
 
+const paginateContextRuleset = (
+	rulesets: readonly ExternalRulebook[],
+	url: RulesetUrl,
+	page: number,
+): RulesetPageResponse => {
+	const book = rulesets.find((entry) => entry.url === url);
+	if (isNullOrEmpty(book)) {
+		return {
+			success: false,
+			error: `Unknown ruleset URL: ${url}. Choose one of the URLs returned in inspect under #/rulesets.`,
+		};
+	}
+	const chunks = paginateText(book.text);
+	if (page < 1 || page > chunks.length) {
+		return {
+			success: false,
+			error: `Ruleset page ${page} is out of range for ${url} (valid pages: 1..${chunks.length}).`,
+		};
+	}
+	return {
+		success: true,
+		url: book.url,
+		title: book.title,
+		page,
+		totalPages: chunks.length,
+		text: nonnull(chunks[page - 1]),
+	};
+};
+
 function contextProbeBehavior(
 	probe: ContextProbeDocument,
 	checkoutDir: Checkout,
@@ -124,30 +144,8 @@ function contextProbeBehavior(
 					'Invalid ack payload for context probe. Expected JSON: {"message":"<dispatcher message received>","bookRuleRows":3,"observationFormat":"<observation> breaks <principle>"} because context probes report 3 bookRule rows whose observations complete "<observation> breaks <principle>".',
 			};
 		},
-		ruleset: (url, page) => {
-			const book = hydrated.rulesets.find((entry) => entry.url === url);
-			if (isNullOrEmpty(book)) {
-				return {
-					success: false,
-					error: `Unknown ruleset URL: ${url}. Choose one of the URLs returned in inspect under #/rulesets.`,
-				};
-			}
-			const chunks = paginateText(book.text);
-			if (page < 1 || page > chunks.length) {
-				return {
-					success: false,
-					error: `Ruleset page ${page} is out of range for ${url} (valid pages: 1..${chunks.length}).`,
-				};
-			}
-			return {
-				success: true,
-				url: book.url,
-				title: book.title,
-				page,
-				totalPages: chunks.length,
-				text: nonnull(chunks[page - 1]),
-			};
-		},
+		ruleset: (url, page) =>
+			paginateContextRuleset(hydrated.rulesets, url, page),
 	};
 }
 
@@ -199,42 +197,4 @@ export function probeBehaviorFor(
 	return rulebookProbeBehavior(probe, checkoutDir);
 }
 
-export type { ProbeBehavior, ProbeRules, ProbeStorage };
-
-export function inMemoryProbeStorage(): ProbeStorage {
-	const state = new Map<"cursor" | "ack", number>();
-	return {
-		readCursor: () => {
-			const cursor = state.get("cursor");
-			if (cursor === undefined) {
-				return null;
-			}
-			return cursor;
-		},
-		writeCursor: (index) => {
-			state.set("cursor", index);
-		},
-		readAck: () => {
-			const acknowledgedAt = state.get("ack");
-			if (acknowledgedAt === undefined) {
-				return null;
-			}
-			return acknowledgedAt;
-		},
-		writeAck: (acknowledgedAt) => {
-			state.set("ack", acknowledgedAt);
-		},
-	};
-}
-
-export function persistedProbeStorage(
-	directory: LedgerDirectory,
-	name: string,
-): ProbeStorage {
-	return {
-		readCursor: () => directory.readCursor(name),
-		writeCursor: (index) => directory.writeCursor(name, index),
-		readAck: () => directory.readAck(name),
-		writeAck: (acknowledgedAt) => directory.writeAck(name, acknowledgedAt),
-	};
-}
+export type { ProbeBehavior, ProbeRules };

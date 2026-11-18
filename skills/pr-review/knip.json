@@ -1,19 +1,5 @@
 {
 	"$schema": "https://unpkg.com/knip@5/schema.json",
-	"entry": ["src/client/controller-cli.ts", "src/client/sub-agent-cli.ts"],
 	"ignoreBinaries": ["esbuild"],
-	"ignoreDependencies": [
-		"@faker-js/faker",
-		"@graphql-tools/mock",
-		"@graphql-tools/schema",
-		"msw"
-	],
-	"project": [
-		"src/client/*.ts",
-		"src/controller/*.ts",
-		"src/adapters/**/*.ts",
-		"src/io/*.ts",
-		"src/domain/*.ts",
-		"!src/**/*.test.ts"
-	]
+	"project": ["src/**/*.ts", "scripts/*.ts"]
 }

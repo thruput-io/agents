@@ -14,10 +14,8 @@ import {
 	GitHubPullRequestCodec,
 	GitHubReviewsCodec,
 } from "./github.ts";
-import {
-	GitHubReviewCommentCodec,
-	GitHubReviewPayloadCodec,
-} from "./github-review.ts";
+import { GitHubReviewPayloadCodec } from "./github-review.ts";
+import { GitHubReviewCommentCodec } from "./github-review-comment.ts";
 import { REVIEW_THREADS_QUERY, ThreadsPage } from "./github-thread-codecs.ts";
 import {
 	fetchGitHubThreads,

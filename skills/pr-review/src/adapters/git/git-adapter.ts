@@ -8,12 +8,15 @@ import {
 	PurposeSchema,
 	type Summary,
 } from "../../domain/contracts.g.ts";
+import type {
+	AdapterResolution,
+	HostAdapter,
+} from "../../domain/host-adapter.ts";
 import { table } from "../../domain/ledger-table.ts";
 import { rendered } from "../../domain/outcome.ts";
-import type { AdapterResolution, HostAdapter } from "../../io/host-adapter.ts";
-import { reviewBaselineFrom } from "../../io/review-baseline.ts";
-import { buildReviewSnapshot } from "../../io/review-snapshot-builder.ts";
-import type { SnapshotDirectory } from "../../io/snapshot-directory.ts";
+import type { SnapshotPort } from "../../domain/ports.ts";
+import { reviewBaselineFrom } from "../../domain/review-baseline.ts";
+import { buildReviewSnapshot } from "../../domain/review-snapshot-builder.ts";
 import type { GitDiff } from "./git-diff.ts";
 
 export class GitAdapter implements HostAdapter<Git> {
@@ -27,7 +30,7 @@ export class GitAdapter implements HostAdapter<Git> {
 	host(): Git {
 		return this.#review.host();
 	}
-	resolve(snapshotDir: SnapshotDirectory): Promise<AdapterResolution> {
+	resolve(snapshotDir: SnapshotPort): Promise<AdapterResolution> {
 		const host = this.host();
 		const { repository, base, head } = host;
 		snapshotDir.clone(repository);

@@ -100,7 +100,6 @@ export function createFailedAzureConnectionDataHandler() {
 
 export function createRejectedAzurePolicyHandler() {
 	const baseEval = nonnull(getEvaluationsListResponseMock().value[0]);
-	const baseConfig = baseEval.configuration ?? {};
 	return getEvaluationsListMockHandler({
 		count: 1,
 		value: [
@@ -108,9 +107,8 @@ export function createRejectedAzurePolicyHandler() {
 				...baseEval,
 				status: "rejected",
 				configuration: {
-					...baseConfig,
 					isBlocking: true,
-					type: { ...baseConfig.type, displayName: "Build" },
+					type: { displayName: "Build" },
 				},
 			},
 		],

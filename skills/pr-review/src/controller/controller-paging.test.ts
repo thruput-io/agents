@@ -1,63 +1,28 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { test as it } from "node:test";
-import { fileURLToPath } from "node:url";
-import { Instructions } from "../domain/instructions.ts";
 import { nonnull } from "../domain/nullish.ts";
-import { Rulebook } from "../domain/rulebook.ts";
-import { Workdir } from "../io/workdir.ts";
-import type { SubAgentController } from "./sub-agent-controller.ts";
+import type { WorkspacePort } from "../domain/ports.ts";
+import { toAgentInstructions } from "../domain/probe-document.ts";
+import {
+	H,
+	rulesAuditDocument,
+	sampleChange,
+	sampleRulebook,
+} from "./controller-fixtures.test.ts";
+import { createMemoryWorkspace } from "./memory-workspace.test.ts";
+import { SubAgentController } from "./sub-agent-controller.ts";
 
-const SHA1_HEX_LENGTH = 40;
-const H = "a".repeat(SHA1_HEX_LENGTH);
-const CLIENT_DIR = fileURLToPath(new URL("../client", import.meta.url));
 const LARGE_LINE_COUNT = 120;
 const LINE_WIDTH = 80;
 const SURFACE_LINE_OFFSET = 121;
 const RULE_SECTION_COUNT = 200;
 const GUIDELINE_REPEATS = 8;
-const EXPECTED_TOTAL_PAGES = 4;
-const MAX_CLI_OUTPUT_BYTES = 9000;
+const MAX_PAGE_BYTES = 9000;
 
-const sampleRulebook = () =>
-	nonnull(
-		Rulebook.slice(
-			[
-				{
-					id: "Stated purpose",
-					body: "State the [[Purpose]] of every [[Change]].",
-					parent: "You aren't gonna need it",
-					marker: "MUST",
-					group: "Purpose",
-				},
-			],
-			{
-				principles: [
-					{
-						id: "You aren't gonna need it",
-						body: "Always implement things when you actually need them.",
-						parent: "Code is a liability, not an asset",
-					},
-				],
-			},
-		).data,
-	);
-
-const sampleChange = {
-	host: {
-		kind: "github" as const,
-		owner: "thruput-io",
-		repository: "agents",
-		number: 14,
-	},
-	author: "author",
-	description: "Body",
-};
-
-const writePagingFixtures = (workdir: Workdir, bigRulesetUrl: string) => {
+const setupPagingWorkspace = (
+	workdir: WorkspacePort,
+	bigRulesetUrl: string,
+) => {
 	const bigFileOne = {
 		path: "large.ts",
 		fragments: [
@@ -104,183 +69,96 @@ const writePagingFixtures = (workdir: Workdir, bigRulesetUrl: string) => {
 				`## Rule ${i + 1}\n${"Guideline text ".repeat(GUIDELINE_REPEATS)}`,
 		).join("\n"),
 	};
+	const surface = { headCommit: H, files: [bigFileOne, smallFileTwo] };
 	workdir.ledgerDirectory().writePullRequest({
 		change: sampleChange,
-		surface: { headCommit: H, files: [bigFileOne, smallFileTwo] },
+		surface,
 		fragments: [...bigFileOne.fragments, ...smallFileTwo.fragments],
 		threads: { threads: [] },
 	});
 	workdir.ledgerDirectory().writeRulesets([bigRuleset]);
-	return bigRuleset;
-};
-
-const writePagingAudits = (
-	workdir: Workdir,
-	bigRuleset: ReturnType<typeof writePagingFixtures>,
-) => {
-	const rb = sampleRulebook();
-	const rulesDoc = Instructions.forKind("rules");
-	workdir.writeAudit("01-purpose", {
-		instructions: rulesDoc.prose(),
-		task: rulesDoc.task() as Extract<
-			ReturnType<SubAgentController["inspect"]>,
-			{ readonly kind: "rules" }
-		>["task"],
-		permissions: rulesDoc.permissions() as Extract<
-			ReturnType<SubAgentController["inspect"]>,
-			{ readonly kind: "rules" }
-		>["permissions"],
-		kind: "rules",
-		change: sampleChange,
-		surface: {
-			headCommit: H,
-			changedFiles: 2,
-			totalPages: EXPECTED_TOTAL_PAGES,
-		},
-		ruleset: rb.toRuleset(),
-	});
-	const contextDoc = Instructions.forKind("context");
-	workdir.writeAudit("02-context", {
-		instructions: contextDoc.prose(),
-		task: contextDoc.task() as Extract<
-			ReturnType<SubAgentController["inspect"]>,
-			{ readonly kind: "context" }
-		>["task"],
-		permissions: contextDoc.permissions() as Extract<
-			ReturnType<SubAgentController["inspect"]>,
-			{ readonly kind: "context" }
-		>["permissions"],
-		kind: "context",
-		change: sampleChange,
-		surface: {
-			headCommit: H,
-			changedFiles: 2,
-			totalPages: EXPECTED_TOTAL_PAGES,
-		},
-		rulesets: [
-			{
-				url: bigRuleset.url,
-				title: bigRuleset.title,
-				focus: bigRuleset.focus,
-				whenToUse: bigRuleset.whenToUse,
-				totalPages: EXPECTED_TOTAL_PAGES,
-			},
-		],
-		checkout: workdir.snapshotDirectory().toString(),
-	});
-};
-
-const setupPagingWorkdir = (tempRoot: string, bigRulesetUrl: string) => {
-	const workdir = nonnull(Workdir.from(join(tempRoot, "workspace")).data);
-	const bigRuleset = writePagingFixtures(workdir, bigRulesetUrl);
-	writePagingAudits(workdir, bigRuleset);
-	return workdir.sessionToken();
-};
-
-const runSubCliJson = <T>(args: readonly string[]) => {
-	const cliPath = join(CLIENT_DIR, "sub-agent-cli.ts");
-	const res = spawnSync(process.execPath, [cliPath, ...args], {
-		encoding: "utf8",
-	});
-	let payload: T | null = null;
-	if (res.status === 0) {
-		payload = JSON.parse(res.stdout) as T;
-	}
-	return {
-		status: res.status,
-		output: res.stderr || res.stdout,
-		byteLength: Buffer.byteLength(res.stdout, "utf8"),
-		payload,
-	};
+	workdir.writeAudit("01-purpose", rulesAuditDocument(sampleRulebook()));
+	workdir.writeAudit(
+		"02-context",
+		toAgentInstructions({
+			kind: "context",
+			change: sampleChange,
+			surface,
+			rulesets: [bigRuleset],
+			checkout: workdir.snapshotDirectory().toString(),
+		}),
+	);
 };
 
 function collectPages(
-	session: string,
+	sub: SubAgentController,
 	acc: {
-		readonly statuses: readonly (number | null)[];
 		readonly overLimit: readonly boolean[];
 		readonly seenPaths: readonly string[];
 		readonly lastTotalPages: number;
 	},
 ): {
-	readonly statuses: readonly (number | null)[];
 	readonly overLimit: readonly boolean[];
 	readonly seenPaths: readonly string[];
 	readonly lastTotalPages: number;
 } {
-	const run = runSubCliJson<{
-		readonly status: "page" | "end";
-		readonly path?: string;
-		readonly totalPages: number;
-	}>(["next", session, "01-purpose"]);
-	const current = nonnull(run.payload);
-	const nextAcc = {
-		statuses: [...acc.statuses, run.status],
-		overLimit: [...acc.overLimit, run.byteLength > MAX_CLI_OUTPUT_BYTES],
-		seenPaths: acc.seenPaths,
-		lastTotalPages: acc.lastTotalPages,
+	const page = sub.next();
+	const byteLength = Buffer.byteLength(JSON.stringify(page), "utf8");
+	if (page.success && page.status === "page") {
+		return collectPages(sub, {
+			overLimit: [...acc.overLimit, byteLength > MAX_PAGE_BYTES],
+			seenPaths: [...acc.seenPaths, page.path],
+			lastTotalPages: page.totalPages,
+		});
+	}
+	return {
+		...acc,
+		overLimit: [...acc.overLimit, byteLength > MAX_PAGE_BYTES],
 	};
-	const nextStep: Record<"page" | "end", () => typeof acc> = {
-		end: () => nextAcc,
-		page: () =>
-			collectPages(session, {
-				...nextAcc,
-				seenPaths: [...nextAcc.seenPaths, nonnull(current.path)],
-				lastTotalPages: current.totalPages,
-			}),
-	};
-	return nextStep[current.status]();
 }
 
-it("sub-agent-controller next, prev, and ruleset page large changed files and large rulebooks strictly under 9KB", () => {
-	const tempRoot = mkdtempSync(join(tmpdir(), "controller-paging-"));
+it("SubAgentController next, prev, and ruleset page large changed files and large rulebooks strictly under 9KB", () => {
+	const workdir = createMemoryWorkspace("/tmp/controller-paging/workspace");
 	const bigRulesetUrl =
 		"https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md";
-	try {
-		const session = setupPagingWorkdir(tempRoot, bigRulesetUrl);
-		const { statuses, overLimit, seenPaths, lastTotalPages } = collectPages(
-			session,
-			{ statuses: [], overLimit: [], seenPaths: [], lastTotalPages: 0 },
-		);
-		assert.equal(
-			statuses.every((s) => s === 0),
-			true,
-		);
-		assert.equal(
-			overLimit.every((flag) => !flag),
-			true,
-		);
-		assert.equal(lastTotalPages > 2, true);
-		assert.equal(seenPaths.filter((p) => p === "large.ts").length > 1, true);
-		assert.equal(seenPaths.at(-1), "small.ts");
+	setupPagingWorkspace(workdir, bigRulesetUrl);
 
-		const steppedBack = runSubCliJson<{
-			readonly status: string;
-			readonly path: string;
-		}>(["prev", session, "01-purpose"]);
-		assert.equal(steppedBack.status, 0, steppedBack.output);
-		assert.equal(nonnull(steppedBack.payload).status, "page");
-		assert.equal(nonnull(steppedBack.payload).path, "small.ts");
+	const purposeSub = SubAgentController.forWorkdir(workdir, "01-purpose");
+	const { overLimit, seenPaths, lastTotalPages } = collectPages(purposeSub, {
+		overLimit: [],
+		seenPaths: [],
+		lastTotalPages: 0,
+	});
+	assert.equal(
+		overLimit.every((flag) => !flag),
+		true,
+	);
+	assert.equal(lastTotalPages > 2, true);
+	assert.equal(seenPaths.filter((p) => p === "large.ts").length > 1, true);
+	assert.equal(seenPaths.at(-1), "small.ts");
 
-		const firstBook = runSubCliJson<{
-			readonly page: number;
-			readonly totalPages: number;
-			readonly text: string;
-		}>(["ruleset", session, "02-context", bigRulesetUrl]);
-		assert.equal(firstBook.byteLength <= MAX_CLI_OUTPUT_BYTES, true);
-		assert.equal(nonnull(firstBook.payload).page, 1);
-		assert.equal(nonnull(firstBook.payload).totalPages > 1, true);
-		const secondBook = runSubCliJson<{
-			readonly page: number;
-			readonly text: string;
-		}>(["ruleset", session, "02-context", bigRulesetUrl, "2"]);
-		assert.equal(secondBook.byteLength <= MAX_CLI_OUTPUT_BYTES, true);
-		assert.equal(nonnull(secondBook.payload).page, 2);
-		assert.notEqual(
-			nonnull(secondBook.payload).text,
-			nonnull(firstBook.payload).text,
-		);
-	} finally {
-		rmSync(tempRoot, { recursive: true, force: true });
-	}
+	const steppedBack = purposeSub.prev();
+	assert.equal(steppedBack.success, true);
+	assert.equal((steppedBack as { readonly status: string }).status, "page");
+	assert.equal((steppedBack as { readonly path: string }).path, "small.ts");
+
+	const contextSub = SubAgentController.forWorkdir(workdir, "02-context");
+	const firstBook = contextSub.ruleset(bigRulesetUrl, 1);
+	assert.equal(firstBook.success, true);
+	assert.equal(
+		Buffer.byteLength(JSON.stringify(firstBook), "utf8") <= MAX_PAGE_BYTES,
+		true,
+	);
+	assert.equal(firstBook.page, 1);
+	assert.equal(firstBook.totalPages > 1, true);
+
+	const secondBook = contextSub.ruleset(bigRulesetUrl, 2);
+	assert.equal(secondBook.success, true);
+	assert.equal(
+		Buffer.byteLength(JSON.stringify(secondBook), "utf8") <= MAX_PAGE_BYTES,
+		true,
+	);
+	assert.equal(secondBook.page, 2);
+	assert.notEqual(secondBook.text, firstBook.text);
+	assert.equal(nonnull(firstBook.text).length > 0, true);
 });

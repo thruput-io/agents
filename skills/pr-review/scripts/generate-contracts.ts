@@ -6,9 +6,11 @@ import {
 	type JsonSchema,
 	type JsonSchemaObject,
 	jsonSchemaToZod,
+	type ParserOverride,
 	parseSchema,
 	type Refs,
 } from "json-schema-to-zod";
+import { nonnull } from "../src/domain/nullish.ts";
 
 interface SchemaDocument {
 	readonly $defs?: Record<string, unknown>;
@@ -30,10 +32,10 @@ const toPascalCase = (raw: string): string =>
 const rootSchemaName = (relativePath: string): string =>
 	toPascalCase(basename(relativePath, ".schema.json"));
 
-const customOverride = (
+const customOverride: ParserOverride = (
 	schemaObject: JsonSchemaObject,
 	refs: Refs,
-): string | undefined => {
+) => {
 	if (Array.isArray(schemaObject.const)) {
 		const tuple = `z.tuple([${schemaObject.const.map((item) => `z.literal(${JSON.stringify(item)})`).join(", ")}])`;
 		return `${tuple}.default(${JSON.stringify(schemaObject.const)})`;
@@ -46,10 +48,10 @@ const customOverride = (
 		const literal = JSON.stringify(schemaObject.const);
 		return `z.literal(${literal}).default(${literal})`;
 	}
-	if (Array.isArray(schemaObject.oneOf)) {
-		return `z.xor([${schemaObject.oneOf.map((branch) => parseSchema(branch as JsonSchema, refs)).join(", ")}])`;
+	if (!Array.isArray(schemaObject.oneOf)) {
+		return;
 	}
-	return undefined;
+	return `z.xor([${schemaObject.oneOf.map((branch) => parseSchema(branch as JsonSchema, refs)).join(", ")}])`;
 };
 
 const toZod = (schema: unknown): string =>
@@ -81,9 +83,9 @@ const specFor = (
 	resolvedMap: ReadonlyMap<string, SchemaDocument>,
 ): SchemaDocument => {
 	if (filePath === target) {
-		return rawByPath.get(filePath) ?? {};
+		return nonnull(rawByPath.get(filePath));
 	}
-	return resolvedMap.get(filePath) ?? {};
+	return nonnull(resolvedMap.get(filePath));
 };
 
 const runDereferencePass = async (
@@ -108,7 +110,8 @@ const runDereferencePass = async (
 		}),
 	);
 	for (const { target, schema, errors } of results) {
-		if ((errors ?? []).length === 0 && schema !== undefined) {
+		const hasErrors = errors !== undefined && errors.length > 0;
+		if (!hasErrors && schema !== undefined) {
 			resolvedMap.set(target, schema as SchemaDocument);
 		} else if (pass === DEREFERENCE_PASSES - 1) {
 			throw new Error(
@@ -138,23 +141,24 @@ const emitSchema = (name: string, definition: unknown): void => {
 };
 
 for (const relativePath of reviewPaths) {
-	const document: SchemaDocument =
-		resolvedByPath.get(join(SCHEMAS_DIR, relativePath)) ?? {};
-	const defs = document.$defs ?? {};
-	for (const [defName, defSchema] of Object.entries(defs)) {
-		emitSchema(defName, defSchema);
+	const document = nonnull(resolvedByPath.get(join(SCHEMAS_DIR, relativePath)));
+	const defs = document.$defs;
+	if (defs !== undefined) {
+		for (const [defName, defSchema] of Object.entries(defs)) {
+			emitSchema(defName, defSchema);
+		}
 	}
 	const rootName = rootSchemaName(relativePath);
-	if (!(rootName in defs)) {
+	if (defs === undefined || !Object.hasOwn(defs, rootName)) {
 		emitSchema(rootName, document);
 	}
 }
 
 for (const group of ["rules", "principles", "definitions"] as const) {
-	const document: SchemaDocument =
-		resolvedByPath.get(join(SCHEMAS_DIR, `governance/${group}.schema.json`)) ??
-		{};
-	const defs = document.$defs ?? {};
+	const document = nonnull(
+		resolvedByPath.get(join(SCHEMAS_DIR, `governance/${group}.schema.json`)),
+	);
+	const defs = nonnull(document.$defs);
 	const itemName = toPascalCase(group.slice(0, -1));
 	emitSchema(itemName, defs[itemName]);
 	emitSchema(toPascalCase(group), document);

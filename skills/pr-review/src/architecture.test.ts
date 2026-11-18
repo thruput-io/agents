@@ -20,13 +20,13 @@ it("src has no circular dependencies", async () => {
 	assert.deepEqual(violations, []);
 });
 
-it("domain layer is pure and does not depend on io, controller, adapters, client, or transport APIs", async () => {
+it("domain layer is pure and does not depend on controller, adapters, client, integration-test, or transport APIs", async () => {
 	const layerViolations = await projectFiles(TSCONFIG_PATH)
 		.inFolder("src/domain/**")
 		.shouldNot()
 		.dependOnFiles()
 		.inPath(
-			"{src/io/**,src/controller/**,src/adapters/**,src/client/**,clients/**}",
+			"{src/controller/**,src/adapters/**,src/client/**,src/integration-test/**,clients/**}",
 		)
 		.check();
 	assert.deepEqual(layerViolations, []);
@@ -42,50 +42,34 @@ it("domain layer is pure and does not depend on io, controller, adapters, client
 	assert.deepEqual(transportViolations, []);
 });
 
-it("io layer only depends on domain and io", async () => {
+it("controller layer only depends on domain and controller (no client, adapters, or integration-test)", async () => {
 	const violations = await projectFiles(TSCONFIG_PATH)
-		.inFolder("src/io/**")
-		.shouldNot()
-		.dependOnFiles()
-		.inPath("{src/controller/**,src/adapters/**,src/client/**,clients/**}")
-		.check();
-	assert.deepEqual(violations, []);
-});
-
-it("adapters layer only depends on domain, io, adapters, and generated clients", async () => {
-	const violations = await projectFiles(TSCONFIG_PATH)
-		.inFolder("src/adapters/**")
-		.shouldNot()
-		.dependOnFiles()
-		.inPath("{src/controller/**,src/client/**}")
-		.check();
-	assert.deepEqual(violations, []);
-});
-
-it("controller layer does not depend on client, and controller tests do not depend on adapters", async () => {
-	const clientViolations = await projectFiles(TSCONFIG_PATH)
 		.inFolder("src/controller/**")
 		.shouldNot()
 		.dependOnFiles()
-		.inPath("{src/client/**,clients/**}")
+		.inPath(
+			"{src/adapters/**,src/client/**,src/integration-test/**,clients/**}",
+		)
 		.check();
-	assert.deepEqual(clientViolations, []);
-
-	const adapterTestViolations = await projectFiles(TSCONFIG_PATH)
-		.inPath("src/controller/*.test.ts")
-		.shouldNot()
-		.dependOnFiles()
-		.inFolder("src/adapters/**")
-		.check();
-	assert.deepEqual(adapterTestViolations, []);
+	assert.deepEqual(violations, []);
 });
 
-it("client UI layer only depends on domain, io, controller, and client (never adapters)", async () => {
+it("client layer only depends on domain, controller, and client (never adapters)", async () => {
 	const violations = await projectFiles(TSCONFIG_PATH)
 		.inFolder("src/client/**")
 		.shouldNot()
 		.dependOnFiles()
-		.inPath("{src/adapters/**,clients/**}")
+		.inPath("{src/adapters/**,src/integration-test/**,clients/**}")
+		.check();
+	assert.deepEqual(violations, []);
+});
+
+it("adapters layer only depends on domain, adapters, and generated clients", async () => {
+	const violations = await projectFiles(TSCONFIG_PATH)
+		.inFolder("src/adapters/**")
+		.shouldNot()
+		.dependOnFiles()
+		.inPath("{src/controller/**,src/client/**,src/integration-test/**}")
 		.check();
 	assert.deepEqual(violations, []);
 });

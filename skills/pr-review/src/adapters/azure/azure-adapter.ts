@@ -13,16 +13,13 @@ import type {
 	Outcome,
 	Summary,
 } from "../../domain/contracts.g.ts";
-import { isNullOrEmpty } from "../../domain/nullish.ts";
-import type { AdapterResolution, HostAdapter } from "../../io/host-adapter.ts";
+import type {
+	AdapterResolution,
+	HostAdapter,
+} from "../../domain/host-adapter.ts";
+import type { SnapshotPort } from "../../domain/ports.ts";
+import { buildHostError } from "../http-error.ts";
 import {
-	refusalRecorder,
-	reviewBaselineFrom,
-} from "../../io/review-baseline.ts";
-import { buildReviewSnapshot } from "../../io/review-snapshot-builder.ts";
-import type { SnapshotDirectory } from "../../io/snapshot-directory.ts";
-import {
-	buildHostError,
 	type HostHttpResponse,
 	type HostTransport,
 	HTTP_FORBIDDEN,
@@ -34,31 +31,16 @@ import {
 	AzureEvaluationsListCodec,
 	AzurePullRequestCodec,
 	artifactIdOf,
-	blockingBuildPolicies,
-	changeOf,
-	headCommitOf,
-	refusalReasons,
-	targetCommitOf,
 } from "./azure.ts";
-import type { AzureMergeRequest } from "./azure-merge-request.ts";
 import {
 	type AzurePostContext,
 	isWritePermitted,
-	postAzureReview,
-	refuseAzureReview,
 	resolveAzureReviewerId,
-	setAzureThreadStatus,
-} from "./azure-post.ts";
-import {
-	AzureThreadsListCodec,
-	isOurThread,
-	onLines,
-	priorOf,
-	refusedOf,
-	staleRefusals,
-	thread,
-} from "./azure-threads.ts";
-import { downloadAzureCommitZips } from "./azure-zip.ts";
+} from "./azure-client.ts";
+import type { AzureMergeRequest } from "./azure-merge-request.ts";
+import { postAzureReview } from "./azure-post.ts";
+import { finalizeAzureResolution } from "./azure-resolve.ts";
+import { AzureThreadsListCodec } from "./azure-threads.ts";
 
 const API_VERSION = { "api-version": "7.1" } as const;
 const POLICY_VERSION = "7.1-preview.1";
@@ -109,7 +91,7 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 	#ensureReviewerId(): Promise<string | HostError> {
 		return resolveAzureReviewerId(this.#postContext());
 	}
-	async resolve(snapshotDir: SnapshotDirectory): Promise<AdapterResolution> {
+	async resolve(snapshotDir: SnapshotPort): Promise<AdapterResolution> {
 		const host = this.host();
 		if (!this.#transport.hasScope(AZURE_WRITE_SCOPES)) {
 			return this.#hostError({
@@ -158,75 +140,17 @@ export class AzureDevOpsAdapter implements HostAdapter<AzureDevOps> {
 		if (typeof reviewerId !== "string") {
 			return reviewerId;
 		}
-		return this.#finalizeResolution({
+		return finalizeAzureResolution({
+			host,
+			review: this.#review,
+			transport: this.#transport,
+			ctx: this.#postContext(),
 			snapshotDir,
 			pr,
 			evaluations: AzureEvaluationsListCodec.decode(evalRes.data),
 			rawThreads: AzureThreadsListCodec.decode(threadsRes.data),
 			reviewerId,
 		});
-	}
-	async #finalizeResolution(input: {
-		readonly snapshotDir: SnapshotDirectory;
-		readonly pr: ReturnType<typeof AzurePullRequestCodec.decode>;
-		readonly evaluations: ReturnType<typeof AzureEvaluationsListCodec.decode>;
-		readonly rawThreads: ReturnType<typeof AzureThreadsListCodec.decode>;
-		readonly reviewerId: string;
-	}): Promise<AdapterResolution> {
-		const { snapshotDir, pr, evaluations, rawThreads, reviewerId } = input;
-		const host = this.host();
-		const headCommit = headCommitOf(pr);
-		const ctx = this.#postContext();
-		const refuse = refusalRecorder(refusedOf(rawThreads, headCommit), (c, r) =>
-			refuseAzureReview(ctx, reviewerId, c, r),
-		);
-		const reasons = refusalReasons(
-			pr.mergeStatus,
-			blockingBuildPolicies(evaluations),
-		);
-		if (reasons.length > 0) {
-			const reason = reasons.join(", ");
-			const location = await refuse(headCommit, reason);
-			if (typeof location !== "string") {
-				return location;
-			}
-			return { kind: "refused", headCommit, reason, location };
-		}
-		const staleResults = await Promise.all(
-			staleRefusals(rawThreads).map((tid) =>
-				setAzureThreadStatus(ctx, tid, "closed"),
-			),
-		);
-		const staleError = staleResults.find((err) => !isNullOrEmpty(err));
-		if (!isNullOrEmpty(staleError)) {
-			return staleError;
-		}
-		const baseCommit = targetCommitOf(pr);
-		const baseline = reviewBaselineFrom(priorOf(rawThreads));
-		const zipArchives = await downloadAzureCommitZips({
-			host,
-			commits: baseline.commitsToFetch(baseCommit, headCommit),
-			init: ctx.init,
-			transport: this.#transport,
-		});
-		if (!Array.isArray(zipArchives)) {
-			return zipArchives;
-		}
-		await snapshotDir.loadCommitZips(zipArchives, false);
-		return buildReviewSnapshot(
-			this.#review,
-			snapshotDir,
-			{
-				baseCommit,
-				headCommit,
-				change: changeOf(host, pr),
-				baseline,
-				threads: rawThreads
-					.filter((record) => onLines(record) && isOurThread(record))
-					.map(thread),
-			},
-			refuse,
-		);
 	}
 	async post(outcome: Outcome, ledger: Ledger): Promise<Summary | HostError> {
 		const reviewerId = await this.#ensureReviewerId();

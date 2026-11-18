@@ -5,12 +5,9 @@ import type {
 	HostError,
 } from "../../domain/contracts.g.ts";
 import { isNullOrEmpty } from "../../domain/nullish.ts";
-import type { CommitZipArchive } from "../../io/snapshot-directory.ts";
-import {
-	buildBinaryHostError,
-	type HostTransport,
-	isBinaryResponse,
-} from "../http-transport.ts";
+import type { CommitZipArchive } from "../../domain/ports.ts";
+import { buildBinaryHostError } from "../http-error.ts";
+import { type HostTransport, isBinaryResponse } from "../http-transport.ts";
 
 const API_VERSION = { "api-version": "7.1" } as const;
 

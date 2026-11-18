@@ -4,10 +4,10 @@ import {
 	type CodeUnderReview,
 	GithubPullRequest,
 } from "../domain/code-under-review.ts";
+import type { PersistedPullRequest } from "../domain/contracts.g.ts";
 import { TargetSchema } from "../domain/host.ts";
+import type { HostAdapter } from "../domain/host-adapter.ts";
 import { nonnull } from "../domain/nullish.ts";
-import type { HostAdapter } from "../io/host-adapter.ts";
-import type { PersistedPullRequest } from "../io/ledger-directory.ts";
 import { AzureDevOpsAdapter } from "./azure/azure-adapter.ts";
 import { AzureMergeRequest } from "./azure/azure-merge-request.ts";
 import { GitAdapter } from "./git/git-adapter.ts";

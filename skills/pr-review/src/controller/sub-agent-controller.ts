@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-	type CodeUnderReview,
-	rehydrateCodeUnderReview,
-} from "../domain/code-under-review.ts";
+import type { CodeUnderReview } from "../domain/code-under-review.ts";
 import {
 	type AckPayload,
 	type AckStatus,
@@ -14,50 +11,32 @@ import {
 	type Row,
 	type RulesetPageResponse,
 	type RulesetUrl,
-	type Surface,
 } from "../domain/contracts.g.ts";
-import { Instructions } from "../domain/instructions.ts";
-import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
-import { paginateSurface } from "../domain/pagination.ts";
-import { coordinateLedgers } from "../io/coordinate-ledgers.ts";
+import type { Instructions } from "../domain/instructions.ts";
+import { isNullOrEmpty } from "../domain/nullish.ts";
+import type { WorkspaceFactoryPort, WorkspacePort } from "../domain/ports.ts";
 import {
 	type ProbeDocument,
 	toAgentInstructions,
-} from "../io/probe-document.ts";
-import type { LedgerSubmission, SubAgentLedger } from "../io/probe-ledger.ts";
-import { loadPersistedProbes } from "../io/probe-loader.ts";
-import { Workdir } from "../io/workdir.ts";
+} from "../domain/probe-document.ts";
+import type {
+	LedgerSubmission,
+	SubAgentLedger,
+} from "../domain/probe-ledger.ts";
+import type { ProbeStorage } from "./probe-storage.ts";
 import {
-	inMemoryProbeStorage,
+	customFailure,
+	fromLedgerInit,
+	loadWorkdirInit,
+	type SubAgentControllerInit,
+	withLedgerInit,
+} from "./sub-agent-hydration.ts";
+import { nextSurfacePage, prevSurfacePage } from "./sub-agent-paging.ts";
+import {
 	type ProbeBehavior,
 	type ProbeRules,
-	type ProbeStorage,
-	persistedProbeStorage,
 	probeBehaviorFor,
 } from "./sub-agent-probe.ts";
-
-const SHA1_HEX_LENGTH = 40;
-const ZERO_COMMIT_SHA = "0".repeat(SHA1_HEX_LENGTH);
-
-interface SubAgentControllerInit {
-	readonly workdir: Workdir;
-	readonly ledger: SubAgentLedger;
-	readonly instructions: Instructions;
-	readonly change: Change;
-	readonly behavior: ProbeBehavior;
-	readonly storage: ProbeStorage;
-	readonly now: () => number;
-}
-
-const customFailure = (
-	path: string,
-	message: string,
-): z.ZodSafeParseResult<LedgerSubmission> =>
-	z
-		.custom<LedgerSubmission>(() => false, { path: [path], message })
-		.safeDecode(null as never);
-
-export type { ProbeDocument } from "../io/probe-document.ts";
 
 export type AckResult =
 	| { readonly success: true; readonly data: AckStatus }
@@ -66,7 +45,7 @@ export type AckResult =
 export const SUBAGENT_DEADLINE_MS = DeadlineMsSchema.decode(undefined);
 
 export class SubAgentController {
-	readonly #workdir: Workdir;
+	readonly #workdir: WorkspacePort;
 	readonly #ledger: SubAgentLedger;
 	readonly #instructions: Instructions;
 	readonly #change: Change;
@@ -85,32 +64,15 @@ export class SubAgentController {
 	}
 
 	static from(
-		workdir: Workdir,
+		workdir: WorkspacePort,
 		ledger: SubAgentLedger,
 		change: Change,
 	): SubAgentController {
-		const checkout = workdir.snapshotDirectory().toString();
-		const surface: Surface = {
-			headCommit: ZERO_COMMIT_SHA,
-			files: [...ledger.pullRequest().surface()],
-		};
-		const behavior = probeBehaviorFor(
-			{ kind: "context", change, surface, rulesets: [], checkout },
-			checkout,
-		);
-		return new SubAgentController({
-			workdir,
-			ledger,
-			instructions: Instructions.forKind("context"),
-			change,
-			behavior,
-			storage: inMemoryProbeStorage(),
-			now: Date.now,
-		});
+		return new SubAgentController(fromLedgerInit(workdir, ledger, change));
 	}
 
 	static forProbe(
-		workdir: Workdir,
+		workdir: WorkspacePort,
 		pullRequest: CodeUnderReview,
 		probe: ProbeDocument,
 	): SubAgentController {
@@ -118,82 +80,49 @@ export class SubAgentController {
 			probe,
 			workdir.snapshotDirectory().toString(),
 		);
-		const ledger = behavior.toLedger(workdir.ledgerDirectory(), pullRequest);
-		return SubAgentController.withLedger(workdir, ledger, probe);
+		return SubAgentController.withLedger(
+			workdir,
+			behavior.toLedger(workdir.ledgerDirectory(), pullRequest),
+			probe,
+		);
 	}
 
 	static withLedger(
-		workdir: Workdir,
+		workdir: WorkspacePort,
 		ledger: SubAgentLedger,
 		probe: ProbeDocument,
 	): SubAgentController {
-		const behavior = probeBehaviorFor(
-			probe,
-			workdir.snapshotDirectory().toString(),
-		);
-		return new SubAgentController({
-			workdir,
-			ledger,
-			instructions: Instructions.forKind(probe.kind),
-			change: probe.change,
-			behavior,
-			storage: inMemoryProbeStorage(),
-			now: Date.now,
-		});
+		return new SubAgentController(withLedgerInit(workdir, ledger, probe));
 	}
 
 	static forWorkdir(
-		workdir: Workdir,
+		workdir: WorkspacePort,
 		name: Checkout,
-		now: () => number = Date.now,
 	): SubAgentController {
-		const persisted = workdir.ledgerDirectory().readPullRequest();
-		const pullRequest = rehydrateCodeUnderReview(persisted);
-		const rulesets = workdir.ledgerDirectory().readRulesets();
-		const probes = loadPersistedProbes(
-			workdir.readAudits(),
-			persisted.surface,
-			rulesets,
-		);
-		const checkoutDir = workdir.snapshotDirectory().toString();
-		const specs = probes.map((entry) =>
-			probeBehaviorFor(entry.probe, checkoutDir).toCoordinatedSpec(entry.name),
-		);
-		const { ledgers } = coordinateLedgers(
-			workdir.ledgerDirectory(),
-			pullRequest,
-			specs,
-		);
-		const index = probes.findIndex((entry) => entry.name === name);
-		if (index < 0) {
-			throw new Error(`Unknown probe: ${name}`);
-		}
-		const target = nonnull(probes[index]);
-		const behavior = probeBehaviorFor(target.probe, checkoutDir);
-		return new SubAgentController({
-			workdir,
-			ledger: nonnull(ledgers[index]),
-			instructions: Instructions.forKind(target.probe.kind),
-			change: target.probe.change,
-			behavior,
-			storage: persistedProbeStorage(workdir.ledgerDirectory(), name),
-			now,
-		});
+		return new SubAgentController(loadWorkdirInit(workdir, name, Date.now));
+	}
+
+	static forWorkdirWithClock(
+		workdir: WorkspacePort,
+		name: Checkout,
+		now: () => number,
+	): SubAgentController {
+		return new SubAgentController(loadWorkdirInit(workdir, name, now));
 	}
 
 	static forSession(
+		workspaceFactory: WorkspaceFactoryPort,
 		sessionOrWorkdir: Checkout,
 		name: Checkout,
-		now: () => number = Date.now,
 	): SubAgentController {
-		const parsed = Workdir.fromSession(sessionOrWorkdir);
+		const parsed = workspaceFactory.fromSession(sessionOrWorkdir);
 		if (!parsed.success) {
 			throw new Error(z.prettifyError(parsed.error));
 		}
-		return SubAgentController.forWorkdir(parsed.data, name, now);
+		return SubAgentController.forWorkdir(parsed.data, name);
 	}
 
-	workdir(): Workdir {
+	workdir(): WorkspacePort {
 		return this.#workdir;
 	}
 
@@ -217,48 +146,12 @@ export class SubAgentController {
 		return toAgentInstructions(this.#behavior.probe);
 	}
 
-	#readCursor(): number {
-		const cursor = this.#storage.readCursor();
-		if (cursor === null) {
-			return -1;
-		}
-		return cursor;
-	}
-
-	#writeCursor(index: number): void {
-		this.#storage.writeCursor(index);
-	}
-
 	next(): PageResponse {
-		const pages = paginateSurface(this.#behavior.probe.surface.files);
-		const totalFiles = this.#behavior.probe.surface.files.length;
-		const totalPages = pages.length;
-		if (totalPages === 0) {
-			return { success: true, status: "end", totalFiles: 0, totalPages: 0 };
-		}
-		const target = this.#readCursor() + 1;
-		if (target >= totalPages) {
-			this.#writeCursor(totalPages);
-			return { success: true, status: "end", totalFiles, totalPages };
-		}
-		this.#writeCursor(target);
-		return nonnull(pages[target]);
+		return nextSurfacePage(this.#behavior.probe.surface.files, this.#storage);
 	}
 
 	prev(): PageResponse {
-		const pages = paginateSurface(this.#behavior.probe.surface.files);
-		const totalFiles = this.#behavior.probe.surface.files.length;
-		const totalPages = pages.length;
-		if (totalPages === 0) {
-			return { success: true, status: "start", totalFiles: 0, totalPages: 0 };
-		}
-		const target = this.#readCursor() - 1;
-		if (target < 0) {
-			this.#writeCursor(-1);
-			return { success: true, status: "start", totalFiles, totalPages };
-		}
-		this.#writeCursor(target);
-		return nonnull(pages[target]);
+		return prevSurfacePage(this.#behavior.probe.surface.files, this.#storage);
 	}
 
 	ruleset(url: RulesetUrl, page: number): RulesetPageResponse {

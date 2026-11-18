@@ -135,18 +135,20 @@ function rulebookProbeDriver(
 				evidence: `Verified ${rule.id}`,
 			})),
 		reReviewRows: (pages) => {
-			const overrides: Readonly<Record<string, Row>> = {
-				"Stated purpose": reReviewViolationRow(pages),
-			};
-			return inspected.ruleset.rules.map(
-				(rule) =>
-					overrides[rule.id] ?? {
-						rule: rule.id,
-						examined: ["helper.ts"],
-						verdict: "clean",
-						evidence: `Verified ${rule.id}`,
-					},
-			);
+			const overrides = new Map<string, Row>([
+				["Stated purpose", reReviewViolationRow(pages)],
+			]);
+			return inspected.ruleset.rules.map((rule) => {
+				if (overrides.has(rule.id)) {
+					return nonnull(overrides.get(rule.id));
+				}
+				return {
+					rule: rule.id,
+					examined: ["helper.ts"],
+					verdict: "clean",
+					evidence: `Verified ${rule.id}`,
+				};
+			});
 		},
 	};
 }
