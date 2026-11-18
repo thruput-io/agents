@@ -174,8 +174,15 @@ const toRulebookInstructions = (
 	return { ...base, checkout: nonnull(probe.checkout) } as AgentInstructions;
 };
 
+const proseOf = (probe: ProbeDocument): InstructionsProse => {
+	if (probe.instructions === undefined) {
+		return Instructions.PROSE;
+	}
+	return probe.instructions;
+};
+
 const toAgentInstructions = (probe: ProbeDocument): AgentInstructions => {
-	const prose = probe.instructions ?? Instructions.PROSE;
+	const prose = proseOf(probe);
 	const overview = surfaceOverview(probe.surface);
 	if (probe.kind === "context") {
 		return toContextInstructions(probe, prose, overview);

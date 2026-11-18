@@ -110,12 +110,20 @@ class MainAgentLedger {
 
 	submittedOutcome(): Outcome | null {
 		this.#state.sync();
-		return this.#state.submitted.get("submitted")?.outcome ?? null;
+		const submitted = this.#state.submitted.get("submitted");
+		if (submitted === undefined) {
+			return null;
+		}
+		return submitted.outcome;
 	}
 
 	submittedLedger(): Ledger | null {
 		this.#state.sync();
-		return this.#state.submitted.get("submitted")?.ledger ?? null;
+		const submitted = this.#state.submitted.get("submitted");
+		if (submitted === undefined) {
+			return null;
+		}
+		return submitted.ledger;
 	}
 }
 

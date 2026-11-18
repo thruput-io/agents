@@ -29,6 +29,14 @@ interface SurfaceFiles {
 	files: { path: Path; added: LineRange[] }[];
 }
 
+const rangesFor = (map: RangeMap, path: Path): readonly LineRange[] => {
+	const found = map.get(path);
+	if (found === undefined) {
+		return [];
+	}
+	return found;
+};
+
 export function threadRanges(threads: readonly ThreadRangeInput[]) {
 	const sides = {
 		head: new Map<Path, LineRange[]>(),
@@ -39,7 +47,7 @@ export function threadRanges(threads: readonly ThreadRangeInput[]) {
 	)) {
 		sides[thread.side].set(
 			thread.path,
-			union(sides[thread.side].get(thread.path) ?? [], [thread.lines]),
+			union(rangesFor(sides[thread.side], thread.path), [thread.lines]),
 		);
 	}
 	return sides;
@@ -65,8 +73,8 @@ export const narrowSurface = (
 			added: intersect(
 				file.added,
 				union(
-					changedSince.get(file.path) ?? [],
-					threads.head.get(file.path) ?? [],
+					rangesFor(changedSince, file.path),
+					rangesFor(threads.head, file.path),
 				),
 			),
 		}))

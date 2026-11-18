@@ -87,8 +87,10 @@ export async function buildReviewSnapshot(
 		return input.baseline.alreadyReviewed(input.headCommit);
 	}
 	const surfaceFiles: SurfaceFile[] = surfaceSpec.files.map((entry) => {
-		const headLines =
-			linesByPath.get(entry.path) ?? linesAtHead(snapshotDir, entry.path);
+		let headLines = linesByPath.get(entry.path);
+		if (headLines === undefined) {
+			headLines = linesAtHead(snapshotDir, entry.path);
+		}
 		linesByPath.set(entry.path, headLines);
 		return {
 			path: entry.path,

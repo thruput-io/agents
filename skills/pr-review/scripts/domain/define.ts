@@ -23,13 +23,22 @@ const extractTexts = (value: unknown): readonly string[] => {
 	return [];
 };
 
+const definedItems = (
+	items: readonly string[] | undefined,
+): readonly string[] => {
+	if (items === undefined) {
+		return [];
+	}
+	return items;
+};
+
 const referencedTerms = (entry: Definition): readonly string[] => [
 	...new Set([
 		...extractTexts(entry).flatMap((text) =>
 			[...text.matchAll(CITATION)].map((match) => nonnull(match[1])),
 		),
-		...(entry.closedEnumerationOf ?? []),
-		...(entry.openEnumerationOf ?? []),
+		...definedItems(entry.closedEnumerationOf),
+		...definedItems(entry.openEnumerationOf),
 	]),
 ];
 
@@ -50,9 +59,12 @@ function resolveDefinitionFromPath(
 		parse(readFileSync(definitionsPath, "utf8")),
 	);
 	const byId = new Map(definitions.map((entry) => [entry.id, entry]));
-	const root =
-		byId.get(term) ??
-		definitions.find((entry) => entry.id.toLowerCase() === term.toLowerCase());
+	let root = byId.get(term);
+	if (root === undefined) {
+		root = definitions.find(
+			(entry) => entry.id.toLowerCase() === term.toLowerCase(),
+		);
+	}
 	if (isNullOrEmpty(root)) {
 		return { success: false, error: `Unknown definition term: ${term}` };
 	}

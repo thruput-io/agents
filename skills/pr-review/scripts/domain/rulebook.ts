@@ -73,7 +73,12 @@ function partition<T extends { readonly group: Rule["group"] }>(
 ): { name: string; group: Rule["group"]; rules: readonly T[] }[] {
 	const groups = new Map<Rule["group"], readonly T[]>();
 	for (const rule of rules) {
-		groups.set(rule.group, [...(groups.get(rule.group) ?? []), rule]);
+		const existing = groups.get(rule.group);
+		if (existing === undefined) {
+			groups.set(rule.group, [rule]);
+		} else {
+			groups.set(rule.group, [...existing, rule]);
+		}
 	}
 	return [...groups].map(([group, members]) => ({
 		name: slug(group),
@@ -91,8 +96,13 @@ const GovernanceSchema = z.object({
 	principles: z.array(PrincipleSchema).readonly(),
 });
 
-const kindOf = (group: Rule["group"]): ReuseKind | DeadCodeKind | RulesKind =>
-	KIND_OF_GROUP.get(group) ?? "rules";
+const kindOf = (group: Rule["group"]): ReuseKind | DeadCodeKind | RulesKind => {
+	const mapped = KIND_OF_GROUP.get(group);
+	if (mapped === undefined) {
+		return "rules";
+	}
+	return mapped;
+};
 
 function checkKinds(groups: readonly Rule["group"][]): void {
 	const absent = [...KIND_OF_GROUP.keys()].filter(
