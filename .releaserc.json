@@ -11,6 +11,13 @@
         ]
       }
     ],
-    "@semantic-release/github"
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          { "path": "dist/thruput-review-tool.tgz", "label": "thruput-review-tool.tgz" }
+        ]
+      }
+    ]
   ]
 }

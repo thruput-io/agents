@@ -9,8 +9,7 @@
 		"@faker-js/faker",
 		"@graphql-tools/mock",
 		"@graphql-tools/schema",
-		"msw",
-		"tsx"
+		"msw"
 	],
 	"project": ["scripts/domain/*.ts", "!scripts/domain/*.test.ts"]
 }
