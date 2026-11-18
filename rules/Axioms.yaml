@@ -66,7 +66,7 @@ axioms:
 - id: Code Is Written for People
   parent: Excellence Through Transparency
   body: |
-    Code explains to people what the machine will do.
+    Code is written to be read and understood by people.
   analect:
     passage: Analects XIII.III
     text: If names be not correct, language is not in accordance with the truth of things. If language be not in accordance with the truth of things, affairs cannot be carried on to success.

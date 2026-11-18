@@ -6,15 +6,24 @@ rules:
   body: |
     State the [[Purpose]] of every [[Change]].
   smells:
-  - Code written or merged whose [[Purpose]] is not stated.
+  - A [[Pull request]] description that does not state the business [[Purpose]].
 - id: Every part solves the Purpose
   marker: MUST
   group: Purpose
-  parent: Code as a Subset of the Purpose
+  parent: Do One Thing
   body: |
     Trace every part of the [[Change]] to the part of the stated [[Purpose]] it solves.
   smells:
   - A [[Change]] that solves more than the stated [[Purpose]].
+- id: Predictable user-facing behavior
+  marker: MUST
+  group: Purpose
+  parent: Principle of Least Astonishment
+  body: |
+    Make every [[User]]-facing operation behave as its name and domain conventions lead [[Users]] to expect, with no hidden side effects.
+  smells:
+  - A read or query [[Public method]] or [[Interface]] operation that mutates state.
+  - An [[Error output]] or status message that hides what failed or how the [[User]] recovers.
 - id: No speculative portability
   marker: MUST NOT
   group: Purpose
@@ -86,7 +95,7 @@ rules:
 - id: Consistent with the codebase
   marker: MUST
   group: Conventions
-  parent: Convention Over Novelty
+  parent: Convention over Invention
   body: |
     Follow the [[Surrounding code]] where no [[Demonstrable standard]] decides the question.
   smells:
@@ -94,9 +103,21 @@ rules:
 - id: Demonstrable, not recalled
   marker: MUST
   group: Conventions
-  parent: Convention Over Novelty
+  parent: Convention over Invention
   body: |
     Point at a [[Demonstrable standard]] whenever you invoke a standard as justification. Novel work is not required to cite a standard it does not have.
+- id: Readable at a glance
+  marker: MUST
+  group: Conventions
+  parent: Less is more
+  body: |
+    Keep every [[Component]] and [[Function]] within human [[Readability]] bounds, with vertical spacing separating logical blocks, so a reader holds it in mind without scrolling or unwinding nested blocks.
+  smells:
+  - A line in a [[Component]] longer than 120 characters.
+  - A [[Function]] or [[Public method]] longer than 30 lines.
+  - "[[Branching logic]] or block nesting deeper than 2 levels."
+  - Cognitive complexity of a [[Function]] above 10.
+  - A dense [[Component]] or [[Representation]] with no blank lines separating top-level entries or logical blocks.
 - id: On point prose
   marker: MUST
   group: Conventions
@@ -169,7 +190,6 @@ rules:
     Wrap a [[Primitive]] in its [[Domain primitive]] before it crosses any [[Interface]] of ours.
   smells:
   - A [[Primitive]] in a domain [[Signature]].
-  - Raw [[Primitive]]s crossing a [[Layer]] boundary.
 - id: Opaque encapsulated types
   marker: MUST
   group: Types
@@ -258,6 +278,12 @@ rules:
   - A [[Component]] longer than 200 lines.
   - A [[Function]] or [[Public method]] with more than 3 parameters.
   - An [[Interface]] with more than 4 [[Public method]]s, not counting [[Overload]]s or convenience methods.
+- id: No primitive leakage
+  marker: MUST
+  group: Domain Model
+  parent: No Primitive Obsession
+  body: |
+    Keep raw [[Primitive]]s from crossing a [[Layer]] boundary.
 - id: Delete unused
   marker: MUST
   group: Dead Code
@@ -327,13 +353,13 @@ rules:
 - id: Assert values
   marker: MUST
   group: Tests
-  parent: F.I.R.S.T.
+  parent: Never trust a test you haven't seen fail
   body: |
-    Make an [[Assertion]] on the actual returned values.
+    Verify the expected outcome of the [[Subject under test]] with an [[Assertion]] on the actual values produced, achieving [[True Test Coverage]] rather than merely executing code paths.
   smells:
-  - "[[Assertion]]s that only check no error occurred."
-  - "[[Assertion]]s on generalizations such as presence or type."
   - "[[Test]]s that discard return values just to increase [[Code coverage]]."
+  - "[[Assertion]]s that only check no error occurred."
+  - "[[Assertion]]s on generalizations such as the presence or type of the asserted value."
 - id: Add tests for new code
   marker: MUST
   group: Tests
