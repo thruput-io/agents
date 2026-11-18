@@ -29,7 +29,8 @@ jobs:
           node-version: 24
       - run: |
           npm --prefix skills/pr-review ci --no-audit --no-fund
-          ./scripts/pack-review-tool.sh dist/thruput-review-tool.tgz
+          npm --prefix skills/pr-review run codegen
+          npm --prefix skills/pr-review run build
           npx --yes semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
