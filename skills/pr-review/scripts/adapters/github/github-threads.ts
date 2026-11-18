@@ -2,160 +2,21 @@ import { ClientError, type GraphQLClient } from "graphql-request";
 import { z } from "zod";
 import {
 	type Developer,
-	DeveloperSchema,
 	type GitHub,
-	LineNumberSchema,
-	PathSchema,
 	SummarySchema,
 	type Thread,
 	type ThreadId,
-	ThreadIdSchema,
-	type ThreadState,
 } from "../../domain/contracts.g.ts";
 import { isNullOrEmpty } from "../../domain/nullish.ts";
-import { ours } from "../../domain/rulebook.ts";
-
-const SIDE_OF = new Map<string, "head" | "base">([
-	["RIGHT", "head"],
-	["LEFT", "base"],
-]);
-
-const REVIEW_THREADS_QUERY = `
-query ReviewThreads($owner: String!, $name: String!, $number: Int!, $after: String) {
-  repository(owner: $owner, name: $name) {
-    pullRequest(number: $number) {
-      viewerCanUpdate
-      reviewThreads(first: 100, after: $after) {
-        pageInfo { hasNextPage endCursor }
-        nodes {
-          id path line startLine diffSide isResolved
-          resolvedBy { login }
-          comments(first: 1) { nodes { body } }
-        }
-      }
-    }
-  }
-}
-`;
-
-const RESOLVE_REVIEW_THREAD_MUTATION = `
-mutation ResolveReviewThread($threadId: ID!) {
-  resolveReviewThread(input: { threadId: $threadId }) {
-    thread { id isResolved }
-  }
-}
-`;
-
-const UNRESOLVE_REVIEW_THREAD_MUTATION = `
-mutation UnresolveReviewThread($threadId: ID!) {
-  unresolveReviewThread(input: { threadId: $threadId }) {
-    thread { id isResolved }
-  }
-}
-`;
-
-const ThreadNode = z.object({
-	id: ThreadIdSchema,
-	path: PathSchema,
-	line: LineNumberSchema.nullable(),
-	startLine: LineNumberSchema.nullable(),
-	diffSide: z.enum(["RIGHT", "LEFT"]),
-	isResolved: z.boolean(),
-	resolvedBy: z.object({ login: DeveloperSchema }).nullable(),
-	comments: z.object({
-		nodes: z.array(z.object({ body: SummarySchema.or(z.literal("")) })),
-	}),
-});
-
-const ReviewThreadsConnectionSchema = z.object({
-	pageInfo: z.object({
-		hasNextPage: z.boolean(),
-		endCursor: SummarySchema.nullable(),
-	}),
-	nodes: z.array(ThreadNode),
-});
-
-const RawThreadsPageSchema = z.object({
-	data: z.object({
-		repository: z.object({
-			pullRequest: z.object({
-				viewerCanUpdate: z.boolean().optional(),
-				reviewThreads: ReviewThreadsConnectionSchema,
-			}),
-		}),
-	}),
-});
-
-const ThreadsPage = z.codec(
-	RawThreadsPageSchema,
-	ReviewThreadsConnectionSchema,
-	{
-		decode: (page) => page.data.repository.pullRequest.reviewThreads,
-		encode: (reviewThreads) => ({
-			data: {
-				repository: {
-					pullRequest: {
-						reviewThreads,
-					},
-				},
-			},
-		}),
-	},
-);
-
-type GitHubThreadNode = z.infer<typeof ThreadNode>;
-
-const firstCommentBodyOf = (node: GitHubThreadNode): string => {
-	const [first] = node.comments.nodes;
-	if (first === undefined) {
-		return "";
-	}
-	return first.body;
-};
-
-const numberOr = (value: number | null, fallback: number): number => {
-	if (value === null) {
-		return fallback;
-	}
-	return value;
-};
-
-const sideOf = (diffSide: GitHubThreadNode["diffSide"]): "head" | "base" => {
-	const mapped = SIDE_OF.get(diffSide);
-	if (mapped === undefined) {
-		return "head";
-	}
-	return mapped;
-};
-
-const isReviewableThreadNode = (node: GitHubThreadNode): boolean =>
-	!isNullOrEmpty(node.line) && ours(firstCommentBodyOf(node));
-
-const threadState = (
-	node: GitHubThreadNode,
-	author: Developer,
-): ThreadState => {
-	if (!node.isResolved) {
-		return "open";
-	}
-	if (node.resolvedBy?.login === author) {
-		return "resolved-by-author";
-	}
-	return "resolved";
-};
-
-function thread(node: GitHubThreadNode, author: Developer): Thread {
-	const end = numberOr(node.line, 1);
-	const state = threadState(node, author);
-	return {
-		id: node.id,
-		path: node.path,
-		side: sideOf(node.diffSide),
-		lines: { start: numberOr(node.startLine, end), end },
-		state,
-		body: firstCommentBodyOf(node),
-	};
-}
+import {
+	isReviewableThreadNode,
+	type RawThreadsPageSchema,
+	RESOLVE_REVIEW_THREAD_MUTATION,
+	REVIEW_THREADS_QUERY,
+	ThreadsPage,
+	thread,
+	UNRESOLVE_REVIEW_THREAD_MUTATION,
+} from "./github-thread-codecs.ts";
 
 type FetchGitHubThreadsResult =
 	| {
@@ -167,7 +28,7 @@ type FetchGitHubThreadsResult =
 			readonly ok: false;
 			readonly status: number;
 			readonly headers: Headers;
-			readonly data?: unknown;
+			readonly data: unknown;
 	  };
 
 const GraphQlErrorResponseSchema = z.object({
@@ -178,14 +39,14 @@ const GraphQlErrorResponseSchema = z.object({
 
 const directErrorMessageOf = (
 	data: z.infer<typeof GraphQlErrorResponseSchema>,
-): string | undefined => {
+): string | null => {
 	if (data.message !== undefined) {
 		return data.message;
 	}
 	if (data.errors !== undefined && data.errors[0] !== undefined) {
 		return data.errors[0].message;
 	}
-	return undefined;
+	return null;
 };
 
 const responseHeadersOf = (headers: Headers | undefined): Headers => {
@@ -200,20 +61,19 @@ const extractClientErrorData = (response: unknown): unknown => {
 		response as z.input<typeof GraphQlErrorResponseSchema>,
 	);
 	if (!parsed.success) {
-		return undefined;
+		return null;
 	}
 	const directMessage = directErrorMessageOf(parsed.data);
 	if (!isNullOrEmpty(directMessage)) {
 		return { message: directMessage };
 	}
 	if (!isNullOrEmpty(parsed.data.body)) {
-		try {
+		const trimmed = parsed.data.body.trimStart();
+		if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
 			return JSON.parse(parsed.data.body);
-		} catch {
-			return undefined;
 		}
 	}
-	return undefined;
+	return null;
 };
 
 const fetchThreadsPage = async (
@@ -277,15 +137,7 @@ export function fetchGitHubThreads(
 	});
 }
 
-export type { FetchGitHubThreadsResult, GitHubThreadNode };
-export {
-	isReviewableThreadNode,
-	RESOLVE_REVIEW_THREAD_MUTATION,
-	REVIEW_THREADS_QUERY,
-	ThreadsPage,
-	thread,
-	UNRESOLVE_REVIEW_THREAD_MUTATION,
-};
+export type { FetchGitHubThreadsResult };
 
 export type MutateGitHubThreadsResult =
 	| { readonly ok: true }
@@ -293,7 +145,7 @@ export type MutateGitHubThreadsResult =
 			readonly ok: false;
 			readonly status: number;
 			readonly headers: Headers;
-			readonly data?: unknown;
+			readonly data: unknown;
 	  };
 
 export async function settleAndReopenGitHubThreads(

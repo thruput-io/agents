@@ -18,11 +18,10 @@ import {
 	GitHubReviewCommentCodec,
 	GitHubReviewPayloadCodec,
 } from "./github-review.ts";
+import { REVIEW_THREADS_QUERY, ThreadsPage } from "./github-thread-codecs.ts";
 import {
 	fetchGitHubThreads,
-	REVIEW_THREADS_QUERY,
 	settleAndReopenGitHubThreads,
-	ThreadsPage,
 } from "./github-threads.ts";
 
 const SHA1_HEX_LENGTH = 40;

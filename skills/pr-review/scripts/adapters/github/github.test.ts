@@ -21,7 +21,7 @@ import {
 	ThreadsPage,
 	thread,
 	UNRESOLVE_REVIEW_THREAD_MUTATION,
-} from "./github-threads.ts";
+} from "./github-thread-codecs.ts";
 
 const SHA1_HEX_LENGTH = 40;
 const SHA_A = "a".repeat(SHA1_HEX_LENGTH);
