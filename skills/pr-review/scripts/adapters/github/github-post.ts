@@ -1,9 +1,8 @@
 import { GraphQLClient } from "graphql-request";
-import { pullsCreateReview, pullsListReviews } from "../../clients/github.g.ts";
 import {
-	type HostHttpResponse,
-	isJsonResponse,
-} from "../adapters/http-transport.ts";
+	pullsCreateReview,
+	pullsListReviews,
+} from "../../../clients/github.g.ts";
 import type {
 	GitHub,
 	HeadCommit,
@@ -11,7 +10,10 @@ import type {
 	Ledger,
 	Outcome,
 	Summary,
-} from "./contracts.g.ts";
+} from "../../domain/contracts.g.ts";
+import { table } from "../../domain/ledger-table.ts";
+import { isNullOrEmpty } from "../../domain/nullish.ts";
+import { type HostHttpResponse, isJsonResponse } from "../http-transport.ts";
 import {
 	GitHubCreatedReviewCodec,
 	GitHubReviewsCodec,
@@ -19,8 +21,6 @@ import {
 } from "./github.ts";
 import { payload, refusalPayload } from "./github-review.ts";
 import { settleAndReopenGitHubThreads } from "./github-threads.ts";
-import { table } from "./ledger-table.ts";
-import { isNullOrEmpty } from "./nullish.ts";
 
 const GRAPHQL_URL = "https://api.github.com/graphql";
 

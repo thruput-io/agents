@@ -1,7 +1,7 @@
 import type { z } from "zod";
-import { PullRequestThreadsListResponse } from "../../clients/azure-git.zod.g.ts";
-import type { Side } from "./contracts.g.ts";
-import { isNullOrEmpty } from "./nullish.ts";
+import { PullRequestThreadsListResponse } from "../../../clients/azure-git.zod.g.ts";
+import type { Side } from "../../domain/contracts.g.ts";
+import { isNullOrEmpty } from "../../domain/nullish.ts";
 
 const LEADING_SLASH = /^\//u;
 

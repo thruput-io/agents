@@ -4,7 +4,28 @@ import {
 	checksListForRef,
 	pullsGet,
 	pullsListReviews,
-} from "../../clients/github.g.ts";
+} from "../../../clients/github.g.ts";
+import type { AccessToken } from "../../domain/access-token.ts";
+import type { GithubPullRequest } from "../../domain/code-under-review.ts";
+import type {
+	GitHub,
+	HeadCommit,
+	HostError,
+	Ledger,
+	Outcome,
+	Summary,
+} from "../../domain/contracts.g.ts";
+import type {
+	AdapterResolution,
+	HostAdapter,
+} from "../../domain/host-adapter.ts";
+import { isNullOrEmpty } from "../../domain/nullish.ts";
+import {
+	refusalRecorder,
+	reviewBaselineFrom,
+} from "../../domain/review-baseline.ts";
+import { buildReviewSnapshot } from "../../domain/review-snapshot-builder.ts";
+import type { SnapshotDirectory } from "../../domain/snapshot-directory.ts";
 import {
 	buildHostError,
 	type HostHttpResponse,
@@ -13,17 +34,7 @@ import {
 	isJsonResponse,
 	tokenHttpTransport,
 	transportFromEnv,
-} from "../adapters/http-transport.ts";
-import type { AccessToken } from "./access-token.ts";
-import type { GithubPullRequest } from "./code-under-review.ts";
-import type {
-	GitHub,
-	HeadCommit,
-	HostError,
-	Ledger,
-	Outcome,
-	Summary,
-} from "./contracts.g.ts";
+} from "../http-transport.ts";
 import {
 	baseCommitOf,
 	changeOf,
@@ -44,11 +55,6 @@ import {
 	resolveOversizedGitHubPull,
 } from "./github-pull-precheck.ts";
 import { fetchGitHubThreads } from "./github-threads.ts";
-import type { AdapterResolution, HostAdapter } from "./host-adapter.ts";
-import { isNullOrEmpty } from "./nullish.ts";
-import { refusalRecorder, reviewBaselineFrom } from "./review-baseline.ts";
-import { buildReviewSnapshot } from "./review-snapshot-builder.ts";
-import type { SnapshotDirectory } from "./snapshot-directory.ts";
 
 const GRAPHQL_URL = "https://api.github.com/graphql";
 

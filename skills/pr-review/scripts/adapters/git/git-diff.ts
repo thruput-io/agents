@@ -3,14 +3,14 @@ import {
 	type CodeUnderReview,
 	EMPTY_REVIEW,
 	type ReviewState,
-} from "./code-under-review.ts";
+} from "../../domain/code-under-review.ts";
 import {
 	type Fragment,
 	type Git,
 	GitSchema,
 	type SurfaceFile,
 	type Threads,
-} from "./contracts.g.ts";
+} from "../../domain/contracts.g.ts";
 
 export class GitDiff implements CodeUnderReview {
 	readonly #host: Git;

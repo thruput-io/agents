@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
-import { getPullsGetResponseMock } from "../../clients/github.g.ts";
+import { getPullsGetResponseMock } from "../../../clients/github.g.ts";
+import { SITE } from "../../domain/rulebook.ts";
 import {
 	baseCommitOf,
 	changeOf,
@@ -21,7 +22,6 @@ import {
 	thread,
 	UNRESOLVE_REVIEW_THREAD_MUTATION,
 } from "./github-threads.ts";
-import { SITE } from "./rulebook.ts";
 
 const SHA1_HEX_LENGTH = 40;
 const SHA_A = "a".repeat(SHA1_HEX_LENGTH);

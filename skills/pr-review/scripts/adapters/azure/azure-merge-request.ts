@@ -3,14 +3,14 @@ import {
 	type CodeUnderReview,
 	EMPTY_REVIEW,
 	type ReviewState,
-} from "./code-under-review.ts";
+} from "../../domain/code-under-review.ts";
 import {
 	type AzureDevOps,
 	AzureDevOpsSchema,
 	type Fragment,
 	type SurfaceFile,
 	type Threads,
-} from "./contracts.g.ts";
+} from "../../domain/contracts.g.ts";
 
 export class AzureMergeRequest implements CodeUnderReview {
 	readonly #host: AzureDevOps;

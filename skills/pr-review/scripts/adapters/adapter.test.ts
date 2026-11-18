@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import { rmSync } from "node:fs";
 import { after, before, beforeEach, test as it } from "node:test";
-import { HTTP_FORBIDDEN } from "../adapters/http-transport.ts";
+import { AccessToken } from "../domain/access-token.ts";
+import {
+	HostErrorSchema,
+	type Ledger,
+	type Outcome,
+} from "../domain/contracts.g.ts";
+import { nonnull } from "../domain/nullish.ts";
 import {
 	createFailedAzureThreadCreateHandler,
 	createForbiddenAzureItemsHandler,
@@ -23,10 +29,8 @@ import {
 	scenarioToken,
 } from "../integration-test/mock-server.ts";
 import { createScenarioRepo } from "../integration-test/scenario-repo.ts";
-import { AccessToken } from "./access-token.ts";
 import { HostAdapterFactory } from "./adapter-factory.ts";
-import { HostErrorSchema, type Ledger, type Outcome } from "./contracts.g.ts";
-import { nonnull } from "./nullish.ts";
+import { HTTP_FORBIDDEN } from "./http-transport.ts";
 
 const HTTP_BAD_REQUEST = 400;
 const HTTP_UNPROCESSABLE = 422;

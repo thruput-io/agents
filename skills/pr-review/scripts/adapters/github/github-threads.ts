@@ -11,9 +11,9 @@ import {
 	type ThreadId,
 	ThreadIdSchema,
 	type ThreadState,
-} from "./contracts.g.ts";
-import { isNullOrEmpty } from "./nullish.ts";
-import { ours } from "./rulebook.ts";
+} from "../../domain/contracts.g.ts";
+import { isNullOrEmpty } from "../../domain/nullish.ts";
+import { ours } from "../../domain/rulebook.ts";
 
 const SIDE_OF = new Map<string, "head" | "base">([
 	["RIGHT", "head"],

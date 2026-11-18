@@ -1,18 +1,18 @@
 import { z } from "zod";
-import type { AccessToken } from "./access-token.ts";
-import { AzureDevOpsAdapter } from "./azure-adapter.ts";
-import { AzureMergeRequest } from "./azure-merge-request.ts";
+import type { AccessToken } from "../domain/access-token.ts";
 import {
 	type CodeUnderReview,
 	GithubPullRequest,
-} from "./code-under-review.ts";
-import { GitAdapter } from "./git-adapter.ts";
-import { GitDiff } from "./git-diff.ts";
-import { GitHubAdapter } from "./github-adapter.ts";
-import { TargetSchema } from "./host.ts";
-import type { HostAdapter } from "./host-adapter.ts";
-import type { PersistedPullRequest } from "./ledger-directory.ts";
-import { nonnull } from "./nullish.ts";
+} from "../domain/code-under-review.ts";
+import { TargetSchema } from "../domain/host.ts";
+import type { HostAdapter } from "../domain/host-adapter.ts";
+import type { PersistedPullRequest } from "../domain/ledger-directory.ts";
+import { nonnull } from "../domain/nullish.ts";
+import { AzureDevOpsAdapter } from "./azure/azure-adapter.ts";
+import { AzureMergeRequest } from "./azure/azure-merge-request.ts";
+import { GitAdapter } from "./git/git-adapter.ts";
+import { GitDiff } from "./git/git-diff.ts";
+import { GitHubAdapter } from "./github/github-adapter.ts";
 
 const defaultSchema = TargetSchema.pipe(
 	z.union([

@@ -2,12 +2,8 @@ import { z } from "zod";
 import {
 	CommentCommentType,
 	CommentThreadStatus,
-} from "../../clients/azure-git.g.ts";
-import { PullRequestThreadsListResponse } from "../../clients/azure-git.zod.g.ts";
-import {
-	decodeAzureThreadContext,
-	encodeAzureThreadContext,
-} from "./azure-thread-context.ts";
+} from "../../../clients/azure-git.g.ts";
+import { PullRequestThreadsListResponse } from "../../../clients/azure-git.zod.g.ts";
 import {
 	type HeadCommit,
 	type Outcome,
@@ -15,9 +11,13 @@ import {
 	type ThreadId,
 	ThreadSchema,
 	type ThreadState,
-} from "./contracts.g.ts";
-import { isNullOrEmpty } from "./nullish.ts";
-import { ours as written } from "./rulebook.ts";
+} from "../../domain/contracts.g.ts";
+import { isNullOrEmpty } from "../../domain/nullish.ts";
+import { ours as written } from "../../domain/rulebook.ts";
+import {
+	decodeAzureThreadContext,
+	encodeAzureThreadContext,
+} from "./azure-thread-context.ts";
 
 const PRIOR = / probes at (?<commit>[0-9a-f]{40})\b/u;
 const STATE_BY_STATUS: Readonly<Record<string, ThreadState>> = {

@@ -1,12 +1,12 @@
 import { z } from "zod";
-import type { AccessToken } from "./access-token.ts";
-import { AzureMergeRequest } from "./azure-merge-request.ts";
+import type { AccessToken } from "../domain/access-token.ts";
 import {
 	type CodeUnderReview,
 	GithubPullRequest,
-} from "./code-under-review.ts";
-import { GitDiff } from "./git-diff.ts";
-import { TargetSchema } from "./host.ts";
+} from "../domain/code-under-review.ts";
+import { TargetSchema } from "../domain/host.ts";
+import { AzureMergeRequest } from "./azure/azure-merge-request.ts";
+import { GitDiff } from "./git/git-diff.ts";
 
 const HostReviewSchema = z.union([
 	GithubPullRequest.SCHEMA,

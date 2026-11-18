@@ -3,23 +3,15 @@ import {
 	pullsListFiles,
 	pullsListReviews,
 	reposDownloadZipballArchive,
-} from "../../clients/github.g.ts";
-import type { PullsGetResponse } from "../../clients/github.zod.g.ts";
-import {
-	buildBinaryHostError,
-	type HostHttpResponse,
-	type HostTransport,
-	isBinaryResponse,
-	isJsonResponse,
-} from "../adapters/http-transport.ts";
-import type { GitHub, HeadCommit, HostError, Summary } from "./contracts.g.ts";
-import {
-	GitHubPullFilesCodec,
-	GitHubReviewsCodec,
-	postedAt,
-	refusedIn,
-} from "./github.ts";
-import type { AdapterResolution } from "./host-adapter.ts";
+} from "../../../clients/github.g.ts";
+import type { PullsGetResponse } from "../../../clients/github.zod.g.ts";
+import type {
+	GitHub,
+	HeadCommit,
+	HostError,
+	Summary,
+} from "../../domain/contracts.g.ts";
+import type { AdapterResolution } from "../../domain/host-adapter.ts";
 import {
 	DIFF_LIMIT_EXCEEDED,
 	type FileLineCount,
@@ -28,9 +20,22 @@ import {
 	MAX_DIFF_LINES,
 	oversizedFiles,
 	tooLarge,
-} from "./limits.ts";
-import { isNullOrEmpty } from "./nullish.ts";
-import type { CommitZipArchive } from "./snapshot-directory.ts";
+} from "../../domain/limits.ts";
+import { isNullOrEmpty } from "../../domain/nullish.ts";
+import type { CommitZipArchive } from "../../domain/snapshot-directory.ts";
+import {
+	buildBinaryHostError,
+	type HostHttpResponse,
+	type HostTransport,
+	isBinaryResponse,
+	isJsonResponse,
+} from "../http-transport.ts";
+import {
+	GitHubPullFilesCodec,
+	GitHubReviewsCodec,
+	postedAt,
+	refusedIn,
+} from "./github.ts";
 
 const PULL_FILES_PER_PAGE = 100;
 const MAX_PULL_FILE_PAGES = 3;

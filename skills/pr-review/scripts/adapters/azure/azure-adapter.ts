@@ -3,8 +3,27 @@ import {
 	pullRequestReviewersUpdatePullRequestReviewers,
 	pullRequestsGetPullRequest,
 	pullRequestThreadsList,
-} from "../../clients/azure-git.g.ts";
-import { evaluationsList } from "../../clients/azure-policy.g.ts";
+} from "../../../clients/azure-git.g.ts";
+import { evaluationsList } from "../../../clients/azure-policy.g.ts";
+import type { AccessToken } from "../../domain/access-token.ts";
+import type {
+	AzureDevOps,
+	HostError,
+	Ledger,
+	Outcome,
+	Summary,
+} from "../../domain/contracts.g.ts";
+import type {
+	AdapterResolution,
+	HostAdapter,
+} from "../../domain/host-adapter.ts";
+import { isNullOrEmpty } from "../../domain/nullish.ts";
+import {
+	refusalRecorder,
+	reviewBaselineFrom,
+} from "../../domain/review-baseline.ts";
+import { buildReviewSnapshot } from "../../domain/review-snapshot-builder.ts";
+import type { SnapshotDirectory } from "../../domain/snapshot-directory.ts";
 import {
 	buildHostError,
 	type HostHttpResponse,
@@ -13,8 +32,7 @@ import {
 	isJsonResponse,
 	tokenHttpTransport,
 	transportFromEnv,
-} from "../adapters/http-transport.ts";
-import type { AccessToken } from "./access-token.ts";
+} from "../http-transport.ts";
 import {
 	AzureEvaluationsListCodec,
 	AzurePullRequestCodec,
@@ -44,18 +62,6 @@ import {
 	thread,
 } from "./azure-threads.ts";
 import { downloadAzureCommitZips } from "./azure-zip.ts";
-import type {
-	AzureDevOps,
-	HostError,
-	Ledger,
-	Outcome,
-	Summary,
-} from "./contracts.g.ts";
-import type { AdapterResolution, HostAdapter } from "./host-adapter.ts";
-import { isNullOrEmpty } from "./nullish.ts";
-import { refusalRecorder, reviewBaselineFrom } from "./review-baseline.ts";
-import { buildReviewSnapshot } from "./review-snapshot-builder.ts";
-import type { SnapshotDirectory } from "./snapshot-directory.ts";
 
 const API_VERSION = { "api-version": "7.1" } as const;
 const POLICY_VERSION = "7.1-preview.1";

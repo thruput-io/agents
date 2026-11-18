@@ -6,7 +6,8 @@ import {
 	getPullsCreateReviewResponseMock,
 	getPullsGetResponseMock,
 	getPullsListReviewsResponseMock,
-} from "../../clients/github.g.ts";
+} from "../../../clients/github.g.ts";
+import { nonnull } from "../../domain/nullish.ts";
 import {
 	GitHubCheckRunsCodec,
 	GitHubCreatedReviewCodec,
@@ -23,7 +24,6 @@ import {
 	settleAndReopenGitHubThreads,
 	ThreadsPage,
 } from "./github-threads.ts";
-import { nonnull } from "./nullish.ts";
 
 const SHA1_HEX_LENGTH = 40;
 const SHA_A = "a".repeat(SHA1_HEX_LENGTH);

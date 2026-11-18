@@ -3,8 +3,8 @@ import {
 	type PullsCreateReviewBodyCommentsItem,
 	PullsCreateReviewBodyEvent,
 	type PullsCreateReviewBody as PullsCreateReviewBodyType,
-} from "../../clients/github.g.ts";
-import { PullsCreateReviewBody } from "../../clients/github.zod.g.ts";
+} from "../../../clients/github.g.ts";
+import { PullsCreateReviewBody } from "../../../clients/github.zod.g.ts";
 import {
 	type HeadCommit,
 	HeadCommitSchema,
@@ -16,8 +16,8 @@ import {
 	type Side,
 	type Summary,
 	SummarySchema,
-} from "./contracts.g.ts";
-import { SITE } from "./rulebook.ts";
+} from "../../domain/contracts.g.ts";
+import { SITE } from "../../domain/rulebook.ts";
 
 const HOST_SIDE_OF = { head: "RIGHT", base: "LEFT" } as const;
 const DOMAIN_SIDE_OF = new Map<string, Side>([

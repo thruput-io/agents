@@ -7,14 +7,17 @@ import {
 	type Outcome,
 	PurposeSchema,
 	type Summary,
-} from "./contracts.g.ts";
+} from "../../domain/contracts.g.ts";
+import type {
+	AdapterResolution,
+	HostAdapter,
+} from "../../domain/host-adapter.ts";
+import { table } from "../../domain/ledger-table.ts";
+import { reviewBaselineFrom } from "../../domain/review-baseline.ts";
+import { rendered } from "../../domain/review-snapshot.ts";
+import { buildReviewSnapshot } from "../../domain/review-snapshot-builder.ts";
+import type { SnapshotDirectory } from "../../domain/snapshot-directory.ts";
 import type { GitDiff } from "./git-diff.ts";
-import type { AdapterResolution, HostAdapter } from "./host-adapter.ts";
-import { table } from "./ledger-table.ts";
-import { reviewBaselineFrom } from "./review-baseline.ts";
-import { rendered } from "./review-snapshot.ts";
-import { buildReviewSnapshot } from "./review-snapshot-builder.ts";
-import type { SnapshotDirectory } from "./snapshot-directory.ts";
 
 export class GitAdapter implements HostAdapter<Git> {
 	readonly #review: GitDiff;

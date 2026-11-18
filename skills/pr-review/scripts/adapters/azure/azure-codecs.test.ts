@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
+import { SITE } from "../../domain/rulebook.ts";
 import {
 	AzureEvaluationsListCodec,
 	AzurePullRequestCodec,
@@ -12,7 +13,6 @@ import {
 	AzureVoteCodec,
 } from "./azure-review.ts";
 import { AzureThreadCodec, AzureThreadsListCodec } from "./azure-threads.ts";
-import { SITE } from "./rulebook.ts";
 
 const SHA1_HEX_LENGTH = 40;
 const SHA_A = "a".repeat(SHA1_HEX_LENGTH);

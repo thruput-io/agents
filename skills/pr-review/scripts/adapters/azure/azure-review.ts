@@ -4,16 +4,12 @@ import {
 	CommentThreadStatus,
 	type GitPullRequestCommentThread,
 	type IdentityRefWithVote,
-} from "../../clients/azure-git.g.ts";
+} from "../../../clients/azure-git.g.ts";
 import {
 	PullRequestReviewersCreatePullRequestReviewerBody,
 	PullRequestThreadsCreateBody,
 	PullRequestThreadsUpdateBody,
-} from "../../clients/azure-git.zod.g.ts";
-import {
-	decodeAzureThreadContext,
-	encodeAzureThreadContext,
-} from "./azure-thread-context.ts";
+} from "../../../clients/azure-git.zod.g.ts";
 import {
 	type HeadCommit,
 	HeadCommitSchema,
@@ -25,8 +21,12 @@ import {
 	SummarySchema,
 	type ThreadBody,
 	ThreadBodySchema,
-} from "./contracts.g.ts";
-import { SITE } from "./rulebook.ts";
+} from "../../domain/contracts.g.ts";
+import { SITE } from "../../domain/rulebook.ts";
+import {
+	decodeAzureThreadContext,
+	encodeAzureThreadContext,
+} from "./azure-thread-context.ts";
 
 const AZURE_VOTE_APPROVED = 10;
 const AZURE_VOTE_REJECTED = -10;

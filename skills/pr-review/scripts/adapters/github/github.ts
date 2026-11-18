@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CheckRun, PullRequestReview } from "../../clients/github.g.ts";
+import type { CheckRun, PullRequestReview } from "../../../clients/github.g.ts";
 import {
 	ChecksListForRefResponse,
 	PullsCreateReviewResponse,
@@ -7,10 +7,15 @@ import {
 	type PullsGetResponse as PullsGetResponseType,
 	PullsListFilesResponse,
 	PullsListReviewsResponse,
-} from "../../clients/github.zod.g.ts";
-import type { Change, GitHub, HeadCommit, Summary } from "./contracts.g.ts";
-import { isNullOrEmpty } from "./nullish.ts";
-import { ours } from "./rulebook.ts";
+} from "../../../clients/github.zod.g.ts";
+import type {
+	Change,
+	GitHub,
+	HeadCommit,
+	Summary,
+} from "../../domain/contracts.g.ts";
+import { isNullOrEmpty } from "../../domain/nullish.ts";
+import { ours } from "../../domain/rulebook.ts";
 
 const PASSED = new Set(["success", "skipped", "neutral"]);
 const PRIOR = / probes at (?<commit>[0-9a-f]{40})\b/u;

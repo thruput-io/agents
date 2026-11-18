@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test as it } from "node:test";
 import { Worker } from "node:worker_threads";
-import { CodeUnderReviewFactory } from "./code-under-review-factory.ts";
+import { CodeUnderReviewFactory } from "../adapters/code-under-review-factory.ts";
 import { ContextSubAgentLedger } from "./context-sub-agent-ledger.ts";
 import type { Row, RuleRef, Violation } from "./contracts.g.ts";
 import { DeadCodeSubAgentLedger } from "./dead-code-sub-agent-ledger.ts";

@@ -5,7 +5,18 @@ import {
 	pullRequestThreadsCreate,
 	pullRequestThreadsList,
 	pullRequestThreadsUpdate,
-} from "../../clients/azure-git.g.ts";
+} from "../../../clients/azure-git.g.ts";
+import type {
+	AzureDevOps,
+	HeadCommit,
+	HostError,
+	Ledger,
+	Outcome,
+	Summary,
+	ThreadId,
+} from "../../domain/contracts.g.ts";
+import { table } from "../../domain/ledger-table.ts";
+import { isNullOrEmpty } from "../../domain/nullish.ts";
 import {
 	type HostHttpResponse,
 	type HostTransport,
@@ -13,7 +24,7 @@ import {
 	HTTP_NON_AUTHORITATIVE,
 	HTTP_OK,
 	isJsonResponse,
-} from "../adapters/http-transport.ts";
+} from "../http-transport.ts";
 import { AzureCreatedThreadIdCodec } from "./azure.ts";
 import {
 	type AzureEditableThreadStatus,
@@ -24,17 +35,6 @@ import {
 	votePayload,
 } from "./azure-review.ts";
 import { AzureThreadsListCodec, unposted } from "./azure-threads.ts";
-import type {
-	AzureDevOps,
-	HeadCommit,
-	HostError,
-	Ledger,
-	Outcome,
-	Summary,
-	ThreadId,
-} from "./contracts.g.ts";
-import { table } from "./ledger-table.ts";
-import { isNullOrEmpty } from "./nullish.ts";
 
 const API_VERSION = { "api-version": "7.1" } as const;
 const CONNECTION_DATA_VERSION = "7.1-preview.1";

@@ -1,6 +1,6 @@
 import { z } from "zod";
+import { HostAdapterFactory } from "../adapters/adapter-factory.ts";
 import type { AccessToken } from "../domain/access-token.ts";
-import { HostAdapterFactory } from "../domain/adapter-factory.ts";
 import type { CodeUnderReview } from "../domain/code-under-review.ts";
 import type { DispatchResult, PrepareError } from "../domain/contracts.g.ts";
 import type { AdapterResolution, HostAdapter } from "../domain/host-adapter.ts";

@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import { rmSync } from "node:fs";
 import { env } from "node:process";
 import { after, before, beforeEach, test as it } from "node:test";
-import { HTTP_FORBIDDEN } from "../adapters/http-transport.ts";
+import { AccessToken } from "../domain/access-token.ts";
+import {
+	HostErrorSchema,
+	type Ledger,
+	type Outcome,
+} from "../domain/contracts.g.ts";
+import { nonnull } from "../domain/nullish.ts";
 import { createFailedAzureConnectionDataHandler } from "../integration-test/azure-error-mocks.ts";
 import {
 	AZURE_REVIEWER_ID,
@@ -14,10 +20,8 @@ import {
 	scenarioToken,
 } from "../integration-test/mock-server.ts";
 import { createScenarioRepo } from "../integration-test/scenario-repo.ts";
-import { AccessToken } from "./access-token.ts";
 import { HostAdapterFactory } from "./adapter-factory.ts";
-import { HostErrorSchema, type Ledger, type Outcome } from "./contracts.g.ts";
-import { nonnull } from "./nullish.ts";
+import { HTTP_FORBIDDEN } from "./http-transport.ts";
 
 const repo = createScenarioRepo();
 const GH_TOKEN_ENV = "GH_TOKEN";

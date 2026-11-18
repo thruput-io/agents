@@ -2,15 +2,15 @@ import { z } from "zod";
 import {
 	PullRequestsGetPullRequestResponse,
 	PullRequestThreadsCreateResponse,
-} from "../../clients/azure-git.zod.g.ts";
-import { EvaluationsListResponse } from "../../clients/azure-policy.zod.g.ts";
+} from "../../../clients/azure-git.zod.g.ts";
+import { EvaluationsListResponse } from "../../../clients/azure-policy.zod.g.ts";
 import {
 	type AzureDevOps,
 	type Change,
 	type HeadCommit,
 	type Summary,
 	SummarySchema,
-} from "./contracts.g.ts";
+} from "../../domain/contracts.g.ts";
 
 const AzureEvaluationTransportSchema =
 	EvaluationsListResponse.shape.value.element;

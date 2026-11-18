@@ -1,12 +1,16 @@
-import { itemsList } from "../../clients/azure-git.g.ts";
+import { itemsList } from "../../../clients/azure-git.g.ts";
+import type {
+	AzureDevOps,
+	HeadCommit,
+	HostError,
+} from "../../domain/contracts.g.ts";
+import { isNullOrEmpty } from "../../domain/nullish.ts";
+import type { CommitZipArchive } from "../../domain/snapshot-directory.ts";
 import {
 	buildBinaryHostError,
 	type HostTransport,
 	isBinaryResponse,
-} from "../adapters/http-transport.ts";
-import type { AzureDevOps, HeadCommit, HostError } from "./contracts.g.ts";
-import { isNullOrEmpty } from "./nullish.ts";
-import type { CommitZipArchive } from "./snapshot-directory.ts";
+} from "../http-transport.ts";
 
 const API_VERSION = { "api-version": "7.1" } as const;
 

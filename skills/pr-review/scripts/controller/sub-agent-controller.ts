@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { HostAdapterFactory } from "../domain/adapter-factory.ts";
+import { HostAdapterFactory } from "../adapters/adapter-factory.ts";
 import type { CodeUnderReview } from "../domain/code-under-review.ts";
 import {
 	type AckPayload,

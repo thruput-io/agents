@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { test as it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { SITE } from "../../domain/rulebook.ts";
 import {
 	artifactIdOf,
 	blockingBuildPolicies,
@@ -27,7 +28,6 @@ import {
 	thread,
 	unposted,
 } from "./azure-threads.ts";
-import { SITE } from "./rulebook.ts";
 
 const SHA1_HEX_LENGTH = 40;
 const REFUSAL_THREAD_ID = 9;
