@@ -1,18 +1,22 @@
 principles:
 - id: You aren't gonna need it
-  parent: Code is a liability, not an asset
+  parent: Validated user need over speculative scope
   body: |
     Always implement things when you actually need them, never when you just foresee that you need them ([Ron Jeffries](https://ronjeffries.com/xprog/articles/practices/pracnotneed/)).
-- id: Code as a Subset of the Purpose
-  parent: Code is a liability, not an asset
+- id: Do One Thing
+  parent: Validated user need over speculative scope
   body: |
-    Every part of the code solves some part of its [[Purpose]], and no part reaches outside it. What it solves, it solves accurately and without harm the [[Users]] would not accept.
+    Make each [[Change]] a minimal, self-contained change that addresses its one stated [[Purpose]] and nothing outside it ([Google Engineering Practices, Small CLs](https://google.github.io/eng-practices/review/developer/small-cls.html)).
+- id: Principle of Least Astonishment
+  parent: Validated user need over speculative scope
+  body: |
+    A system behaves in the way [[Users]] expect it to behave, without hidden side effects or surprising outcomes ([Saltzer and Kaashoek](https://en.wikipedia.org/wiki/Principle_of_least_astonishment)).
 - id: Choose boring technology
   parent: Code is a liability, not an asset
   body: |
     Keep the [[Development Stack]] small and well known: "every company gets about three innovation tokens" ([Dan McKinley](https://mcfunley.com/choose-boring-technology)).
-- id: Convention Over Novelty
-  parent: Convention over invention
+- id: Convention over Invention
+  parent: Clarity over cleverness
   body: |
     Structure follows the conventions of the ecosystem and of the [[Surrounding code]]; novelty belongs in the domain solution. Only a [[Demonstrable standard]] is a convention.
 - id: Push tests down the pyramid
@@ -104,7 +108,7 @@ principles:
   body: |
     A behavior ships with its [[Signal]]; if we cannot see it, it is not shipped.
 - id: Don't Repeat Yourself
-  parent: Convention over invention
+  parent: Duplication drifts
   body: |
     Every piece of knowledge must have a single, unambiguous, authoritative representation within a system ([The Pragmatic Programmer, Tip 15](https://pragprog.com/tips/)).
 - id: Replace conditional with polymorphism
@@ -116,7 +120,7 @@ principles:
   body: |
     The contract stands above both sides of a boundary: each side is derived from it and conforms to it, and where code and contract disagree, the code is wrong.
 - id: Less is more
-  parent: Read far more than written
+  parent: Clarity over cleverness
   body: |
     Perfection is achieved, not when there is nothing more to add, but when there is nothing left to take away ([Antoine de Saint-Exupéry](https://en.wikiquote.org/wiki/Antoine_de_Saint-Exup%C3%A9ry)). Keep only what serves the intent and remove everything else.
 - id: Make it work, make it right, make it fast

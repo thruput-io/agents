@@ -15,25 +15,30 @@ rationales:
 - id: Code is a liability, not an asset
   parent: Simplicity
   body: |
-    Simplicity is the fit between a job and the tools and strategies chosen to do it: a solution is simple when it carries nothing the job does not call for, and complex in proportion to what it carries beyond that. Every line carries the ongoing cost of being read, supported, and updated as the ecosystem around it evolves, and is worth that cost only where it meets a user need ([Software Engineering at Google, Why Deprecate?](https://abseil.io/resources/swe-book/html/ch15.html#why_deprecatequestion_mark)). Edsger Dijkstra: if we count lines of code, "we should not regard them as 'lines produced' but as 'lines spent'" ([EWD1036](https://www.cs.utexas.edu/~EWD/transcriptions/EWD10xx/EWD1036.html)), and Jeff Atwood: "Every new line of code you willingly bring into the world is code that has to be debugged, code that has to be read and understood, code that has to be supported" ([The Best Code is No Code At All](https://blog.codinghorror.com/the-best-code-is-no-code-at-all/)). Code outside the stated [[Purpose]] is not free. Martin Fowler's [Yagni](https://martinfowler.com/bliki/Yagni.html) names four costs: building it, delaying real features, carrying its complexity, and repairing it when the guess proves wrong. Ron Jeffries: "the best way to have fewer bugs is to implement less code." Keeping every part inside the [[Purpose]] keeps the codebase small enough to understand and change quickly, and every test and review aimed at what [[Users]] need.
+    Simplicity is the fit between a job and the tools and strategies chosen to do it: a solution is simple when it carries nothing the job does not call for, and complex in proportion to what it carries beyond that. Every line carries the ongoing cost of being read, supported, and updated as the ecosystem around it evolves, and is worth that cost only where it meets a user need ([Software Engineering at Google, Why Deprecate?](https://abseil.io/resources/swe-book/html/ch15.html#why_deprecatequestion_mark)). Edsger Dijkstra: if we count lines of code, "we should not regard them as 'lines produced' but as 'lines spent'" ([EWD1036](https://www.cs.utexas.edu/~EWD/transcriptions/EWD10xx/EWD1036.html)), and Jeff Atwood: "Every new line of code you willingly bring into the world is code that has to be debugged, code that has to be read and understood, code that has to be supported" ([The Best Code is No Code At All](https://blog.codinghorror.com/the-best-code-is-no-code-at-all/)). Ron Jeffries: "the best way to have fewer bugs is to implement less code."
   solutions:
-  - marker: SHOULD
-    body: |
-      State the [[User]] need before the change is reviewed, so every part of the change can be traced to it.
   - marker: SHOULD
     body: |
       Record, for every level of the [[Development Stack]] above the one chosen, the search performed and what it found.
   - marker: SHOULD
     body: |
       Choose the technology the team already operates before adopting a new one.
-- id: Convention over invention
-  parent: Single Source of Truth
+- id: Validated user need over speculative scope
+  parent: Great Products Require Users
   body: |
-    Code is read far more often than it is written ([PEP 8](https://peps.python.org/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds)) and maintained by people who did not write it. Following the ecosystem's conventions and the [[Surrounding code]] lets a reader predict structure instead of decoding it. The [Rails Doctrine](https://rubyonrails.org/doctrine#convention-over-configuration) calls it removing the mundane decisions so effort goes to what is new.
+    Code outside the stated [[Purpose]] is not free. Martin Fowler's [Yagni](https://martinfowler.com/bliki/Yagni.html) names four costs of speculative scope: building it, delaying real features, carrying its complexity, and repairing it when the guess proves wrong. Google's [Small CLs](https://google.github.io/eng-practices/review/developer/small-cls.html) keeps each [[Change]] to one self-contained purpose so every part is reviewed and verified against what [[Users]] actually need, and Saltzer and Kaashoek's [Principle of Least Astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment) extends that discipline to how the system behaves: features and interfaces match the mental model [[Users]] bring, rather than surprising them with unasked-for behaviour or hidden side effects.
   solutions:
   - marker: SHOULD
     body: |
-      Cite the convention followed: the section of the style guide, or the neighbouring code it mirrors ([Google Engineering Practices](https://google.github.io/eng-practices/review/reviewer/looking-for.html)).
+      State the [[User]] need before the [[Change]] is reviewed, so every part of the [[Change]] can be traced to it.
+- id: Duplication drifts
+  parent: Single Source of Truth
+  body: |
+    When the same piece of knowledge is written down in two places, the two copies drift apart on the first change that forgets one of them. Hunt and Thomas's [The Pragmatic Programmer](https://pragprog.com/tips/) distinguishes duplication of authoritative knowledge—which always belongs in one [[Representation]]—from coincidental similarity between independent pieces of code. Keeping one authoritative [[Representation]] and deriving or referencing everything else eliminates synchronization bugs at the source.
+  solutions:
+  - marker: SHOULD
+    body: |
+      Derive secondary artifacts from the authoritative [[Representation]] in the build rather than maintaining copies by hand.
 - id: Intent lives where it is checked
   parent: Single Source of Truth
   body: |
@@ -98,7 +103,7 @@ rationales:
   body: |
     An [[Encapsulated type]] with one [[Validating path of creation]] makes [[Illegal states]] unrepresentable. Yaron Minsky's [Effective ML Revisited](https://blog.janestreet.com/effective-ml-revisited/) names the idiom, [[Make illegal states unrepresentable]], and Scott Wlaschin's [Designing with types](https://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/) works it through. Any weaker typing, one that does not fully encapsulate or leaves a second path of creation open, hands the validation back to every caller.
 
-    When an API passes `int x, int y` as coordinates, fold them into a `CarPosition`, not a `Coordinate`. A `CarPosition` is never collapsed into ints again: all our code keeps it as a `CarPosition`, perhaps uses a generic `Position`, or converts it into a `DriverPosition` once it is verified to be moving. In the best case `CarPosition` stays opaque, the best encapsulation: [[No code]] ever knows or depends on the fact that there might be two ints inside. When it is written to the database, at the [[Perimeter]], the database context consumes it as a `CarPosition` and, by contract, perhaps a visitor, folds it into a database parameter belonging to the `CAR_POSITION` table. A [[Domain primitive]] is the special case where a single primitive is wrapped.
+    When an API passes `int x, int y` as coordinates, fold them into a `CarPosition`, not a `Coordinate`. When `CarPosition` is written to the database at the [[Perimeter]], the database context consumes it as a `CarPosition` and, by contract, folds it into a database parameter belonging to the `CAR_POSITION` table.
 
     Every typing add-on to a weakly typed language exists to be used for this. Even an environment without types can mint a naming standard in which a variable prefix carries the signature "validated by factory", and a linter enforcing that standard shifts the validated contract further left.
   solutions:
@@ -150,9 +155,9 @@ rationales:
       Treat painful [[Test setup]] as a design signal: split the subject into smaller domain models or focused interfaces before reaching for a mock.
   - marker: SHOULD
     body: |
-      Almost all code has tools for verification, make sure they are used inside the [project].
+      Almost all code has tools for verification; make sure they are used inside the project.
 - id: Make the wrong thing fail
-  parent: Single Source of Truth
+  parent: Shift Left
   body: |
     Documents advise; the build decides. Compiler strictness, linters, and thresholds live in the self-testing build ([Continuous Integration](https://martinfowler.com/articles/continuousIntegration.html)), where every change, by any [[Developer]], meets the same bar. As in Toyota's jidoka, an abnormality stops the line instead of travelling downstream. A gate that is relaxed is a broken window: it tells everyone the standard is gone.
   solutions:
@@ -185,7 +190,7 @@ rationales:
     body: |
       Verify generated output by the same means as any other change; fluency and confidence are properties of its form and say nothing about its [[Correctness]].
 - id: Environment parity
-  parent: Single Source of Truth
+  parent: Without Verification It Is Worthless
   body: |
     If it works on your machine but not in production, the environment is the bug. Keeping parity between production and test is what guarantees that a verification also holds in production, and that no time goes to hunting bugs that exist only in test. [The Twelve-Factor App, X. Dev/prod parity](https://12factor.net/dev-prod-parity) names three gaps that open between the two, in time, in personnel, and in tools, and every gap is a place where a defect hides until the deploy. Closing them means the environment stops being a state each machine has drifted into and becomes a definition every machine is provisioned from: one description, in code, from which local, staging, and production are all built. GitHub's [Scripts to Rule Them All](https://github.blog/engineering/scripts-to-rule-them-all/) applies the same idea at the entry point: one consistent bootstrap across every project, so a newcomer clones, builds, and tests with a single command instead of a page of steps. A manual step is a second definition of the procedure, kept in the head of whoever last ran it.
   solutions:
@@ -218,7 +223,7 @@ rationales:
     body: |
       Where [[Ease of Doing the Right Thing]] and [[Guardrails Against Doing the Wrong Thing]] compete, build the easy path first, and let the guardrail point at it.
 - id: Agree at the boundary
-  parent: Single Source of Truth
+  parent: Shift Left
   body: |
     Two sides of a boundary that each define the shape they expect hold two definitions of one thing, and the two drift until the day they disagree in production. One contract, written apart from either side, is the single definition: both sides are derived from it and checked against it, and a disagreement between code and contract is a defect in the code. Bertrand Meyer's [Design by Contract](https://www.eiffel.org/doc/eiffel/ET-_Design_by_Contract_%28tm%29,_Assertions_and_Exceptions) binds client and supplier to one specification, where each party's obligation is the other's benefit. The OpenAPI Initiative's [design-first guidance](https://learn.openapis.org/best-practices.html) makes the description the contract that the code is validated against in continuous integration, and [Protocol Buffers](https://protobuf.dev/overview/) define a structure once and generate every side from it.
   solutions:
@@ -231,18 +236,21 @@ rationales:
   - marker: MAY
     body: |
       Publish the contract on its own, versioned apart from any implementation, so every consumer reads the same definition.
-- id: Read far more than written
+- id: Clarity over cleverness
   parent: Code Is Written for People
   body: |
-    A line of code is written once and read many times: by the reviewer, by the next [[Developer]], by whoever is on call when it fails. Professionals spend about 58 percent of their working time understanding code ([Xia et al., IEEE TSE 2018](https://doi.org/10.1109/TSE.2017.2734091)), and "code is read much more often than it is written" ([PEP 8](https://peps.python.org/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds)). The reader's cost decides how code is shaped, and [[Readability]] is the first [[Software quality axis]] a reader meets.
+    A line of code is written once and read many times: by the reviewer, by the next [[Developer]], by whoever is on call when it fails. Professionals spend about 58 percent of their working time understanding code ([Xia et al., IEEE TSE 2018](https://doi.org/10.1109/TSE.2017.2734091)), and "code is read much more often than it is written" ([PEP 8](https://peps.python.org/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds)). Following the ecosystem's conventions and the [[Surrounding code]] lets a reader predict structure instead of decoding it ([The Rails Doctrine](https://rubyonrails.org/doctrine#convention-over-configuration)), and removing everything superfluous keeps each unit within human working memory ([Brian Kernighan, The Elements of Programming Style](https://en.wikipedia.org/wiki/The_Elements_of_Programming_Style)). The reader's cost decides how code is shaped, and [[Readability]] is the first [[Software quality axis]] a reader meets.
   solutions:
   - marker: SHOULD
     body: |
-      Shape every unit of code, a file, a type, a function, to be read in one sitting by a reader who has not seen it before.
+      Shape every unit of code—a file, a type, a function—to be read in one sitting by a reader who has not seen it before.
+  - marker: SHOULD
+    body: |
+      Cite the convention followed: the section of the style guide, or the neighbouring code it mirrors ([Google Engineering Practices](https://google.github.io/eng-practices/review/reviewer/looking-for.html)).
 - id: Premature optimization and Jackson's rules
   parent: Code Is Written for People
   body: |
-    What the machine executes is the compiler's output, not the author's text. Donald Knuth asked that we stop "imagining that our main task is to instruct a computer what to do" and "concentrate rather on explaining to human beings what we want a computer to do" ([Literate Programming, 1984](http://www.literateprogramming.com/knuthweb.pdf)); Abelson and Sussman put it as "programs must be written for people to read, and only incidentally for machines to execute" ([SICP, preface](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/6515/sicp.zip/full-text/book/book-Z-H-7.html)). Knuth warned that "we should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil. Yet we should not pass up our opportunities in that critical 3%"—and that critical three percent is found by measurement, "only after that code has been identified" ([Computing Surveys 1974, p. 268](https://www.gwern.net/doc/cs/algorithm/1974-knuth.pdf)). Michael A. Jackson codified the discipline in two rules ([Principles of Program Design, 1975](https://en.wikipedia.org/wiki/Program_optimization#When_to_optimize)): Rule 1 is "Don't do it"; Rule 2 (for experts only) is "Don't do it yet—that is, not until you have a perfectly clear and unoptimized solution." A clear, well-decomposed architecture is the prerequisite to profiling: you cannot isolate or replace a bottleneck in tangled code.
+    Donald Knuth asked that we stop "imagining that our main task is to instruct a computer what to do" and "concentrate rather on explaining to human beings what we want a computer to do" ([Literate Programming, 1984](http://www.literateprogramming.com/knuthweb.pdf)); Abelson and Sussman put it as "programs must be written for people to read, and only incidentally for machines to execute" ([SICP, preface](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/6515/sicp.zip/full-text/book/book-Z-H-7.html)). Knuth warned that "we should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil. Yet we should not pass up our opportunities in that critical 3%"—and that critical three percent is found by measurement, "only after that code has been identified" ([Computing Surveys 1974, p. 268](https://www.gwern.net/doc/cs/algorithm/1974-knuth.pdf)). Michael A. Jackson codified the discipline in two rules ([Principles of Program Design, 1975](https://en.wikipedia.org/wiki/Program_optimization#When_to_optimize)): Rule 1 is "Don't do it"; Rule 2 (for experts only) is "Don't do it yet—that is, not until you have a perfectly clear and unoptimized solution." A clear, well-decomposed architecture is the prerequisite to profiling: you cannot isolate or replace a bottleneck in tangled code.
   solutions:
   - marker: SHOULD
     body: |
