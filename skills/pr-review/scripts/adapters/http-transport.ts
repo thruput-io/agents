@@ -24,6 +24,14 @@ interface HostHttpResponse {
 	readonly data?: unknown;
 }
 
+function contentTypeOf(headers: Headers): string {
+	const raw = headers.get("content-type");
+	if (isNullOrEmpty(raw)) {
+		return "no content-type";
+	}
+	return raw.toLowerCase();
+}
+
 function isJsonResponse<Res extends HostHttpResponse>(
 	res: Res,
 ): res is Extract<Res, { readonly status: 200 }> {
@@ -31,14 +39,14 @@ function isJsonResponse<Res extends HostHttpResponse>(
 		res.status >= HTTP_OK &&
 		res.status < HTTP_MULTIPLE_CHOICES &&
 		res.status !== HTTP_NON_AUTHORITATIVE &&
-		(res.headers.get("content-type") ?? "").toLowerCase().includes("json")
+		contentTypeOf(res.headers).includes("json")
 	);
 }
 
 function isBinaryResponse(
 	res: HostHttpResponse,
 ): res is HostHttpResponse & { readonly status: 200; readonly data: Blob } {
-	const contentType = (res.headers.get("content-type") ?? "").toLowerCase();
+	const contentType = contentTypeOf(res.headers);
 	return (
 		res.status >= HTTP_OK &&
 		res.status < HTTP_MULTIPLE_CHOICES &&
@@ -95,7 +103,10 @@ function transportFromEnv(
 	raw: string | undefined,
 	normalize: (token: AccessToken) => AccessToken,
 ): HostTransport {
-	const parsed = AccessToken.from(raw ?? "");
+	if (isNullOrEmpty(raw)) {
+		return anonymousHttpTransport();
+	}
+	const parsed = AccessToken.from(raw);
 	if (parsed.success) {
 		return tokenHttpTransport(normalize(parsed.data));
 	}
@@ -178,8 +189,7 @@ function hostErrorMessage(
 	if (parsed.success) {
 		return parsed.data.message;
 	}
-	const contentType =
-		(res.headers.get("content-type") ?? "").toLowerCase() || "no content-type";
+	const contentType = contentTypeOf(res.headers);
 	if (isAuthFailure(res.status, contentType)) {
 		return SummarySchema.decode(transport.authGuidance(envVar));
 	}
@@ -192,8 +202,7 @@ function hostErrorReason(
 	res: HostHttpResponse,
 	transport: HostTransport,
 ): Summary {
-	const contentType =
-		(res.headers.get("content-type") ?? "").toLowerCase() || "no content-type";
+	const contentType = contentTypeOf(res.headers);
 	const formatter = errorFormatterFor(res.data);
 	if (isAuthFailure(res.status, contentType)) {
 		return formatter.auth(
@@ -229,7 +238,7 @@ async function buildBinaryHostError(
 	res: HostHttpResponse,
 	transport: HostTransport,
 ): Promise<HostError> {
-	const contentType = (res.headers.get("content-type") ?? "").toLowerCase();
+	const contentType = contentTypeOf(res.headers);
 	if (res.data instanceof Blob && contentType.includes("json")) {
 		const text = await res.data.text();
 		return buildHostError(

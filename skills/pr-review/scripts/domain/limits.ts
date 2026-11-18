@@ -13,7 +13,7 @@ interface FileLineCount {
 	readonly path: Path;
 	readonly lines: number;
 	readonly added: number;
-	readonly deleted?: number;
+	readonly deleted: number;
 }
 
 const diffExceeded = (counts: readonly FileLineCount[]): boolean => {
@@ -24,7 +24,7 @@ const diffExceeded = (counts: readonly FileLineCount[]): boolean => {
 	let totalChanged = 0;
 	for (const file of counts) {
 		totalAdded += file.added;
-		totalChanged += file.added + (file.deleted ?? 0);
+		totalChanged += file.added + file.deleted;
 	}
 	return totalAdded > MAX_ADDED_LINES || totalChanged > MAX_DIFF_LINES;
 };

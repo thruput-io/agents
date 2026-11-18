@@ -27,8 +27,15 @@ interface SurfaceCarrier {
 	readonly review?: { readonly files: readonly SurfaceFile[] };
 }
 
-const filesOf = (document: SurfaceCarrier): readonly SurfaceFile[] =>
-	document.surface?.files ?? document.review?.files ?? [];
+const filesOf = (document: SurfaceCarrier): readonly SurfaceFile[] => {
+	if (document.surface !== undefined) {
+		return document.surface.files;
+	}
+	if (document.review !== undefined) {
+		return document.review.files;
+	}
+	return [];
+};
 
 interface OutcomeEntry {
 	readonly document: CitationDocument & SurfaceCarrier;

@@ -67,6 +67,16 @@ type ContextProbeDocument = Extract<
 	{ readonly kind: "context" }
 >;
 
+const resolveCheckout = (
+	probe: { readonly checkout?: Checkout },
+	fallback: Checkout,
+): Checkout => {
+	if (probe.checkout === undefined) {
+		return fallback;
+	}
+	return probe.checkout;
+};
+
 const HYDRATE_RULEBOOK_PROBE: Readonly<
 	Record<
 		RulebookProbeDocument["kind"],
@@ -79,11 +89,11 @@ const HYDRATE_RULEBOOK_PROBE: Readonly<
 	rules: (probe) => probe,
 	"dead-code": (probe, checkoutDir) => ({
 		...probe,
-		checkout: probe.checkout ?? checkoutDir,
+		checkout: resolveCheckout(probe, checkoutDir),
 	}),
 	reuse: (probe, checkoutDir) => ({
 		...probe,
-		checkout: probe.checkout ?? checkoutDir,
+		checkout: resolveCheckout(probe, checkoutDir),
 	}),
 };
 
@@ -93,7 +103,7 @@ function contextProbeBehavior(
 ): ProbeBehavior {
 	const hydrated: ContextProbeDocument = {
 		...probe,
-		checkout: probe.checkout ?? checkoutDir,
+		checkout: resolveCheckout(probe, checkoutDir),
 	};
 	return {
 		probe: hydrated,
