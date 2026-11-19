@@ -21,7 +21,7 @@ const forwardToBridge = async ({
 	const bodyBytes = Buffer.from(await request.arrayBuffer());
 	const response = await fetch(bridgeUrl, {
 		method: "POST",
-		headers: { "content-type": "application/json" },
+		headers: { "content-type": "application/json", connection: "close" },
 		body: JSON.stringify({
 			url: request.url,
 			method: request.method,
