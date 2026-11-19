@@ -83,6 +83,7 @@ const handleBridgeRequest = async (
 	const parsed = BridgeRequestSchema.parse(JSON.parse(await readBody(req)));
 	const headers = new Headers(parsed.headers);
 	headers.delete("host");
+	headers.delete("connection");
 	headers.delete("content-length");
 	headers.delete("accept-encoding");
 	const rawBytes = Buffer.from(parsed.bodyBase64, "base64");
@@ -100,7 +101,10 @@ const handleBridgeRequest = async (
 	const responseHeaders = [...upstream.headers.entries()].filter(
 		([name]) => name.toLowerCase() !== "content-encoding",
 	);
-	res.writeHead(HTTP_OK, { "content-type": "application/json" });
+	res.writeHead(HTTP_OK, {
+		"content-type": "application/json",
+		connection: "close",
+	});
 	res.end(
 		JSON.stringify({
 			status: upstream.status,
