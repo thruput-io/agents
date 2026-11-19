@@ -1,11 +1,21 @@
 import type { CodeUnderReview } from "./code-under-review.ts";
 import type {
 	ContextKind,
+	ContextPermissions,
+	ContextTask,
 	DeadCodeKind,
+	DeadCodePermissions,
+	DeadCodeTask,
+	InstructionsProse,
 	Ledger,
 	Outcome,
+	ProbePrompt,
 	ReuseKind,
+	ReusePermissions,
+	ReuseTask,
 	RulesKind,
+	RulesPermissions,
+	RulesTask,
 } from "./contracts.g.ts";
 import type { ProbePermissions } from "./instructions.ts";
 import type { ContextProbe, RulesProbe } from "./ledger.ts";
@@ -13,9 +23,22 @@ import { isNullOrEmpty, nonnull } from "./nullish.ts";
 import type { LedgerStore } from "./ports.ts";
 import type { CitationRule } from "./rulebook.ts";
 
-type CitationRulesProbe = RulesProbe & {
-	readonly rulebook: { readonly rules: readonly CitationRule[] };
-};
+interface OptionalInstructionParts {
+	readonly instructions?: InstructionsProse;
+	readonly task?: RulesTask | ReuseTask | DeadCodeTask | ContextTask;
+	readonly permissions?:
+		| RulesPermissions
+		| ReusePermissions
+		| DeadCodePermissions
+		| ContextPermissions;
+}
+
+type CitationRulesProbe = RulesProbe &
+	OptionalInstructionParts & {
+		readonly rulebook: { readonly rules: readonly CitationRule[] };
+	};
+
+type CoordinatedContextProbe = ContextProbe & OptionalInstructionParts;
 
 type CoordinatedProbeSpec =
 	| {
@@ -26,12 +49,13 @@ type CoordinatedProbeSpec =
 	| {
 			readonly name: string;
 			readonly kind: ContextKind;
-			readonly probe: ContextProbe;
+			readonly probe: CoordinatedContextProbe;
 	  };
 
 interface MainAgentLedgerState {
 	readonly probeNames: readonly string[];
 	readonly permissionsByProbe: ReadonlyMap<string, ProbePermissions>;
+	readonly promptsByProbe: ReadonlyMap<string, ProbePrompt>;
 	readonly sync: () => void;
 	readonly completed: ReadonlySet<string>;
 	readonly submitted: ReadonlyMap<
@@ -80,6 +104,10 @@ class MainAgentLedger {
 
 	permissions(probeName: string): ProbePermissions {
 		return nonnull(this.#state.permissionsByProbe.get(probeName));
+	}
+
+	prompt(probeName: string): ProbePrompt {
+		return nonnull(this.#state.promptsByProbe.get(probeName));
 	}
 
 	acknowledged(): readonly string[] {

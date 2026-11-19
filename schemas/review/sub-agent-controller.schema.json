@@ -713,7 +713,7 @@
       "acknowledged": true,
       "deadlineMs": 300000,
       "permissions": [
-        "Bash(review-tool-probe*)"
+        "Bash(/opt/pr-review/dist/bin/review-tool-probe.mjs*)"
       ]
     }
   ]

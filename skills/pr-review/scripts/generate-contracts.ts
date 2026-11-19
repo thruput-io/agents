@@ -41,6 +41,17 @@ const customOverride: ParserOverride = (
 		return `${tuple}.default(${JSON.stringify(schemaObject.const)})`;
 	}
 	if (
+		Array.isArray(
+			(schemaObject as { readonly prefixItems?: unknown }).prefixItems,
+		) &&
+		schemaObject.items === false
+	) {
+		const items = (
+			schemaObject as { readonly prefixItems: readonly JsonSchema[] }
+		).prefixItems;
+		return `z.tuple([${items.map((item) => parseSchema(item, refs)).join(", ")}])`;
+	}
+	if (
 		(typeof schemaObject.const === "string" &&
 			schemaObject.const.includes(" ")) ||
 		schemaObject.const === DEFAULT_DEADLINE_MS
@@ -164,7 +175,71 @@ for (const group of ["rules", "principles", "definitions"] as const) {
 	emitSchema(toPascalCase(group), document);
 }
 
+const patternToTemplate = (pattern: string): string =>
+	pattern
+		.slice(1, -1)
+		.replaceAll("/.+/review-tool-probe\\.mjs", "<probe-bin>")
+		.replaceAll("pr-review-session:[A-Za-z0-9_-]+", "<session>")
+		.replaceAll("[0-9]{2}-[a-z0-9-]+", "<probe>")
+		.replaceAll(/\\(?<escaped>[.()[\]{}*])/gu, "$<escaped>");
+
+const itemToTemplate = (item: {
+	readonly const?: string;
+	readonly pattern?: string;
+}): string => {
+	if (typeof item.const === "string") {
+		return item.const;
+	}
+	return patternToTemplate(nonnull(item.pattern));
+};
+
+const agentInstructionsDefs = new Map(
+	Object.entries(
+		nonnull(
+			nonnull(
+				resolvedByPath.get(
+					join(SCHEMAS_DIR, "review/agent-instructions.schema.json"),
+				),
+			).$defs,
+		),
+	),
+);
+const controllerDefs = new Map(
+	Object.entries(
+		nonnull(
+			nonnull(
+				resolvedByPath.get(join(SCHEMAS_DIR, "review/controller.schema.json")),
+			).$defs,
+		),
+	),
+);
+const prosePrefixItems = (
+	nonnull(agentInstructionsDefs.get("InstructionsProse")) as {
+		readonly prefixItems: readonly {
+			readonly const?: string;
+			readonly pattern?: string;
+		}[];
+	}
+).prefixItems;
+const rulesTaskPattern = (
+	nonnull(agentInstructionsDefs.get("RulesTask")) as {
+		readonly pattern: string;
+	}
+).pattern;
+const contextTaskPattern = (
+	nonnull(agentInstructionsDefs.get("ContextTask")) as {
+		readonly pattern: string;
+	}
+).pattern;
+const probePromptPattern = (
+	nonnull(controllerDefs.get("ProbePrompt")) as { readonly pattern: string }
+).pattern;
+
 declarations.push(
+	`export const INSTRUCTIONS_PROSE_TEMPLATES = ${JSON.stringify(prosePrefixItems.map(itemToTemplate))} as const;`,
+	`export const RULES_TASK_TEMPLATE = ${JSON.stringify(patternToTemplate(rulesTaskPattern))};`,
+	`export const CONTEXT_TASK_TEMPLATE = ${JSON.stringify(patternToTemplate(contextTaskPattern))};`,
+	`export const PROBE_PROMPT_TEMPLATE = ${JSON.stringify(patternToTemplate(probePromptPattern))};`,
 	'export const RULEBOOK_PROBE_KINDS: ReadonlySet<string> = new Set(["dead-code","reuse","context"]);\n',
 );
 
