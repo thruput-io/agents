@@ -1,5 +1,5 @@
-import { execFileSync, spawn } from "node:child_process";
-import { cpSync, mkdtempSync, rmSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { cpSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { env } from "node:process";
@@ -38,36 +38,18 @@ const expectEqual = <T>(actual: T, expected: T, message: string): void => {
 };
 
 function installReviewToolForTest(): void {
-	installRootDir = mkdtempSync(join(tmpdir(), "pr-review-bin-"));
-	const stageDir = join(installRootDir, "pkg");
-	const prefixDir = join(installRootDir, "prefix");
+	installRootDir = realpathSync(mkdtempSync(join(tmpdir(), "pr-review-bin-")));
+	const stageDir = join(installRootDir, "skill");
 	cpSync(SKILL_DIR, stageDir, {
 		recursive: true,
 		dereference: true,
-		filter: (src) => !src.includes("node_modules"),
+		filter: (src) => !(src.includes("node_modules") || src.includes("/src/")),
 	});
-	const tarball = execFileSync(
-		"npm",
-		["pack", stageDir, "--pack-destination", installRootDir],
-		{ encoding: "utf8" },
-	)
-		.trim()
-		.split("\n")
-		.pop();
-	execFileSync(
-		"npm",
-		[
-			"install",
-			"-g",
-			"--prefix",
-			prefixDir,
-			join(installRootDir, nonnull(tarball)),
-			"--no-audit",
-			"--no-fund",
-		],
-		{ encoding: "utf8" },
-	);
-	installedBinDir = join(prefixDir, "bin");
+	installedBinDir = join(stageDir, "dist", "bin");
+}
+
+function installedProbeBinPath(): string {
+	return join(installedBinDir, "review-tool-probe.mjs");
 }
 
 function cleanupReviewToolForTest(): void {
@@ -122,18 +104,19 @@ const invokeMainCli = <T>(
 	args: readonly string[],
 	schema: z.ZodType<T>,
 ): Promise<{ readonly exitCode: number; readonly payload: T }> =>
-	runCliProcess("review-tool", args, schema);
+	runCliProcess("review-tool.mjs", args, schema);
 
 const invokeSubCli = <T>(
 	args: readonly string[],
 	schema: z.ZodType<T>,
 ): Promise<{ readonly exitCode: number; readonly payload: T }> =>
-	runCliProcess("review-tool-probe", args, schema);
+	runCliProcess("review-tool-probe.mjs", args, schema);
 
 export {
 	cleanupReviewToolForTest,
 	expectEqual,
 	type InspectedProbePayload,
+	installedProbeBinPath,
 	installReviewToolForTest,
 	invokeMainCli,
 	invokeSubCli,

@@ -14,3 +14,9 @@ const findSkillDir = (dir: string): string => {
 };
 
 export const SKILL_DIR = findSkillDir(dirname(fileURLToPath(import.meta.url)));
+export const PROBE_BIN_PATH = join(
+	SKILL_DIR,
+	"dist",
+	"bin",
+	"review-tool-probe.mjs",
+);

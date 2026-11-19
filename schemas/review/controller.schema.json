@@ -182,7 +182,7 @@
       "minLength": 1
     },
     "PrepareCommand": {
-      "description": "CLI arguments to review-tool prepare <url> <workdir> [<token>]",
+      "description": "CLI arguments to review-tool.mjs prepare <url> <workdir> [<token>]",
       "type": "object",
       "required": [
         "command",
@@ -206,7 +206,7 @@
       "additionalProperties": false
     },
     "StatusCommand": {
-      "description": "CLI arguments to review-tool status <workdir>",
+      "description": "CLI arguments to review-tool.mjs status <workdir>",
       "type": "object",
       "required": [
         "command",
@@ -223,7 +223,7 @@
       "additionalProperties": false
     },
     "DispatchCommand": {
-      "description": "CLI arguments to review-tool dispatch <workdir> [<token>]",
+      "description": "CLI arguments to review-tool.mjs dispatch <workdir> [<token>]",
       "type": "object",
       "required": [
         "command",
@@ -243,7 +243,7 @@
       "additionalProperties": false
     },
     "ControllerCommand": {
-      "description": "CLI command arguments accepted by review-tool",
+      "description": "CLI command arguments accepted by review-tool.mjs",
       "oneOf": [
         {
           "$ref": "#/$defs/PrepareCommand"
@@ -255,6 +255,21 @@
           "$ref": "#/$defs/DispatchCommand"
         }
       ]
+    },
+    "ProbePrompt": {
+      "description": "Exact single-sentence prompt to pass when spawning a probe subagent, with the absolute review-tool-probe.mjs path, session token, and probe name already resolved",
+      "type": "string",
+      "pattern": "^Run /.+/review-tool-probe\\.mjs inspect pr-review-session:[A-Za-z0-9_-]+ [0-9]{2}-[a-z0-9-]+ and follow its instructions\\.$"
+    },
+    "ProbePromptsMap": {
+      "description": "Map of pending probe name to the exact single-sentence prompt to pass when spawning its subagent",
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/ProbeName"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/ProbePrompt"
+      }
     },
     "ProbePermissions": {
       "description": "Allowed tools for a probe subagent, determined by its probe kind",
@@ -281,12 +296,13 @@
       }
     },
     "PrepareReady": {
-      "description": "Returned by review-tool prepare when the review session is ready and subagents should be spawned",
+      "description": "Returned by review-tool.mjs prepare when the review session is ready and subagents should be spawned",
       "type": "object",
       "required": [
         "success",
         "session",
         "pending",
+        "prompts",
         "permissions"
       ],
       "properties": {
@@ -301,6 +317,9 @@
           "items": {
             "$ref": "#/$defs/ProbeName"
           }
+        },
+        "prompts": {
+          "$ref": "#/$defs/ProbePromptsMap"
         },
         "permissions": {
           "$ref": "#/$defs/ProbePermissionsMap"
@@ -649,9 +668,12 @@
       "pending": [
         "01-purpose"
       ],
+      "prompts": {
+        "01-purpose": "Run /opt/pr-review/dist/bin/review-tool-probe.mjs inspect pr-review-session:L3RtcC9wci1yZXZpZXctd29ya2Rpcg 01-purpose and follow its instructions."
+      },
       "permissions": {
         "01-purpose": [
-          "Bash(review-tool-probe*)"
+          "Bash(/opt/pr-review/dist/bin/review-tool-probe.mjs*)"
         ]
       }
     }

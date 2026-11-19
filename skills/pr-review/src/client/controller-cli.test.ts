@@ -114,43 +114,39 @@ it("Sub-agent and main-agent CLIs handle ack, report, and status", async () => {
 			SubAgentController.forSession(factory, session, name),
 		resolveDefinition: stubResolveDefinition,
 	};
+	const ackPayload = JSON.stringify({
+		message: "<SYSTEM_MESSAGE>Inspect 01-purpose</SYSTEM_MESSAGE>",
+		rulesInOrder: ["Stated purpose"],
+		observationFormat: "<observation> breaks <principle>",
+	});
+	const reportPayload = JSON.stringify({
+		oneRowPerRuleInOrder: [
+			{
+				rule: "Stated purpose",
+				examined: ["a.ts"],
+				verdict: "clean",
+				evidence: "stated",
+			},
+		],
+	});
 	assert.equal(
-		runSubAgentCli(deps, [
-			"ack",
-			sessionToken,
-			"01-purpose",
-			JSON.stringify({
-				message: "<SYSTEM_MESSAGE>Inspect 01-purpose</SYSTEM_MESSAGE>",
-				rulesInOrder: ["Stated purpose"],
-				observationFormat: "<observation> breaks <principle>",
-			}),
-		]),
+		runSubAgentCli(deps, ["ack", sessionToken, "01-purpose", ackPayload]),
 		0,
 	);
 	assert.equal(
-		runSubAgentCli(deps, [
-			"report",
-			sessionToken,
-			"01-purpose",
-			JSON.stringify({
-				oneRowPerRuleInOrder: [
-					{
-						rule: "Stated purpose",
-						examined: ["a.ts"],
-						verdict: "clean",
-						evidence: "stated",
-					},
-				],
-			}),
-		]),
+		runSubAgentCli(deps, ["report", sessionToken, "01-purpose", reportPayload]),
 		0,
 	);
 	const mainLedger = freshMain.ledger(workdir);
 	assert.deepEqual(mainLedger.pending(), []);
 	assert.deepEqual(mainLedger.completed(), ["01-purpose"]);
 	assert.deepEqual(mainLedger.permissions("01-purpose"), [
-		"Bash(review-tool-probe*)",
+		"Bash(/opt/pr-review/dist/bin/review-tool-probe.mjs*)",
 	]);
+	assert.equal(
+		mainLedger.prompt("01-purpose"),
+		"Run /opt/pr-review/dist/bin/review-tool-probe.mjs inspect pr-review-session:default 01-purpose and follow its instructions.",
+	);
 	assert.equal(mainLedger.submittedOutcome()?.verdict, "approve");
 	assert.equal(
 		await runMainAgentCli(freshMain, factory, ["status", workdir.toString()]),
