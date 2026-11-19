@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/repository/progress.schema.json",
+  "title": "Progress",
+  "description": "An append-only execution log for one attempt of a plan, at docs/plans/<problem>/progress/<plan>-attempt-<attempt>-<started>.md, where <attempt> is one higher than the highest attempt already in progress/. Opened before the first code change and committed alongside the milestone work it records: existing entries are never edited, condensed, or deleted (corrections are appended as new entries), and commits carrying progress entries are never amended or force-pushed. If an attempt is abandoned, the branch and progress log are kept and opened as a pull request stating what was attempted, where it broke, and what the next attempt should do differently",
+  "type": "object",
+  "required": [
+    "plan",
+    "attempt",
+    "started",
+    "status",
+    "entries"
+  ],
+  "properties": {
+    "plan": {
+      "$ref": "#/$defs/PlanNumber"
+    },
+    "attempt": {
+      "$ref": "#/$defs/Attempt"
+    },
+    "started": {
+      "$ref": "#/$defs/Started"
+    },
+    "status": {
+      "$ref": "#/$defs/Status"
+    },
+    "entries": {
+      "$ref": "#/$defs/Entries"
+    }
+  },
+  "$defs": {
+    "PlanNumber": {
+      "description": "The sequence number of the plan this attempt executes",
+      "type": "integer",
+      "minimum": 1
+    },
+    "Attempt": {
+      "description": "The 1-based attempt number, one higher than the highest attempt already recorded in progress/",
+      "type": "integer",
+      "minimum": 1
+    },
+    "Started": {
+      "description": "The day the attempt was opened",
+      "type": "string",
+      "format": "date"
+    },
+    "Status": {
+      "description": "The lifecycle state of the execution attempt",
+      "enum": [
+        "in-progress",
+        "complete",
+        "abandoned"
+      ]
+    },
+    "Entries": {
+      "description": "The chronological, append-only checkpoint entries recorded during the attempt",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Entry"
+      }
+    },
+    "Entry": {
+      "description": "One immutable checkpoint entry appended to the progress log",
+      "type": "object",
+      "required": [
+        "title",
+        "summary",
+        "verification"
+      ],
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/EntryTitle"
+        },
+        "summary": {
+          "$ref": "#/$defs/Summary"
+        },
+        "verification": {
+          "$ref": "#/$defs/Verification"
+        },
+        "commit": {
+          "$ref": "#/$defs/Commit"
+        }
+      }
+    },
+    "EntryTitle": {
+      "description": "The milestone or checkpoint heading",
+      "type": "string",
+      "minLength": 1
+    },
+    "Summary": {
+      "description": "What was attempted, what the evidence showed, and what was decided or changed",
+      "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+    },
+    "Verification": {
+      "description": "The verification command or test suite run and its concrete outcome",
+      "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+    },
+    "Commit": {
+      "description": "The git commit hash anchored to the checkpoint, when recorded",
+      "type": "string",
+      "pattern": "^[0-9a-f]{7,40}$"
+    }
+  },
+  "examples": [
+    {
+      "plan": 4,
+      "attempt": 1,
+      "started": "2026-11-19",
+      "status": "complete",
+      "entries": [
+        {
+          "title": "Milestone M1 — DryRunProducer and unit test coverage",
+          "summary": "Replaced DisabledProducer with DryRunProducer emitting contract.dry_run.events on Contract.DryRun.Metrics.",
+          "verification": "dotnet test -c Release passed with zero warnings and branch coverage above 90%.",
+          "commit": "837abfd"
+        }
+      ]
+    }
+  ]
+}

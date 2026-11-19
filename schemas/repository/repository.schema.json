@@ -27,7 +27,10 @@
     },
     "Plans": {
       "description": "The plans, one directory per problem, under docs/plans",
-      "type": "array"
+      "type": "array",
+      "items": {
+        "$ref": "plan.schema.json"
+      }
     },
     "Adrs": {
       "description": "The Architecture Decision Records, which together form the Architectural Direction, under docs/adrs",

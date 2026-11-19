@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/repository/plan.schema.json",
+  "title": "Plan",
+  "description": "One problem plan directory at docs/plans/<problem>/, containing the plan document <number>-<problem>.md and its execution attempts under progress/. Once execution begins, the plan document is immutable: executing agents never edit, rewrite, or amend the plan during milestone execution, and stop and return control to the human if any conflict, ambiguity, or unexpected error arises. Repository rules outrank the plan",
+  "type": "object",
+  "required": [
+    "number",
+    "title",
+    "date",
+    "context",
+    "goals",
+    "milestones"
+  ],
+  "properties": {
+    "number": {
+      "$ref": "#/$defs/Number"
+    },
+    "title": {
+      "$ref": "#/$defs/Title"
+    },
+    "date": {
+      "$ref": "#/$defs/Date"
+    },
+    "branch": {
+      "$ref": "#/$defs/Branch"
+    },
+    "supersedes": {
+      "$ref": "#/$defs/Supersedes"
+    },
+    "adrsConsulted": {
+      "$ref": "#/$defs/AdrNumbers"
+    },
+    "adrsAdded": {
+      "$ref": "#/$defs/AdrNumbers"
+    },
+    "context": {
+      "$ref": "#/$defs/Context"
+    },
+    "goals": {
+      "$ref": "#/$defs/Goals"
+    },
+    "milestones": {
+      "$ref": "#/$defs/Milestones"
+    },
+    "progress": {
+      "$ref": "#/$defs/ProgressLogs"
+    }
+  },
+  "$defs": {
+    "Number": {
+      "description": "The sequence number ordering the plan under docs/plans and naming <number>-<problem>.md",
+      "type": "integer",
+      "minimum": 1
+    },
+    "Title": {
+      "description": "What problem the plan solves, in a few words",
+      "type": "string",
+      "minLength": 1
+    },
+    "Date": {
+      "description": "The day the plan was written",
+      "type": "string",
+      "format": "date"
+    },
+    "Branch": {
+      "description": "The git branch on which the plan is executed",
+      "type": "string",
+      "minLength": 1
+    },
+    "Supersedes": {
+      "description": "The sequence number of an earlier plan this plan replaces",
+      "type": "integer",
+      "minimum": 1
+    },
+    "AdrNumber": {
+      "description": "The sequence number of an Architecture Decision Record under docs/adrs",
+      "type": "integer",
+      "minimum": 1
+    },
+    "AdrNumbers": {
+      "description": "Distinct ADR sequence numbers referenced by the plan",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/AdrNumber"
+      }
+    },
+    "Context": {
+      "description": "The problem and forces calling for the change, kept short and on point without repeating code or contracts",
+      "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+    },
+    "Goal": {
+      "description": "One outcome the plan delivers, stated briefly and directly",
+      "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+    },
+    "Goals": {
+      "description": "The ordered outcomes the plan delivers, highest priority first",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Goal"
+      }
+    },
+    "Milestone": {
+      "description": "One verifiable checkpoint executed in sequence; work outside the declared milestones is out of scope",
+      "type": "object",
+      "required": [
+        "title",
+        "summary",
+        "verification"
+      ],
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/MilestoneTitle"
+        },
+        "summary": {
+          "$ref": "#/$defs/MilestoneSummary"
+        },
+        "verification": {
+          "$ref": "#/$defs/MilestoneVerification"
+        }
+      }
+    },
+    "MilestoneTitle": {
+      "description": "The short label and name of the milestone",
+      "type": "string",
+      "minLength": 1
+    },
+    "MilestoneSummary": {
+      "description": "What the milestone delivers, stated without code walkthroughs or unmotivated file inventories",
+      "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+    },
+    "MilestoneVerification": {
+      "description": "How completion of the milestone is proven before moving on",
+      "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+    },
+    "Milestones": {
+      "description": "Ordered milestones executed from first to last",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Milestone"
+      }
+    },
+    "ProgressLogs": {
+      "description": "Append-only execution attempt logs under docs/plans/<problem>/progress/",
+      "type": "array",
+      "items": {
+        "$ref": "progress.schema.json"
+      }
+    }
+  },
+  "examples": [
+    {
+      "number": 4,
+      "title": "Dry-Run Event Producer and Telemetry",
+      "date": "2026-11-19",
+      "context": "Events are disabled in production during dark-run verification, leaving suppressed events unobserved.",
+      "goals": [
+        "Emit isolated dry-run event counters without polluting production metrics."
+      ],
+      "milestones": [
+        {
+          "title": "M1 — DryRunProducer and unit tests",
+          "summary": "Replace DisabledProducer with DryRunProducer owning its own meter and wire it when event sending is disabled.",
+          "verification": "Run Release build and unit tests with branch coverage above 90%."
+        }
+      ]
+    }
+  ]
+}
