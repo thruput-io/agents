@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/repository/progress.schema.json",
   "title": "Progress",
-  "description": "An append-only execution log for one attempt of a plan, at docs/plans/<problem>/progress/<plan>-attempt-<attempt>-<started>.md, where <attempt> is one higher than the highest attempt already in progress/. Opened before the first code change and committed alongside the milestone work it records: existing entries are never edited, condensed, or deleted (corrections are appended as new entries), and commits carrying progress entries are never amended or force-pushed. If an attempt is abandoned, the branch and progress log are kept and opened as a pull request stating what was attempted, where it broke, and what the next attempt should do differently",
+  "description": "An append-only execution log for one attempt of a plan, at docs/plans/<plan-name>/progress/<plan-number>-attempt-<n>-<date>.md, written during implementation, not planning, where <n> is one higher than the highest attempt already in progress/. Opened before the first code change and committed alongside the milestone work it records: existing entries are never edited, condensed, or deleted (corrections are appended as new entries), and commits carrying progress entries are never amended or force-pushed. If an attempt is abandoned, the branch and progress log are kept and opened as a pull request stating what was attempted, where it broke, and what the next attempt should do differently",
   "type": "object",
   "required": [
     "plan",
