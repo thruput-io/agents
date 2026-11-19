@@ -9,6 +9,7 @@ import type {
 	PersistedPullRequest,
 	RepositoryPath,
 	Rulebook,
+	SessionToken,
 	Summary,
 	Surface,
 } from "./contracts.g.ts";
@@ -74,6 +75,7 @@ type ProbeCatalogPort = (
 	change: Change,
 	surface: Surface,
 	checkout: Checkout,
+	session: SessionToken,
 ) => Promise<BundledProbes>;
 
 type DefineLookupResult =

@@ -2,20 +2,6 @@
 	"name": "@thruput-io/review-tool",
 	"version": "0.0.0",
 	"type": "module",
-	"publishConfig": {
-		"registry": "https://npm.pkg.github.com"
-	},
-	"bin": {
-		"review-tool": "./dist/bin/review-tool.mjs",
-		"review-tool-probe": "./dist/bin/review-tool-probe.mjs"
-	},
-	"files": [
-		"dist/bin/*.mjs",
-		"rules/",
-		"schemas/",
-		"references/agent-rules-books-search-index.json",
-		"README.md"
-	],
 	"scripts": {
 		"codegen": "node scripts/generate-contracts.ts && node scripts/generate-clients.ts",
 		"build": "esbuild src/review-tool.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=dist/bin/review-tool.mjs && esbuild src/review-tool-probe.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=dist/bin/review-tool-probe.mjs && chmod +x dist/bin/review-tool.mjs dist/bin/review-tool-probe.mjs",

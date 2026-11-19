@@ -50,6 +50,9 @@ const writePrepared = (
 	const warning = workdir.warning();
 	const session = workdir.sessionToken();
 	const pending = ledger.pending();
+	const prompts = Object.fromEntries(
+		pending.map((name) => [name, ledger.prompt(name)]),
+	);
 	const permissions = Object.fromEntries(
 		pending.map((name) => [name, ledger.permissions(name)]),
 	);
@@ -57,6 +60,7 @@ const writePrepared = (
 		success: true as const,
 		session,
 		pending: [...pending],
+		prompts,
 		permissions,
 	};
 	if (isNullOrEmpty(warning)) {

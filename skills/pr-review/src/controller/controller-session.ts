@@ -141,6 +141,7 @@ const prepareWithAdapter = async (
 		resolved.change,
 		surface,
 		workdir.snapshotDirectory().toString(),
+		workdir.sessionToken(),
 	);
 	workdir.ledgerDirectory().writePullRequest({
 		change: resolved.change,

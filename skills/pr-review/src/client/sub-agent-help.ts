@@ -31,14 +31,14 @@ const subAgentHelpPayload = () => {
 	);
 	return {
 		usage: [
-			"review-tool-probe -h | --help",
-			'review-tool-probe define "<term>" [depth]',
-			"review-tool-probe inspect <session> <probe>",
-			"review-tool-probe ack <session> <probe> '<ack-json-or-file>'",
-			"review-tool-probe next <session> <probe>",
-			"review-tool-probe prev <session> <probe>",
-			'review-tool-probe ruleset <session> <probe> "<url>" [page]',
-			`review-tool-probe report <session> <probe> ${reportJson}`,
+			"review-tool-probe.mjs -h | --help",
+			'review-tool-probe.mjs define "<term>" [depth]',
+			"review-tool-probe.mjs inspect <session> <probe>",
+			"review-tool-probe.mjs ack <session> <probe> '<ack-json-or-file>'",
+			"review-tool-probe.mjs next <session> <probe>",
+			"review-tool-probe.mjs prev <session> <probe>",
+			'review-tool-probe.mjs ruleset <session> <probe> "<url>" [page]',
+			`review-tool-probe.mjs report <session> <probe> ${reportJson}`,
 		],
 		deadlineMs: SUBAGENT_DEADLINE_MS,
 		ackSchema: subAgentDefs.get("AckPayload"),

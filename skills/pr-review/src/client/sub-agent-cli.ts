@@ -55,7 +55,7 @@ interface SubAgentCliDeps {
 }
 
 const MISSING_COMMAND_USAGE = [
-	"Usage: review-tool-probe <define|inspect|ack|",
+	"Usage: review-tool-probe.mjs <define|inspect|ack|",
 	"next|prev|ruleset|report> ...\n",
 ].join("");
 

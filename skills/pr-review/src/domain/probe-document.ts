@@ -66,36 +66,32 @@ type ProbeDocument =
 
 const toContextInstructions = (
 	probe: Extract<ProbeDocument, { readonly kind: "context" }>,
-	prose: AgentInstructions["instructions"],
+	spec: Instructions,
 	overview: AgentInstructions["surface"],
-): AgentInstructions => {
-	const spec = Instructions.forKind("context");
-	return {
-		instructions: prose,
-		task: spec.task() as Extract<
-			AgentInstructions,
-			{ readonly kind: "context" }
-		>["task"],
-		permissions: spec.permissions() as Extract<
-			AgentInstructions,
-			{ readonly kind: "context" }
-		>["permissions"],
-		kind: "context",
-		change: probe.change,
-		surface: overview,
-		rulesets: [...toRulebookSummaries(probe.rulesets)],
-		checkout: nonnull(probe.checkout),
-	};
-};
+): AgentInstructions => ({
+	instructions: spec.prose(),
+	task: spec.task() as Extract<
+		AgentInstructions,
+		{ readonly kind: "context" }
+	>["task"],
+	permissions: spec.permissions() as Extract<
+		AgentInstructions,
+		{ readonly kind: "context" }
+	>["permissions"],
+	kind: "context",
+	change: probe.change,
+	surface: overview,
+	rulesets: [...toRulebookSummaries(probe.rulesets)],
+	checkout: nonnull(probe.checkout),
+});
 
 const toRulebookInstructions = (
 	probe: Exclude<ProbeDocument, { readonly kind: "context" }>,
-	prose: AgentInstructions["instructions"],
+	spec: Instructions,
 	overview: AgentInstructions["surface"],
 ): AgentInstructions => {
-	const spec = Instructions.forKind(probe.kind);
 	const base = {
-		instructions: prose,
+		instructions: spec.prose(),
 		task: spec.task() as Extract<
 			AgentInstructions,
 			{ readonly kind: "rules" | "dead-code" | "reuse" }
@@ -115,20 +111,13 @@ const toRulebookInstructions = (
 	return { ...base, checkout: nonnull(probe.checkout) } as AgentInstructions;
 };
 
-const proseOf = (probe: ProbeDocument): InstructionsProse => {
-	if (probe.instructions === undefined) {
-		return Instructions.PROSE;
-	}
-	return probe.instructions;
-};
-
 const toAgentInstructions = (probe: ProbeDocument): AgentInstructions => {
-	const prose = proseOf(probe);
+	const spec = Instructions.fromParts(probe);
 	const overview = surfaceOverview(probe.surface);
 	if (probe.kind === "context") {
-		return toContextInstructions(probe, prose, overview);
+		return toContextInstructions(probe, spec, overview);
 	}
-	return toRulebookInstructions(probe, prose, overview);
+	return toRulebookInstructions(probe, spec, overview);
 };
 
 const fromAuditDocument = (

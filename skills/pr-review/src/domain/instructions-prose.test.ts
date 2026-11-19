@@ -40,7 +40,10 @@ it("Instructions encapsulates the canonical probe prose from the schema", () => 
 		rulesInstr.prose()[1].includes("dispatcher message included"),
 		true,
 	);
-	assert.equal(rulesInstr.prose()[3].includes("next <session> <probe>"), true);
+	assert.equal(
+		rulesInstr.prose()[3].includes("next pr-review-session:default 01-purpose"),
+		true,
+	);
 	assert.equal(rulesInstr.prose()[4].includes('define "<term>" [depth]'), true);
 	assert.equal(rulesInstr.prose()[6].includes("idToReportViolationOn"), true);
 	assert.equal(rulesInstr.prose()[8].includes(REPORT_KEY), true);

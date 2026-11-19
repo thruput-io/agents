@@ -17,9 +17,5 @@ npm --prefix "$PROJECT_ROOT/skills/pr-review" ci --no-audit --no-fund
 npm --prefix "$PROJECT_ROOT/skills/pr-review" run verify
 npx --yes @agentplugins/cli@0.6.1 audit "$PROJECT_ROOT"
 
-pack_test_dir=$(mktemp -d)
-trap 'rm -rf "$pack_test_dir"' EXIT
-"$PROJECT_ROOT/scripts/pack-review-tool.sh" "$pack_test_dir/thruput-review-tool.tgz"
-npm install -g --prefix "$pack_test_dir/prefix" "$pack_test_dir/thruput-review-tool.tgz" --no-audit --no-fund
-"$pack_test_dir/prefix/bin/review-tool" -h
-"$pack_test_dir/prefix/bin/review-tool-probe" -h
+"$PROJECT_ROOT/skills/pr-review/dist/bin/review-tool.mjs" -h
+"$PROJECT_ROOT/skills/pr-review/dist/bin/review-tool-probe.mjs" -h

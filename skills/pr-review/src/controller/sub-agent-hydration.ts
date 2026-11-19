@@ -72,7 +72,7 @@ const withLedgerInit = (
 ): SubAgentControllerInit => ({
 	workdir,
 	ledger,
-	instructions: Instructions.forKind(probe.kind),
+	instructions: Instructions.fromParts(probe),
 	change: probe.change,
 	behavior: probeBehaviorFor(probe, workdir.snapshotDirectory().toString()),
 	storage: inMemoryProbeStorage(),
@@ -109,7 +109,7 @@ const loadWorkdirInit = (
 	return {
 		workdir,
 		ledger: nonnull(ledgers[index]),
-		instructions: Instructions.forKind(target.probe.kind),
+		instructions: Instructions.fromParts(target.probe),
 		change: target.probe.change,
 		behavior: probeBehaviorFor(target.probe, checkoutDir),
 		storage: persistedProbeStorage(workdir.ledgerDirectory(), name),

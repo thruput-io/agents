@@ -55,10 +55,10 @@ async function runMainAgentCli(
 		schema: ControllerCommandSchema,
 		help: () => ({
 			usage: [
-				"review-tool -h | --help",
-				"review-tool prepare <url> <workdir> [<token>]",
-				"review-tool status <workdir>",
-				"review-tool dispatch <workdir> [<token>]",
+				"review-tool.mjs -h | --help",
+				"review-tool.mjs prepare <url> <workdir> [<token>]",
+				"review-tool.mjs status <workdir>",
+				"review-tool.mjs dispatch <workdir> [<token>]",
 			],
 		}),
 		toRaw: toRawControllerCommand,

@@ -57,6 +57,14 @@ function settleIfComplete(
 	return result;
 }
 
+const instructionsForSpec = (spec: CoordinatedProbeSpec): Instructions =>
+	Instructions.fromParts({
+		kind: spec.kind,
+		instructions: spec.probe.instructions,
+		task: spec.probe.task,
+		permissions: spec.probe.permissions,
+	});
+
 export function coordinateLedgers(
 	directory: LedgerStore,
 	pullRequest: CodeUnderReview,
@@ -80,10 +88,10 @@ export function coordinateLedgers(
 	const mainLedger = MainAgentLedger.from(directory, pullRequest, {
 		probeNames: specs.map((spec) => spec.name),
 		permissionsByProbe: new Map(
-			specs.map((spec) => [
-				spec.name,
-				Instructions.forKind(spec.kind).permissions(),
-			]),
+			specs.map((spec) => [spec.name, instructionsForSpec(spec).permissions()]),
+		),
+		promptsByProbe: new Map(
+			specs.map((spec) => [spec.name, instructionsForSpec(spec).prompt()]),
 		),
 		sync: () => {
 			settle();
