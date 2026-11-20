@@ -9,6 +9,7 @@
     "attempt",
     "started",
     "status",
+    "implementingAgentInstructions",
     "entries"
   ],
   "properties": {
@@ -23,6 +24,9 @@
     },
     "status": {
       "$ref": "#/$defs/Status"
+    },
+    "implementingAgentInstructions": {
+      "$ref": "#/$defs/ImplementingAgentInstructions"
     },
     "entries": {
       "$ref": "#/$defs/Entries"
@@ -51,6 +55,10 @@
         "complete",
         "abandoned"
       ]
+    },
+    "ImplementingAgentInstructions": {
+      "description": "How the implementing agent works, completion criteria, verification, and progress-log obligations, with no placeholders",
+      "$ref": "../governance/definitions.schema.json#/$defs/Prose"
     },
     "Entries": {
       "description": "The chronological, append-only checkpoint entries recorded during the attempt",
@@ -108,6 +116,7 @@
       "attempt": 1,
       "started": "2026-11-19",
       "status": "complete",
+      "implementingAgentInstructions": "Open progress/004-attempt-1-2026-11-19.md before the first edit and run dotnet test -c Release after each milestone.",
       "entries": [
         {
           "title": "Milestone M1 — DryRunProducer and unit test coverage",
