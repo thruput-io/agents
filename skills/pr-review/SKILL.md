@@ -20,11 +20,9 @@ Run `<skill>/dist/bin/review-tool.mjs` directly (`-h` or `--help` prints usage).
 
 ## 1. Prepare (`controller.schema.json#/$defs/PrepareCommand`)
 
-1. Choose a dedicated real path `<workdir>` for this review (such as `.pr-review/<id>/work`, so `.pr-review/<id>/` holds only this review's `work` and `ledger` directories) and recreate `<workdir>` before calling `prepare`:
+1. Run `prepare` with `<url>`, `<workdir>` (e.g. `.pr-review`—`prepare` creates `<workdir>` and cleans its internal subdirectories automatically), and optional `<token>`:
 
    ```sh
-   rm -rf <workdir>
-   mkdir -p <workdir>
    <skill>/dist/bin/review-tool.mjs prepare <url> <workdir> [<token>]
    ```
 

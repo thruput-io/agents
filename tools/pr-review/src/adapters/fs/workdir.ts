@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { z } from "zod";
 import {
 	type AgentInstructions,
@@ -50,7 +50,7 @@ export class Workdir implements WorkspacePort {
 	) {
 		return CheckoutSchema.transform((rawPath, ctx) => {
 			const resolvedPath = resolve(rawPath);
-			const ledgerPath = join(dirname(resolvedPath), "ledger");
+			const ledgerPath = join(resolvedPath, "ledger");
 			const parsedLedger = LedgerDirectory.from(ledgerPath);
 			if (!parsedLedger.success) {
 				ctx.addIssue({

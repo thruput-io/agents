@@ -12,21 +12,21 @@ import { test as it } from "node:test";
 import { LedgerDirectory } from "./ledger-directory.ts";
 import { Workdir } from "./workdir.ts";
 
-it("Workdir parses an absolute path and derives its sibling LedgerDirectory and snapshot subdirectory", () => {
+it("Workdir parses an absolute path and derives its LedgerDirectory and snapshot subdirectories", () => {
 	const tempRoot = mkdtempSync(join(tmpdir(), "workdir-derive-"));
 	try {
 		const workspacePath = join(tempRoot, "review", "workspace");
-		const expectedSiblingPath = join(tempRoot, "review", "ledger");
+		const expectedLedgerPath = join(workspacePath, "ledger");
 		const workdir = Workdir.from(workspacePath);
 		const same = Workdir.from(workspacePath);
-		const expectedSibling = LedgerDirectory.from(expectedSiblingPath);
+		const expectedLedger = LedgerDirectory.from(expectedLedgerPath);
 		assert.equal(workdir.success, true);
 		assert.equal(same.success, true);
-		assert.equal(expectedSibling.success, true);
+		assert.equal(expectedLedger.success, true);
 		assert.equal(workdir.data.equals(same.data), true);
 		assert.equal(workdir.data.toString(), workspacePath);
 		assert.equal(
-			workdir.data.ledgerDirectory().equals(expectedSibling.data),
+			workdir.data.ledgerDirectory().equals(expectedLedger.data),
 			true,
 		);
 		assert.equal(
@@ -38,7 +38,7 @@ it("Workdir parses an absolute path and derives its sibling LedgerDirectory and 
 	}
 });
 
-it("Workdir immediately writes to establish it is operational, fails on unwriteable path, and warns when traversing a symlink", () => {
+it("Workdir immediately writes to establish it is operational, cleans its own subdirectories, fails on unwriteable path, and warns when traversing a symlink", () => {
 	const tempRoot = mkdtempSync(join(tmpdir(), "workdir-operational-"));
 	try {
 		const realDir = join(tempRoot, "real-workspace");
@@ -49,7 +49,7 @@ it("Workdir immediately writes to establish it is operational, fails on unwritea
 		const realWorkdir = Workdir.from(realDir);
 		assert.equal(realWorkdir.success, true);
 		assert.equal(existsSync(join(realDir, ".operational")), true);
-		assert.equal(existsSync(join(tempRoot, "ledger", ".operational")), true);
+		assert.equal(existsSync(join(realDir, "ledger", ".operational")), true);
 		assert.equal(realWorkdir.data.isSymlinked(), false);
 		assert.equal(realWorkdir.data.warning(), null);
 
@@ -59,20 +59,25 @@ it("Workdir immediately writes to establish it is operational, fails on unwritea
 		assert.equal(linkedWorkdir.data.isSymlinked(), true);
 		assert.equal(linkedWorkdir.data.warning()?.includes("symlink"), true);
 
-		const staleLedgerFile = join(tempRoot, "ledger", "stale-slice.json");
+		const staleLedgerFile = join(realDir, "ledger", "stale-slice.json");
+		const preservedOuterFile = join(realDir, "keep-me.txt");
 		writeFileSync(staleLedgerFile, '{"stale":true}', "utf8");
+		writeFileSync(preservedOuterFile, "keep", "utf8");
 		const refreshedWorkdir = Workdir.from(
 			join(symlinkDir, "nested", "workspace"),
 		);
 		assert.equal(refreshedWorkdir.success, true);
 		assert.equal(refreshedWorkdir.data.isSymlinked(), true);
 		assert.equal(
-			existsSync(join(symlinkDir, "nested", "ledger", "stale-slice.json")),
+			existsSync(
+				join(symlinkDir, "nested", "workspace", "ledger", "stale-slice.json"),
+			),
 			false,
 		);
 		const parentWorkdir = Workdir.from(realDir);
 		assert.equal(parentWorkdir.success, true);
 		assert.equal(existsSync(staleLedgerFile), false);
+		assert.equal(existsSync(preservedOuterFile), true);
 
 		const unwriteableWorkdir = Workdir.from(join(blockerFile, "child"));
 		assert.equal(unwriteableWorkdir.success, false);

@@ -98,10 +98,11 @@ const prepareFreshDirectory = (
 	if (!check.ok) {
 		return check;
 	}
-	rmSync(resolvedPath, { recursive: true, force: true });
 	mkdirSync(resolvedPath, { recursive: true });
 	const instructionsDir = join(resolvedPath, "instructions");
+	const snapshotDir = join(resolvedPath, "snapshot");
 	rmSync(instructionsDir, { recursive: true, force: true });
+	rmSync(snapshotDir, { recursive: true, force: true });
 	mkdirSync(instructionsDir, { recursive: true });
 	ledger.initialize();
 	writeFileSync(join(resolvedPath, ".operational"), "ok\n", "utf-8");
