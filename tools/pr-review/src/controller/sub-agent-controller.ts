@@ -159,6 +159,7 @@ export class SubAgentController {
 			success: true,
 			data: AckStatusSchema.parse({
 				acknowledgedAt,
+				deadlineMs: response.deadlineMs,
 				permissions: response.permissions,
 			}),
 			response,

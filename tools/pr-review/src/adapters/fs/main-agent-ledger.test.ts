@@ -71,7 +71,7 @@ it("coordinateLedgers records each probe slice to disk, tracks MainAgentLedger s
 
 	assert.equal(mainLedger.directory().equals(dir), true);
 	assert.deepEqual(mainLedger.pullRequest().host(), PR.host());
-	assert.deepEqual(mainLedger.pending(), ["01-rules", "02-dead-code"]);
+	assert.deepEqual(mainLedger.pending(), ["02-dead-code", "01-rules"]);
 	assert.deepEqual(mainLedger.completed(), []);
 	assert.equal(mainLedger.submittedOutcome(), null);
 	assert.equal(mainLedger.submittedLedger(), null);
@@ -99,7 +99,7 @@ it("coordinateLedgers records each probe slice to disk, tracks MainAgentLedger s
 	assert.equal(secondReport.data.ledger.rows.length, 2);
 	assert.equal(existsSync(join(tempRoot, "02-dead-code.json")), true);
 	assert.deepEqual(mainLedger.pending(), []);
-	assert.deepEqual(mainLedger.completed(), ["01-rules", "02-dead-code"]);
+	assert.deepEqual(mainLedger.completed(), ["02-dead-code", "01-rules"]);
 	assert.equal(mainLedger.submittedOutcome()?.verdict, "request-changes");
 	assert.equal(mainLedger.submittedLedger()?.rows.length, 2);
 

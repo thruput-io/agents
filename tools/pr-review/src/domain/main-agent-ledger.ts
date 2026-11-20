@@ -28,6 +28,8 @@ type CoordinatedProbeSpec =
 interface MainAgentLedgerState {
 	readonly probeNames: readonly string[];
 	readonly permissionsByProbe: ReadonlyMap<string, ProbePermissions>;
+	readonly deadlineMsByProbe: ReadonlyMap<string, number>;
+	readonly now: () => number;
 	readonly sync: () => void;
 	readonly completed: ReadonlySet<string>;
 	readonly submitted: ReadonlyMap<
@@ -78,16 +80,36 @@ class MainAgentLedger {
 		return nonnull(this.#state.permissionsByProbe.get(probeName));
 	}
 
+	deadlineMs(probeName: string): number {
+		return nonnull(this.#state.deadlineMsByProbe.get(probeName));
+	}
+
+	#isAcknowledged(name: string): boolean {
+		const acknowledgedAt = this.#directory.readAck(name);
+		if (isNullOrEmpty(acknowledgedAt)) {
+			return false;
+		}
+		return this.#state.now() - acknowledgedAt < this.deadlineMs(name);
+	}
+
 	acknowledged(): readonly string[] {
-		return this.pending().filter(
-			(name) => !isNullOrEmpty(this.#directory.readAck(name)),
-		);
+		return this.pending().filter((name) => this.#isAcknowledged(name));
 	}
 
 	unacknowledged(): readonly string[] {
-		return this.pending().filter((name) =>
-			isNullOrEmpty(this.#directory.readAck(name)),
-		);
+		return this.pending().filter((name) => !this.#isAcknowledged(name));
+	}
+
+	nextDeadlineMs(): number | null {
+		const nowMs = this.#state.now();
+		const remaining = this.acknowledged().map((name) => {
+			const acknowledgedAt = nonnull(this.#directory.readAck(name));
+			return Math.max(0, acknowledgedAt + this.deadlineMs(name) - nowMs);
+		});
+		if (remaining.length === 0) {
+			return null;
+		}
+		return Math.min(...remaining);
 	}
 
 	completed(): readonly string[] {

@@ -39,10 +39,12 @@ contracts or instruction prose in hand-written code or static types per probe ki
    - Task instructions state affirmative investigation strategies for the probe's role in plain English without
      repeating schemas or lecturing on non-goals.
 
-4. **Acknowledgment fails fast before inspection**:
+4. **Acknowledgment fails fast before inspection and timers run in code**:
    - A probe begins by running help and acknowledgment to prove it can execute the probe CLI, read the JSON Schema
      contract, verify the bootstrap prompt, and start the reporting deadline before inspecting review data.
    - Acknowledgment takes only the session and probe identifiers without fragile shell-quoting payloads.
+   - Acknowledgment and reporting deadline thresholds live as schema data on the status command and probe objects, and
+     the status command tracks them in code rather than delegating timer scheduling to the orchestrating agent.
 
 5. **The final probe report submits the review to the host in code**:
    - When the last pending probe records a valid slice, the probe tool merges the ledger and submits the review to the

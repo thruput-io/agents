@@ -4,7 +4,7 @@ import type {
 	PersistedPullRequest,
 	PrepareError,
 } from "../domain/contracts.g.ts";
-import { coordinateLedgers } from "../domain/coordinate-ledgers.ts";
+import { coordinateLedgersWithClock } from "../domain/coordinate-ledgers.ts";
 import type {
 	AdapterResolution,
 	HostAdapter,
@@ -41,19 +41,20 @@ const bindSession = (
 		readonly adapter: HostAdapter;
 		readonly pullRequest: CodeUnderReview;
 		readonly probes: readonly NamedProbe[];
+		readonly now: () => number;
 	},
 ): PreparedSession => {
-	const { workdir, adapter, pullRequest, probes } = input;
+	const { workdir, adapter, pullRequest, probes, now } = input;
 	const specs = probes.map(({ name, probe }): CoordinatedProbeSpec => {
 		if (probe.kind === "context") {
 			return { name, kind: "context", probe };
 		}
 		return { name, kind: probe.kind, probe };
 	});
-	const { mainLedger } = coordinateLedgers(
+	const { mainLedger } = coordinateLedgersWithClock(
 		workdir.ledgerDirectory(),
 		pullRequest,
-		specs,
+		{ specs, now },
 	);
 	const session: PreparedSession = {
 		adapter,
@@ -65,14 +66,16 @@ const bindSession = (
 	return session;
 };
 
-const rehydrateSession = (
-	workdir: WorkspacePort,
-	load: (persisted: PersistedPullRequest) => {
+const rehydrateSession = (options: {
+	readonly workdir: WorkspacePort;
+	readonly load: (persisted: PersistedPullRequest) => {
 		readonly pullRequest: CodeUnderReview;
 		readonly adapter: HostAdapter;
-	},
-	sessions: Map<string, PreparedSession>,
-): PreparedSession => {
+	};
+	readonly sessions: Map<string, PreparedSession>;
+	readonly now: () => number;
+}): PreparedSession => {
+	const { workdir, load, sessions, now } = options;
 	const persisted = workdir.ledgerDirectory().readPullRequest();
 	const { pullRequest, adapter } = load(persisted);
 	const probes = loadPersistedProbes(
@@ -80,14 +83,22 @@ const rehydrateSession = (
 		persisted.surface,
 		workdir.ledgerDirectory().readRulesets(),
 	);
-	return bindSession(sessions, { workdir, adapter, pullRequest, probes });
+	return bindSession(sessions, {
+		workdir,
+		adapter,
+		pullRequest,
+		probes,
+		now,
+	});
 };
 
-const sessionForWorkdir = (
-	workdir: WorkspacePort,
-	adapters: HostAdapterPort,
-	sessions: Map<string, PreparedSession>,
-): PreparedSession => {
+const sessionForWorkdir = (options: {
+	readonly workdir: WorkspacePort;
+	readonly adapters: HostAdapterPort;
+	readonly sessions: Map<string, PreparedSession>;
+	readonly now: () => number;
+}): PreparedSession => {
+	const { workdir, adapters, sessions, now } = options;
 	const existing = sessions.get(workdir.toString());
 	if (!isNullOrEmpty(existing)) {
 		const diskUpdated = existing.mainLedger
@@ -101,15 +112,17 @@ const sessionForWorkdir = (
 				adapter: existing.adapter,
 				pullRequest: existing.pullRequest,
 				probes: existing.probes,
+				now,
 			});
 		}
 		return existing;
 	}
-	return rehydrateSession(
+	return rehydrateSession({
 		workdir,
-		(persisted) => adapters.rehydrate(persisted),
+		load: (persisted) => adapters.rehydrate(persisted),
 		sessions,
-	);
+		now,
+	});
 };
 
 const toPersistedPullRequest = (
@@ -135,8 +148,9 @@ const prepareWithAdapter = async (input: {
 	readonly loadProbes: ProbeCatalogPort;
 	readonly sessions: Map<string, PreparedSession>;
 	readonly rawToken: string | null;
+	readonly now: () => number;
 }): Promise<PrepareResult> => {
-	const { workdir, parsedAdapter, loadProbes, sessions, rawToken } = input;
+	const { workdir, parsedAdapter, loadProbes, sessions, rawToken, now } = input;
 	if (!parsedAdapter.success) {
 		return {
 			success: false,
@@ -173,6 +187,7 @@ const prepareWithAdapter = async (input: {
 		adapter: parsedAdapter.data,
 		pullRequest: resolved.snapshot,
 		probes,
+		now,
 	});
 	return { success: true, data: resolved };
 };

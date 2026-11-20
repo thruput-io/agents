@@ -9,8 +9,8 @@ import {
 	type RulesPageResponse,
 } from "../domain/contracts.g.ts";
 import type { CoordinatedProbeSpec } from "../domain/main-agent-ledger.ts";
-import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
-import { paginateRulebook, paginateText } from "../domain/pagination.ts";
+import { nonnull } from "../domain/nullish.ts";
+import { paginateRulebook } from "../domain/pagination.ts";
 import type { LedgerStore } from "../domain/ports.ts";
 import {
 	type ProbeDocument,
@@ -18,6 +18,10 @@ import {
 } from "../domain/probe-document.ts";
 import { ProbeLedger, type SubAgentLedger } from "../domain/probe-ledger.ts";
 import type { Rulebook } from "../domain/rulebook.ts";
+import {
+	paginateContextRuleset,
+	paginateProbeRulebook,
+} from "./sub-agent-paging.ts";
 
 type ProbeRules =
 	| { readonly kind: "rulebook"; readonly rulebook: Rulebook }
@@ -78,47 +82,34 @@ const HYDRATE_RULEBOOK_PROBE: Readonly<
 	}),
 };
 
-const paginateContextRuleset = (
-	rulesets: readonly ExternalRulebook[],
-	url: RulesetUrl,
-	page: number,
-): RulesetPageResponse => {
-	const book = rulesets.find((entry) => entry.url === url);
-	if (isNullOrEmpty(book)) {
-		return {
-			success: false,
-			error: `Unknown ruleset URL: ${url}. Choose one of the URLs returned in ack under #/rulesets.`,
-		};
-	}
-	const chunks = paginateText(book.text);
-	if (page < 1 || page > chunks.length) {
-		return {
-			success: false,
-			error: `Ruleset page ${page} is out of range for ${url} (valid pages: 1..${chunks.length}).`,
-		};
-	}
-	return {
+const toRulebookAckSuccess = (
+	hydrated: RulebookProbeDocument,
+	probeName: Checkout,
+): AckSuccess => {
+	const serialized = toAgentInstructions(hydrated);
+	const chunks = paginateRulebook(hydrated.rulebook.toRuleset());
+	const base = {
 		success: true,
-		url: book.url,
-		title: book.title,
-		page,
-		totalPages: chunks.length,
-		text: nonnull(chunks[page - 1]),
+		probe: probeName,
+		acknowledged: true,
+		deadlineMs: serialized.deadlineMs,
+		task: serialized.task,
+		permissions: serialized.permissions,
+		kind: hydrated.kind,
+		change: serialized.change,
+		surface: serialized.surface,
+		rulesOverview: {
+			totalPages: chunks.length,
+			ruleIds: hydrated.rulebook.rules.map((r) => r.id),
+		},
 	};
-};
-
-const paginateProbeRulebook = (
-	rulebook: Rulebook,
-	page: number,
-): RulesPageResponse => {
-	const chunks = paginateRulebook(rulebook.toRuleset());
-	if (page < 1 || page > chunks.length) {
-		return {
-			success: false,
-			error: `Rules page ${page} is out of range (valid pages: 1..${chunks.length}).`,
-		};
+	if (hydrated.kind === "rules") {
+		return AckSuccessSchema.parse(base);
 	}
-	return nonnull(chunks[page - 1]);
+	return AckSuccessSchema.parse({
+		...base,
+		checkout: nonnull(hydrated.checkout),
+	});
 };
 
 function contextProbeBehavior(
@@ -141,16 +132,10 @@ function contextProbeBehavior(
 				throw new Error(`Expected context probe, got ${serialized.kind}`);
 			}
 			return AckSuccessSchema.parse({
+				...serialized,
 				success: true,
 				probe: probeName,
 				acknowledged: true,
-				task: serialized.task,
-				permissions: serialized.permissions,
-				kind: "context",
-				change: serialized.change,
-				surface: serialized.surface,
-				rulesets: serialized.rulesets,
-				checkout: serialized.checkout,
 			});
 		},
 		rulesPage: () => ({
@@ -178,31 +163,7 @@ function rulebookProbeBehavior(
 			kind: hydrated.kind,
 			probe: hydrated,
 		}),
-		ackAssignment: (probeName) => {
-			const serialized = toAgentInstructions(hydrated);
-			const chunks = paginateRulebook(hydrated.rulebook.toRuleset());
-			const base = {
-				success: true,
-				probe: probeName,
-				acknowledged: true,
-				task: serialized.task,
-				permissions: serialized.permissions,
-				kind: hydrated.kind,
-				change: serialized.change,
-				surface: serialized.surface,
-				rulesOverview: {
-					totalPages: chunks.length,
-					ruleIds: hydrated.rulebook.rules.map((r) => r.id),
-				},
-			};
-			if (hydrated.kind === "rules") {
-				return AckSuccessSchema.parse(base);
-			}
-			return AckSuccessSchema.parse({
-				...base,
-				checkout: nonnull(hydrated.checkout),
-			});
-		},
+		ackAssignment: (probeName) => toRulebookAckSuccess(hydrated, probeName),
 		rulesPage: (page) => paginateProbeRulebook(hydrated.rulebook, page),
 		ruleset: () => ({
 			success: false,

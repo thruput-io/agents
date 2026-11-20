@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-	ControllerCommandSchema,
-	type ReviewStatus,
-} from "../domain/contracts.g.ts";
+import { ControllerCommandSchema } from "../domain/contracts.g.ts";
 import type { WorkspaceFactoryPort } from "../domain/ports.ts";
 import {
 	failCli,
@@ -52,16 +49,7 @@ async function runMainAgentCli(
 	if (!parsedWorkdir.success) {
 		return failCli(`${z.prettifyError(parsedWorkdir.error)}\n`);
 	}
-	const ledger = controller.ledger(parsedWorkdir.data);
-	const status: ReviewStatus = {
-		pending: [...ledger.pending()],
-		acknowledged: [...ledger.acknowledged()],
-		unacknowledged: [...ledger.unacknowledged()],
-		completed: [...ledger.completed()],
-		submittedOutcome: ledger.submittedOutcome(),
-		location: ledger.submittedLocation(),
-	};
-	writeJson(status);
+	writeJson(await controller.status(parsedWorkdir.data));
 	return 0;
 }
 

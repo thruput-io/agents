@@ -99,7 +99,8 @@ Evaluate each rule in order. If a rule's application is ambiguous, use its paren
 ## 4. How Schemas, Instructions, Codegen, and Adapters Sit Together
 
 1. **JSON Schema Draft 2020-12 Is Both Contract and Instruction**:
-   - Domain shapes and `const` instructions (`instructions`, `task`, `permissions`, `prompt`, `deadlineMs`) live inline on the properties of the objects that cross boundaries (`Probe`, `Ruleset`, `PrepareReady`, `AckStatus`, `AckSuccess`).
+   - Domain shapes and `const` instructions (`instructions`, `task`, `permissions`, `prompt`, `deadlineMs`, `ackTimeoutMs`, `pollIntervalMs`) live inline on the properties of the objects that cross boundaries (`Probe`, `Ruleset`, `PrepareReady`, `StatusCommand`, `AckStatus`, `AckSuccess`).
+   - Each probe's reporting deadline threshold (`deadlineMs`) is probe data on `Probe`, while the acknowledgment timeout (`ackTimeoutMs`) and polling interval (`pollIntervalMs`) are shared across probes on `StatusCommand`; `status` tracks both thresholds in code so the main agent never schedules timers.
    - Top-level `$defs` define domain data types (`Probe`, `Ruleset`, `SurfaceOverview`, `RulebookSummary`, `Checkout`), never static types named after `const` instructions or probe kinds (`InstructionsProse`, `RulesetInstructions`, `RulesTask`, `RulesInstructions`, etc.).
    - CLI `-h` / `--help` emits `z.toJSONSchema(CommandSchema, { target: "draft-2020-12" })` directly so the schema itself instructs the caller without custom help wrappers.
 

@@ -510,8 +510,15 @@
           "$ref": "#/$defs/EpochMs"
         },
         "deadlineMs": {
-          "description": "Reporting deadline in milliseconds from acknowledgment (5 minutes)",
-          "const": 300000
+          "description": "Reporting deadline threshold in milliseconds from acknowledgment, determined by the probe kind",
+          "oneOf": [
+            {
+              "$ref": "agent-instructions.schema.json#/$defs/Probe/oneOf/2/properties/deadlineMs"
+            },
+            {
+              "$ref": "agent-instructions.schema.json#/$defs/Probe/oneOf/0/properties/deadlineMs"
+            }
+          ]
         },
         "permissions": {
           "type": "array",
@@ -524,7 +531,7 @@
       "additionalProperties": false
     },
     "AckSuccess": {
-      "description": "Returned by review-tool-probe ack when the probe starts its 5-minute deadline and receives its bounded assignment",
+      "description": "Returned by review-tool-probe ack when the probe starts its reporting deadline and receives its bounded assignment",
       "type": "object",
       "required": [
         "success",

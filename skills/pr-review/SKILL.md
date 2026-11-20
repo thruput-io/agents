@@ -13,9 +13,9 @@ Run `<skill>/dist/bin/review-tool.mjs` directly (`-h` or `--help` prints usage).
 
 ## Main Agent Role
 
-- **Controller-driven orchestration**: Drive the review exclusively through `<skill>/dist/bin/review-tool.mjs` (`prepare` and `status`), subagent spawning, and timer scheduling.
+- **Controller-driven orchestration**: Drive the review exclusively through `<skill>/dist/bin/review-tool.mjs` (`prepare` and `status`) and subagent spawning.
 - **Immediate preparation**: Call `prepare` as your first action; inspect or adjust `<url>` or `<workdir>` only when `prepare` returns `InvalidInputError`.
-- **Verbatim probe delegation**: Spawn one boxed subagent per probe in `PrepareReady.pending` with workspace instruction files (`CLAUDE.md`, `GEMINI.md`) omitted, allowed tools set to `PrepareReady.permissions[probe]`, and prompt set to `PrepareReady.prompt` (with `<skill>`, `PrepareReady.session`, and `<probe>` filled in).
+- **Verbatim probe delegation**: Spawn one boxed subagent per probe in `PrepareReady.pending` order (which orders probes with the longest `deadlineMs`—`dead-code` and `context`—first) with workspace instruction files (`CLAUDE.md`, `GEMINI.md`) omitted, allowed tools set to `PrepareReady.permissions[probe]`, and prompt set to `PrepareReady.prompt` (with `<skill>`, `PrepareReady.session`, and `<probe>` filled in).
 - **Automatic host submission**: The final probe's `review-tool-probe.mjs report` call posts the merged review to the host automatically in code; read `submittedOutcome` and `location` via `<skill>/dist/bin/review-tool.mjs status <workdir>`.
 
 ## 1. Prepare (`controller.schema.json#/$defs/PrepareCommand`)
@@ -34,22 +34,17 @@ Run `<skill>/dist/bin/review-tool.mjs` directly (`-h` or `--help` prints usage).
    - **`PrepareFailure` with `Refused` | `TooLarge` | `AlreadyReviewed` (`controller.schema.json#/$defs/Refused`, `#/$defs/TooLarge`, `#/$defs/AlreadyReviewed`)**: Report `error.kind`, `headCommit`, `location` (when present), and the refusal summary (`reason` or changed file count) to the user and stop.
    - **`PrepareReady` (`controller.schema.json#/$defs/PrepareReady`, `{ "success": true, "session", "pending", "prompt", "permissions" }`)**: Proceed to Step 2.
 
-## 2. Spawn Subagents, Ack & Verify Status
+## 2. Spawn Subagents & Await Status
 
 1. **Spawn all `PrepareReady.pending` probes concurrently**:
-   - If your harness defines custom subagents via `define_subagent`, define `pr-review-probe` once (`SystemPrompt: "Follow your prompt and the probe CLI instructions."`, `EnableWriteTools: true`, `EnableSubagentTools: false`, `EnableMCPTools: false`). If your harness accepts per-invocation tool allowlists and instruction-file exclusions, set allowed tools to `permissions[probe]` (`controller.schema.json#/$defs/ProbePermissions`) and omit workspace instruction files (`CLAUDE.md`, `GEMINI.md`).
-   - Invoke one subagent per `probe` in `pending` concurrently—using a fast mid-tier coding model (`sonnet` or `flash`) for standard probes (`rules`, `reuse`, `dead-code`) and the most capable model (`opus` or `pro`) for the `-context` probe—passing `PrepareReady.prompt` (`controller.schema.json#/$defs/ProbePrompt`) with `<skill>`, `PrepareReady.session`, and `<probe>` filled in.
-2. **Ack check (`45s` timer -> `controller.schema.json#/$defs/StatusCommand`)**: Schedule a one-shot timer (`DurationSeconds: 45`, `TimerCondition: "never"`). When the `45s` timer fires, run `<skill>/dist/bin/review-tool.mjs status <workdir>` (`ReviewStatus`, `controller.schema.json#/$defs/ReviewStatus`). If `ReviewStatus.submittedOutcome` is present, report `submittedOutcome` and `location` to the user and stop. Otherwise, terminate and re-spawn every probe in `ReviewStatus.unacknowledged` using `PrepareReady.prompt` and `permissions[probe]`.
-3. **Review deadline from `ack` (`180s` reminder + `150s` kill)**:
-   - As each probe subagent finishes, terminate any duplicate subagent for that probe (`manage_subagents` `kill`). Once all probes finish, cancel the active timer (`manage_task` `kill`) and proceed to step 4.
-   - After the `45s` status check, schedule a one-shot reminder timer (`DurationSeconds: 180`, `TimerCondition: "never"`).
-   - When the `180s` timer fires, run `<skill>/dist/bin/review-tool.mjs status <workdir>`, send every probe in `ReviewStatus.pending` the exact message `"3 minutes elapsed since ack (2 minutes remaining before the 5-minute deadline). Wrap up and submit your report immediately."` via `send_message`, and schedule the kill timer (`DurationSeconds: 150`, `TimerCondition: "never"`).
-   - When the `150s` kill timer fires, terminate any remaining subagents (`manage_subagents` `kill`) and proceed to step 4.
-4. **Verify final status (`controller.schema.json#/$defs/StatusCommand`)**:
+   - If your harness defines custom subagents via `define_subagent`, define `pr-review-probe` once (`SystemPrompt: "Follow your prompt and the probe CLI instructions."`, `EnableWriteTools: true`, `EnableSubagentTools: false`, `EnableMCPTools: false`). If your harness accepts per-invocation tool allowlists and instruction-file exclusions, set allowed tools to `permissions[probe]` (`controller.schema.json#/$defs/ProbePermissionsMap`) and omit workspace instruction files (`CLAUDE.md`, `GEMINI.md`).
+   - Invoke one subagent per `probe` in `PrepareReady.pending` order concurrently—starting with the longest-deadline probes (`dead-code` and `context` at 6 minutes, followed by `reuse` and `rules` at 5 minutes), using a fast mid-tier coding model (`sonnet` or `flash`) for standard probes (`rules`, `reuse`, `dead-code`) and the most capable model (`opus` or `pro`) for the `-context` probe—passing `PrepareReady.prompt` (`controller.schema.json#/$defs/PrepareReady/properties/prompt`) with `<skill>`, `PrepareReady.session`, and `<probe>` filled in.
+2. **Await status in code (`controller.schema.json#/$defs/StatusCommand`)**:
 
    ```sh
    <skill>/dist/bin/review-tool.mjs status <workdir>
    ```
 
-   - **When `ReviewStatus.submittedOutcome` is present**: Report `ReviewStatus.submittedOutcome` (`controller.schema.json#/$defs/Outcome`) and `ReviewStatus.location` to the user and stop.
-   - **When `ReviewStatus.pending` is non-empty**: Re-spawn subagents only for `ReviewStatus.pending` following steps 1–4 (up to **2 retries**). If `ReviewStatus.pending` remains non-empty after 2 retries, report `ReviewStatus.pending` to the user and stop.
+   `status` tracks the acknowledgment timeout (`StatusCommand.ackTimeoutMs`) and each probe's reporting deadline (`Probe.deadlineMs`) in code, returning `ReviewStatus` (`controller.schema.json#/$defs/ReviewStatus`) as soon as all probes complete or any probe times out:
+   - **When `ReviewStatus.submittedOutcome` is present**: Terminate any remaining subagents, report `ReviewStatus.submittedOutcome` (`controller.schema.json#/$defs/Outcome`) and `ReviewStatus.location` to the user, and stop.
+   - **When `ReviewStatus.unacknowledged` is non-empty**: Terminate the subagents for `ReviewStatus.unacknowledged`, re-spawn only `ReviewStatus.unacknowledged` using `PrepareReady.prompt` and `permissions[probe]`, and re-run `<skill>/dist/bin/review-tool.mjs status <workdir>` (up to **2 retries**). If `ReviewStatus.pending` remains non-empty after 2 retries, terminate remaining subagents, report `ReviewStatus.pending` to the user, and stop.

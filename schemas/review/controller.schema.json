@@ -207,7 +207,9 @@
       "type": "object",
       "required": [
         "command",
-        "workdir"
+        "workdir",
+        "ackTimeoutMs",
+        "pollIntervalMs"
       ],
       "properties": {
         "command": {
@@ -215,6 +217,14 @@
         },
         "workdir": {
           "$ref": "agent-instructions.schema.json#/$defs/Checkout"
+        },
+        "ackTimeoutMs": {
+          "description": "Maximum milliseconds to wait for pending probes to acknowledge before returning unacknowledged probes (45 seconds)",
+          "const": 45000
+        },
+        "pollIntervalMs": {
+          "description": "Polling interval in milliseconds while status tracks probe acknowledgments and reporting deadlines",
+          "const": 250
         }
       },
       "additionalProperties": false

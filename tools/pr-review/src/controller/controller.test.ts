@@ -19,6 +19,7 @@ import { SubAgentController } from "./sub-agent-controller.ts";
 
 const EXPECTED_PROSE_LENGTH = 5;
 const FIVE_MINUTES_MS = 300_000;
+const SIX_MINUTES_MS = 360_000;
 
 const probeFor = (
 	kind: "rules" | "dead-code" | "reuse",
@@ -101,6 +102,10 @@ it("SubAgentController sets probe-kind permissions and checkout paths", () => {
 		"WebFetch",
 		"Bash(review-tool-probe.mjs*)",
 	]);
+	assert.equal(rulesAck.deadlineMs, FIVE_MINUTES_MS);
+	assert.equal(reuseAck.deadlineMs, FIVE_MINUTES_MS);
+	assert.equal(contextAck.deadlineMs, SIX_MINUTES_MS);
+	assert.equal(deadCodeAck.deadlineMs, SIX_MINUTES_MS);
 	assert.equal(
 		[contextAck, deadCodeAck, reuseAck].every(
 			(ack) => ack.checkout === "/tmp/review/workspace/snapshot",

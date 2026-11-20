@@ -83,7 +83,13 @@ type DefineLookupResult =
 	| { readonly success: true; readonly data: DefineSuccess }
 	| { readonly success: false; readonly error: string };
 
+interface ClockPort {
+	now: () => number;
+	sleep: (ms: number) => Promise<void>;
+}
+
 export type {
+	ClockPort,
 	CommitZipArchive,
 	DefineLookupResult,
 	LedgerStore,

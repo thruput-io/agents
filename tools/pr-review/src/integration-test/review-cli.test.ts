@@ -107,12 +107,18 @@ it("Review CLI prepares identical surfaces across Git, GitHub, and AzureDevOps",
 			invoked: baseline.invoked,
 			hasLeak: false,
 			firstPromptMatches: true,
-			firstPermission: ["Bash(review-tool-probe.mjs*)"],
+			firstPermission: [
+				"Read",
+				"Grep",
+				"Glob",
+				"Find",
+				"Bash(review-tool-probe.mjs*)",
+			],
 			author: baselineInspected.change.author,
 			description: baselineInspected.change.description,
 			changedFiles: 2,
 			pagePaths: ["helper.ts", "service.ts"],
-			firstHasCheckout: false,
+			firstHasCheckout: true,
 			checkoutMatch: true,
 			helperSnapContent: "export const z = 3;\n\n",
 			auditExists: true,
@@ -121,7 +127,7 @@ it("Review CLI prepares identical surfaces across Git, GitHub, and AzureDevOps",
 	);
 });
 
-it("Review CLI reports pending probes on partial completion and submits once remaining probes report", async () => {
+it("Review CLI status waits in code while remaining probes acknowledge and report", async () => {
 	const workdir = repo.workdirFor("scenario-retry");
 	const prepared = await invokeMainCli(
 		["prepare", repo.gitTarget, workdir.toString()],
@@ -135,26 +141,15 @@ it("Review CLI reports pending probes on partial completion and submits once rem
 		rulebookProbes.map((name) => reportForProbe(ready.session, name)),
 	);
 
-	const firstStatus = await invokeMainCli(
-		["status", workdir.toString()],
-		ReviewStatusSchema,
-	);
-	assert.equal(firstStatus.exitCode, 0);
-	assert.deepEqual(firstStatus.payload.pending, contextProbes);
-	assert.equal(firstStatus.payload.submittedOutcome, null);
-	assert.equal(firstStatus.payload.location, null);
-
-	await Promise.all(
-		contextProbes.map((name) => reportForProbe(ready.session, name)),
-	);
-
-	const secondStatus = await invokeMainCli(
-		["status", workdir.toString()],
-		ReviewStatusSchema,
-	);
-	assert.equal(secondStatus.exitCode, 0);
-	assert.deepEqual(secondStatus.payload.pending, []);
-	assert.deepEqual(secondStatus.payload.completed, [...ready.pending]);
-	assert.notEqual(secondStatus.payload.submittedOutcome, null);
-	assert.notEqual(secondStatus.payload.location, null);
+	const [finalStatus] = await Promise.all([
+		invokeMainCli(["status", workdir.toString()], ReviewStatusSchema),
+		Promise.all(
+			contextProbes.map((name) => reportForProbe(ready.session, name)),
+		),
+	]);
+	assert.equal(finalStatus.exitCode, 0);
+	assert.deepEqual(finalStatus.payload.pending, []);
+	assert.deepEqual(finalStatus.payload.completed, [...ready.pending]);
+	assert.notEqual(finalStatus.payload.submittedOutcome, null);
+	assert.notEqual(finalStatus.payload.location, null);
 });

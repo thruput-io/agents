@@ -18,6 +18,6 @@
 
 4. **Layers**:
    - **Domain**: Pure domain types, ruleset pagination, surface diffing, ledger validation, and outcome calculation with zero I/O or transport imports.
-   - **Controller**: Session preparation, probe acknowledgment, paging, and automatic review submission on the final probe report through domain ports.
+   - **Controller**: Session preparation, probe acknowledgment, paging, code-driven acknowledgment and deadline tracking in status, and automatic review submission on the final probe report through domain ports.
    - **Client**: Main-agent and probe CLI entry points that parse arguments against command schemas and emit Draft 2020-12 JSON Schemas on help.
    - **Adapters**: GitHub, Azure DevOps, local git, and filesystem adapters that own all network, process, and disk I/O and clean only managed subdirectories inside the working directory.

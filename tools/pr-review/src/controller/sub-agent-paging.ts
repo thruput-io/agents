@@ -1,6 +1,18 @@
-import type { PageResponse, SurfaceFile } from "../domain/contracts.g.ts";
-import { nonnull } from "../domain/nullish.ts";
-import { paginateSurface } from "../domain/pagination.ts";
+import type {
+	Rulebook as ExternalRulebook,
+	PageResponse,
+	RulesetPageResponse,
+	RulesetUrl,
+	RulesPageResponse,
+	SurfaceFile,
+} from "../domain/contracts.g.ts";
+import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
+import {
+	paginateRulebook,
+	paginateSurface,
+	paginateText,
+} from "../domain/pagination.ts";
+import type { Rulebook } from "../domain/rulebook.ts";
 import type { ProbeStorage } from "./probe-storage.ts";
 
 const readCursor = (storage: ProbeStorage): number => {
@@ -49,4 +61,52 @@ const prevSurfacePage = (
 	return nonnull(pages[target]);
 };
 
-export { nextSurfacePage, prevSurfacePage };
+const paginateContextRuleset = (
+	rulesets: readonly ExternalRulebook[],
+	url: RulesetUrl,
+	page: number,
+): RulesetPageResponse => {
+	const book = rulesets.find((entry) => entry.url === url);
+	if (isNullOrEmpty(book)) {
+		return {
+			success: false,
+			error: `Unknown ruleset URL: ${url}. Choose one of the URLs returned in ack under #/rulesets.`,
+		};
+	}
+	const chunks = paginateText(book.text);
+	if (page < 1 || page > chunks.length) {
+		return {
+			success: false,
+			error: `Ruleset page ${page} is out of range for ${url} (valid pages: 1..${chunks.length}).`,
+		};
+	}
+	return {
+		success: true,
+		url: book.url,
+		title: book.title,
+		page,
+		totalPages: chunks.length,
+		text: nonnull(chunks[page - 1]),
+	};
+};
+
+const paginateProbeRulebook = (
+	rulebook: Rulebook,
+	page: number,
+): RulesPageResponse => {
+	const chunks = paginateRulebook(rulebook.toRuleset());
+	if (page < 1 || page > chunks.length) {
+		return {
+			success: false,
+			error: `Rules page ${page} is out of range (valid pages: 1..${chunks.length}).`,
+		};
+	}
+	return nonnull(chunks[page - 1]);
+};
+
+export {
+	nextSurfacePage,
+	paginateContextRuleset,
+	paginateProbeRulebook,
+	prevSurfacePage,
+};

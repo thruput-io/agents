@@ -20,7 +20,9 @@ import { createMemoryWorkspaceFactory } from "./memory-workspace.test.ts";
 import { SubAgentController } from "./sub-agent-controller.ts";
 
 const INITIAL_CLOCK_MS = 1000;
-const AFTER_DEADLINE_OFFSET_MS = 300_001;
+const ACK_TIMEOUT_MS = 45_000;
+const DEADLINE_MS = 300_000;
+const RESPAWN_ACK_OFFSET_MS = 5000;
 
 const setupRehydratedWorkspace = (
 	factory: WorkspaceFactoryPort,
@@ -80,54 +82,74 @@ it("SubAgentController.forSession rehydrates a probe, rejects tampered audit, an
 	assert.deepEqual(rehydratedSub.codeUnderReview().surface(), sampleSurface);
 });
 
-it("SubAgentController enforces ack and 5-minute deadline across rehydrated sessions", () => {
+const createClockHarness = (path: string) => {
 	const factory = createMemoryWorkspaceFactory();
-	const workdir = setupRehydratedWorkspace(
-		factory,
-		"/tmp/controller-deadline/workspace",
-	);
+	const workdir = setupRehydratedWorkspace(factory, path);
 	let currentClock = INITIAL_CLOCK_MS;
+	const clock = {
+		now: () => currentClock,
+		advance: (ms: number) => {
+			currentClock += ms;
+		},
+		sleep: (ms: number) => {
+			currentClock += ms;
+			return Promise.resolve();
+		},
+	};
+	const adapterPort = createStubAdapterPort(defaultStubAdapter);
+	const mainController = MainAgentController.createWithClock(
+		adapterPort,
+		createStubLoadProbes(),
+		clock,
+	);
 	const rehydratedSub = SubAgentController.forWorkdirWithClock(
 		workdir,
 		"01-purpose",
-		() => currentClock,
+		clock.now,
 	);
-	const beforeAck = rehydratedSub.report([
-		{
-			rule: "Stated purpose",
-			examined: ["a.ts"],
-			verdict: "clean",
-			evidence: "stated",
-		},
-	]);
-	assert.equal(beforeAck.success, false);
-	const adapterPort = createStubAdapterPort(defaultStubAdapter);
-	const loadProbes = createStubLoadProbes();
-	const beforeAckMain = MainAgentController.create(
-		adapterPort,
-		loadProbes,
-	).ledger(workdir);
-	assert.deepEqual(beforeAckMain.acknowledged(), []);
-	assert.deepEqual(beforeAckMain.unacknowledged(), ["01-purpose"]);
+	return { workdir, clock, adapterPort, mainController, rehydratedSub };
+};
 
-	const rehydratedAck = rehydratedSub.ack();
-	assert.equal(rehydratedAck.success, true);
-	const afterAckMain = MainAgentController.create(
-		adapterPort,
-		loadProbes,
-	).ledger(workdir);
-	assert.deepEqual(afterAckMain.acknowledged(), ["01-purpose"]);
-	assert.deepEqual(afterAckMain.unacknowledged(), []);
+it("MainAgentController.status tracks ackTimeoutMs and Probe.deadlineMs thresholds in code", async () => {
+	const { workdir, clock, adapterPort, mainController, rehydratedSub } =
+		createClockHarness("/tmp/controller-deadline/workspace");
+	assert.equal(
+		rehydratedSub.report([
+			{
+				rule: "Stated purpose",
+				examined: ["a.ts"],
+				verdict: "clean",
+				evidence: "stated",
+			},
+		]).success,
+		false,
+	);
+	const unackedStatus = await mainController.status(workdir);
+	assert.equal(clock.now(), INITIAL_CLOCK_MS + ACK_TIMEOUT_MS);
+	assert.deepEqual(unackedStatus.unacknowledged, ["01-purpose"]);
 
-	currentClock = INITIAL_CLOCK_MS + AFTER_DEADLINE_OFFSET_MS;
-	const lateReportResult = rehydratedSub.report([
-		{
-			rule: "Stated purpose",
-			examined: ["a.ts"],
-			verdict: "clean",
-			evidence: "stated",
-		},
-	]);
-	assert.equal(lateReportResult.success, true);
-	assert.equal(lateReportResult.data.kind, "submitted");
+	const ackedAtMs = clock.now();
+	assert.equal(rehydratedSub.ack().response.deadlineMs, DEADLINE_MS);
+	const expiredStatus = await mainController.status(workdir);
+	assert.equal(clock.now(), ackedAtMs + DEADLINE_MS);
+	assert.deepEqual(expiredStatus.acknowledged, []);
+	assert.deepEqual(expiredStatus.unacknowledged, ["01-purpose"]);
+
+	clock.advance(RESPAWN_ACK_OFFSET_MS);
+	rehydratedSub.ack();
+	await rehydratedSub.submitReport(
+		[
+			{
+				rule: "Stated purpose",
+				examined: ["a.ts"],
+				verdict: "clean",
+				evidence: "stated",
+			},
+		],
+		adapterPort,
+	);
+	const completedStatus = await mainController.status(workdir);
+	assert.deepEqual(completedStatus.pending, []);
+	assert.equal(completedStatus.submittedOutcome?.verdict, "approve");
+	assert.equal(completedStatus.location, "stub://review");
 });

@@ -110,6 +110,7 @@
             "instructions",
             "task",
             "permissions",
+            "deadlineMs",
             "kind",
             "change",
             "surface",
@@ -141,6 +142,10 @@
                 "Bash(review-tool-probe.mjs*)"
               ]
             },
+            "deadlineMs": {
+              "description": "Reporting deadline threshold in milliseconds from acknowledgment (6 minutes for context and dead-code probes)",
+              "const": 360000
+            },
             "kind": {
               "const": "context"
             },
@@ -171,6 +176,7 @@
             "instructions",
             "task",
             "permissions",
+            "deadlineMs",
             "kind",
             "change",
             "surface",
@@ -187,6 +193,9 @@
             },
             "permissions": {
               "$ref": "#/$defs/Probe/oneOf/0/properties/permissions"
+            },
+            "deadlineMs": {
+              "$ref": "#/$defs/Probe/oneOf/0/properties/deadlineMs"
             },
             "kind": {
               "const": "dead-code"
@@ -213,6 +222,7 @@
             "instructions",
             "task",
             "permissions",
+            "deadlineMs",
             "kind",
             "change",
             "surface",
@@ -237,6 +247,10 @@
                 "WebFetch",
                 "Bash(review-tool-probe.mjs*)"
               ]
+            },
+            "deadlineMs": {
+              "description": "Reporting deadline threshold in milliseconds from acknowledgment (5 minutes for reuse and rules probes)",
+              "const": 300000
             },
             "kind": {
               "const": "reuse"
@@ -263,6 +277,7 @@
             "instructions",
             "task",
             "permissions",
+            "deadlineMs",
             "kind",
             "change",
             "surface",
@@ -281,6 +296,9 @@
               "const": [
                 "Bash(review-tool-probe.mjs*)"
               ]
+            },
+            "deadlineMs": {
+              "$ref": "#/$defs/Probe/oneOf/2/properties/deadlineMs"
             },
             "kind": {
               "const": "rules"
@@ -313,6 +331,7 @@
       "permissions": [
         "Bash(review-tool-probe.mjs*)"
       ],
+      "deadlineMs": 300000,
       "kind": "rules",
       "change": {
         "host": {

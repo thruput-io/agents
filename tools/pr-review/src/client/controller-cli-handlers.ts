@@ -3,6 +3,7 @@ import { AccessToken } from "../domain/access-token.ts";
 import {
 	PrepareReadySchema,
 	type PrepareResponse,
+	type ReviewStatus,
 } from "../domain/contracts.g.ts";
 import type { AdapterResolution } from "../domain/host-adapter.ts";
 import type { MainAgentLedger } from "../domain/main-agent-ledger.ts";
@@ -39,6 +40,7 @@ interface MainAgentCliDriver {
 		  }
 	>;
 	ledger: (workdir: WorkspacePort) => MainAgentLedger;
+	status: (workdir: WorkspacePort) => Promise<ReviewStatus>;
 }
 
 const writePrepared = (
