@@ -154,7 +154,7 @@ export class SubAgentController {
 			return { success: false, error: UNACKNOWLEDGED_ERROR };
 		}
 		return nextSurfacePage(
-			this.#behavior.probe.surface.files,
+			this.codeUnderReview().surface(),
 			this.#change,
 			this.#storage,
 		);
@@ -165,7 +165,7 @@ export class SubAgentController {
 			return { success: false, error: UNACKNOWLEDGED_ERROR };
 		}
 		return prevSurfacePage(
-			this.#behavior.probe.surface.files,
+			this.codeUnderReview().surface(),
 			this.#change,
 			this.#storage,
 		);
