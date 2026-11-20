@@ -1,17 +1,13 @@
 import { z } from "zod";
 import { isNullOrEmpty } from "../domain/nullish.ts";
 
-export type RawCommandResult =
-	| { readonly ok: true; readonly raw: unknown }
-	| { readonly ok: false; readonly error: string };
-
 export type SchemaCliDispatch<Command> =
 	| { readonly kind: "done"; readonly exitCode: number }
 	| { readonly kind: "command"; readonly command: Command };
 
 export interface SchemaCliConfig<Command> {
 	readonly schema: z.ZodType<Command>;
-	readonly toRaw: (args: readonly string[]) => RawCommandResult;
+	readonly toRaw: (args: readonly string[], ctx: z.RefinementCtx) => unknown;
 	readonly onInvalidCommand: (
 		command: string | undefined,
 		details: string,
@@ -71,11 +67,12 @@ export function parseSchemaCli<Command>(
 	if (isNullOrEmpty(command) && !isNullOrEmpty(config.missingCommandUsage)) {
 		return { kind: "done", exitCode: failCli(config.missingCommandUsage) };
 	}
-	const built = config.toRaw(args);
-	if (!built.ok) {
-		return { kind: "done", exitCode: failWithJsonError(built.error) };
-	}
-	const parsed = config.schema.safeParse(built.raw);
+	const argsPipeline = z
+		.array(z.string())
+		.readonly()
+		.transform(config.toRaw)
+		.pipe(config.schema);
+	const parsed = argsPipeline.safeParse(args);
 	if (!parsed.success) {
 		const details = z.prettifyError(parsed.error);
 		return {

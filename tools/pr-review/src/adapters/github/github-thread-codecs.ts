@@ -7,6 +7,7 @@ import {
 	SummarySchema,
 	type Thread,
 	ThreadIdSchema,
+	ThreadSchema,
 	type ThreadState,
 } from "../../domain/contracts.g.ts";
 import { isNullOrEmpty, nonnull } from "../../domain/nullish.ts";
@@ -16,6 +17,10 @@ const SIDE_OF = new Map<string, "head" | "base">([
 	["RIGHT", "head"],
 	["LEFT", "base"],
 ]);
+const DIFF_SIDE_OF = {
+	head: "RIGHT",
+	base: "LEFT",
+} as const;
 
 const REVIEW_THREADS_QUERY = `
 query ReviewThreads($owner: String!, $name: String!, $number: Int!, $after: String) {
@@ -136,17 +141,43 @@ const threadState = (
 	return "resolved";
 };
 
+const resolvedByOf = (
+	state: ThreadState,
+	author: Developer,
+): { readonly login: Developer } | null => {
+	if (state === "resolved-by-author") {
+		return { login: author };
+	}
+	return null;
+};
+
+const gitHubThreadCodec = (author: Developer) =>
+	z.codec(ThreadNode, ThreadSchema, {
+		decode: (node) => {
+			const end = numberOr(node.line, 1);
+			return {
+				id: node.id,
+				path: node.path,
+				side: sideOf(node.diffSide),
+				lines: { start: numberOr(node.startLine, end), end },
+				state: threadState(node, author),
+				body: firstCommentBodyOf(node),
+			};
+		},
+		encode: (domainThread) => ({
+			id: domainThread.id,
+			path: domainThread.path,
+			line: domainThread.lines.end,
+			startLine: domainThread.lines.start,
+			diffSide: DIFF_SIDE_OF[domainThread.side],
+			isResolved: domainThread.state !== "open",
+			resolvedBy: resolvedByOf(domainThread.state, author),
+			comments: { nodes: [{ body: domainThread.body }] },
+		}),
+	});
+
 function thread(node: GitHubThreadNode, author: Developer): Thread {
-	const end = numberOr(node.line, 1);
-	const state = threadState(node, author);
-	return {
-		id: node.id,
-		path: node.path,
-		side: sideOf(node.diffSide),
-		lines: { start: numberOr(node.startLine, end), end },
-		state,
-		body: firstCommentBodyOf(node),
-	};
+	return gitHubThreadCodec(author).decode(node);
 }
 
 export type { GitHubThreadNode };

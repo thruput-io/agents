@@ -1,6 +1,6 @@
 import { isMap, parseDocument } from "yaml";
+import { z } from "zod";
 import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
-import type { RawCommandResult } from "./cli.ts";
 
 const readJsonInput = (
 	raw: string,
@@ -35,65 +35,63 @@ const toReportCommand = (
 	session: string | undefined,
 	probe: string | undefined,
 	thirdArg: string | undefined,
-): RawCommandResult => {
+	ctx: z.RefinementCtx,
+): unknown => {
 	if (isNullOrEmpty(thirdArg)) {
-		return { ok: true, raw: { command: "report", session, probe } };
+		return { command: "report", session, probe };
 	}
 	const parsedJson = readJsonInput(thirdArg);
 	if (!parsedJson.ok) {
-		return {
-			ok: false,
-			error: `Malformed JSON for report: ${parsedJson.error}`,
-		};
+		ctx.addIssue({
+			code: "custom",
+			message: `Malformed JSON for report: ${parsedJson.error}`,
+		});
+		return z.NEVER;
 	}
 	return {
-		ok: true,
-		raw: { command: "report", session, probe, report: parsedJson.value },
+		command: "report",
+		session,
+		probe,
+		report: parsedJson.value,
 	};
 };
 
-const toRawSubAgentCommand = (args: readonly string[]): RawCommandResult => {
+const toRawSubAgentCommand = (
+	args: readonly string[],
+	ctx: z.RefinementCtx,
+): unknown => {
 	const [command, firstArg, secondArg, thirdArg, fourthArg] = args;
 	if (command === "define") {
 		return {
-			ok: true,
-			raw: {
-				command,
-				term: firstArg,
-				depth: parseIntegerArg(secondArg, 1),
-			},
+			command,
+			term: firstArg,
+			depth: parseIntegerArg(secondArg, 1),
 		};
 	}
 	if (command === "ack" || command === "next" || command === "prev") {
-		return { ok: true, raw: { command, session: firstArg, probe: secondArg } };
+		return { command, session: firstArg, probe: secondArg };
 	}
 	if (command === "rules") {
 		return {
-			ok: true,
-			raw: {
-				command,
-				session: firstArg,
-				probe: secondArg,
-				page: parseIntegerArg(thirdArg, 1),
-			},
+			command,
+			session: firstArg,
+			probe: secondArg,
+			page: parseIntegerArg(thirdArg, 1),
 		};
 	}
 	if (command === "ruleset") {
 		return {
-			ok: true,
-			raw: {
-				command,
-				session: firstArg,
-				probe: secondArg,
-				url: thirdArg,
-				page: parseIntegerArg(fourthArg, 1),
-			},
+			command,
+			session: firstArg,
+			probe: secondArg,
+			url: thirdArg,
+			page: parseIntegerArg(fourthArg, 1),
 		};
 	}
 	if (command === "report") {
-		return toReportCommand(firstArg, secondArg, thirdArg);
+		return toReportCommand(firstArg, secondArg, thirdArg, ctx);
 	}
-	return { ok: true, raw: { command } };
+	return { command };
 };
 
 export { toRawSubAgentCommand };

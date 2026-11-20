@@ -8,11 +8,14 @@ import {
 	PullsListFilesResponse,
 	PullsListReviewsResponse,
 } from "../../../clients/github.zod.g.ts";
-import type {
-	Change,
-	GitHub,
-	HeadCommit,
-	Summary,
+import {
+	type Change,
+	ChangeSchema,
+	type GitHub,
+	type HeadCommit,
+	HeadCommitSchema,
+	PathSchema,
+	type Summary,
 } from "../../domain/contracts.g.ts";
 import { isNullOrEmpty } from "../../domain/nullish.ts";
 import { ours } from "../../domain/rulebook.ts";
@@ -21,8 +24,18 @@ const PASSED = new Set(["success", "skipped", "neutral"]);
 const PRIOR = / probes at (?<commit>[0-9a-f]{40})\b/u;
 const TOTAL_COUNT_KEY = "total_count";
 const CHECK_RUNS_KEY = "check_runs";
+const BLOB_URL_KEY = "blob_url";
+const RAW_URL_KEY = "raw_url";
+const CONTENTS_URL_KEY = "contents_url";
 const GitHubCheckRunTransportSchema =
 	ChecksListForRefResponse.shape.check_runs.element;
+
+const FileLineCountSchema = z.object({
+	path: PathSchema,
+	lines: z.number().int().min(0),
+	added: z.number().int().min(0),
+	deleted: z.number().int().min(0),
+});
 
 const stringOrEmpty = (value: string | null | undefined): string => {
 	if (isNullOrEmpty(value)) {
@@ -51,10 +64,27 @@ export const GitHubReviewsCodec = z.codec(
 
 export const GitHubPullFilesCodec = z.codec(
 	PullsListFilesResponse,
-	PullsListFilesResponse,
+	z.array(FileLineCountSchema),
 	{
-		decode: (wire) => wire,
-		encode: (files) => files,
+		decode: (wire) =>
+			wire.map((file) => ({
+				path: file.filename,
+				lines: file.additions,
+				added: file.additions,
+				deleted: file.deletions,
+			})),
+		encode: (files) =>
+			files.map((file) => ({
+				sha: "",
+				filename: file.path,
+				status: "modified" as const,
+				additions: file.added,
+				deletions: file.deleted,
+				changes: file.added + file.deleted,
+				[BLOB_URL_KEY]: "https://api.github.com",
+				[RAW_URL_KEY]: "https://api.github.com",
+				[CONTENTS_URL_KEY]: "https://api.github.com",
+			})),
 	},
 );
 
@@ -81,20 +111,21 @@ export const GitHubCheckRunsCodec = z.codec(
 
 export const headCommitOf = (pullRequest: {
 	readonly head: { readonly sha: string };
-}): HeadCommit => pullRequest.head.sha;
+}): HeadCommit => HeadCommitSchema.parse(pullRequest.head.sha);
 
 export const changeOf = (
 	host: GitHub,
 	pullRequest: Pick<PullsGetResponseType, "user" | "body">,
-): Change => ({
-	host,
-	author: pullRequest.user.login,
-	description: stringOrEmpty(pullRequest.body),
-});
+): Change =>
+	ChangeSchema.parse({
+		host,
+		author: pullRequest.user.login,
+		description: stringOrEmpty(pullRequest.body),
+	});
 
 export const baseCommitOf = (pullRequest: {
 	readonly base: { readonly sha: string };
-}): HeadCommit => pullRequest.base.sha;
+}): HeadCommit => HeadCommitSchema.parse(pullRequest.base.sha);
 
 export const failedChecks = (
 	checks: readonly Pick<CheckRun, "name" | "conclusion">[],

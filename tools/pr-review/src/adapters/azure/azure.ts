@@ -7,7 +7,9 @@ import { EvaluationsListResponse } from "../../../clients/azure-policy.zod.g.ts"
 import {
 	type AzureDevOps,
 	type Change,
+	ChangeSchema,
 	type HeadCommit,
+	HeadCommitSchema,
 	type Summary,
 	SummarySchema,
 } from "../../domain/contracts.g.ts";
@@ -79,26 +81,31 @@ export const AzureCreatedThreadIdCodec = z.codec(
 
 export const headCommitOf = (
 	pullRequest: Pick<AzurePullRequest, "lastMergeSourceCommit">,
-): HeadCommit => orEmpty(pullRequest.lastMergeSourceCommit?.commitId);
+): HeadCommit =>
+	HeadCommitSchema.parse(orEmpty(pullRequest.lastMergeSourceCommit?.commitId));
 
 export const changeOf = (
 	host: AzureDevOps,
 	pullRequest: Pick<AzurePullRequest, "createdBy" | "description">,
-): Change => ({
-	host,
-	author: orEmpty(pullRequest.createdBy?.uniqueName),
-	description: orEmpty(pullRequest.description),
-});
+): Change =>
+	ChangeSchema.parse({
+		host,
+		author: orEmpty(pullRequest.createdBy?.uniqueName),
+		description: orEmpty(pullRequest.description),
+	});
 
 export const artifactIdOf = (
 	host: AzureDevOps,
 	pullRequest: Pick<AzurePullRequest, "repository">,
 ): Summary =>
-	`vstfs:///CodeReview/CodeReviewId/${projectIdOf(host, pullRequest)}/${host.id}`;
+	SummarySchema.parse(
+		`vstfs:///CodeReview/CodeReviewId/${projectIdOf(host, pullRequest)}/${host.id}`,
+	);
 
 export const targetCommitOf = (
 	pullRequest: Pick<AzurePullRequest, "lastMergeTargetCommit">,
-): HeadCommit => orEmpty(pullRequest.lastMergeTargetCommit?.commitId);
+): HeadCommit =>
+	HeadCommitSchema.parse(orEmpty(pullRequest.lastMergeTargetCommit?.commitId));
 
 export const blockingBuildPolicies = (
 	policies: readonly Pick<AzureEvaluationRecord, "status" | "configuration">[],

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import {
 	type Change,
 	type Checkout,
@@ -114,16 +115,31 @@ const fromAuditDocument = (
 	};
 };
 
+const probeDocumentCodecFor = (
+	surface: Surface,
+	rulesets: readonly ExternalRulebook[],
+) =>
+	z.codec(
+		ProbeSchema,
+		z.custom<ProbeDocument>((val): val is ProbeDocument => val !== null),
+		{
+			decode: (document) => fromAuditDocument(document, surface, rulesets),
+			encode: (probe) => toAgentInstructions(probe),
+		},
+	);
+
 const loadPersistedProbes = (
 	audits: readonly PersistedAudit[],
 	surface: Surface,
 	rulesets: readonly ExternalRulebook[],
-): readonly NamedProbe[] =>
-	audits.map(({ name, document }) => ({
+): readonly NamedProbe[] => {
+	const codec = probeDocumentCodecFor(surface, rulesets);
+	return audits.map(({ name, document }) => ({
 		name,
-		probe: fromAuditDocument(document, surface, rulesets),
+		probe: codec.decode(document),
 		auditDocument: document,
 	}));
+};
 
 export type {
 	BundledProbes,

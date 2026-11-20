@@ -72,14 +72,7 @@ const fetchPullFilesPage = async (
 		return onError(filesRes);
 	}
 	const pageFiles = GitHubPullFilesCodec.decode(filesRes.data);
-	for (const file of pageFiles) {
-		accumulated.push({
-			path: file.filename,
-			lines: file.additions,
-			added: file.additions,
-			deleted: file.deletions,
-		});
-	}
+	accumulated.push(...pageFiles);
 	if (pageFiles.length < PULL_FILES_PER_PAGE || page >= MAX_PULL_FILE_PAGES) {
 		return accumulated;
 	}

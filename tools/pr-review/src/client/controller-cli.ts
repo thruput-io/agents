@@ -8,7 +8,6 @@ import {
 	failCli,
 	optionalStringField,
 	parseSchemaCli,
-	type RawCommandResult,
 	writeJson,
 } from "./cli.ts";
 import {
@@ -16,23 +15,20 @@ import {
 	type MainAgentCliDriver,
 } from "./controller-cli-handlers.ts";
 
-const toRawControllerCommand = (args: readonly string[]): RawCommandResult => {
+const toRawControllerCommand = (args: readonly string[]): unknown => {
 	const [command, firstArg, secondArg, thirdArg] = args;
 	if (command === "prepare") {
 		return {
-			ok: true,
-			raw: {
-				command,
-				url: firstArg,
-				workdir: secondArg,
-				...optionalStringField("token", thirdArg),
-			},
+			command,
+			url: firstArg,
+			workdir: secondArg,
+			...optionalStringField("token", thirdArg),
 		};
 	}
 	if (command === "status") {
-		return { ok: true, raw: { command, workdir: firstArg } };
+		return { command, workdir: firstArg };
 	}
-	return { ok: true, raw: { command } };
+	return { command };
 };
 
 async function runMainAgentCli(
