@@ -1,10 +1,9 @@
 import type { CodeUnderReview } from "./code-under-review.ts";
 import type { Ledger, Outcome } from "./contracts.g.ts";
-import type { ProbePermissions } from "./instructions.ts";
+import type { ProbePermissions, RulebookProbeKind } from "./instructions.ts";
 import type { ContextProbe, RulesProbe } from "./ledger.ts";
 import { isNullOrEmpty, nonnull } from "./nullish.ts";
 import type { LedgerStore } from "./ports.ts";
-import type { RulebookProbeKind } from "./probe-document.ts";
 import type { CitationRule } from "./rulebook.ts";
 
 type CitationRulesProbe = RulesProbe & {

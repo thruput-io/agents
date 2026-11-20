@@ -42,7 +42,7 @@ const customOverride: ParserOverride = (
 	}
 	if (
 		(typeof schemaObject.const === "string" &&
-			schemaObject.const.includes(" ")) ||
+			schemaObject.const.endsWith(".")) ||
 		typeof schemaObject.const === "number"
 	) {
 		const literal = JSON.stringify(schemaObject.const);

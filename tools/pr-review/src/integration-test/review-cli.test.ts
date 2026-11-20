@@ -53,6 +53,8 @@ const runPathsFor = (run: Awaited<ReturnType<typeof runScenario>>) => ({
 
 function summarizePreparedRun(run: Awaited<ReturnType<typeof runScenario>>) {
 	const firstInspected = nonnull(run.inspected[0]);
+	const firstPage = nonnull(run.pages[0]);
+	const firstChange = nonnull(firstPage.change);
 	const firstProbe = nonnull(run.invoked[0]);
 	const { helperSnap, auditFile, sliceFile } = runPathsFor(run);
 	return {
@@ -63,15 +65,15 @@ function summarizePreparedRun(run: Awaited<ReturnType<typeof runScenario>>) {
 			"rulesets" in run.prepared,
 		firstPromptMatches:
 			run.prepared.prompt ===
-			"Run <skill>/dist/bin/review-tool-probe.mjs -h && <skill>/dist/bin/review-tool-probe.mjs ack <session> <probe> and follow its instructions.",
+			"Run <skill>/dist/bin/review-tool-probe.mjs instructions <session> <probe> and follow its instructions.",
 		firstPermission: run.prepared.permissions[firstProbe],
-		author: firstInspected.change.author,
-		description: firstInspected.change.description,
-		changedFiles: firstInspected.surface.changedFiles,
-		pagePaths: run.pages.flatMap((p) => p.files.map((f) => f.path)),
+		author: firstChange.author,
+		description: firstChange.description,
+		changedFiles: firstPage.totalFiles,
+		pagePaths: run.pages.map((p) => p.path),
 		firstHasCheckout: "checkout" in firstInspected,
 		checkoutMatch: run.inspected.every(
-			(entry) => "checkout" in entry === (entry.kind !== "rules"),
+			(entry) => "checkout" in entry === entry.permissions.length > 1,
 		),
 		helperSnapContent: readFileSync(helperSnap, "utf8"),
 		auditExists: existsSync(auditFile),
@@ -89,16 +91,17 @@ it("Review CLI prepares identical surfaces across Git, GitHub, and AzureDevOps",
 		adapters.map(({ label, target }) => runScenario(repo, target, label)),
 	);
 	const baseline = nonnull(runs[0]);
-	const baselineInspected = nonnull(baseline.inspected[0]);
+	const baselineFirstPage = nonnull(baseline.pages[0]);
+	const baselineChange = nonnull(baselineFirstPage.change);
 	assert.equal(baseline.invoked.length > 1, true);
-	assert.equal(baselineInspected.change.author, "author@example.com");
+	assert.equal(baselineChange.author, "author@example.com");
 	assert.equal(
-		baselineInspected.change.description,
+		baselineChange.description,
 		"Refine helper\n\nSecond body.\n\nAdd y export\n\nFirst body.",
 	);
-	assert.equal(baselineInspected.surface.changedFiles, 2);
+	assert.equal(baselineFirstPage.totalFiles, 2);
 	assert.deepEqual(
-		baseline.pages.flatMap((p) => p.files.map((f) => f.path)),
+		baseline.pages.map((p) => p.path),
 		["helper.ts", "service.ts"],
 	);
 	assert.deepEqual(
@@ -114,8 +117,8 @@ it("Review CLI prepares identical surfaces across Git, GitHub, and AzureDevOps",
 				"Find",
 				"Bash(review-tool-probe.mjs*)",
 			],
-			author: baselineInspected.change.author,
-			description: baselineInspected.change.description,
+			author: baselineChange.author,
+			description: baselineChange.description,
 			changedFiles: 2,
 			pagePaths: ["helper.ts", "service.ts"],
 			firstHasCheckout: true,
@@ -150,6 +153,12 @@ it("Review CLI status waits in code while remaining probes acknowledge and repor
 	assert.equal(finalStatus.exitCode, 0);
 	assert.deepEqual(finalStatus.payload.pending, []);
 	assert.deepEqual(finalStatus.payload.completed, [...ready.pending]);
-	assert.notEqual(finalStatus.payload.submittedOutcome, null);
-	assert.notEqual(finalStatus.payload.location, null);
+	assert.equal(
+		finalStatus.payload.submittedOutcome?.verdict,
+		"request-changes",
+	);
+	assert.equal(
+		finalStatus.payload.location?.startsWith("**Verdict: request-changes**"),
+		true,
+	);
 });

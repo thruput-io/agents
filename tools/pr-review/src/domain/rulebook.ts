@@ -4,7 +4,6 @@ import {
 	type Observation,
 	type Principle,
 	PrincipleSchema,
-	type Probe,
 	type Rule,
 	type Ruleset as RulebookData,
 	RuleSchema,
@@ -14,7 +13,7 @@ import {
 } from "./contracts.g.ts";
 import { isNullOrEmpty } from "./nullish.ts";
 
-type RulebookProbeKind = Exclude<Probe["kind"], "context">;
+type RulebookProbeKind = "rules" | "reuse" | "dead-code";
 
 const SITE = "https://thruput.se/agents/";
 const APOSTROPHE = /'/gu;

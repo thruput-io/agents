@@ -1,12 +1,15 @@
+import type { z } from "zod";
 import type { Workdir } from "../adapters/fs/workdir.ts";
 import {
 	AckSuccessSchema,
+	InstructionsSuccessSchema,
 	PageResponseSchema,
 	PrepareReadySchema,
 	PrepareResponseSchema,
 	ReportSuccessSchema,
 	type ReviewStatus,
 	ReviewStatusSchema,
+	RulesResponseSchema,
 	SurfaceBoundarySchema,
 	type SurfacePage,
 } from "../domain/contracts.g.ts";
@@ -19,7 +22,11 @@ import {
 	type PreparedCliSuccess,
 	requireExitZero,
 } from "./scenario-cli.ts";
-import { type ProbeDriver, probeDriverFor } from "./scenario-drivers.ts";
+import {
+	contextProbeDriver,
+	type ProbeDriver,
+	rulebookProbeDriver,
+} from "./scenario-drivers.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
 
 const collectSurfacePages = async (
@@ -42,6 +49,18 @@ const collectSurfacePages = async (
 	return pages;
 };
 
+const driverFromRulesResponse = (
+	rulesRes: z.infer<typeof RulesResponseSchema>,
+): ProbeDriver => {
+	if ("rulesets" in rulesRes) {
+		return contextProbeDriver(rulesRes.rulesets);
+	}
+	if ("ruleset" in rulesRes) {
+		return rulebookProbeDriver(rulesRes.ruleset.rules.map((r) => r.id));
+	}
+	throw new Error("Expected ruleset or rulesets in rules response");
+};
+
 const inspectAndAck = async (
 	session: string,
 	probeName: string,
@@ -51,14 +70,31 @@ const inspectAndAck = async (
 	readonly pages: readonly SurfacePage[];
 }> => {
 	const inspected = requireExitZero(
-		await invokeSubCli(["ack", session, probeName], AckSuccessSchema),
+		await invokeSubCli(
+			["instructions", session, probeName],
+			InstructionsSuccessSchema,
+		),
+	);
+	const acked = requireExitZero(
+		await invokeSubCli(
+			["ack", session, probeName, JSON.stringify({ acknowledged: true })],
+			AckSuccessSchema,
+		),
 	);
 	expectEqual(
-		inspected.acknowledged,
+		acked.acknowledged,
 		true,
 		`Expected probe ${probeName} to be acknowledged`,
 	);
-	const driver = probeDriverFor(inspected);
+	const rulesRes = requireExitZero(
+		await invokeSubCli(["rules", session, probeName], RulesResponseSchema),
+	);
+	expectEqual(
+		rulesRes.success,
+		true,
+		`Expected rules to succeed for ${probeName}`,
+	);
+	const driver = driverFromRulesResponse(rulesRes);
 	const pages = await collectSurfacePages(session, probeName);
 	return { inspected, driver, pages };
 };
@@ -90,7 +126,10 @@ const reportForProbe = async (
 const reportForReReviewProbe = async (
 	session: string,
 	probeName: string,
-): Promise<InspectedProbePayload> => {
+): Promise<{
+	readonly inspected: InspectedProbePayload;
+	readonly pages: readonly SurfacePage[];
+}> => {
 	const { inspected, driver, pages } = await inspectAndAck(session, probeName);
 	requireExitZero(
 		await invokeSubCli(
@@ -103,7 +142,7 @@ const reportForReReviewProbe = async (
 			ReportSuccessSchema,
 		),
 	);
-	return inspected;
+	return { inspected, pages };
 };
 
 const submitStagedProbe = async (

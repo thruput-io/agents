@@ -88,7 +88,7 @@ it("controller CLIs support -h / --help and define routing without adapters", as
 	);
 });
 
-it("Sub-agent CLI handles ack, rules, next, prev, and rejects out-of-range rules page", async () => {
+it("Sub-agent CLI handles instructions, ack, rules, next, and prev", async () => {
 	const { factory, workdir } = setupWorkspace();
 	const sessionToken = workdir.sessionToken();
 	const deps = {
@@ -99,7 +99,20 @@ it("Sub-agent CLI handles ack, rules, next, prev, and rejects out-of-range rules
 		adapters: createStubAdapterPort(defaultStubAdapter),
 	};
 	assert.equal(
+		await runSubAgentCli(deps, ["instructions", sessionToken, "01-purpose"]),
+		0,
+	);
+	assert.equal(
 		await runSubAgentCli(deps, ["ack", sessionToken, "01-purpose"]),
+		1,
+	);
+	assert.equal(
+		await runSubAgentCli(deps, [
+			"ack",
+			sessionToken,
+			"01-purpose",
+			JSON.stringify({ acknowledged: true }),
+		]),
 		0,
 	);
 	assert.equal(
@@ -107,7 +120,12 @@ it("Sub-agent CLI handles ack, rules, next, prev, and rejects out-of-range rules
 		0,
 	);
 	assert.equal(
-		await runSubAgentCli(deps, ["rules", sessionToken, "01-purpose", "99"]),
+		await runSubAgentCli(deps, [
+			"rules",
+			sessionToken,
+			"01-purpose",
+			"https://thruput.se/agents/",
+		]),
 		1,
 	);
 	assert.equal(
@@ -120,7 +138,7 @@ it("Sub-agent CLI handles ack, rules, next, prev, and rejects out-of-range rules
 	);
 });
 
-it("Sub-agent and main-agent CLIs handle ack, report, and status", async () => {
+it("Sub-agent and main-agent CLIs handle instructions, ack, report, and status", async () => {
 	const { factory, workdir } = setupWorkspace();
 	const sessionToken = workdir.sessionToken();
 	const freshMain = MainAgentController.create(
@@ -145,7 +163,12 @@ it("Sub-agent and main-agent CLIs handle ack, report, and status", async () => {
 		],
 	});
 	assert.equal(
-		await runSubAgentCli(deps, ["ack", sessionToken, "01-purpose"]),
+		await runSubAgentCli(deps, [
+			"ack",
+			sessionToken,
+			"01-purpose",
+			JSON.stringify({ acknowledged: true }),
+		]),
 		0,
 	);
 	assert.equal(

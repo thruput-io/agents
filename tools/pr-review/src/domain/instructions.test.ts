@@ -8,6 +8,8 @@ import { Rulebook } from "./rulebook.ts";
 
 const SHA1_HEX_LENGTH = 40;
 const H = "a".repeat(SHA1_HEX_LENGTH);
+const FIVE_MINUTES_MS = 300_000;
+const SIX_MINUTES_MS = 360_000;
 
 const change = {
 	host: {
@@ -69,27 +71,25 @@ function buildInstructionsFixture() {
 	);
 	const parsedByKind = {
 		rules: ProbeSchema.parse({
-			kind: "rules",
 			change,
 			surface,
 			ruleset: rb.toRuleset(),
 		}),
 		reuse: ProbeSchema.parse({
-			kind: "reuse",
+			deadlineMs: FIVE_MINUTES_MS,
 			change,
 			surface,
 			ruleset: rb.toRuleset(),
 			checkout: "/w/snapshot",
 		}),
 		"dead-code": ProbeSchema.parse({
-			kind: "dead-code",
+			deadlineMs: SIX_MINUTES_MS,
 			change,
 			surface,
 			ruleset: rb.toRuleset(),
 			checkout: "/w/snapshot",
 		}),
 		context: ProbeSchema.parse({
-			kind: "context",
 			change,
 			surface,
 			rulesets: rulesetSummaries,
@@ -99,7 +99,7 @@ function buildInstructionsFixture() {
 	return { rb, parsedByKind };
 }
 
-it("instructions hands every probe its instructions, task, change, surface overview, rulebook or rulesets summary, and checkout where needed", () => {
+it("instructions hands every probe its instructions prose, permissions, deadlineMs, change, surface overview, rulebook or rulesets summary, and checkout where needed", () => {
 	const { rb, parsedByKind } = buildInstructionsFixture();
 	const probes = [
 		{ name: "g1", kind: "rules" as const, rulebook: rb },
@@ -113,7 +113,6 @@ it("instructions hands every probe its instructions, task, change, surface overv
 	);
 	assert.deepEqual(files[0]?.document, {
 		instructions: parsedByKind.rules.instructions,
-		task: parsedByKind.rules.task,
 		permissions: parsedByKind.rules.permissions,
 		deadlineMs: parsedByKind.rules.deadlineMs,
 		kind: "rules",
@@ -123,7 +122,6 @@ it("instructions hands every probe its instructions, task, change, surface overv
 	});
 	assert.deepEqual(files[1]?.document, {
 		instructions: parsedByKind.reuse.instructions,
-		task: parsedByKind.reuse.task,
 		permissions: parsedByKind.reuse.permissions,
 		deadlineMs: parsedByKind.reuse.deadlineMs,
 		kind: "reuse",
@@ -134,7 +132,6 @@ it("instructions hands every probe its instructions, task, change, surface overv
 	});
 	assert.deepEqual(files[2]?.document, {
 		instructions: parsedByKind["dead-code"].instructions,
-		task: parsedByKind["dead-code"].task,
 		permissions: parsedByKind["dead-code"].permissions,
 		deadlineMs: parsedByKind["dead-code"].deadlineMs,
 		kind: "dead-code",
@@ -145,7 +142,6 @@ it("instructions hands every probe its instructions, task, change, surface overv
 	});
 	assert.deepEqual(files[3]?.document, {
 		instructions: parsedByKind.context.instructions,
-		task: parsedByKind.context.task,
 		permissions: parsedByKind.context.permissions,
 		deadlineMs: parsedByKind.context.deadlineMs,
 		kind: "context",

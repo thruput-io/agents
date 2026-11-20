@@ -76,7 +76,6 @@ const createStubPort = (
 const stubPassingRowsForAudit = (auditDoc: Record<string, unknown>): Row[] => {
 	const contextRulesets = z
 		.object({
-			kind: z.literal("context"),
 			rulesets: z.array(z.object({ url: z.string().url() })),
 		})
 		.safeParse(auditDoc);

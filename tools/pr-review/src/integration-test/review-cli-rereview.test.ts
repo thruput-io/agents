@@ -32,7 +32,6 @@ import { createScenarioRepo } from "./scenario-repo.ts";
 
 const repo = createScenarioRepo();
 const TOKEN_STRING = scenarioToken;
-const EXPECTED_PROSE_LENGTH = 5;
 const EXPECTED_THREAD_COUNT = 2;
 
 before(async () => {
@@ -66,12 +65,12 @@ const runReReviewFlow = async (label: string, target: string) => {
 		ready.session,
 		nonnull(ready.pending.at(-1)),
 	);
-	const inspected = [...initial, last];
+	const probeRuns = [...initial, last];
 	const status = await invokeMainCli(
 		["status", workdir.toString()],
 		ReviewStatusSchema,
 	);
-	return { workdir, prep, inspected, status };
+	return { workdir, prep, probeRuns, status };
 };
 
 it("Review CLI handles GitHub re-review with narrowed surface, GraphQL pagination, and thread settle/reopen", async () => {
@@ -81,7 +80,7 @@ it("Review CLI handles GitHub re-review with narrowed surface, GraphQL paginatio
 		postedBodies: [],
 	};
 	mockServer.use(...createGitHubReReviewHandlers(repo, ghRecorder));
-	const { workdir, prep, inspected, status } = await runReReviewFlow(
+	const { workdir, prep, probeRuns, status } = await runReReviewFlow(
 		"rereview-github",
 		repo.githubTarget,
 	);
@@ -98,20 +97,25 @@ it("Review CLI handles GitHub re-review with narrowed surface, GraphQL paginatio
 		EXPECTED_THREAD_COUNT,
 	);
 	assert.deepEqual(
-		inspected.map((entry) => ({
-			description: entry.change.description,
-			instructionsLength: entry.instructions.length,
-			hasCheckout: "checkout" in entry,
+		probeRuns.map((entry) => ({
+			description: nonnull(nonnull(entry.pages[0]).change).description,
+			hasAckPrompt: entry.inspected.instructions.includes(
+				"ack <session> <probe>",
+			),
+			hasCheckout: "checkout" in entry.inspected,
 		})),
-		inspected.map((entry) => ({
+		probeRuns.map((entry) => ({
 			description: "Re-review body",
-			instructionsLength: EXPECTED_PROSE_LENGTH,
-			hasCheckout: entry.kind !== "rules",
+			hasAckPrompt: true,
+			hasCheckout: entry.inspected.permissions.length > 1,
 		})),
 	);
 	assert.equal(status.exitCode, 0);
-	assert.notEqual(status.payload.submittedOutcome, null);
-	assert.notEqual(status.payload.location, null);
+	assert.equal(status.payload.submittedOutcome?.verdict, "request-changes");
+	assert.equal(
+		status.payload.location?.startsWith("https://github.com/"),
+		true,
+	);
 	assert.deepEqual(ghRecorder.settledThreadIds, ["T_open_fixed"]);
 	assert.deepEqual(ghRecorder.reopenedThreadIds, ["T_resolved_recurring"]);
 	assert.equal(ghRecorder.postedBodies.length, 1);
@@ -123,7 +127,7 @@ it("Review CLI handles Azure re-review with narrowed surface, thread updates, an
 		createdThreads: [],
 	};
 	mockServer.use(...createAzureReReviewHandlers(repo, azRecorder));
-	const { workdir, prep, inspected, status } = await runReReviewFlow(
+	const { workdir, prep, probeRuns, status } = await runReReviewFlow(
 		"rereview-azure",
 		repo.azureTarget,
 	);
@@ -138,18 +142,20 @@ it("Review CLI handles Azure re-review with narrowed surface, thread updates, an
 		EXPECTED_THREAD_COUNT,
 	);
 	assert.deepEqual(
-		inspected.map((entry) => ({
-			description: entry.change.description,
-			instructionsLength: entry.instructions.length,
+		probeRuns.map((entry) => ({
+			description: nonnull(nonnull(entry.pages[0]).change).description,
+			hasAckPrompt: entry.inspected.instructions.includes(
+				"ack <session> <probe>",
+			),
 		})),
-		inspected.map(() => ({
+		probeRuns.map(() => ({
 			description: "Re-review body",
-			instructionsLength: EXPECTED_PROSE_LENGTH,
+			hasAckPrompt: true,
 		})),
 	);
 	assert.equal(status.exitCode, 0);
-	assert.notEqual(status.payload.submittedOutcome, null);
-	assert.notEqual(status.payload.location, null);
+	assert.equal(status.payload.submittedOutcome?.verdict, "request-changes");
+	assert.equal(status.payload.location, "201");
 	assert.deepEqual(azRecorder.patchedThreads[0], {
 		id: "90",
 		status: "closed",

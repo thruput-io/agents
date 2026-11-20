@@ -31,27 +31,29 @@ const parseIntegerArg = (
 	return raw;
 };
 
-const toReportCommand = (
+const toJsonPayloadCommand = (
+	command: "ack" | "report",
+	field: "payload" | "report",
 	args: readonly string[],
 	ctx: z.RefinementCtx,
 ): unknown => {
 	const [, session, probe, thirdArg] = args;
 	if (isNullOrEmpty(thirdArg)) {
-		return { command: "report", session, probe };
+		return { command, session, probe };
 	}
 	const parsedJson = readJsonInput(thirdArg);
 	if (!parsedJson.ok) {
 		ctx.addIssue({
 			code: "custom",
-			message: `Malformed JSON for report: ${parsedJson.error}`,
+			message: `Malformed JSON for ${command}: ${parsedJson.error}`,
 		});
 		return z.NEVER;
 	}
 	return {
-		command: "report",
+		command,
 		session,
 		probe,
-		report: parsedJson.value,
+		[field]: parsedJson.value,
 	};
 };
 
@@ -68,32 +70,31 @@ const toProbeSessionCommand = ([
 const COMMAND_BUILDERS: Readonly<
 	Record<string, (args: readonly string[], ctx: z.RefinementCtx) => unknown>
 > = {
+	instructions: toProbeSessionCommand,
+	ack: (args, ctx) => toJsonPayloadCommand("ack", "payload", args, ctx),
+
 	define: ([, term, secondArg]) => ({
 		command: "define",
 		term,
 		depth: parseIntegerArg(secondArg, 1),
 	}),
 
-	ack: toProbeSessionCommand,
+	rules: ([, session, probe, url, fourthArg]) => {
+		if (isNullOrEmpty(url)) {
+			return { command: "rules", session, probe };
+		}
+		return {
+			command: "rules",
+			session,
+			probe,
+			url,
+			page: parseIntegerArg(fourthArg, 1),
+		};
+	},
+
 	next: toProbeSessionCommand,
 	prev: toProbeSessionCommand,
-
-	rules: ([, session, probe, thirdArg]) => ({
-		command: "rules",
-		session,
-		probe,
-		page: parseIntegerArg(thirdArg, 1),
-	}),
-
-	ruleset: ([, session, probe, url, fourthArg]) => ({
-		command: "ruleset",
-		session,
-		probe,
-		url,
-		page: parseIntegerArg(fourthArg, 1),
-	}),
-
-	report: toReportCommand,
+	report: (args, ctx) => toJsonPayloadCommand("report", "report", args, ctx),
 };
 
 const toRawSubAgentCommand = (

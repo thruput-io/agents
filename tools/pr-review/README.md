@@ -3,8 +3,8 @@
 ## Architecture
 
 1. **Schemas as Contracts and Instructions**:
-   - Governance and review JSON Schemas (Draft 2020-12) define every domain shape and embed `const` instructions, tasks, permissions, and deadlines directly on object properties.
-   - Probe kind is data, not a set of static instruction or ledger classes.
+   - Governance and review JSON Schemas (Draft 2020-12) define every domain shape and embed `const` instructions, permissions, and deadlines directly on object properties, with probe `instructions` expressed as a single `Prose` field.
+   - Probe variants are data, not a set of static instruction or ledger classes.
    - CLI help emits the Draft 2020-12 JSON Schema directly from the command schema so the contract instructs the agent without separate prose wrappers.
 
 2. **Two Hands-Off Codegen Pipelines**:

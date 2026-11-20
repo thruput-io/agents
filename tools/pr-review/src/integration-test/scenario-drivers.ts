@@ -1,17 +1,12 @@
 import {
 	type Row,
+	type RulebookSummary,
 	RulesetPageSchema,
-	RulesPageSchema,
 	type SurfaceLineId,
 	type SurfacePage,
 } from "../domain/contracts.g.ts";
 import { nonnull } from "../domain/nullish.ts";
-import {
-	expectEqual,
-	type InspectedProbePayload,
-	invokeSubCli,
-	requireExitZero,
-} from "./scenario-cli.ts";
+import { expectEqual, invokeSubCli, requireExitZero } from "./scenario-cli.ts";
 
 interface ProbeDriver {
 	verifyBeforeReport: (session: string, probeName: string) => Promise<void>;
@@ -26,9 +21,8 @@ const surfaceLineId = (
 ): SurfaceLineId =>
 	nonnull(
 		pages
-			.flatMap((page) => page.files)
-			.filter((file) => file.path === filePath)
-			.flatMap((file) => file.fragments)
+			.filter((page) => page.path === filePath)
+			.flatMap((page) => page.fragments)
 			.filter((fragment) => fragment.kind === "surface")
 			.flatMap((fragment) => fragment.lines)
 			.find((line) => line.text === lineText),
@@ -52,13 +46,13 @@ const reReviewViolationRow = (pages: readonly SurfacePage[]): Row => ({
 	],
 });
 
-function contextProbeDriver(inspected: InspectedProbePayload): ProbeDriver {
-	const first = nonnull(nonnull(inspected.rulesets)[0]);
+function contextProbeDriver(rulesets: readonly RulebookSummary[]): ProbeDriver {
+	const first = nonnull(rulesets[0]);
 	return {
 		verifyBeforeReport: async (session, probeName) => {
 			const rulesetPage = requireExitZero(
 				await invokeSubCli(
-					["ruleset", session, probeName, first.url],
+					["rules", session, probeName, first.url],
 					RulesetPageSchema,
 				),
 			);
@@ -109,19 +103,9 @@ function contextProbeDriver(inspected: InspectedProbePayload): ProbeDriver {
 	};
 }
 
-function rulebookProbeDriver(inspected: InspectedProbePayload): ProbeDriver {
-	const { ruleIds } = nonnull(inspected.rulesOverview);
+function rulebookProbeDriver(ruleIds: readonly string[]): ProbeDriver {
 	return {
-		verifyBeforeReport: async (session, probeName) => {
-			const rulesPage = requireExitZero(
-				await invokeSubCli(["rules", session, probeName], RulesPageSchema),
-			);
-			expectEqual(
-				rulesPage.ruleset.rules.length > 0,
-				true,
-				`Expected non-empty rules page for ${probeName}`,
-			);
-		},
+		verifyBeforeReport: async () => undefined,
 		initialRows: () =>
 			ruleIds.map((ruleId) => ({
 				rule: ruleId,
@@ -148,11 +132,4 @@ function rulebookProbeDriver(inspected: InspectedProbePayload): ProbeDriver {
 	};
 }
 
-function probeDriverFor(inspected: InspectedProbePayload): ProbeDriver {
-	if (inspected.kind === "context") {
-		return contextProbeDriver(inspected);
-	}
-	return rulebookProbeDriver(inspected);
-}
-
-export { type ProbeDriver, probeDriverFor };
+export { contextProbeDriver, type ProbeDriver, rulebookProbeDriver };

@@ -21,7 +21,7 @@ const LINE_WIDTH = 80;
 const SURFACE_LINE_OFFSET = 121;
 const RULE_SECTION_COUNT = 200;
 const GUIDELINE_REPEATS = 8;
-const MAX_CLI_OUTPUT_BYTES = 9000;
+const MAX_CLI_OUTPUT_BYTES = 5000;
 
 const sampleCliPagingFiles = () => {
 	const bigFileOne = {
@@ -130,7 +130,7 @@ function collectPages(
 } {
 	const run = runSubCliJson<{
 		readonly status: "page" | "end";
-		readonly files?: readonly { readonly path: string }[];
+		readonly path?: string;
 		readonly totalPages: number;
 	}>(["next", session, "01-purpose"]);
 	const current = nonnull(run.payload);
@@ -145,18 +145,54 @@ function collectPages(
 		page: () =>
 			collectPages(session, {
 				...nextAcc,
-				seenPaths: [
-					...nextAcc.seenPaths,
-					...nonnull(current.files).map((f) => f.path),
-				],
+				seenPaths: [...nextAcc.seenPaths, nonnull(current.path)],
 				lastTotalPages: current.totalPages,
 			}),
 	};
 	return nextStep[current.status]();
 }
 
-it("review-tool-probe ack, rules, next, and prev page large changed files strictly under 9KB", () => {
+it("review-tool-probe instructions, ack, rules, next, and prev stay small and targeted", () => {
 	const tempRoot = mkdtempSync(join(tmpdir(), "controller-paging-"));
+	const bigRulesetUrl =
+		"https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md";
+	try {
+		const session = setupPagingWorkdir(tempRoot, bigRulesetUrl);
+		for (const args of [
+			["instructions", session, "01-purpose"],
+			["ack", session, "01-purpose", JSON.stringify({ acknowledged: true })],
+			["rules", session, "01-purpose"],
+		] as const) {
+			const run = runSubCliJson(args);
+			assert.equal(run.status, 0, run.output);
+			assert.equal(run.byteLength <= MAX_CLI_OUTPUT_BYTES, true);
+		}
+		const { statuses, overLimit, seenPaths, lastTotalPages } = collectPages(
+			session,
+			{ statuses: [], overLimit: [], seenPaths: [], lastTotalPages: 0 },
+		);
+		assert.equal(
+			statuses.every((s) => s === 0) && overLimit.every((flag) => !flag),
+			true,
+		);
+		assert.equal(lastTotalPages > 1, true);
+		assert.equal(seenPaths.filter((p) => p === "large.ts").length > 1, true);
+		assert.equal(seenPaths.includes("small.ts"), true);
+		assert.equal(seenPaths.at(-1), "small-two.ts");
+		const steppedBack = runSubCliJson<{
+			readonly status: string;
+			readonly path: string;
+		}>(["prev", session, "01-purpose"]);
+		assert.equal(steppedBack.status, 0, steppedBack.output);
+		assert.equal(nonnull(steppedBack.payload).status, "page");
+		assert.equal(nonnull(steppedBack.payload).path, "small-two.ts");
+	} finally {
+		rmSync(tempRoot, { recursive: true, force: true });
+	}
+});
+
+it("review-tool-probe rules pages external rulebooks under 5KB", () => {
+	const tempRoot = mkdtempSync(join(tmpdir(), "controller-paging-book-"));
 	const bigRulesetUrl =
 		"https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md";
 	try {
@@ -164,69 +200,22 @@ it("review-tool-probe ack, rules, next, and prev page large changed files strict
 		const ackRun = runSubCliJson<{ readonly acknowledged: boolean }>([
 			"ack",
 			session,
-			"01-purpose",
+			"02-context",
+			JSON.stringify({ acknowledged: true }),
 		]);
 		assert.equal(ackRun.status, 0, ackRun.output);
-		assert.equal(ackRun.byteLength <= MAX_CLI_OUTPUT_BYTES, true);
-
-		const rulesRun = runSubCliJson<{ readonly page: number }>([
-			"rules",
-			session,
-			"01-purpose",
-		]);
-		assert.equal(rulesRun.status, 0, rulesRun.output);
-		assert.equal(rulesRun.byteLength <= MAX_CLI_OUTPUT_BYTES, true);
-
-		const { statuses, overLimit, seenPaths, lastTotalPages } = collectPages(
-			session,
-			{ statuses: [], overLimit: [], seenPaths: [], lastTotalPages: 0 },
-		);
-		assert.equal(
-			statuses.every((s) => s === 0),
-			true,
-		);
-		assert.equal(
-			overLimit.every((flag) => !flag),
-			true,
-		);
-		assert.equal(lastTotalPages > 1, true);
-		assert.equal(seenPaths.filter((p) => p === "large.ts").length > 1, true);
-		assert.equal(seenPaths.includes("small.ts"), true);
-		assert.equal(seenPaths.at(-1), "small-two.ts");
-
-		const steppedBack = runSubCliJson<{
-			readonly status: string;
-			readonly files: readonly { readonly path: string }[];
-		}>(["prev", session, "01-purpose"]);
-		assert.equal(steppedBack.status, 0, steppedBack.output);
-		assert.equal(nonnull(steppedBack.payload).status, "page");
-		assert.equal(
-			nonnull(steppedBack.payload).files.some((f) => f.path === "small-two.ts"),
-			true,
-		);
-	} finally {
-		rmSync(tempRoot, { recursive: true, force: true });
-	}
-});
-
-it("review-tool-probe ruleset pages large rulebooks strictly under 9KB", () => {
-	const tempRoot = mkdtempSync(join(tmpdir(), "controller-paging-book-"));
-	const bigRulesetUrl =
-		"https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md";
-	try {
-		const session = setupPagingWorkdir(tempRoot, bigRulesetUrl);
 		const firstBook = runSubCliJson<{
 			readonly page: number;
 			readonly totalPages: number;
 			readonly text: string;
-		}>(["ruleset", session, "02-context", bigRulesetUrl]);
+		}>(["rules", session, "02-context", bigRulesetUrl]);
 		assert.equal(firstBook.byteLength <= MAX_CLI_OUTPUT_BYTES, true);
 		assert.equal(nonnull(firstBook.payload).page, 1);
 		assert.equal(nonnull(firstBook.payload).totalPages > 1, true);
 		const secondBook = runSubCliJson<{
 			readonly page: number;
 			readonly text: string;
-		}>(["ruleset", session, "02-context", bigRulesetUrl, "2"]);
+		}>(["rules", session, "02-context", bigRulesetUrl, "2"]);
 		assert.equal(secondBook.byteLength <= MAX_CLI_OUTPUT_BYTES, true);
 		assert.equal(nonnull(secondBook.payload).page, 2);
 		assert.notEqual(

@@ -5,12 +5,12 @@ import type { CodeUnderReview } from "../domain/code-under-review.ts";
 import {
 	type Change,
 	type Checkout,
+	type InstructionsSuccess,
 	type PageResponse,
 	type ReportResponse,
 	type Row,
-	type RulesetPageResponse,
 	type RulesetUrl,
-	type RulesPageResponse,
+	type RulesResponse,
 	SubAgentCommandSchema,
 } from "../domain/contracts.g.ts";
 import type { HostAdapterPort } from "../domain/host-adapter.ts";
@@ -33,10 +33,10 @@ interface SubAgentCliTarget {
 	change: () => Change;
 	codeUnderReview: () => CodeUnderReview;
 	rules: () => ProbeRules;
-	rulesPage: (page: number) => RulesPageResponse;
+	instructions: () => InstructionsSuccess;
+	rulesResponse: (url?: RulesetUrl, page?: number) => RulesResponse;
 	next: () => PageResponse;
 	prev: () => PageResponse;
-	ruleset: (url: RulesetUrl, page: number) => RulesetPageResponse;
 	ack: () => AckResult;
 	report: (rows: readonly Row[]) => z.ZodSafeParseResult<LedgerSubmission>;
 	submitReport: (
@@ -56,12 +56,12 @@ interface SubAgentCliDeps {
 }
 
 const SUBAGENT_COMMANDS = [
-	"define",
+	"instructions",
 	"ack",
+	"define",
 	"rules",
 	"next",
 	"prev",
-	"ruleset",
 	"report",
 ].join("|");
 const MISSING_COMMAND_USAGE = `Usage: review-tool-probe.mjs <${SUBAGENT_COMMANDS}> ...\n`;
@@ -100,21 +100,22 @@ const dispatchSubAgentAction = async (
 		{ readonly command: "define" }
 	>,
 ): Promise<number> => {
+	if (cmd.command === "instructions") {
+		writeJson(sub.instructions());
+		return 0;
+	}
 	if (cmd.command === "ack") {
 		writeJson(sub.ack().response);
 		return 0;
 	}
 	if (cmd.command === "rules") {
-		return writePageResponse(sub.rulesPage(cmd.page));
+		return writePageResponse(sub.rulesResponse(cmd.url, cmd.page));
 	}
 	if (cmd.command === "next") {
 		return writePageResponse(sub.next());
 	}
 	if (cmd.command === "prev") {
 		return writePageResponse(sub.prev());
-	}
-	if (cmd.command === "ruleset") {
-		return writePageResponse(sub.ruleset(cmd.url, cmd.page));
 	}
 	const reported = await sub.submitReport(
 		cmd.report.oneRowPerRuleInOrder,

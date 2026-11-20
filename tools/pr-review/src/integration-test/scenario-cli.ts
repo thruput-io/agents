@@ -5,12 +5,15 @@ import { join } from "node:path";
 import { env } from "node:process";
 import { fileURLToPath } from "node:url";
 import type { z } from "zod";
-import type { AckSuccess, PrepareReady } from "../domain/contracts.g.ts";
+import type {
+	InstructionsSuccess,
+	PrepareReady,
+} from "../domain/contracts.g.ts";
 import { nonnull } from "../domain/nullish.ts";
 import { mockBridgeUrl, scenarioToken } from "./mock-server.ts";
 
 type PreparedCliSuccess = PrepareReady;
-type InspectedProbePayload = AckSuccess;
+type InspectedProbePayload = InstructionsSuccess;
 
 const SKILL_DIR = fileURLToPath(
 	new URL("../../../../skills/pr-review", import.meta.url),

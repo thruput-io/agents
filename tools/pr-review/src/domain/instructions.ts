@@ -12,9 +12,12 @@ import {
 import { paginateText, surfaceOverview } from "./pagination.ts";
 
 type ProbePermissions = Probe["permissions"];
-type RulebookProbeKind = Exclude<Probe["kind"], "context">;
+type RulebookProbeKind = "rules" | "reuse" | "dead-code";
+type ProbeKind = RulebookProbeKind | "context";
 
 const SHA1_HEX_LENGTH = 40;
+const DEAD_CODE_DEADLINE_MS = 360_000;
+const REUSE_DEADLINE_MS = 300_000;
 
 const DEFAULT_CHANGE: Change = {
 	host: {
@@ -56,21 +59,29 @@ const DEFAULT_SUMMARIES: readonly RulebookSummary[] = [
 	},
 ];
 
-const CHECKOUT_FIELDS_BY_KIND: Record<
+const RULEBOOK_PROBE_SPEC: Record<
 	RulebookProbeKind,
-	(checkout: Checkout) => { readonly checkout?: Checkout }
+	(checkout: Checkout) => {
+		readonly deadlineMs?: 360000 | 300000;
+		readonly checkout?: Checkout;
+	}
 > = {
 	rules: () => ({}),
-	"dead-code": (checkout) => ({ checkout }),
-	reuse: (checkout) => ({ checkout }),
+	"dead-code": (checkout) => ({
+		deadlineMs: DEAD_CODE_DEADLINE_MS,
+		checkout,
+	}),
+	reuse: (checkout) => ({
+		deadlineMs: REUSE_DEADLINE_MS,
+		checkout,
+	}),
 };
 
 const probeDefaultsForKind = (
-	kind: Probe["kind"],
-): Pick<Probe, "permissions" | "deadlineMs"> => {
+	kind: ProbeKind,
+): Pick<Probe, "instructions" | "permissions" | "deadlineMs"> => {
 	if (kind === "context") {
 		return ProbeSchema.parse({
-			kind: "context",
 			change: DEFAULT_CHANGE,
 			surface: DEFAULT_SURFACE,
 			rulesets: DEFAULT_SUMMARIES,
@@ -78,11 +89,10 @@ const probeDefaultsForKind = (
 		});
 	}
 	return ProbeSchema.parse({
-		kind,
 		change: DEFAULT_CHANGE,
 		surface: DEFAULT_SURFACE,
 		ruleset: DEFAULT_RULESET,
-		...CHECKOUT_FIELDS_BY_KIND[kind]("/opt/pr-review/snapshot"),
+		...RULEBOOK_PROBE_SPEC[kind]("/opt/pr-review/snapshot"),
 	});
 };
 
@@ -110,28 +120,45 @@ const toRulebookProbeEntry = <
 		readonly kind: RulebookProbeKind;
 		readonly rulebook: RulebookSlice;
 	},
-) => {
+): {
+	readonly name: string;
+	readonly document: {
+		readonly instructions: Probe["instructions"];
+		readonly permissions: Probe["permissions"];
+		readonly deadlineMs: Probe["deadlineMs"];
+		readonly kind: RulebookProbeKind;
+		readonly change: Change;
+		readonly surface: ReturnType<typeof surfaceOverview>;
+		readonly rulebook: RulebookSlice;
+		readonly checkout?: Checkout;
+	};
+} => {
 	const overview = surfaceOverview(context.surface);
+	const spec = RULEBOOK_PROBE_SPEC[probe.kind](context.checkout);
 	const parsed = ProbeSchema.parse({
-		kind: probe.kind,
 		change: context.change,
 		surface: overview,
 		ruleset: probe.rulebook.toRuleset(),
-		...CHECKOUT_FIELDS_BY_KIND[probe.kind](context.checkout),
+		...spec,
 	});
+	const baseDoc = {
+		instructions: parsed.instructions,
+		permissions: parsed.permissions,
+		deadlineMs: parsed.deadlineMs,
+		kind: probe.kind,
+		change: context.change,
+		surface: overview,
+		rulebook: probe.rulebook,
+	};
+	if (spec.checkout !== undefined) {
+		return {
+			name: probe.name,
+			document: { ...baseDoc, checkout: spec.checkout },
+		};
+	}
 	return {
 		name: probe.name,
-		document: {
-			instructions: parsed.instructions,
-			task: parsed.task,
-			permissions: parsed.permissions,
-			deadlineMs: parsed.deadlineMs,
-			kind: probe.kind,
-			change: context.change,
-			surface: overview,
-			rulebook: probe.rulebook,
-			...CHECKOUT_FIELDS_BY_KIND[probe.kind](context.checkout),
-		},
+		document: baseDoc,
 	};
 };
 
@@ -151,7 +178,6 @@ function instructions<RulebookSlice extends { toRuleset: () => Ruleset }>(
 	const overview = surfaceOverview(context.surface);
 	const summaries = toRulebookSummaries(rulesets);
 	const parsedContext = ProbeSchema.parse({
-		kind: "context",
 		change: context.change,
 		surface: overview,
 		rulesets: summaries,
@@ -163,7 +189,6 @@ function instructions<RulebookSlice extends { toRuleset: () => Ruleset }>(
 			name: "context",
 			document: {
 				instructions: parsedContext.instructions,
-				task: parsedContext.task,
 				permissions: parsedContext.permissions,
 				deadlineMs: parsedContext.deadlineMs,
 				kind: "context" as const,
@@ -180,5 +205,5 @@ function instructions<RulebookSlice extends { toRuleset: () => Ruleset }>(
 	}));
 }
 
-export type { ProbePermissions };
+export type { ProbePermissions, RulebookProbeKind };
 export { instructions, probeDefaultsForKind, toRulebookSummaries };

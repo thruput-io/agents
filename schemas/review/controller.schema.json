@@ -286,7 +286,7 @@
         },
         "prompt": {
           "description": "Exact single-sentence prompt template for spawning a probe subagent, with <skill>, <session>, and <probe> filled in from PrepareReady",
-          "const": "Run <skill>/dist/bin/review-tool-probe.mjs -h && <skill>/dist/bin/review-tool-probe.mjs ack <session> <probe> and follow its instructions."
+          "const": "Run <skill>/dist/bin/review-tool-probe.mjs instructions <session> <probe> and follow its instructions."
         },
         "permissions": {
           "$ref": "#/$defs/ProbePermissionsMap"
@@ -606,7 +606,7 @@
       "pending": [
         "01-purpose"
       ],
-      "prompt": "Run <skill>/dist/bin/review-tool-probe.mjs -h && <skill>/dist/bin/review-tool-probe.mjs ack <session> <probe> and follow its instructions.",
+      "prompt": "Run <skill>/dist/bin/review-tool-probe.mjs instructions <session> <probe> and follow its instructions.",
       "permissions": {
         "01-purpose": [
           "Bash(review-tool-probe.mjs*)"

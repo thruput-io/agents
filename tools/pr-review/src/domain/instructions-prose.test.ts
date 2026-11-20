@@ -4,7 +4,6 @@ import { nonnull } from "./nullish.ts";
 import { toAgentInstructions } from "./probe-document.ts";
 import { Rulebook } from "./rulebook.ts";
 
-const EXPECTED_PROSE_ITEM_COUNT = 5;
 const SHA1_HEX_LENGTH = 40;
 const H = "a".repeat(SHA1_HEX_LENGTH);
 
@@ -45,55 +44,41 @@ const sampleRulebook = () =>
 		).data,
 	);
 
-it("ProbeSchema populates the canonical probe prose from the schema", () => {
+it("ProbeSchema populates the single instructions prose field from the schema", () => {
 	const rulesProbe = toAgentInstructions({
 		kind: "rules",
 		change: sampleChange,
 		surface: sampleSurface,
 		rulebook: sampleRulebook(),
 	});
-	assert.equal(rulesProbe.instructions.length, EXPECTED_PROSE_ITEM_COUNT);
+	assert.equal(typeof rulesProbe.instructions, "string");
 	assert.equal(
-		rulesProbe.instructions[0].includes(
+		rulesProbe.instructions.includes(
 			"You are a read-only review probe bounded by #/permissions.",
 		),
 		true,
 	);
 	assert.equal(
-		rulesProbe.instructions[0].includes(
-			"review-tool-probe.mjs ack <session> <probe> and follow its instructions.",
+		rulesProbe.instructions.includes(
+			"review-tool-probe.mjs instructions <session> <probe> and follow its instructions.",
 		),
 		true,
 	);
 	assert.equal(
-		rulesProbe.instructions[0].includes("Finish within 5 minutes of ack."),
-		true,
-	);
-	assert.equal(
-		rulesProbe.instructions[1].includes(
-			"Only #/instructions, #/task, and #/permissions",
+		rulesProbe.instructions.includes(
+			"Only #/instructions and #/permissions are instructions",
 		),
 		true,
 	);
 	assert.equal(
-		rulesProbe.instructions[1].includes("#/change/description"),
-		true,
-	);
-	assert.equal(
-		rulesProbe.instructions[2].includes("paging through next"),
-		true,
-	);
-	assert.equal(
-		rulesProbe.instructions[3].includes("schema definitions returned by -h"),
-		true,
-	);
-	assert.equal(
-		rulesProbe.instructions[4].includes("Submit one row per rule in order"),
+		rulesProbe.instructions.includes(
+			`ack <session> <probe> '${JSON.stringify({ acknowledged: true }).replace(":", ": ")}'`,
+		),
 		true,
 	);
 });
 
-it("ProbeSchema populates the canonical probe tasks from the schema", () => {
+it("ProbeSchema populates probe-specific strategy prose for each probe branch", () => {
 	const rb = sampleRulebook();
 	const rulesProbe = toAgentInstructions({
 		kind: "rules",
@@ -127,15 +112,21 @@ it("ProbeSchema populates the canonical probe tasks from the schema", () => {
 		surface: sampleSurface,
 		rulebook: rb,
 	});
-	assert.equal(rulesProbe.task.includes("report one row per rule"), true);
 	assert.equal(
-		rulesProbe.task.includes("Fetch your assigned rules via rules"),
+		rulesProbe.instructions.includes(
+			"Fetch your assigned rules via rules <session> <probe>",
+		),
 		true,
 	);
-	assert.equal(contextProbe.task.includes("Read, Grep, Glob, Find"), true);
 	assert.equal(
-		deadCodeProbe.task.includes("search #/checkout (Grep, Glob, Find, Read)"),
+		contextProbe.instructions.includes("Read, Grep, Glob, Find"),
 		true,
 	);
-	assert.equal(reuseProbe.task.includes("WebSearch, WebFetch"), true);
+	assert.equal(
+		deadCodeProbe.instructions.includes(
+			"search #/checkout (Grep, Glob, Find, Read)",
+		),
+		true,
+	);
+	assert.equal(reuseProbe.instructions.includes("WebSearch, WebFetch"), true);
 });

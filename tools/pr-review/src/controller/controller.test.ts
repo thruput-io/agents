@@ -17,7 +17,6 @@ import {
 import { createMemoryWorkspace } from "./memory-workspace.test.ts";
 import { SubAgentController } from "./sub-agent-controller.ts";
 
-const EXPECTED_PROSE_LENGTH = 5;
 const FIVE_MINUTES_MS = 300_000;
 const SIX_MINUTES_MS = 360_000;
 
@@ -32,7 +31,7 @@ const probeFor = (
 		rulebook: sampleRulebook(),
 	});
 
-it("SubAgentController exposes instructions, change, rules, rulesPage, and ack assignment for its probe", () => {
+it("SubAgentController exposes instructions, ack, and rules for its probe", () => {
 	const workdir = createMemoryWorkspace("/tmp/review/workspace");
 	const sub = probeFor("rules", workdir);
 	assert.equal(sub.workdir().equals(workdir), true);
@@ -47,21 +46,21 @@ it("SubAgentController exposes instructions, change, rules, rulesPage, and ack a
 		].map((r) => r.id),
 		["Stated purpose"],
 	);
+	const inst = sub.instructions();
+	assert.equal(inst.success, true);
+	assert.equal(inst.instructions.includes("ack <session> <probe>"), true);
+	assert.equal("checkout" in inst, false);
+	assert.equal("kind" in inst, false);
+	assert.equal("task" in inst, false);
+	assert.equal(sub.rulesResponse().success, false);
 	const acked = sub.ack().response;
-	assert.equal(acked.instructions.length, EXPECTED_PROSE_LENGTH);
-	assert.equal(acked.task.includes("report one row per rule"), true);
-	assert.equal("checkout" in acked, false);
-	assert.equal("files" in acked.surface, false);
-	assert.equal(acked.kind, "rules");
-	assert.deepEqual(acked.rulesOverview, {
-		totalPages: 1,
-		ruleIds: ["Stated purpose"],
-	});
-	const pageOne = sub.rulesPage(1);
-	assert.equal(pageOne.success, true);
+	assert.equal(acked.acknowledged, true);
+	assert.equal(acked.deadlineMs, FIVE_MINUTES_MS);
+	const rulesRes = sub.rulesResponse();
+	assert.equal(rulesRes.success, true);
 });
 
-it("SubAgentController sets probe-kind permissions and checkout paths", () => {
+it("SubAgentController sets probe permissions, deadlines, and checkout paths on instructions", () => {
 	const workdir = createMemoryWorkspace("/tmp/review/workspace");
 	const rulesSub = probeFor("rules", workdir);
 	const contextSub = SubAgentController.forProbe(workdir, createReviewedPr(), {
@@ -81,20 +80,20 @@ it("SubAgentController sets probe-kind permissions and checkout paths", () => {
 	const deadCodeSub = probeFor("dead-code", workdir);
 	const reuseSub = probeFor("reuse", workdir);
 	assert.equal(contextSub.rules().kind, "rulesets");
-	const rulesAck = rulesSub.ack().response;
-	const contextAck = contextSub.ack().response;
-	const deadCodeAck = deadCodeSub.ack().response;
-	const reuseAck = reuseSub.ack().response;
-	assert.deepEqual(rulesAck.permissions, ["Bash(review-tool-probe.mjs*)"]);
-	assert.deepEqual(contextAck.permissions, [
+	const rulesInst = rulesSub.instructions();
+	const contextInst = contextSub.instructions();
+	const deadCodeInst = deadCodeSub.instructions();
+	const reuseInst = reuseSub.instructions();
+	assert.deepEqual(rulesInst.permissions, ["Bash(review-tool-probe.mjs*)"]);
+	assert.deepEqual(contextInst.permissions, [
 		"Read",
 		"Grep",
 		"Glob",
 		"Find",
 		"Bash(review-tool-probe.mjs*)",
 	]);
-	assert.deepEqual(deadCodeAck.permissions, contextAck.permissions);
-	assert.deepEqual(reuseAck.permissions, [
+	assert.deepEqual(deadCodeInst.permissions, contextInst.permissions);
+	assert.deepEqual(reuseInst.permissions, [
 		"Read",
 		"Grep",
 		"Glob",
@@ -102,19 +101,19 @@ it("SubAgentController sets probe-kind permissions and checkout paths", () => {
 		"WebFetch",
 		"Bash(review-tool-probe.mjs*)",
 	]);
-	assert.equal(rulesAck.deadlineMs, FIVE_MINUTES_MS);
-	assert.equal(reuseAck.deadlineMs, FIVE_MINUTES_MS);
-	assert.equal(contextAck.deadlineMs, SIX_MINUTES_MS);
-	assert.equal(deadCodeAck.deadlineMs, SIX_MINUTES_MS);
+	assert.equal(rulesInst.deadlineMs, FIVE_MINUTES_MS);
+	assert.equal(reuseInst.deadlineMs, FIVE_MINUTES_MS);
+	assert.equal(contextInst.deadlineMs, SIX_MINUTES_MS);
+	assert.equal(deadCodeInst.deadlineMs, SIX_MINUTES_MS);
 	assert.equal(
-		[contextAck, deadCodeAck, reuseAck].every(
-			(ack) => ack.checkout === "/tmp/review/workspace/snapshot",
+		[contextInst, deadCodeInst, reuseInst].every(
+			(inst) => inst.checkout === "/tmp/review/workspace/snapshot",
 		),
 		true,
 	);
 });
 
-it("SubAgentController requires ack before report and MainAgentController rejects invalid targets", async () => {
+it("SubAgentController requires ack before rules, next, prev, and report and MainAgentController rejects invalid targets", async () => {
 	const workdir = createMemoryWorkspace("/tmp/review/workspace");
 	const sub = probeFor("rules", workdir);
 	const subLedger = ProbeLedger.from(
@@ -137,6 +136,8 @@ it("SubAgentController requires ack before report and MainAgentController reject
 		verdict: "clean" as const,
 		evidence: "ok",
 	};
+	assert.equal(sub.next().success, false);
+	assert.equal(sub.prev().success, false);
 	assert.equal(sub.report([cleanRow]).success, false);
 	const ackResult = sub.ack();
 	assert.equal(ackResult.success, true);

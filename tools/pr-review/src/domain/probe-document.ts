@@ -7,7 +7,7 @@ import {
 	ProbeSchema,
 	type Surface,
 } from "./contracts.g.ts";
-import { toRulebookSummaries } from "./instructions.ts";
+import { type RulebookProbeKind, toRulebookSummaries } from "./instructions.ts";
 import { nonnull } from "./nullish.ts";
 import { surfaceOverview } from "./pagination.ts";
 import { Rulebook } from "./rulebook.ts";
@@ -28,8 +28,6 @@ interface BundledProbes {
 	readonly rulesets: readonly ExternalRulebook[];
 }
 
-type RulebookProbeKind = Exclude<Probe["kind"], "context">;
-
 type ProbeDocument =
 	| {
 			readonly kind: RulebookProbeKind;
@@ -47,6 +45,16 @@ type ProbeDocument =
 	  };
 
 const DEFAULT_CHECKOUT = "/opt/pr-review/snapshot";
+const DEAD_CODE_DEADLINE_MS = 360_000;
+const REUSE_DEADLINE_MS = 300_000;
+
+const DEADLINE_BY_KIND: Record<
+	Exclude<RulebookProbeKind, "rules">,
+	360_000 | 300_000
+> = {
+	"dead-code": DEAD_CODE_DEADLINE_MS,
+	reuse: REUSE_DEADLINE_MS,
+};
 
 const resolveCheckout = (checkout: Checkout | undefined): Checkout => {
 	if (checkout === undefined) {
@@ -55,11 +63,17 @@ const resolveCheckout = (checkout: Checkout | undefined): Checkout => {
 	return checkout;
 };
 
+const kindFromDeadline = (deadlineMs: number): RulebookProbeKind => {
+	if (deadlineMs === DEAD_CODE_DEADLINE_MS) {
+		return "dead-code";
+	}
+	return "reuse";
+};
+
 const toAgentInstructions = (probe: ProbeDocument): Probe => {
 	const overview = surfaceOverview(probe.surface);
 	if (probe.kind === "context") {
 		return ProbeSchema.parse({
-			kind: "context",
 			change: probe.change,
 			surface: overview,
 			rulesets: [...toRulebookSummaries(probe.rulesets)],
@@ -68,14 +82,13 @@ const toAgentInstructions = (probe: ProbeDocument): Probe => {
 	}
 	if (probe.kind === "rules") {
 		return ProbeSchema.parse({
-			kind: "rules",
 			change: probe.change,
 			surface: overview,
 			ruleset: probe.rulebook.toRuleset(),
 		});
 	}
 	return ProbeSchema.parse({
-		kind: probe.kind,
+		deadlineMs: DEADLINE_BY_KIND[probe.kind],
 		change: probe.change,
 		surface: overview,
 		ruleset: probe.rulebook.toRuleset(),
@@ -88,7 +101,7 @@ const fromAuditDocument = (
 	surface: Surface,
 	rulesets: readonly ExternalRulebook[],
 ): ProbeDocument => {
-	if (document.kind === "context") {
+	if ("rulesets" in document) {
 		return {
 			kind: "context",
 			change: document.change,
@@ -98,7 +111,7 @@ const fromAuditDocument = (
 		};
 	}
 	const parsedRulebook = nonnull(Rulebook.from(document.ruleset).data);
-	if (document.kind === "rules") {
+	if (!("checkout" in document)) {
 		return {
 			kind: "rules",
 			change: document.change,
@@ -107,7 +120,7 @@ const fromAuditDocument = (
 		};
 	}
 	return {
-		kind: document.kind,
+		kind: kindFromDeadline(document.deadlineMs),
 		change: document.change,
 		surface,
 		rulebook: parsedRulebook,
@@ -141,11 +154,5 @@ const loadPersistedProbes = (
 	}));
 };
 
-export type {
-	BundledProbes,
-	NamedProbe,
-	PersistedAudit,
-	ProbeDocument,
-	RulebookProbeKind,
-};
+export type { BundledProbes, NamedProbe, PersistedAudit, ProbeDocument };
 export { loadPersistedProbes, toAgentInstructions };

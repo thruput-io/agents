@@ -4,13 +4,13 @@ import {
 	AckSuccessSchema,
 	type Checkout,
 	type Rulebook as ExternalRulebook,
-	type RulesetPageResponse,
+	type InstructionsSuccess,
+	InstructionsSuccessSchema,
 	type RulesetUrl,
-	type RulesPageResponse,
+	type RulesResponse,
 } from "../domain/contracts.g.ts";
+import { toRulebookSummaries } from "../domain/instructions.ts";
 import type { CoordinatedProbeSpec } from "../domain/main-agent-ledger.ts";
-import { nonnull } from "../domain/nullish.ts";
-import { paginateRulebook } from "../domain/pagination.ts";
 import type { LedgerStore } from "../domain/ports.ts";
 import {
 	type ProbeDocument,
@@ -18,10 +18,7 @@ import {
 } from "../domain/probe-document.ts";
 import { ProbeLedger, type SubAgentLedger } from "../domain/probe-ledger.ts";
 import type { Rulebook } from "../domain/rulebook.ts";
-import {
-	paginateContextRuleset,
-	paginateProbeRulebook,
-} from "./sub-agent-paging.ts";
+import { paginateContextRuleset } from "./sub-agent-paging.ts";
 
 type ProbeRules =
 	| { readonly kind: "rulebook"; readonly rulebook: Rulebook }
@@ -38,9 +35,9 @@ interface ProbeBehavior {
 		pullRequest: CodeUnderReview,
 	) => SubAgentLedger;
 	toCoordinatedSpec: (name: Checkout) => CoordinatedProbeSpec;
-	ackAssignment: (probeName: Checkout) => AckSuccess;
-	rulesPage: (page: number) => RulesPageResponse;
-	ruleset: (url: RulesetUrl, page: number) => RulesetPageResponse;
+	instructionsResponse: (probeName: Checkout) => InstructionsSuccess;
+	ackResponse: (probeName: Checkout) => AckSuccess;
+	rulesResponse: (url?: RulesetUrl, page?: number) => RulesResponse;
 }
 
 type RulebookProbeDocument = Extract<
@@ -82,33 +79,38 @@ const HYDRATE_RULEBOOK_PROBE: Readonly<
 	}),
 };
 
-const toRulebookAckSuccess = (
-	hydrated: RulebookProbeDocument,
+const toInstructionsSuccess = (
+	hydrated: ProbeDocument,
+	probeName: Checkout,
+): InstructionsSuccess => {
+	const serialized = toAgentInstructions(hydrated);
+	const base = {
+		success: true,
+		probe: probeName,
+		deadlineMs: serialized.deadlineMs,
+		permissions: serialized.permissions,
+		instructions: serialized.instructions,
+	};
+	if ("checkout" in serialized) {
+		return InstructionsSuccessSchema.parse({
+			...base,
+			checkout: serialized.checkout,
+		});
+	}
+	return InstructionsSuccessSchema.parse(base);
+};
+
+const toAckSuccess = (
+	hydrated: ProbeDocument,
 	probeName: Checkout,
 ): AckSuccess => {
 	const serialized = toAgentInstructions(hydrated);
-	const chunks = paginateRulebook(hydrated.rulebook.toRuleset());
-	const base = {
+	return AckSuccessSchema.parse({
 		success: true,
 		probe: probeName,
 		acknowledged: true,
 		deadlineMs: serialized.deadlineMs,
-		task: serialized.task,
 		permissions: serialized.permissions,
-		kind: hydrated.kind,
-		change: serialized.change,
-		surface: serialized.surface,
-		rulesOverview: {
-			totalPages: chunks.length,
-			ruleIds: hydrated.rulebook.rules.map((r) => r.id),
-		},
-	};
-	if (hydrated.kind === "rules") {
-		return AckSuccessSchema.parse(base);
-	}
-	return AckSuccessSchema.parse({
-		...base,
-		checkout: nonnull(hydrated.checkout),
 	});
 };
 
@@ -126,25 +128,18 @@ function contextProbeBehavior(
 		toLedger: (directory, pullRequest) =>
 			ProbeLedger.from(directory, pullRequest, hydrated),
 		toCoordinatedSpec: (name) => ({ name, kind: "context", probe: hydrated }),
-		ackAssignment: (probeName) => {
-			const serialized = toAgentInstructions(hydrated);
-			if (serialized.kind !== "context") {
-				throw new Error(`Expected context probe, got ${serialized.kind}`);
+		instructionsResponse: (probeName) =>
+			toInstructionsSuccess(hydrated, probeName),
+		ackResponse: (probeName) => toAckSuccess(hydrated, probeName),
+		rulesResponse: (url, page) => {
+			if (url === undefined) {
+				return {
+					success: true,
+					rulesets: [...toRulebookSummaries(hydrated.rulesets)],
+				};
 			}
-			return AckSuccessSchema.parse({
-				...serialized,
-				success: true,
-				probe: probeName,
-				acknowledged: true,
-			});
+			return paginateContextRuleset(hydrated.rulesets, url, page ?? 1);
 		},
-		rulesPage: () => ({
-			success: false,
-			error:
-				"Probe kind context uses external rulesets; use the ruleset command.",
-		}),
-		ruleset: (url, page) =>
-			paginateContextRuleset(hydrated.rulesets, url, page),
 	};
 }
 
@@ -163,12 +158,22 @@ function rulebookProbeBehavior(
 			kind: hydrated.kind,
 			probe: hydrated,
 		}),
-		ackAssignment: (probeName) => toRulebookAckSuccess(hydrated, probeName),
-		rulesPage: (page) => paginateProbeRulebook(hydrated.rulebook, page),
-		ruleset: () => ({
-			success: false,
-			error: `Probe kind ${hydrated.kind} has no external rulesets; use the rules command.`,
-		}),
+		instructionsResponse: (probeName) =>
+			toInstructionsSuccess(hydrated, probeName),
+		ackResponse: (probeName) => toAckSuccess(hydrated, probeName),
+		rulesResponse: (url) => {
+			if (url !== undefined) {
+				return {
+					success: false,
+					error:
+						"This probe has no external rulebook URLs; call rules without a URL.",
+				};
+			}
+			return {
+				success: true,
+				ruleset: hydrated.rulebook.toRuleset(),
+			};
+		},
 	};
 }
 

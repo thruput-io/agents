@@ -17,7 +17,7 @@ const LINE_WIDTH = 80;
 const SURFACE_LINE_OFFSET = 121;
 const RULE_SECTION_COUNT = 200;
 const GUIDELINE_REPEATS = 8;
-const MAX_PAGE_BYTES = 9000;
+const MAX_PAGE_BYTES = 5000;
 
 const samplePagingFiles = () => {
 	const bigFileOne = {
@@ -111,7 +111,7 @@ function collectPages(
 	if (page.success && page.status === "page") {
 		return collectPages(sub, {
 			overLimit: [...acc.overLimit, byteLength > MAX_PAGE_BYTES],
-			seenPaths: [...acc.seenPaths, ...page.files.map((f) => f.path)],
+			seenPaths: [...acc.seenPaths, page.path],
 			lastTotalPages: page.totalPages,
 		});
 	}
@@ -121,19 +121,24 @@ function collectPages(
 	};
 }
 
-it("SubAgentController ack, rules, next, and prev page large changed files strictly under 9KB", () => {
+it("SubAgentController instructions, ack, rules, next, and prev stay small and targeted", () => {
 	const workdir = createMemoryWorkspace("/tmp/controller-paging/workspace");
 	const bigRulesetUrl =
 		"https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md";
 	setupPagingWorkspace(workdir, bigRulesetUrl);
 
 	const purposeSub = SubAgentController.forWorkdir(workdir, "01-purpose");
+	const instRes = purposeSub.instructions();
+	assert.equal(
+		Buffer.byteLength(JSON.stringify(instRes), "utf8") <= MAX_PAGE_BYTES,
+		true,
+	);
 	const ackRes = purposeSub.ack().response;
 	assert.equal(
 		Buffer.byteLength(JSON.stringify(ackRes), "utf8") <= MAX_PAGE_BYTES,
 		true,
 	);
-	const rulesRes = purposeSub.rulesPage(1);
+	const rulesRes = purposeSub.rulesResponse();
 	assert.equal(rulesRes.success, true);
 	assert.equal(
 		Buffer.byteLength(JSON.stringify(rulesRes), "utf8") <= MAX_PAGE_BYTES,
@@ -157,15 +162,10 @@ it("SubAgentController ack, rules, next, and prev page large changed files stric
 	const steppedBack = purposeSub.prev();
 	assert.equal(steppedBack.success, true);
 	assert.equal((steppedBack as { readonly status: string }).status, "page");
-	assert.equal(
-		(
-			steppedBack as { readonly files: readonly { readonly path: string }[] }
-		).files.some((f) => f.path === "small-two.ts"),
-		true,
-	);
+	assert.equal((steppedBack as { readonly path: string }).path, "small-two.ts");
 });
 
-it("SubAgentController ruleset pages large rulebooks strictly under 9KB", () => {
+it("SubAgentController rules pages external context rulebooks under 5KB", () => {
 	const workdir = createMemoryWorkspace(
 		"/tmp/controller-paging/workspace-book",
 	);
@@ -173,8 +173,16 @@ it("SubAgentController ruleset pages large rulebooks strictly under 9KB", () => 
 		"https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md";
 	setupPagingWorkspace(workdir, bigRulesetUrl);
 	const contextSub = SubAgentController.forWorkdir(workdir, "02-context");
-	const firstBook = contextSub.ruleset(bigRulesetUrl, 1);
+	contextSub.ack();
+	const indexRes = contextSub.rulesResponse();
+	assert.equal(indexRes.success, true);
+	assert.equal("rulesets" in indexRes, true);
+	const firstBook = contextSub.rulesResponse(bigRulesetUrl, 1);
 	assert.equal(firstBook.success, true);
+	assert.equal("text" in firstBook, true);
+	if (!("text" in firstBook)) {
+		return;
+	}
 	assert.equal(
 		Buffer.byteLength(JSON.stringify(firstBook), "utf8") <= MAX_PAGE_BYTES,
 		true,
@@ -182,8 +190,12 @@ it("SubAgentController ruleset pages large rulebooks strictly under 9KB", () => 
 	assert.equal(firstBook.page, 1);
 	assert.equal(firstBook.totalPages > 1, true);
 
-	const secondBook = contextSub.ruleset(bigRulesetUrl, 2);
+	const secondBook = contextSub.rulesResponse(bigRulesetUrl, 2);
 	assert.equal(secondBook.success, true);
+	assert.equal("text" in secondBook, true);
+	if (!("text" in secondBook)) {
+		return;
+	}
 	assert.equal(
 		Buffer.byteLength(JSON.stringify(secondBook), "utf8") <= MAX_PAGE_BYTES,
 		true,

@@ -16,10 +16,11 @@ contracts or instruction prose in hand-written code or static types per probe ki
 ## Decisions
 
 1. **JSON Schema Draft 2020-12 is the single source of truth for contracts and instructions**:
-   - Domain shapes and `const` instructions, tasks, permissions, and deadlines live directly on the schema properties of
-     the objects that cross boundaries.
-   - Probe kind is data, not a hierarchy of static instruction or ledger types; schemas define domain data types while
-     leaving `const` instruction literals inline on their object properties.
+   - Domain shapes and `const` instructions, permissions, and deadlines live directly on the schema properties of
+     the objects that cross boundaries, with probe `instructions` expressed as a single `Prose` field and no internal
+     probe `kind` or separate `task` field exposed to the subagent.
+   - Probe variants are data, not a hierarchy of static instruction or ledger types; schemas define domain data types
+     while leaving `const` instruction literals inline on their object properties.
    - CLI help emits the Draft 2020-12 JSON Schema directly from the generated command schema so the contract itself
      instructs the caller without hand-maintained usage wrappers.
 
@@ -30,19 +31,18 @@ contracts or instruction prose in hand-written code or static types per probe ki
      transforms through Zod schemas and codecs, folds foreign shapes into domain types at the adapter perimeter, and
      populates `const` defaults when parsing parent objects.
 
-3. **The probe CLI is an on-demand paging and lookup tool, never a monolithic dump**:
-   - Each subcommand returns a bounded response strictly under 9 KB.
-   - Probes fetch task instructions, rule pages, changed file pages, and external rulebook pages through separate,
-     focused subcommands rather than a single combined payload.
-   - Term lookup is an on-demand tool for resolving unfamiliar bracketed `[[Term]]`s, never a mandatory step for every
-     term or unbracketed phrase.
-   - Task instructions state affirmative investigation strategies for the probe's role in plain English without
-     repeating schemas or lecturing on non-goals.
+3. **The probe CLI exposes small, targeted commands and pages only code changes and external rulebooks**:
+   - Probes operate through six small, targeted commands: `instructions` (fetch probe instructions), `ack`
+     (acknowledge instructions with a small JSON object), `rules` (fetch the probe's rules or external rulebook pages),
+     `next` / `prev` (browse changed files and their surrounding context one file page at a time), `define` (on-demand
+     lookup for unfamiliar bracketed `[[Term]]`s), and `report` (submit verdict rows).
+   - Instructions state affirmative investigation strategies for the probe's role in plain English without repeating
+     schemas or lecturing on non-goals.
 
-4. **Acknowledgment fails fast before inspection and timers run in code**:
-   - A probe begins by running help and acknowledgment to prove it can execute the probe CLI, read the JSON Schema
-     contract, verify the bootstrap prompt, and start the reporting deadline before inspecting review data.
-   - Acknowledgment takes only the session and probe identifiers without fragile shell-quoting payloads.
+4. **Acknowledgment verifies CLI JSON submission up front and timers run in code**:
+   - A probe begins by running `instructions`, which ends by asking the probe to call `ack` with a small JSON object
+     described the same way `report` is described—verifying up front that the subagent can invoke the tool, read its
+     instructions, and submit valid JSON on the command line before starting the reporting deadline.
    - Acknowledgment and reporting deadline thresholds live as schema data on the status command and probe objects, and
      the status command tracks them in code rather than delegating timer scheduling to the orchestrating agent.
 

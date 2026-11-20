@@ -6,11 +6,11 @@ import {
 	type AckSuccess,
 	type Change,
 	type Checkout,
+	type InstructionsSuccess,
 	type PageResponse,
 	type Row,
-	type RulesetPageResponse,
 	type RulesetUrl,
-	type RulesPageResponse,
+	type RulesResponse,
 } from "../domain/contracts.g.ts";
 import type { HostAdapterPort } from "../domain/host-adapter.ts";
 import { isNullOrEmpty } from "../domain/nullish.ts";
@@ -34,6 +34,9 @@ import {
 	type ProbeRules,
 	probeBehaviorFor,
 } from "./sub-agent-probe.ts";
+
+const UNACKNOWLEDGED_ERROR =
+	"Probe must acknowledge instructions via ack before calling rules, next, prev, or report";
 
 export interface AckResult {
 	readonly success: true;
@@ -135,26 +138,43 @@ export class SubAgentController {
 		return this.#behavior.rules;
 	}
 
-	rulesPage(page: number): RulesPageResponse {
-		return this.#behavior.rulesPage(page);
+	instructions(): InstructionsSuccess {
+		return this.#behavior.instructionsResponse(this.#name);
+	}
+
+	rulesResponse(url?: RulesetUrl, page?: number): RulesResponse {
+		if (isNullOrEmpty(this.#storage.readAck())) {
+			return { success: false, error: UNACKNOWLEDGED_ERROR };
+		}
+		return this.#behavior.rulesResponse(url, page);
 	}
 
 	next(): PageResponse {
-		return nextSurfacePage(this.#behavior.probe.surface.files, this.#storage);
+		if (isNullOrEmpty(this.#storage.readAck())) {
+			return { success: false, error: UNACKNOWLEDGED_ERROR };
+		}
+		return nextSurfacePage(
+			this.#behavior.probe.surface.files,
+			this.#change,
+			this.#storage,
+		);
 	}
 
 	prev(): PageResponse {
-		return prevSurfacePage(this.#behavior.probe.surface.files, this.#storage);
-	}
-
-	ruleset(url: RulesetUrl, page: number): RulesetPageResponse {
-		return this.#behavior.ruleset(url, page);
+		if (isNullOrEmpty(this.#storage.readAck())) {
+			return { success: false, error: UNACKNOWLEDGED_ERROR };
+		}
+		return prevSurfacePage(
+			this.#behavior.probe.surface.files,
+			this.#change,
+			this.#storage,
+		);
 	}
 
 	ack(): AckResult {
 		const acknowledgedAt = this.#now();
 		this.#storage.writeAck(acknowledgedAt);
-		const response = this.#behavior.ackAssignment(this.#name);
+		const response = this.#behavior.ackResponse(this.#name);
 		return {
 			success: true,
 			data: AckStatusSchema.parse({
@@ -167,12 +187,8 @@ export class SubAgentController {
 	}
 
 	report(rows: readonly Row[]): z.ZodSafeParseResult<LedgerSubmission> {
-		const ackTime = this.#storage.readAck();
-		if (isNullOrEmpty(ackTime)) {
-			return customFailure(
-				"ack",
-				"Probe must acknowledge instructions via ack before reporting",
-			);
+		if (isNullOrEmpty(this.#storage.readAck())) {
+			return customFailure("ack", UNACKNOWLEDGED_ERROR);
 		}
 		return this.#ledger.report(rows);
 	}
