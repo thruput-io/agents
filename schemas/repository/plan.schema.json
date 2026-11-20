@@ -7,7 +7,6 @@
   "required": [
     "number",
     "title",
-    "implementingAgentInstructions",
     "background",
     "goals",
     "nonGoals",
@@ -22,9 +21,6 @@
     },
     "title": {
       "$ref": "#/$defs/Title"
-    },
-    "implementingAgentInstructions": {
-      "$ref": "#/$defs/ImplementingAgentInstructions"
     },
     "background": {
       "$ref": "#/$defs/Background"
@@ -76,10 +72,6 @@
       "description": "The stable problem the plan solves, in a few words; the directory <plan-name> is kebab-case named after the problem, never the solution (e.g. end-user-authentication, not oauth2-client-library)",
       "type": "string",
       "minLength": 1
-    },
-    "ImplementingAgentInstructions": {
-      "description": "How the implementing agent works, completion criteria, verification, and progress-log obligations, with no placeholders",
-      "$ref": "../governance/definitions.schema.json#/$defs/Prose"
     },
     "Background": {
       "description": "The problem and forces calling for the change, kept short and on point without repeating code or contracts",
@@ -490,7 +482,6 @@
     {
       "number": 4,
       "title": "Dry-Run Event Producer and Telemetry",
-      "implementingAgentInstructions": "Open progress/004-attempt-1-YYYY-MM-DD.md before the first edit and run dotnet test -c Release after each milestone.",
       "background": "Events are disabled in production during dark-run verification, leaving suppressed events unobserved.",
       "goals": [
         {
