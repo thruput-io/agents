@@ -1,0 +1,560 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/repository/plan.schema.json",
+  "title": "Plan",
+  "description": "One problem-named plan directory at docs/plans/<plan-name>/, containing <number>-<plan-name>.md, optional research/<report-name>/<files...>, optional tracer-bullets/<bullet-name>/ (with Dockerfile or compose.yaml and self-contained sources/fixtures), and progress/<plan-number>-attempt-<n>-<date>.md written during implementation, not planning. Editable in place until any attempt reports progress under progress/; reported progress freezes the plan, and resurfacing problems are written by copying <number>-<plan-name>.md to <number+1>-<plan-name>.md beside the untouched original. Repository rules outrank the plan",
+  "type": "object",
+  "required": [
+    "number",
+    "title",
+    "background",
+    "goals",
+    "nonGoals",
+    "summary",
+    "assumptionsRisksAndPreconditions",
+    "discussions",
+    "executionPlan"
+  ],
+  "properties": {
+    "number": {
+      "$ref": "#/$defs/Number"
+    },
+    "title": {
+      "$ref": "#/$defs/Title"
+    },
+    "background": {
+      "$ref": "#/$defs/Background"
+    },
+    "goals": {
+      "$ref": "#/$defs/Goals"
+    },
+    "nonGoals": {
+      "$ref": "#/$defs/NonGoals"
+    },
+    "summary": {
+      "$ref": "#/$defs/Summary"
+    },
+    "assumptionsRisksAndPreconditions": {
+      "$ref": "#/$defs/AssumptionsRisksAndPreconditions"
+    },
+    "references": {
+      "$ref": "#/$defs/References"
+    },
+    "rejectedAlternatives": {
+      "$ref": "#/$defs/RejectedAlternatives"
+    },
+    "discussions": {
+      "$ref": "#/$defs/Discussions"
+    },
+    "openQuestions": {
+      "$ref": "#/$defs/OpenQuestions"
+    },
+    "executionPlan": {
+      "$ref": "#/$defs/ExecutionPlan"
+    },
+    "research": {
+      "$ref": "#/$defs/ResearchReports"
+    },
+    "tracerBullets": {
+      "$ref": "#/$defs/TracerBullets"
+    },
+    "progress": {
+      "$ref": "#/$defs/ProgressLogs"
+    }
+  },
+  "$defs": {
+    "Number": {
+      "description": "The sequence number ordering the plan under docs/plans/<plan-name>/ and naming <number>-<plan-name>.md",
+      "type": "integer",
+      "minimum": 1
+    },
+    "Title": {
+      "description": "The stable problem the plan solves, in a few words; the directory <plan-name> is kebab-case named after the problem, never the solution (e.g. end-user-authentication, not oauth2-client-library)",
+      "type": "string",
+      "minLength": 1
+    },
+    "Background": {
+      "description": "The problem and forces calling for the change, kept short and on point without repeating code or contracts",
+      "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+    },
+    "CheapestPassingInterpretation": {
+      "description": "The cheapest implementation that would satisfy a goal's wording while missing its intent, how the goal's wording excludes it, and the discussion register row accepting it",
+      "type": "object",
+      "required": [
+        "interpretation",
+        "exclusion"
+      ],
+      "properties": {
+        "interpretation": {
+          "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+        },
+        "exclusion": {
+          "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+        },
+        "discussionRow": {
+          "$ref": "#/$defs/DiscussionRowRef"
+        }
+      }
+    },
+    "Goal": {
+      "description": "One prioritized, testable outcome expressing intent, paired with its cheapest passing interpretation",
+      "type": "object",
+      "required": [
+        "statement",
+        "cheapestPassingInterpretation"
+      ],
+      "properties": {
+        "statement": {
+          "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+        },
+        "cheapestPassingInterpretation": {
+          "$ref": "#/$defs/CheapestPassingInterpretation"
+        }
+      }
+    },
+    "Goals": {
+      "description": "Prioritized, testable goals expressing intent, highest priority first",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Goal"
+      }
+    },
+    "NonGoals": {
+      "description": "What is deliberately excluded from the plan so scope boundaries are explicit rather than inferred",
+      "type": "array",
+      "items": {
+        "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+      }
+    },
+    "Summary": {
+      "description": "Short prose explaining how the goals will be achieved",
+      "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+    },
+    "Assumption": {
+      "description": "An assumption the plan rests on and how it was tested (or that it was not)",
+      "type": "object",
+      "required": [
+        "statement",
+        "tested"
+      ],
+      "properties": {
+        "statement": {
+          "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+        },
+        "tested": {
+          "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+        }
+      }
+    },
+    "AssumptionsRisksAndPreconditions": {
+      "description": "Assumptions, risks, and preconditions that must hold before implementation starts",
+      "type": "object",
+      "required": [
+        "assumptions",
+        "risks",
+        "preconditions"
+      ],
+      "properties": {
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Assumption"
+          }
+        },
+        "risks": {
+          "type": "array",
+          "items": {
+            "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+          }
+        },
+        "preconditions": {
+          "type": "array",
+          "items": {
+            "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+          }
+        }
+      }
+    },
+    "ResearchReference": {
+      "description": "One research question with its short answer, evidence, and path under research/",
+      "type": "object",
+      "required": [
+        "question",
+        "answer",
+        "evidence",
+        "reportPath"
+      ],
+      "properties": {
+        "question": {
+          "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+        },
+        "answer": {
+          "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+        },
+        "evidence": {
+          "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+        },
+        "reportPath": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "References": {
+      "description": "Research questions, tracer-bullet links confirming or disproving assumptions, and negative findings or abandoned approaches",
+      "type": "object",
+      "properties": {
+        "researchQuestions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ResearchReference"
+          }
+        },
+        "tracerBulletLinks": {
+          "type": "array",
+          "items": {
+            "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+          }
+        },
+        "negativeFindings": {
+          "type": "array",
+          "items": {
+            "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+          }
+        }
+      }
+    },
+    "RejectedAlternative": {
+      "description": "A candidate alternative that was evaluated and rejected with evidence, linking to its decision register row",
+      "type": "object",
+      "required": [
+        "alternative",
+        "evidence",
+        "reason"
+      ],
+      "properties": {
+        "alternative": {
+          "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+        },
+        "evidence": {
+          "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+        },
+        "reason": {
+          "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+        },
+        "discussionRow": {
+          "$ref": "#/$defs/DiscussionRowRef"
+        }
+      }
+    },
+    "RejectedAlternatives": {
+      "description": "Alternatives considered and rejected during exploration",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/RejectedAlternative"
+      }
+    },
+    "DiscussionRowRef": {
+      "description": "1-based row number in the Discussions decision register",
+      "type": "integer",
+      "minimum": 1
+    },
+    "Discussion": {
+      "description": "One decision register entry recording the decider, the question put to the human, and their verbatim answer (never paraphrased); when the agent proposed the call, the human's verbatim approval is recorded",
+      "type": "object",
+      "required": [
+        "row",
+        "decider",
+        "question",
+        "answer"
+      ],
+      "properties": {
+        "row": {
+          "$ref": "#/$defs/DiscussionRowRef"
+        },
+        "decider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "question": {
+          "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+        },
+        "answer": {
+          "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+        }
+      }
+    },
+    "Discussions": {
+      "description": "Ordered decision register entries, including ADR conflicts and additions",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Discussion"
+      }
+    },
+    "OpenQuestions": {
+      "description": "Unresolved questions maintained during planning; empty or explicitly closed before execution",
+      "type": "array",
+      "items": {
+        "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+      }
+    },
+    "Milestone": {
+      "description": "One verifiable checkpoint executed in sequence; work outside the declared milestones is out of scope",
+      "type": "object",
+      "required": [
+        "title",
+        "summary",
+        "verification"
+      ],
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/MilestoneTitle"
+        },
+        "summary": {
+          "$ref": "#/$defs/MilestoneSummary"
+        },
+        "verification": {
+          "$ref": "#/$defs/MilestoneVerification"
+        }
+      }
+    },
+    "MilestoneTitle": {
+      "description": "The short label and name of the milestone",
+      "type": "string",
+      "minLength": 1
+    },
+    "MilestoneSummary": {
+      "description": "What the milestone delivers, stated without code walkthroughs or unmotivated file inventories",
+      "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+    },
+    "MilestoneVerification": {
+      "description": "The named, human-readable verification test proving completion of the milestone before moving on",
+      "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+    },
+    "GoalCoverageEntry": {
+      "description": "Maps a goal to the milestones that deliver it",
+      "type": "object",
+      "required": [
+        "goal",
+        "milestones"
+      ],
+      "properties": {
+        "goal": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "milestones": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/MilestoneTitle"
+          }
+        }
+      }
+    },
+    "VerificationCommand": {
+      "description": "The single command or script that runs all tests relevant to the plan, where it lives, and whether it already exists or is created in M1",
+      "$ref": "../governance/definitions.schema.json#/$defs/Prose"
+    },
+    "ExecutionPlan": {
+      "description": "Step-by-step milestones, goal-to-milestone coverage table, and the single verification command; drafted only after all preceding sections are co-authored and accepted",
+      "type": "object",
+      "required": [
+        "milestones",
+        "goalCoverage",
+        "verificationCommand"
+      ],
+      "properties": {
+        "milestones": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Milestone"
+          }
+        },
+        "goalCoverage": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/GoalCoverageEntry"
+          }
+        },
+        "verificationCommand": {
+          "$ref": "#/$defs/VerificationCommand"
+        }
+      }
+    },
+    "ResearchReports": {
+      "description": "Research reports under docs/plans/<plan-name>/research/, one directory per report",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ResearchReport"
+      }
+    },
+    "ResearchReport": {
+      "description": "One research report directory at docs/plans/<plan-name>/research/<report-name>/ containing report files",
+      "type": "object",
+      "required": [
+        "name",
+        "files"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/ReportName"
+        },
+        "files": {
+          "$ref": "#/$defs/ReportFiles"
+        }
+      }
+    },
+    "ReportName": {
+      "description": "The <report-name> directory under research/",
+      "type": "string",
+      "minLength": 1
+    },
+    "ReportFiles": {
+      "description": "Files inside docs/plans/<plan-name>/research/<report-name>/",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "TracerBullets": {
+      "description": "Self-contained experiment directories under docs/plans/<plan-name>/tracer-bullets/, each running inside a Docker container (Dockerfile or compose.yaml) with one documented command, no dependencies on the rest of the repository, and all temporary build artifacts kept in ephemeral container storage",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/TracerBullet"
+      }
+    },
+    "TracerBullet": {
+      "description": "One self-contained experiment directory at docs/plans/<plan-name>/tracer-bullets/<bullet-name>/, containing the container definition (Dockerfile or compose.yaml) the experiment runs in and self-contained sources and fixtures",
+      "type": "object",
+      "required": [
+        "name",
+        "container"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/BulletName"
+        },
+        "container": {
+          "$ref": "#/$defs/BulletContainer"
+        },
+        "files": {
+          "$ref": "#/$defs/BulletFiles"
+        }
+      }
+    },
+    "BulletName": {
+      "description": "The <bullet-name> directory under tracer-bullets/",
+      "type": "string",
+      "minLength": 1
+    },
+    "BulletContainer": {
+      "description": "The container definition file (Dockerfile or compose.yaml) the experiment runs in",
+      "enum": [
+        "Dockerfile",
+        "compose.yaml"
+      ]
+    },
+    "BulletFiles": {
+      "description": "Self-contained sources and fixtures inside docs/plans/<plan-name>/tracer-bullets/<bullet-name>/",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "ProgressLogs": {
+      "description": "Append-only execution attempt logs under docs/plans/<plan-name>/progress/, written during implementation, not planning",
+      "type": "array",
+      "items": {
+        "$ref": "progress.schema.json"
+      }
+    }
+  },
+  "examples": [
+    {
+      "number": 4,
+      "title": "Dry-Run Event Producer and Telemetry",
+      "background": "Events are disabled in production during dark-run verification, leaving suppressed events unobserved.",
+      "goals": [
+        {
+          "statement": "Emit isolated dry-run event counters without polluting production metrics.",
+          "cheapestPassingInterpretation": {
+            "interpretation": "Log a warning line instead of emitting a counter on a dedicated meter.",
+            "exclusion": "Requires emitting dry-run counters on an isolated meter distinct from production metrics.",
+            "discussionRow": 1
+          }
+        }
+      ],
+      "nonGoals": [
+        "Changing production event transport."
+      ],
+      "summary": "Replace DisabledProducer with DryRunProducer owning a dedicated meter when event sending is disabled.",
+      "assumptionsRisksAndPreconditions": {
+        "assumptions": [
+          {
+            "statement": "OpenTelemetry meter names isolate dry-run counters from production counters.",
+            "tested": "Verified in tracer-bullets/dry-run-meter."
+          }
+        ],
+        "risks": [
+          "Collector configuration might drop unknown meter names."
+        ],
+        "preconditions": [
+          "Meter name is registered in the collector allowlist."
+        ]
+      },
+      "discussions": [
+        {
+          "row": 1,
+          "decider": "Human",
+          "question": "Should dry-run counters use a separate meter?",
+          "answer": "Yes, isolate them on a dedicated meter."
+        }
+      ],
+      "executionPlan": {
+        "milestones": [
+          {
+            "title": "M1 — DryRunProducer and unit tests",
+            "summary": "Replace DisabledProducer with DryRunProducer owning its own meter and wire it when event sending is disabled.",
+            "verification": "Run Release build and unit tests with branch coverage above 90%."
+          }
+        ],
+        "goalCoverage": [
+          {
+            "goal": 1,
+            "milestones": [
+              "M1 — DryRunProducer and unit tests"
+            ]
+          }
+        ],
+        "verificationCommand": "dotnet test -c Release (existing)"
+      },
+      "research": [
+        {
+          "name": "otel-meter-isolation",
+          "files": [
+            "README.md"
+          ]
+        }
+      ],
+      "tracerBullets": [
+        {
+          "name": "dry-run-meter",
+          "container": "Dockerfile",
+          "files": [
+            "run.sh",
+            "README.md"
+          ]
+        }
+      ]
+    }
+  ]
+}
