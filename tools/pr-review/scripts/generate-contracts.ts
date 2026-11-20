@@ -226,6 +226,16 @@ const rulesTaskPattern = (
 		readonly pattern: string;
 	}
 ).pattern;
+const reuseTaskPattern = (
+	nonnull(agentInstructionsDefs.get("ReuseTask")) as {
+		readonly pattern: string;
+	}
+).pattern;
+const deadCodeTaskPattern = (
+	nonnull(agentInstructionsDefs.get("DeadCodeTask")) as {
+		readonly pattern: string;
+	}
+).pattern;
 const contextTaskPattern = (
 	nonnull(agentInstructionsDefs.get("ContextTask")) as {
 		readonly pattern: string;
@@ -238,6 +248,8 @@ const probePromptPattern = (
 declarations.push(
 	`export const INSTRUCTIONS_PROSE_TEMPLATES = ${JSON.stringify(prosePrefixItems.map(itemToTemplate))} as const;`,
 	`export const RULES_TASK_TEMPLATE = ${JSON.stringify(patternToTemplate(rulesTaskPattern))};`,
+	`export const REUSE_TASK_TEMPLATE = ${JSON.stringify(patternToTemplate(reuseTaskPattern))};`,
+	`export const DEAD_CODE_TASK_TEMPLATE = ${JSON.stringify(patternToTemplate(deadCodeTaskPattern))};`,
 	`export const CONTEXT_TASK_TEMPLATE = ${JSON.stringify(patternToTemplate(contextTaskPattern))};`,
 	`export const PROBE_PROMPT_TEMPLATE = ${JSON.stringify(patternToTemplate(probePromptPattern))};`,
 	'export const RULEBOOK_PROBE_KINDS: ReadonlySet<string> = new Set(["dead-code","reuse","context"]);\n',
