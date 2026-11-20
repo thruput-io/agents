@@ -1,28 +1,28 @@
 import type { CodeUnderReview } from "../domain/code-under-review.ts";
 import { ContextSubAgentLedger } from "../domain/context-sub-agent-ledger.ts";
 import type {
-	AckPayload,
+	AckSuccess,
 	Checkout,
 	Rulebook as ExternalRulebook,
 	RulesetPageResponse,
 	RulesetUrl,
+	RulesPageResponse,
 } from "../domain/contracts.g.ts";
 import { DeadCodeSubAgentLedger } from "../domain/dead-code-sub-agent-ledger.ts";
+import { Instructions, toRulebookSummaries } from "../domain/instructions.ts";
 import type { CoordinatedProbeSpec } from "../domain/main-agent-ledger.ts";
 import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
-import { paginateText } from "../domain/pagination.ts";
+import {
+	paginateRulebook,
+	paginateText,
+	surfaceOverview,
+} from "../domain/pagination.ts";
 import type { LedgerStore } from "../domain/ports.ts";
 import type { ProbeDocument } from "../domain/probe-document.ts";
 import type { SubAgentLedger } from "../domain/probe-ledger.ts";
 import { ReuseSubAgentLedger } from "../domain/reuse-sub-agent-ledger.ts";
 import type { Rulebook } from "../domain/rulebook.ts";
 import { RulesSubAgentLedger } from "../domain/rules-sub-agent-ledger.ts";
-
-const CONTEXT_BOOK_RULE_ROWS = 3;
-
-type AckValidationResult =
-	| { readonly success: true }
-	| { readonly success: false; readonly error: string };
 
 type ProbeRules =
 	| { readonly kind: "rulebook"; readonly rulebook: Rulebook }
@@ -39,7 +39,8 @@ interface ProbeBehavior {
 		pullRequest: CodeUnderReview,
 	) => SubAgentLedger;
 	toCoordinatedSpec: (name: Checkout) => CoordinatedProbeSpec;
-	validateAck: (payload: AckPayload) => AckValidationResult;
+	ackAssignment: (probeName: Checkout, deadlineMs: 300000) => AckSuccess;
+	rulesPage: (page: number) => RulesPageResponse;
 	ruleset: (url: RulesetUrl, page: number) => RulesetPageResponse;
 }
 
@@ -97,7 +98,7 @@ const paginateContextRuleset = (
 	if (isNullOrEmpty(book)) {
 		return {
 			success: false,
-			error: `Unknown ruleset URL: ${url}. Choose one of the URLs returned in inspect under #/rulesets.`,
+			error: `Unknown ruleset URL: ${url}. Choose one of the URLs returned in ack under #/rulesets.`,
 		};
 	}
 	const chunks = paginateText(book.text);
@@ -117,6 +118,20 @@ const paginateContextRuleset = (
 	};
 };
 
+const paginateProbeRulebook = (
+	rulebook: Rulebook,
+	page: number,
+): RulesPageResponse => {
+	const chunks = paginateRulebook(rulebook.toRuleset());
+	if (page < 1 || page > chunks.length) {
+		return {
+			success: false,
+			error: `Rules page ${page} is out of range (valid pages: 1..${chunks.length}).`,
+		};
+	}
+	return nonnull(chunks[page - 1]);
+};
+
 function contextProbeBehavior(
 	probe: ContextProbeDocument,
 	checkoutDir: Checkout,
@@ -131,19 +146,28 @@ function contextProbeBehavior(
 		toLedger: (directory, pullRequest) =>
 			ContextSubAgentLedger.from(directory, pullRequest, hydrated),
 		toCoordinatedSpec: (name) => ({ name, kind: "context", probe: hydrated }),
-		validateAck: (payload) => {
-			if (
-				"bookRuleRows" in payload &&
-				payload.bookRuleRows === CONTEXT_BOOK_RULE_ROWS
-			) {
-				return { success: true };
-			}
+		ackAssignment: (probeName, deadlineMs) => {
+			const spec = Instructions.fromParts(hydrated);
 			return {
-				success: false,
-				error:
-					'Invalid ack payload for context probe. Expected JSON: {"message":"<dispatcher message received>","bookRuleRows":3,"observationFormat":"<observation> breaks <principle>"} because context probes report 3 bookRule rows whose observations complete "<observation> breaks <principle>".',
+				success: true,
+				probe: probeName,
+				acknowledged: true,
+				deadlineMs,
+				instructions: spec.prose(),
+				task: spec.task(),
+				permissions: [...spec.permissions()],
+				kind: "context",
+				change: hydrated.change,
+				surface: surfaceOverview(hydrated.surface),
+				rulesets: [...toRulebookSummaries(hydrated.rulesets)],
+				checkout: nonnull(hydrated.checkout),
 			};
 		},
+		rulesPage: () => ({
+			success: false,
+			error:
+				"Probe kind context uses external rulesets; use the ruleset command.",
+		}),
 		ruleset: (url, page) =>
 			paginateContextRuleset(hydrated.rulesets, url, page),
 	};
@@ -164,25 +188,34 @@ function rulebookProbeBehavior(
 			kind: hydrated.kind,
 			probe: hydrated,
 		}),
-		validateAck: (payload) => {
-			const expected = hydrated.rulebook.rules.map((rule) => rule.id);
-			if (!("rulesInOrder" in payload)) {
-				return {
-					success: false,
-					error: `Invalid ack payload for ${hydrated.kind} probe. Expected JSON with "rulesInOrder": ${JSON.stringify(expected)} and "observationFormat": "<observation> breaks <principle>".`,
-				};
+		ackAssignment: (probeName, deadlineMs) => {
+			const spec = Instructions.fromParts(hydrated);
+			const chunks = paginateRulebook(hydrated.rulebook.toRuleset());
+			const base: AckSuccess = {
+				success: true,
+				probe: probeName,
+				acknowledged: true,
+				deadlineMs,
+				instructions: spec.prose(),
+				task: spec.task(),
+				permissions: [...spec.permissions()],
+				kind: hydrated.kind,
+				change: hydrated.change,
+				surface: surfaceOverview(hydrated.surface),
+				rulesOverview: {
+					totalPages: chunks.length,
+					ruleIds: hydrated.rulebook.rules.map((r) => r.id),
+				},
+			};
+			if (hydrated.kind === "rules") {
+				return base;
 			}
-			if (JSON.stringify(payload.rulesInOrder) !== JSON.stringify(expected)) {
-				return {
-					success: false,
-					error: `Ack "rulesInOrder" must match #/ruleset/rules in exact order before probing. Expected ${JSON.stringify(expected)}, got ${JSON.stringify(payload.rulesInOrder)}. Also include "observationFormat": "<observation> breaks <principle>".`,
-				};
-			}
-			return { success: true };
+			return { ...base, checkout: nonnull(hydrated.checkout) };
 		},
+		rulesPage: (page) => paginateProbeRulebook(hydrated.rulebook, page),
 		ruleset: () => ({
 			success: false,
-			error: `Probe kind ${hydrated.kind} has no external rulesets; only context probes use the ruleset command.`,
+			error: `Probe kind ${hydrated.kind} has no external rulesets; use the rules command.`,
 		}),
 	};
 }

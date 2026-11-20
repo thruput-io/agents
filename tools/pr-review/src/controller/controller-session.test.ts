@@ -110,11 +110,7 @@ it("SubAgentController enforces ack and 5-minute deadline across rehydrated sess
 	assert.deepEqual(beforeAckMain.acknowledged(), []);
 	assert.deepEqual(beforeAckMain.unacknowledged(), ["01-purpose"]);
 
-	const rehydratedAck = rehydratedSub.ack({
-		message: "Inspect 01-purpose",
-		rulesInOrder: ["Stated purpose"],
-		observationFormat: "<observation> breaks <principle>",
-	});
+	const rehydratedAck = rehydratedSub.ack();
 	assert.equal(rehydratedAck.success, true);
 	const afterAckMain = MainAgentController.create(
 		adapterPort,

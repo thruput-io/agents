@@ -58,6 +58,21 @@ const setupPagingWorkspace = (
 			},
 		],
 	};
+	const smallFileThree = {
+		path: "small-two.ts",
+		fragments: [
+			{
+				kind: "surface" as const,
+				side: "head" as const,
+				lines: [
+					{
+						idToReportViolationOn: "small-two.ts:1",
+						text: "export const second = 2;",
+					},
+				],
+			},
+		],
+	};
 	const bigRuleset = {
 		url: bigRulesetUrl,
 		title: "Domain-Driven Design",
@@ -69,11 +84,18 @@ const setupPagingWorkspace = (
 				`## Rule ${i + 1}\n${"Guideline text ".repeat(GUIDELINE_REPEATS)}`,
 		).join("\n"),
 	};
-	const surface = { headCommit: H, files: [bigFileOne, smallFileTwo] };
+	const surface = {
+		headCommit: H,
+		files: [bigFileOne, smallFileTwo, smallFileThree],
+	};
 	workdir.ledgerDirectory().writePullRequest({
 		change: sampleChange,
 		surface,
-		fragments: [...bigFileOne.fragments, ...smallFileTwo.fragments],
+		fragments: [
+			...bigFileOne.fragments,
+			...smallFileTwo.fragments,
+			...smallFileThree.fragments,
+		],
 		threads: { threads: [] },
 	});
 	workdir.ledgerDirectory().writeRulesets([bigRuleset]);
@@ -107,7 +129,7 @@ function collectPages(
 	if (page.success && page.status === "page") {
 		return collectPages(sub, {
 			overLimit: [...acc.overLimit, byteLength > MAX_PAGE_BYTES],
-			seenPaths: [...acc.seenPaths, page.path],
+			seenPaths: [...acc.seenPaths, ...page.files.map((f) => f.path)],
 			lastTotalPages: page.totalPages,
 		});
 	}
@@ -117,13 +139,25 @@ function collectPages(
 	};
 }
 
-it("SubAgentController next, prev, and ruleset page large changed files and large rulebooks strictly under 9KB", () => {
+it("SubAgentController ack, rules, next, prev, and ruleset page large changed files and large rulebooks strictly under 9KB", () => {
 	const workdir = createMemoryWorkspace("/tmp/controller-paging/workspace");
 	const bigRulesetUrl =
 		"https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md";
 	setupPagingWorkspace(workdir, bigRulesetUrl);
 
 	const purposeSub = SubAgentController.forWorkdir(workdir, "01-purpose");
+	const ackRes = purposeSub.ack().response;
+	assert.equal(
+		Buffer.byteLength(JSON.stringify(ackRes), "utf8") <= MAX_PAGE_BYTES,
+		true,
+	);
+	const rulesRes = purposeSub.rulesPage(1);
+	assert.equal(rulesRes.success, true);
+	assert.equal(
+		Buffer.byteLength(JSON.stringify(rulesRes), "utf8") <= MAX_PAGE_BYTES,
+		true,
+	);
+
 	const { overLimit, seenPaths, lastTotalPages } = collectPages(purposeSub, {
 		overLimit: [],
 		seenPaths: [],
@@ -133,14 +167,20 @@ it("SubAgentController next, prev, and ruleset page large changed files and larg
 		overLimit.every((flag) => !flag),
 		true,
 	);
-	assert.equal(lastTotalPages > 2, true);
+	assert.equal(lastTotalPages > 1, true);
 	assert.equal(seenPaths.filter((p) => p === "large.ts").length > 1, true);
-	assert.equal(seenPaths.at(-1), "small.ts");
+	assert.equal(seenPaths.includes("small.ts"), true);
+	assert.equal(seenPaths.at(-1), "small-two.ts");
 
 	const steppedBack = purposeSub.prev();
 	assert.equal(steppedBack.success, true);
 	assert.equal((steppedBack as { readonly status: string }).status, "page");
-	assert.equal((steppedBack as { readonly path: string }).path, "small.ts");
+	assert.equal(
+		(
+			steppedBack as { readonly files: readonly { readonly path: string }[] }
+		).files.some((f) => f.path === "small-two.ts"),
+		true,
+	);
 
 	const contextSub = SubAgentController.forWorkdir(workdir, "02-context");
 	const firstBook = contextSub.ruleset(bigRulesetUrl, 1);

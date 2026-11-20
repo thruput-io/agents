@@ -2,11 +2,15 @@ import type {
 	ContextFragment,
 	Fragment,
 	LineText,
+	Rule,
+	Ruleset,
+	RulesPage,
 	Surface,
 	SurfaceFile,
 	SurfaceLine,
 	SurfaceOverview,
 	SurfacePage,
+	SurfacePageFile,
 } from "./contracts.g.ts";
 import { nonnull } from "./nullish.ts";
 
@@ -20,7 +24,7 @@ interface MutableChunk {
 const fitsBytes = (candidate: unknown, maxBytes: number): boolean =>
 	Buffer.byteLength(JSON.stringify(candidate), "utf8") <= maxBytes;
 
-const pageCandidate = (
+const singleSlicePageCandidate = (
 	path: string,
 	fragments: readonly Fragment[],
 ): SurfacePage => ({
@@ -28,12 +32,27 @@ const pageCandidate = (
 	status: "page",
 	page: 9999,
 	totalPages: 9999,
-	fileIndex: 9999,
 	totalFiles: 9999,
-	filePage: 9999,
-	fileTotalPages: 9999,
-	path,
-	fragments: [...fragments],
+	files: [
+		{
+			fileIndex: 9999,
+			filePage: 9999,
+			fileTotalPages: 9999,
+			path,
+			fragments: [...fragments],
+		},
+	],
+});
+
+const multiFilePageCandidate = (
+	slices: readonly SurfacePageFile[],
+): SurfacePage => ({
+	success: true,
+	status: "page",
+	page: 9999,
+	totalPages: 9999,
+	totalFiles: 9999,
+	files: [...slices],
 });
 
 const pushFragmentLine = (
@@ -75,7 +94,9 @@ const splitFileFragments = (
 	file: SurfaceFile,
 	maxBytes: number,
 ): readonly (readonly Fragment[])[] => {
-	if (fitsBytes(pageCandidate(file.path, file.fragments), maxBytes)) {
+	if (
+		fitsBytes(singleSlicePageCandidate(file.path, file.fragments), maxBytes)
+	) {
 		return [file.fragments];
 	}
 	const chunks: Fragment[][] = [];
@@ -83,13 +104,15 @@ const splitFileFragments = (
 	for (const fragment of file.fragments) {
 		for (const line of fragment.lines) {
 			pushFragmentLine(current, fragment.kind, line);
+			const hasMultipleLines =
+				current.fragments.length > 1 ||
+				(current.fragments[0]?.lines.length ?? 0) > 1;
 			if (
-				current.fragments.length > 0 &&
-				!(
-					current.fragments.length === 1 &&
-					current.fragments[0]?.lines.length === 1
-				) &&
-				!fitsBytes(pageCandidate(file.path, current.fragments), maxBytes)
+				hasMultipleLines &&
+				!fitsBytes(
+					singleSlicePageCandidate(file.path, current.fragments),
+					maxBytes,
+				)
 			) {
 				popLastLine(current);
 				chunks.push(current.fragments);
@@ -104,42 +127,67 @@ const splitFileFragments = (
 	return chunks;
 };
 
-function paginateSurfaceWithin(
+const toFileSlices = (
 	files: readonly SurfaceFile[],
 	maxBytes: number,
-): readonly SurfacePage[] {
-	const grouped = files.map((file, index) => ({
-		fileIndex: index + 1,
-		path: file.path,
-		chunks: splitFileFragments(file, maxBytes),
-	}));
-	const totalPages = grouped.reduce(
-		(sum, entry) => sum + entry.chunks.length,
-		0,
-	);
-	const totalFiles = files.length;
-	const pages: SurfacePage[] = [];
-	for (const entry of grouped) {
-		const fileTotalPages = entry.chunks.length;
-		entry.chunks.forEach((fragments, chunkIndex) => {
-			pages.push({
-				success: true,
-				status: "page",
-				page: pages.length + 1,
-				totalPages,
-				fileIndex: entry.fileIndex,
-				totalFiles,
+): readonly SurfacePageFile[] =>
+	files.flatMap((file, index) => {
+		const chunks = splitFileFragments(file, maxBytes);
+		const fileTotalPages = chunks.length;
+		return chunks.map(
+			(fragments, chunkIndex): SurfacePageFile => ({
+				fileIndex: index + 1,
 				filePage: chunkIndex + 1,
 				fileTotalPages,
-				path: entry.path,
+				path: file.path,
 				fragments: fragments as (
 					| ContextFragment
 					| (Fragment & { kind: "surface" })
 				)[],
-			});
-		});
+			}),
+		);
+	});
+
+const packFileSlices = (
+	slices: readonly SurfacePageFile[],
+	maxBytes: number,
+): readonly (readonly SurfacePageFile[])[] => {
+	const groups: SurfacePageFile[][] = [];
+	let current: SurfacePageFile[] = [];
+	for (const slice of slices) {
+		const candidate = [...current, slice];
+		if (
+			current.length > 0 &&
+			!fitsBytes(multiFilePageCandidate(candidate), maxBytes)
+		) {
+			groups.push(current);
+			current = [slice];
+		} else {
+			current.push(slice);
+		}
 	}
-	return pages;
+	if (current.length > 0) {
+		groups.push(current);
+	}
+	return groups;
+};
+
+function paginateSurfaceWithin(
+	files: readonly SurfaceFile[],
+	maxBytes: number,
+): readonly SurfacePage[] {
+	const slices = toFileSlices(files, maxBytes);
+	const packed = packFileSlices(slices, maxBytes);
+	const totalPages = packed.length;
+	const totalFiles = files.length;
+	return packed.map((group, idx) => ({
+		success: true,
+		status: "page",
+		page: idx + 1,
+		totalPages,
+		totalFiles,
+		files: [...group],
+	}));
 }
 
 function paginateSurface(
@@ -153,6 +201,72 @@ const surfaceOverview = (surface: Surface): SurfaceOverview => ({
 	changedFiles: surface.files.length,
 	totalPages: paginateSurfaceWithin(surface.files, MAX_PAGE_JSON_BYTES).length,
 });
+
+const rulesPageCandidate = (
+	instructions: Ruleset["instructions"],
+	rules: readonly Rule[],
+	allPrinciples: Ruleset["principles"],
+): RulesPage => {
+	const parentIds = new Set(rules.map((rule) => rule.parent));
+	const principles = allPrinciples.filter((p) => parentIds.has(p.id));
+	return {
+		success: true,
+		page: 9999,
+		totalPages: 9999,
+		ruleset: {
+			instructions,
+			rules: [...rules],
+			principles,
+		},
+	};
+};
+
+function paginateRulebookWithin(
+	ruleset: Ruleset,
+	maxBytes: number,
+): readonly RulesPage[] {
+	const groups: Rule[][] = [];
+	let current: Rule[] = [];
+	for (const rule of ruleset.rules) {
+		const candidate = [...current, rule];
+		if (
+			current.length > 0 &&
+			!fitsBytes(
+				rulesPageCandidate(
+					ruleset.instructions,
+					candidate,
+					ruleset.principles,
+				),
+				maxBytes,
+			)
+		) {
+			groups.push(current);
+			current = [rule];
+		} else {
+			current.push(rule);
+		}
+	}
+	if (current.length > 0) {
+		groups.push(current);
+	}
+	const totalPages = groups.length;
+	return groups.map((pageRules, idx) => {
+		const built = rulesPageCandidate(
+			ruleset.instructions,
+			pageRules,
+			ruleset.principles,
+		);
+		return {
+			...built,
+			page: idx + 1,
+			totalPages,
+		};
+	});
+}
+
+function paginateRulebook(ruleset: Ruleset): readonly RulesPage[] {
+	return paginateRulebookWithin(ruleset, MAX_PAGE_JSON_BYTES);
+}
 
 function paginateText(text: string): readonly string[] {
 	return paginateTextWithin(
@@ -186,4 +300,4 @@ function paginateTextWithin(text: string, maxBytes: number): readonly string[] {
 	return pages;
 }
 
-export { paginateSurface, paginateText, surfaceOverview };
+export { paginateRulebook, paginateSurface, paginateText, surfaceOverview };

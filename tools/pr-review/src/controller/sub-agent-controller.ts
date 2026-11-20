@@ -1,9 +1,8 @@
 import { z } from "zod";
 import type { CodeUnderReview } from "../domain/code-under-review.ts";
 import {
-	type AckPayload,
 	type AckStatus,
-	type AgentInstructions,
+	type AckSuccess,
 	type Change,
 	type Checkout,
 	DeadlineMsSchema,
@@ -11,14 +10,12 @@ import {
 	type Row,
 	type RulesetPageResponse,
 	type RulesetUrl,
+	type RulesPageResponse,
 } from "../domain/contracts.g.ts";
 import type { Instructions } from "../domain/instructions.ts";
 import { isNullOrEmpty } from "../domain/nullish.ts";
 import type { WorkspaceFactoryPort, WorkspacePort } from "../domain/ports.ts";
-import {
-	type ProbeDocument,
-	toAgentInstructions,
-} from "../domain/probe-document.ts";
+import type { ProbeDocument } from "../domain/probe-document.ts";
 import type {
 	LedgerSubmission,
 	SubAgentLedger,
@@ -38,13 +35,16 @@ import {
 	probeBehaviorFor,
 } from "./sub-agent-probe.ts";
 
-export type AckResult =
-	| { readonly success: true; readonly data: AckStatus }
-	| { readonly success: false; readonly error: string };
+export interface AckResult {
+	readonly success: true;
+	readonly data: AckStatus;
+	readonly response: AckSuccess;
+}
 
 export const SUBAGENT_DEADLINE_MS = DeadlineMsSchema.decode(undefined);
 
 export class SubAgentController {
+	readonly #name: Checkout;
 	readonly #workdir: WorkspacePort;
 	readonly #ledger: SubAgentLedger;
 	readonly #instructions: Instructions;
@@ -54,6 +54,7 @@ export class SubAgentController {
 	readonly #now: () => number;
 
 	private constructor(init: SubAgentControllerInit) {
+		this.#name = init.name;
 		this.#workdir = init.workdir;
 		this.#ledger = init.ledger;
 		this.#instructions = init.instructions;
@@ -142,8 +143,8 @@ export class SubAgentController {
 		return this.#behavior.rules;
 	}
 
-	inspect(): AgentInstructions {
-		return toAgentInstructions(this.#behavior.probe);
+	rulesPage(page: number): RulesPageResponse {
+		return this.#behavior.rulesPage(page);
 	}
 
 	next(): PageResponse {
@@ -158,11 +159,7 @@ export class SubAgentController {
 		return this.#behavior.ruleset(url, page);
 	}
 
-	ack(payload: AckPayload): AckResult {
-		const check = this.#behavior.validateAck(payload);
-		if (!check.success) {
-			return check;
-		}
+	ack(): AckResult {
 		const acknowledgedAt = this.#now();
 		this.#storage.writeAck(acknowledgedAt);
 		return {
@@ -172,6 +169,7 @@ export class SubAgentController {
 				deadlineMs: SUBAGENT_DEADLINE_MS,
 				permissions: this.#instructions.permissions(),
 			},
+			response: this.#behavior.ackAssignment(this.#name, SUBAGENT_DEADLINE_MS),
 		};
 	}
 

@@ -3,9 +3,6 @@ import { isMap, parseDocument } from "yaml";
 import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
 import type { RawCommandResult } from "./cli.ts";
 
-const ACK_FAILURE_GUIDE =
-	'Provide valid JSON for ack: Rules/Reuse/DeadCode -> {"message":"<dispatcher message received>","rulesInOrder":[<rule ids from #/ruleset/rules in order>],"observationFormat":"<observation> breaks <principle>"}; Context -> {"message":"<dispatcher message received>","bookRuleRows":3,"observationFormat":"<observation> breaks <principle>"}.';
-
 const readJsonInput = (
 	arg: string,
 ):
@@ -43,30 +40,6 @@ const parseIntegerArg = (
 	return raw;
 };
 
-const toAckCommand = (
-	session: string | undefined,
-	probe: string | undefined,
-	thirdArg: string | undefined,
-): RawCommandResult => {
-	if (isNullOrEmpty(thirdArg)) {
-		return {
-			ok: false,
-			error: `Missing ack JSON payload. ${ACK_FAILURE_GUIDE}`,
-		};
-	}
-	const parsedJson = readJsonInput(thirdArg);
-	if (!parsedJson.ok) {
-		return {
-			ok: false,
-			error: `Malformed JSON for ack: ${parsedJson.error}. ${ACK_FAILURE_GUIDE}`,
-		};
-	}
-	return {
-		ok: true,
-		raw: { command: "ack", session, probe, payload: parsedJson.value },
-	};
-};
-
 const toReportCommand = (
 	session: string | undefined,
 	probe: string | undefined,
@@ -100,8 +73,19 @@ const toRawSubAgentCommand = (args: readonly string[]): RawCommandResult => {
 			},
 		};
 	}
-	if (command === "inspect" || command === "next" || command === "prev") {
+	if (command === "ack" || command === "next" || command === "prev") {
 		return { ok: true, raw: { command, session: firstArg, probe: secondArg } };
+	}
+	if (command === "rules") {
+		return {
+			ok: true,
+			raw: {
+				command,
+				session: firstArg,
+				probe: secondArg,
+				page: parseIntegerArg(thirdArg, 1),
+			},
+		};
 	}
 	if (command === "ruleset") {
 		return {
@@ -115,13 +99,10 @@ const toRawSubAgentCommand = (args: readonly string[]): RawCommandResult => {
 			},
 		};
 	}
-	if (command === "ack") {
-		return toAckCommand(firstArg, secondArg, thirdArg);
-	}
 	if (command === "report") {
 		return toReportCommand(firstArg, secondArg, thirdArg);
 	}
 	return { ok: true, raw: { command } };
 };
 
-export { ACK_FAILURE_GUIDE, toRawSubAgentCommand };
+export { toRawSubAgentCommand };

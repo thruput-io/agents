@@ -17,7 +17,7 @@ import {
 import { createMemoryWorkspace } from "./memory-workspace.test.ts";
 import { SubAgentController } from "./sub-agent-controller.ts";
 
-const EXPECTED_PROSE_LENGTH = 9;
+const EXPECTED_PROSE_LENGTH = 5;
 const FIVE_MINUTES_MS = 300_000;
 
 const probeFor = (
@@ -31,7 +31,7 @@ const probeFor = (
 		rulebook: sampleRulebook(),
 	});
 
-it("SubAgentController exposes instructions, change, rules, and codeUnderReview for its probe", () => {
+it("SubAgentController exposes instructions, change, rules, rulesPage, and ack assignment for its probe", () => {
 	const workdir = createMemoryWorkspace("/tmp/review/workspace");
 	const sub = probeFor("rules", workdir);
 	assert.equal(sub.workdir().equals(workdir), true);
@@ -51,9 +51,16 @@ it("SubAgentController exposes instructions, change, rules, and codeUnderReview 
 		].map((r) => r.id),
 		["Stated purpose"],
 	);
-	assert.equal("checkout" in sub.inspect(), false);
-	assert.equal("files" in sub.inspect().surface, false);
-	assert.equal(sub.inspect().kind, "rules");
+	const acked = sub.ack().response;
+	assert.equal("checkout" in acked, false);
+	assert.equal("files" in acked.surface, false);
+	assert.equal(acked.kind, "rules");
+	assert.deepEqual(acked.rulesOverview, {
+		totalPages: 1,
+		ruleIds: ["Stated purpose"],
+	});
+	const pageOne = sub.rulesPage(1);
+	assert.equal(pageOne.success, true);
 });
 
 it("SubAgentController sets probe-kind permissions and checkout paths", () => {
@@ -92,9 +99,7 @@ it("SubAgentController sets probe-kind permissions and checkout paths", () => {
 	]);
 	assert.equal(
 		[contextSub, deadCodeSub, reuseSub].every(
-			(sub) =>
-				(sub.inspect() as { readonly checkout?: string }).checkout ===
-				"/tmp/review/workspace/snapshot",
+			(sub) => sub.ack().response.checkout === "/tmp/review/workspace/snapshot",
 		),
 		true,
 	);
@@ -124,11 +129,7 @@ it("SubAgentController requires ack before report and MainAgentController reject
 		evidence: "ok",
 	};
 	assert.equal(sub.report([cleanRow]).success, false);
-	const ackResult = sub.ack({
-		message: "<SYSTEM_MESSAGE>Run inspect</SYSTEM_MESSAGE>",
-		rulesInOrder: ["Stated purpose"],
-		observationFormat: "<observation> breaks <principle>",
-	});
+	const ackResult = sub.ack();
 	assert.equal(ackResult.success, true);
 	assert.equal(ackResult.data.deadlineMs, FIVE_MINUTES_MS);
 	assert.deepEqual(ackResult.data.permissions, [

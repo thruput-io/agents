@@ -77,7 +77,7 @@ it("rulebook hands a probe its rules and their principles without pre-baked defi
 	];
 	assert.deepEqual(rulebook(own, governance), {
 		instructions:
-			"Apply each rule with its [[term]]s resolved via define. When the application of a rule is in doubt, its parent in principles decides",
+			"Evaluate each rule in order. If a rule's application is ambiguous, use its parent principle to decide. If a bracketed [[Term]] is unfamiliar, look it up with define.",
 		rules: own,
 		principles: [governance.principles[0]],
 	});

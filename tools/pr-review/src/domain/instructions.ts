@@ -6,6 +6,7 @@ import {
 	type ContextInstructions,
 	ContextPermissionsSchema,
 	ContextTaskSchema,
+	DEAD_CODE_TASK_TEMPLATE,
 	type DeadCodeKind,
 	DeadCodePermissionsSchema,
 	DeadCodeTaskSchema,
@@ -16,6 +17,7 @@ import {
 	type ProbeName,
 	type ProbePrompt,
 	ProbePromptSchema,
+	REUSE_TASK_TEMPLATE,
 	type ReuseKind,
 	ReusePermissionsSchema,
 	ReuseTaskSchema,
@@ -64,7 +66,7 @@ const buildPrompt = (target: ProbeTarget): ProbePrompt =>
 	ProbePromptSchema.parse(substituteTarget(PROBE_PROMPT_TEMPLATE, target));
 
 const PROMPT_IN_PROSE_PATTERN =
-	/"(?<prompt>Run \/[^"]+\/review-tool-probe\.mjs inspect pr-review-session:[A-Za-z0-9_-]+ [0-9]{2}-[a-z0-9-]+ and follow its instructions\.)"/u;
+	/"(?<prompt>Run \/[^"]+\/review-tool-probe\.mjs -h, then run \/[^"]+\/review-tool-probe\.mjs ack pr-review-session:[A-Za-z0-9_-]+ [0-9]{2}-[a-z0-9-]+ and follow its instructions\.)"/u;
 
 const resolveDefined = <T>(value: T | undefined, fallback: T): T => {
 	if (value === undefined) {
@@ -88,8 +90,12 @@ const buildTask = (kind: ProbeKind, target: ProbeTarget): Task => {
 	const tasks: Record<ProbeKind, () => Task> = {
 		rules: () =>
 			RulesTaskSchema.parse(substituteTarget(RULES_TASK_TEMPLATE, target)),
-		"dead-code": () => DeadCodeTaskSchema.decode(undefined),
-		reuse: () => ReuseTaskSchema.decode(undefined),
+		"dead-code": () =>
+			DeadCodeTaskSchema.parse(
+				substituteTarget(DEAD_CODE_TASK_TEMPLATE, target),
+			),
+		reuse: () =>
+			ReuseTaskSchema.parse(substituteTarget(REUSE_TASK_TEMPLATE, target)),
 		context: () =>
 			ContextTaskSchema.parse(substituteTarget(CONTEXT_TASK_TEMPLATE, target)),
 	};

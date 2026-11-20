@@ -57,6 +57,21 @@ const setupPagingWorkdir = (tempRoot: string, bigRulesetUrl: string) => {
 			},
 		],
 	};
+	const smallFileThree = {
+		path: "small-two.ts",
+		fragments: [
+			{
+				kind: "surface" as const,
+				side: "head" as const,
+				lines: [
+					{
+						idToReportViolationOn: "small-two.ts:1",
+						text: "export const second = 2;",
+					},
+				],
+			},
+		],
+	};
 	const bigRuleset = {
 		url: bigRulesetUrl,
 		title: "Domain-Driven Design",
@@ -68,11 +83,18 @@ const setupPagingWorkdir = (tempRoot: string, bigRulesetUrl: string) => {
 				`## Rule ${i + 1}\n${"Guideline text ".repeat(GUIDELINE_REPEATS)}`,
 		).join("\n"),
 	};
-	const surface = { headCommit: H, files: [bigFileOne, smallFileTwo] };
+	const surface = {
+		headCommit: H,
+		files: [bigFileOne, smallFileTwo, smallFileThree],
+	};
 	workdir.ledgerDirectory().writePullRequest({
 		change: sampleChange,
 		surface,
-		fragments: [...bigFileOne.fragments, ...smallFileTwo.fragments],
+		fragments: [
+			...bigFileOne.fragments,
+			...smallFileTwo.fragments,
+			...smallFileThree.fragments,
+		],
 		threads: { threads: [] },
 	});
 	workdir.ledgerDirectory().writeRulesets([bigRuleset]);
@@ -123,7 +145,7 @@ function collectPages(
 } {
 	const run = runSubCliJson<{
 		readonly status: "page" | "end";
-		readonly path?: string;
+		readonly files?: readonly { readonly path: string }[];
 		readonly totalPages: number;
 	}>(["next", session, "01-purpose"]);
 	const current = nonnull(run.payload);
@@ -138,19 +160,38 @@ function collectPages(
 		page: () =>
 			collectPages(session, {
 				...nextAcc,
-				seenPaths: [...nextAcc.seenPaths, nonnull(current.path)],
+				seenPaths: [
+					...nextAcc.seenPaths,
+					...nonnull(current.files).map((f) => f.path),
+				],
 				lastTotalPages: current.totalPages,
 			}),
 	};
 	return nextStep[current.status]();
 }
 
-it("review-tool-probe next, prev, and ruleset page large changed files and large rulebooks strictly under 9KB", () => {
+it("review-tool-probe ack, rules, next, prev, and ruleset page large changed files and large rulebooks strictly under 9KB", () => {
 	const tempRoot = mkdtempSync(join(tmpdir(), "controller-paging-"));
 	const bigRulesetUrl =
 		"https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md";
 	try {
 		const session = setupPagingWorkdir(tempRoot, bigRulesetUrl);
+		const ackRun = runSubCliJson<{ readonly acknowledged: boolean }>([
+			"ack",
+			session,
+			"01-purpose",
+		]);
+		assert.equal(ackRun.status, 0, ackRun.output);
+		assert.equal(ackRun.byteLength <= MAX_CLI_OUTPUT_BYTES, true);
+
+		const rulesRun = runSubCliJson<{ readonly page: number }>([
+			"rules",
+			session,
+			"01-purpose",
+		]);
+		assert.equal(rulesRun.status, 0, rulesRun.output);
+		assert.equal(rulesRun.byteLength <= MAX_CLI_OUTPUT_BYTES, true);
+
 		const { statuses, overLimit, seenPaths, lastTotalPages } = collectPages(
 			session,
 			{ statuses: [], overLimit: [], seenPaths: [], lastTotalPages: 0 },
@@ -163,17 +204,21 @@ it("review-tool-probe next, prev, and ruleset page large changed files and large
 			overLimit.every((flag) => !flag),
 			true,
 		);
-		assert.equal(lastTotalPages > 2, true);
+		assert.equal(lastTotalPages > 1, true);
 		assert.equal(seenPaths.filter((p) => p === "large.ts").length > 1, true);
-		assert.equal(seenPaths.at(-1), "small.ts");
+		assert.equal(seenPaths.includes("small.ts"), true);
+		assert.equal(seenPaths.at(-1), "small-two.ts");
 
 		const steppedBack = runSubCliJson<{
 			readonly status: string;
-			readonly path: string;
+			readonly files: readonly { readonly path: string }[];
 		}>(["prev", session, "01-purpose"]);
 		assert.equal(steppedBack.status, 0, steppedBack.output);
 		assert.equal(nonnull(steppedBack.payload).status, "page");
-		assert.equal(nonnull(steppedBack.payload).path, "small.ts");
+		assert.equal(
+			nonnull(steppedBack.payload).files.some((f) => f.path === "small-two.ts"),
+			true,
+		);
 
 		const firstBook = runSubCliJson<{
 			readonly page: number;

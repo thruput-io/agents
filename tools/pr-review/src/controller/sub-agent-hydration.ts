@@ -23,7 +23,10 @@ import { type ProbeBehavior, probeBehaviorFor } from "./sub-agent-probe.ts";
 const SHA1_HEX_LENGTH = 40;
 const ZERO_COMMIT_SHA = "0".repeat(SHA1_HEX_LENGTH);
 
+const DEFAULT_PROBE_NAME = "01-purpose";
+
 interface SubAgentControllerInit {
+	readonly name: Checkout;
 	readonly workdir: WorkspacePort;
 	readonly ledger: SubAgentLedger;
 	readonly instructions: Instructions;
@@ -52,6 +55,7 @@ const fromLedgerInit = (
 		files: [...ledger.pullRequest().surface()],
 	};
 	return {
+		name: DEFAULT_PROBE_NAME,
 		workdir,
 		ledger,
 		instructions: Instructions.forKind("context"),
@@ -70,6 +74,7 @@ const withLedgerInit = (
 	ledger: SubAgentLedger,
 	probe: ProbeDocument,
 ): SubAgentControllerInit => ({
+	name: DEFAULT_PROBE_NAME,
 	workdir,
 	ledger,
 	instructions: Instructions.fromParts(probe),
@@ -107,6 +112,7 @@ const loadWorkdirInit = (
 	}
 	const target = nonnull(probes[index]);
 	return {
+		name,
 		workdir,
 		ledger: nonnull(ledgers[index]),
 		instructions: Instructions.fromParts(target.probe),

@@ -71,7 +71,7 @@ it("controller CLIs support -h / --help and define routing without adapters", as
 	assert.equal(runSubAgentCli(deps, ["define", "Missing glossary term"]), 1);
 });
 
-it("Sub-agent CLI handles inspect, next, prev, and rejects mismatched ack rules", () => {
+it("Sub-agent CLI handles ack, rules, next, prev, and rejects out-of-range rules page", () => {
 	const { factory, workdir } = setupWorkspace();
 	const sessionToken = workdir.sessionToken();
 	const deps = {
@@ -80,25 +80,14 @@ it("Sub-agent CLI handles inspect, next, prev, and rejects mismatched ack rules"
 			SubAgentController.forSession(factory, session, name),
 		resolveDefinition: stubResolveDefinition,
 	};
+	assert.equal(runSubAgentCli(deps, ["ack", sessionToken, "01-purpose"]), 0);
+	assert.equal(runSubAgentCli(deps, ["rules", sessionToken, "01-purpose"]), 0);
 	assert.equal(
-		runSubAgentCli(deps, ["inspect", sessionToken, "01-purpose"]),
-		0,
+		runSubAgentCli(deps, ["rules", sessionToken, "01-purpose", "99"]),
+		1,
 	);
 	assert.equal(runSubAgentCli(deps, ["next", sessionToken, "01-purpose"]), 0);
 	assert.equal(runSubAgentCli(deps, ["prev", sessionToken, "01-purpose"]), 0);
-	assert.equal(
-		runSubAgentCli(deps, [
-			"ack",
-			sessionToken,
-			"01-purpose",
-			JSON.stringify({
-				message: "Inspect 01-purpose",
-				rulesInOrder: ["Wrong rule"],
-				observationFormat: "<observation> breaks <principle>",
-			}),
-		]),
-		1,
-	);
 });
 
 it("Sub-agent and main-agent CLIs handle ack, report, and status", async () => {
@@ -114,11 +103,6 @@ it("Sub-agent and main-agent CLIs handle ack, report, and status", async () => {
 			SubAgentController.forSession(factory, session, name),
 		resolveDefinition: stubResolveDefinition,
 	};
-	const ackPayload = JSON.stringify({
-		message: "<SYSTEM_MESSAGE>Inspect 01-purpose</SYSTEM_MESSAGE>",
-		rulesInOrder: ["Stated purpose"],
-		observationFormat: "<observation> breaks <principle>",
-	});
 	const reportPayload = JSON.stringify({
 		oneRowPerRuleInOrder: [
 			{
@@ -129,10 +113,7 @@ it("Sub-agent and main-agent CLIs handle ack, report, and status", async () => {
 			},
 		],
 	});
-	assert.equal(
-		runSubAgentCli(deps, ["ack", sessionToken, "01-purpose", ackPayload]),
-		0,
-	);
+	assert.equal(runSubAgentCli(deps, ["ack", sessionToken, "01-purpose"]), 0);
 	assert.equal(
 		runSubAgentCli(deps, ["report", sessionToken, "01-purpose", reportPayload]),
 		0,
@@ -145,7 +126,7 @@ it("Sub-agent and main-agent CLIs handle ack, report, and status", async () => {
 	]);
 	assert.equal(
 		mainLedger.prompt("01-purpose"),
-		"Run /opt/pr-review/dist/bin/review-tool-probe.mjs inspect pr-review-session:default 01-purpose and follow its instructions.",
+		"Run /opt/pr-review/dist/bin/review-tool-probe.mjs -h, then run /opt/pr-review/dist/bin/review-tool-probe.mjs ack pr-review-session:default 01-purpose and follow its instructions.",
 	);
 	assert.equal(mainLedger.submittedOutcome()?.verdict, "approve");
 	assert.equal(

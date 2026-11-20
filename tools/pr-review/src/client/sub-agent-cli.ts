@@ -3,9 +3,6 @@ import type { AckResult } from "../controller/sub-agent-controller.ts";
 import type { ProbeRules } from "../controller/sub-agent-probe.ts";
 import type { CodeUnderReview } from "../domain/code-under-review.ts";
 import {
-	type AckPayload,
-	type AckResponse,
-	type AgentInstructions,
 	type Change,
 	type Checkout,
 	type PageResponse,
@@ -13,6 +10,7 @@ import {
 	type Row,
 	type RulesetPageResponse,
 	type RulesetUrl,
+	type RulesPageResponse,
 	SubAgentCommandSchema,
 } from "../domain/contracts.g.ts";
 import type { Instructions } from "../domain/instructions.ts";
@@ -28,7 +26,7 @@ import {
 	parseSchemaCli,
 	writeJson,
 } from "./cli.ts";
-import { ACK_FAILURE_GUIDE, toRawSubAgentCommand } from "./sub-agent-args.ts";
+import { toRawSubAgentCommand } from "./sub-agent-args.ts";
 import { subAgentHelpPayload } from "./sub-agent-help.ts";
 
 interface SubAgentCliTarget {
@@ -37,11 +35,11 @@ interface SubAgentCliTarget {
 	change: () => Change;
 	codeUnderReview: () => CodeUnderReview;
 	rules: () => ProbeRules;
-	inspect: () => AgentInstructions;
+	rulesPage: (page: number) => RulesPageResponse;
 	next: () => PageResponse;
 	prev: () => PageResponse;
 	ruleset: (url: RulesetUrl, page: number) => RulesetPageResponse;
-	ack: (payload: AckPayload) => AckResult;
+	ack: () => AckResult;
 	report: (rows: readonly Row[]) => z.ZodSafeParseResult<LedgerSubmission>;
 }
 
@@ -55,7 +53,7 @@ interface SubAgentCliDeps {
 }
 
 const MISSING_COMMAND_USAGE = [
-	"Usage: review-tool-probe.mjs <define|inspect|ack|",
+	"Usage: review-tool-probe.mjs <define|ack|rules|",
 	"next|prev|ruleset|report> ...\n",
 ].join("");
 
@@ -74,9 +72,12 @@ const dispatchSubAgentAction = (
 		{ readonly command: "define" }
 	>,
 ): number => {
-	if (cmd.command === "inspect") {
-		writeJson(sub.inspect());
+	if (cmd.command === "ack") {
+		writeJson(sub.ack().response);
 		return 0;
+	}
+	if (cmd.command === "rules") {
+		return writePageResponse(sub.rulesPage(cmd.page));
 	}
 	if (cmd.command === "next") {
 		return writePageResponse(sub.next());
@@ -86,21 +87,6 @@ const dispatchSubAgentAction = (
 	}
 	if (cmd.command === "ruleset") {
 		return writePageResponse(sub.ruleset(cmd.url, cmd.page));
-	}
-	if (cmd.command === "ack") {
-		const acked = sub.ack(cmd.payload);
-		if (!acked.success) {
-			return failWithJsonError(acked.error);
-		}
-		const response: AckResponse = {
-			success: true,
-			probe: cmd.probe,
-			acknowledged: true,
-			deadlineMs: acked.data.deadlineMs,
-			permissions: [...acked.data.permissions],
-		};
-		writeJson(response);
-		return 0;
 	}
 	const reported = sub.report(cmd.report.oneRowPerRuleInOrder);
 	if (!reported.success) {
@@ -125,12 +111,7 @@ function runSubAgentCli(
 		help: subAgentHelpPayload,
 		toRaw: toRawSubAgentCommand,
 		missingCommandUsage: MISSING_COMMAND_USAGE,
-		onInvalidCommand: (command, details) => {
-			if (command === "ack") {
-				return failWithJsonError(`${details}\n${ACK_FAILURE_GUIDE}`);
-			}
-			return failWithJsonError(details);
-		},
+		onInvalidCommand: (_command, details) => failWithJsonError(details),
 	});
 	if (dispatchedCli.kind === "done") {
 		return dispatchedCli.exitCode;
