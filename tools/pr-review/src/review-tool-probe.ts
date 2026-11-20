@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { HostAdapterFactory } from "./adapters/adapter-factory.ts";
 import { resolveDefinition } from "./adapters/fs/define.ts";
+import { isCliEntrypoint } from "./adapters/fs/skill-dir.ts";
 import { WorkdirFactory } from "./adapters/fs/workdir.ts";
-import { exitWithCode, isCliEntrypoint } from "./client/cli.ts";
+import { exitWithCode } from "./client/cli.ts";
 import { runSubAgentCli } from "./client/sub-agent-cli.ts";
 import { SubAgentController } from "./controller/sub-agent-controller.ts";
 

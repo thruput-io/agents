@@ -1,15 +1,5 @@
-import { existsSync, realpathSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { isNullOrEmpty } from "../domain/nullish.ts";
-
-export const isCliEntrypoint = (metaUrl: string): boolean => {
-	const [, entryArg] = process.argv;
-	if (isNullOrEmpty(entryArg) || !existsSync(entryArg)) {
-		return false;
-	}
-	return realpathSync(fileURLToPath(metaUrl)) === realpathSync(entryArg);
-};
 
 export type RawCommandResult =
 	| { readonly ok: true; readonly raw: unknown }

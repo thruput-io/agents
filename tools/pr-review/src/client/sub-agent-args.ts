@@ -1,21 +1,12 @@
-import { existsSync, readFileSync, statSync } from "node:fs";
 import { isMap, parseDocument } from "yaml";
 import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
 import type { RawCommandResult } from "./cli.ts";
 
 const readJsonInput = (
-	arg: string,
+	raw: string,
 ):
 	| { readonly ok: true; readonly value: unknown }
 	| { readonly ok: false; readonly error: string } => {
-	let raw = arg;
-	if (
-		!arg.trimStart().startsWith("{") &&
-		existsSync(arg) &&
-		statSync(arg).isFile()
-	) {
-		raw = readFileSync(arg, "utf-8");
-	}
 	const doc = parseDocument(raw, { schema: "json", strict: true });
 	if (doc.errors.length > 0) {
 		return { ok: false, error: nonnull(doc.errors[0]).message };

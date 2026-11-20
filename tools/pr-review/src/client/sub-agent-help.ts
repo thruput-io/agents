@@ -1,12 +1,5 @@
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readReviewSchemaDefs } from "../adapters/fs/skill-dir.ts";
 import { SUBAGENT_DEADLINE_MS } from "../controller/sub-agent-controller.ts";
-
-const REVIEW_SCHEMAS_DIR = resolve(
-	dirname(fileURLToPath(import.meta.url)),
-	"../../schemas/review",
-);
 
 const ROW_SCHEMA_KEYS = [
 	"Violation",
@@ -16,16 +9,9 @@ const ROW_SCHEMA_KEYS = [
 	["BookRule", "PassRow"].join(""),
 ] as const;
 
-const readSchemaDefs = (fileName: string): ReadonlyMap<string, unknown> => {
-	const parsed = JSON.parse(
-		readFileSync(resolve(REVIEW_SCHEMAS_DIR, fileName), "utf8"),
-	) as { readonly $defs: Readonly<Record<string, unknown>> };
-	return new Map(Object.entries(parsed.$defs));
-};
-
 const subAgentHelpPayload = () => {
-	const subAgentDefs = readSchemaDefs("sub-agent-controller.schema.json");
-	const ledgerDefs = readSchemaDefs("ledger.schema.json");
+	const subAgentDefs = readReviewSchemaDefs("sub-agent-controller.schema.json");
+	const ledgerDefs = readReviewSchemaDefs("ledger.schema.json");
 	const reportJson = ["'{", '"oneRow', "PerRule", 'InOrder"', ":[...]}'"].join(
 		"",
 	);
