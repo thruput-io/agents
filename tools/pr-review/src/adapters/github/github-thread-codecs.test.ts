@@ -109,4 +109,16 @@ it("thread folds a review thread into side, lines, and whether the author resolv
 		{ start: 9, end: 9 },
 	);
 	assert.equal(thread(node({ diffSide: "LEFT" }), "author").side, "base");
+	const resolvedByAuthor = thread(
+		node({ isResolved: true, resolvedBy: { login: "author" } }),
+		"author",
+	);
+	assert.deepEqual(resolvedByAuthor, {
+		id: "T",
+		path: "a.sh",
+		side: "head",
+		lines: { start: 8, end: 9 },
+		state: "resolved-by-author",
+		body: citedBody,
+	});
 });

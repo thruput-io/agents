@@ -83,4 +83,4 @@ const GitHubReviewCommentCodec = z.codec(
 const comment = (finding: InlineFinding): PullsCreateReviewBodyCommentsItem =>
 	GitHubReviewCommentCodec.encode(finding);
 
-export { comment, GitHubReviewCommentCodec };
+export { comment, DOMAIN_SIDE_OF, GitHubReviewCommentCodec, HOST_SIDE_OF };

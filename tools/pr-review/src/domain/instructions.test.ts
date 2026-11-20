@@ -3,6 +3,7 @@ import { test as it } from "node:test";
 import { ProbeSchema } from "./contracts.g.ts";
 import { instructions } from "./instructions.ts";
 import { nonnull } from "./nullish.ts";
+import { loadPersistedProbes, toAgentInstructions } from "./probe-document.ts";
 import { Rulebook } from "./rulebook.ts";
 
 const SHA1_HEX_LENGTH = 40;
@@ -149,4 +150,20 @@ it("instructions hands every probe its instructions, task, change, surface overv
 		rulesets: rulesetSummaries,
 		checkout: "/w/snapshot",
 	});
+});
+
+it("toAgentInstructions and loadPersistedProbes round-trip probes through ProbeSchema", () => {
+	const { rb } = buildInstructionsFixture();
+	const serialized = toAgentInstructions({
+		kind: "rules",
+		change,
+		surface: context.surface,
+		rulebook: rb,
+	});
+	const rehydrated = loadPersistedProbes(
+		[{ name: "01-g1", document: serialized }],
+		context.surface,
+		rulesets,
+	);
+	assert.deepEqual(rehydrated[0]?.auditDocument, serialized);
 });

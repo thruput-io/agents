@@ -12,15 +12,7 @@ import {
 } from "../../domain/contracts.g.ts";
 import { isNullOrEmpty, nonnull } from "../../domain/nullish.ts";
 import { ours } from "../../domain/rulebook.ts";
-
-const SIDE_OF = new Map<string, "head" | "base">([
-	["RIGHT", "head"],
-	["LEFT", "base"],
-]);
-const DIFF_SIDE_OF = {
-	head: "RIGHT",
-	base: "LEFT",
-} as const;
+import { DOMAIN_SIDE_OF, HOST_SIDE_OF } from "./github-review-comment.ts";
 
 const REVIEW_THREADS_QUERY = `
 query ReviewThreads($owner: String!, $name: String!, $number: Int!, $after: String) {
@@ -123,7 +115,7 @@ const numberOr = (value: number | null, fallback: number): number => {
 };
 
 const sideOf = (diffSide: GitHubThreadNode["diffSide"]): "head" | "base" =>
-	nonnull(SIDE_OF.get(diffSide));
+	nonnull(DOMAIN_SIDE_OF.get(diffSide));
 
 const isReviewableThreadNode = (node: GitHubThreadNode): boolean =>
 	!isNullOrEmpty(node.line) && ours(firstCommentBodyOf(node));
@@ -169,7 +161,7 @@ const gitHubThreadCodec = (author: Developer) =>
 			path: domainThread.path,
 			line: domainThread.lines.end,
 			startLine: domainThread.lines.start,
-			diffSide: DIFF_SIDE_OF[domainThread.side],
+			diffSide: HOST_SIDE_OF[domainThread.side],
 			isResolved: domainThread.state !== "open",
 			resolvedBy: resolvedByOf(domainThread.state, author),
 			comments: { nodes: [{ body: domainThread.body }] },

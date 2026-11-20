@@ -73,6 +73,19 @@ it("controller CLIs support -h / --help and define routing without adapters", as
 		await runSubAgentCli(deps, ["define", "Missing glossary term"]),
 		1,
 	);
+	assert.equal(
+		await runSubAgentCli(deps, [
+			"report",
+			"pr-review-session:invalid",
+			"01-purpose",
+			"not-json",
+		]),
+		1,
+	);
+	assert.equal(
+		await runMainAgentCli(freshMain, factory, ["unknown-command"]),
+		1,
+	);
 });
 
 it("Sub-agent CLI handles ack, rules, next, prev, and rejects out-of-range rules page", async () => {

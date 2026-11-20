@@ -32,11 +32,10 @@ const parseIntegerArg = (
 };
 
 const toReportCommand = (
-	session: string | undefined,
-	probe: string | undefined,
-	thirdArg: string | undefined,
+	args: readonly string[],
 	ctx: z.RefinementCtx,
 ): unknown => {
+	const [, session, probe, thirdArg] = args;
 	if (isNullOrEmpty(thirdArg)) {
 		return { command: "report", session, probe };
 	}
@@ -56,40 +55,58 @@ const toReportCommand = (
 	};
 };
 
+const toProbeSessionCommand = ([
+	command,
+	session,
+	probe,
+]: readonly string[]) => ({
+	command,
+	session,
+	probe,
+});
+
+const COMMAND_BUILDERS: Readonly<
+	Record<string, (args: readonly string[], ctx: z.RefinementCtx) => unknown>
+> = {
+	define: ([, term, secondArg]) => ({
+		command: "define",
+		term,
+		depth: parseIntegerArg(secondArg, 1),
+	}),
+
+	ack: toProbeSessionCommand,
+	next: toProbeSessionCommand,
+	prev: toProbeSessionCommand,
+
+	rules: ([, session, probe, thirdArg]) => ({
+		command: "rules",
+		session,
+		probe,
+		page: parseIntegerArg(thirdArg, 1),
+	}),
+
+	ruleset: ([, session, probe, url, fourthArg]) => ({
+		command: "ruleset",
+		session,
+		probe,
+		url,
+		page: parseIntegerArg(fourthArg, 1),
+	}),
+
+	report: toReportCommand,
+};
+
 const toRawSubAgentCommand = (
 	args: readonly string[],
 	ctx: z.RefinementCtx,
 ): unknown => {
-	const [command, firstArg, secondArg, thirdArg, fourthArg] = args;
-	if (command === "define") {
-		return {
-			command,
-			term: firstArg,
-			depth: parseIntegerArg(secondArg, 1),
-		};
+	const [command] = args;
+	if (command === undefined) {
+		return { command };
 	}
-	if (command === "ack" || command === "next" || command === "prev") {
-		return { command, session: firstArg, probe: secondArg };
-	}
-	if (command === "rules") {
-		return {
-			command,
-			session: firstArg,
-			probe: secondArg,
-			page: parseIntegerArg(thirdArg, 1),
-		};
-	}
-	if (command === "ruleset") {
-		return {
-			command,
-			session: firstArg,
-			probe: secondArg,
-			url: thirdArg,
-			page: parseIntegerArg(fourthArg, 1),
-		};
-	}
-	if (command === "report") {
-		return toReportCommand(firstArg, secondArg, thirdArg, ctx);
+	const builder = COMMAND_BUILDERS[command];
+	if (builder !== undefined) {
+		return builder(args, ctx);
 	}
 	return { command };
 };

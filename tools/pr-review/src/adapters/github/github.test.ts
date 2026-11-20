@@ -6,6 +6,7 @@ import {
 	baseCommitOf,
 	changeOf,
 	failedChecks,
+	GitHubPullFilesCodec,
 	headCommitOf,
 	postedAt,
 	priorOf,
@@ -53,6 +54,14 @@ it("changeOf, headCommitOf, and baseCommitOf fold a GitHub PullRequest into doma
 		author: "author",
 		description: "",
 	});
+	assert.throws(() => headCommitOf({ head: { sha: "not-a-sha" } }));
+	assert.throws(() => baseCommitOf({ base: { sha: "not-a-sha" } }));
+	const encodedFiles = GitHubPullFilesCodec.encode([
+		{ path: "src/a.ts", lines: 12, added: 12, deleted: 3 },
+	]);
+	assert.deepEqual(GitHubPullFilesCodec.decode(encodedFiles), [
+		{ path: "src/a.ts", lines: 12, added: 12, deleted: 3 },
+	]);
 });
 
 it("failedChecks and refusalReasons report non-passing checks and merge conflicts", () => {

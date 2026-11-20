@@ -14,9 +14,9 @@ import {
 	type GitHub,
 	type HeadCommit,
 	HeadCommitSchema,
-	PathSchema,
 	type Summary,
 } from "../../domain/contracts.g.ts";
+import { FileLineCountSchema } from "../../domain/limits.ts";
 import { isNullOrEmpty } from "../../domain/nullish.ts";
 import { ours } from "../../domain/rulebook.ts";
 
@@ -29,13 +29,6 @@ const RAW_URL_KEY = "raw_url";
 const CONTENTS_URL_KEY = "contents_url";
 const GitHubCheckRunTransportSchema =
 	ChecksListForRefResponse.shape.check_runs.element;
-
-const FileLineCountSchema = z.object({
-	path: PathSchema,
-	lines: z.number().int().min(0),
-	added: z.number().int().min(0),
-	deleted: z.number().int().min(0),
-});
 
 const stringOrEmpty = (value: string | null | undefined): string => {
 	if (isNullOrEmpty(value)) {

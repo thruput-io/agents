@@ -48,6 +48,12 @@ it("headCommitOf, targetCommitOf, changeOf, and artifactIdOf fold an Azure GitPu
 		artifactIdOf(HOST, pr),
 		"vstfs:///CodeReview/CodeReviewId/proj/42",
 	);
+	assert.throws(() =>
+		headCommitOf({ lastMergeSourceCommit: { commitId: "invalid" } }),
+	);
+	assert.throws(() =>
+		targetCommitOf({ lastMergeTargetCommit: { commitId: "invalid" } }),
+	);
 });
 
 it("blockingBuildPolicies and refusalReasons keep only blocking Build policies and merge conflicts", () => {
