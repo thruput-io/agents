@@ -13,6 +13,7 @@ import {
 	type RulesPageResponse,
 	SubAgentCommandSchema,
 } from "../domain/contracts.g.ts";
+import type { HostAdapterPort } from "../domain/host-adapter.ts";
 import type { Instructions } from "../domain/instructions.ts";
 import type {
 	DefineLookupResult,
@@ -41,6 +42,10 @@ interface SubAgentCliTarget {
 	ruleset: (url: RulesetUrl, page: number) => RulesetPageResponse;
 	ack: () => AckResult;
 	report: (rows: readonly Row[]) => z.ZodSafeParseResult<LedgerSubmission>;
+	submitReport: (
+		rows: readonly Row[],
+		adapters: HostAdapterPort,
+	) => Promise<z.ZodSafeParseResult<LedgerSubmission>>;
 }
 
 interface SubAgentCliDeps {
@@ -50,12 +55,19 @@ interface SubAgentCliDeps {
 		term: string,
 		depth: number,
 	) => DefineLookupResult;
+	readonly adapters: HostAdapterPort;
 }
 
-const MISSING_COMMAND_USAGE = [
-	"Usage: review-tool-probe.mjs <define|ack|rules|",
-	"next|prev|ruleset|report> ...\n",
-].join("");
+const SUBAGENT_COMMANDS = [
+	"define",
+	"ack",
+	"rules",
+	"next",
+	"prev",
+	"ruleset",
+	"report",
+].join("|");
+const MISSING_COMMAND_USAGE = `Usage: review-tool-probe.mjs <${SUBAGENT_COMMANDS}> ...\n`;
 
 const writePageResponse = (page: { readonly success: boolean }): number => {
 	writeJson(page);
@@ -65,13 +77,32 @@ const writePageResponse = (page: { readonly success: boolean }): number => {
 	return failCli();
 };
 
-const dispatchSubAgentAction = (
+const toReportResponse = (submission: LedgerSubmission): ReportResponse => {
+	if (submission.kind === "submitted" && submission.location !== undefined) {
+		return {
+			success: true,
+			kind: submission.kind,
+			headCommit: submission.ledger.headCommit,
+			rowCount: submission.ledger.rows.length,
+			location: submission.location,
+		};
+	}
+	return {
+		success: true,
+		kind: submission.kind,
+		headCommit: submission.ledger.headCommit,
+		rowCount: submission.ledger.rows.length,
+	};
+};
+
+const dispatchSubAgentAction = async (
 	sub: SubAgentCliTarget,
+	adapters: HostAdapterPort,
 	cmd: Exclude<
 		z.infer<typeof SubAgentCommandSchema>,
 		{ readonly command: "define" }
 	>,
-): number => {
+): Promise<number> => {
 	if (cmd.command === "ack") {
 		writeJson(sub.ack().response);
 		return 0;
@@ -88,24 +119,21 @@ const dispatchSubAgentAction = (
 	if (cmd.command === "ruleset") {
 		return writePageResponse(sub.ruleset(cmd.url, cmd.page));
 	}
-	const reported = sub.report(cmd.report.oneRowPerRuleInOrder);
+	const reported = await sub.submitReport(
+		cmd.report.oneRowPerRuleInOrder,
+		adapters,
+	);
 	if (!reported.success) {
 		return failWithJsonError(z.prettifyError(reported.error));
 	}
-	const response: ReportResponse = {
-		success: true,
-		kind: reported.data.kind,
-		headCommit: reported.data.ledger.headCommit,
-		rowCount: reported.data.ledger.rows.length,
-	};
-	writeJson(response);
+	writeJson(toReportResponse(reported.data));
 	return 0;
 };
 
-function runSubAgentCli(
+async function runSubAgentCli(
 	deps: SubAgentCliDeps,
 	args: readonly string[],
-): number {
+): Promise<number> {
 	const dispatchedCli = parseSchemaCli(args, {
 		schema: SubAgentCommandSchema,
 		help: subAgentHelpPayload,
@@ -129,7 +157,11 @@ function runSubAgentCli(
 	if (!parsedWorkdir.success) {
 		return failWithJsonError(z.prettifyError(parsedWorkdir.error));
 	}
-	return dispatchSubAgentAction(deps.forSession(cmd.session, cmd.probe), cmd);
+	return await dispatchSubAgentAction(
+		deps.forSession(cmd.session, cmd.probe),
+		deps.adapters,
+		cmd,
+	);
 }
 
 export { runSubAgentCli };

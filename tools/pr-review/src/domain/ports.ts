@@ -7,6 +7,7 @@ import type {
 	Ledger,
 	Path,
 	PersistedPullRequest,
+	PersistedSubmission,
 	RepositoryPath,
 	Rulebook,
 	SessionToken,
@@ -32,6 +33,8 @@ interface LedgerStore {
 	readCursor: (name: string) => number | null;
 	writeSlice: (name: string, ledger: Ledger) => void;
 	readSlice: (name: string) => Ledger | null;
+	writeSubmission: (submission: PersistedSubmission) => void;
+	readSubmission: () => PersistedSubmission | null;
 	equals: (other: LedgerStore) => boolean;
 	toString: () => Checkout;
 }

@@ -131,11 +131,24 @@ class MainAgentLedger {
 
 	submittedOutcome(): Outcome | null {
 		this.#state.sync();
+		const persisted = this.#directory.readSubmission();
+		if (persisted !== null) {
+			return persisted.outcome;
+		}
 		const submitted = this.#state.submitted.get("submitted");
 		if (submitted === undefined) {
 			return null;
 		}
 		return submitted.outcome;
+	}
+
+	submittedLocation(): string | null {
+		this.#state.sync();
+		const persisted = this.#directory.readSubmission();
+		if (persisted !== null) {
+			return persisted.location;
+		}
+		return null;
 	}
 
 	submittedLedger(): Ledger | null {

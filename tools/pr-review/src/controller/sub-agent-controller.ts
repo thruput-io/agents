@@ -12,6 +12,7 @@ import {
 	type RulesetUrl,
 	type RulesPageResponse,
 } from "../domain/contracts.g.ts";
+import type { HostAdapterPort } from "../domain/host-adapter.ts";
 import type { Instructions } from "../domain/instructions.ts";
 import { isNullOrEmpty } from "../domain/nullish.ts";
 import type { WorkspaceFactoryPort, WorkspacePort } from "../domain/ports.ts";
@@ -182,5 +183,45 @@ export class SubAgentController {
 			);
 		}
 		return this.#ledger.report(rows);
+	}
+
+	async submitReport(
+		rows: readonly Row[],
+		adapters: HostAdapterPort,
+	): Promise<z.ZodSafeParseResult<LedgerSubmission>> {
+		const reported = this.report(rows);
+		if (!reported.success || reported.data.kind === "recorded") {
+			return reported;
+		}
+		const existing = this.#workdir.ledgerDirectory().readSubmission();
+		if (existing !== null) {
+			return {
+				success: true,
+				data: {
+					...reported.data,
+					location: existing.location,
+				},
+			};
+		}
+		const persisted = this.#workdir.ledgerDirectory().readPullRequest();
+		const { adapter } = adapters.rehydrate(persisted);
+		const location = await adapter.post(
+			reported.data.outcome,
+			reported.data.ledger,
+		);
+		if (typeof location !== "string") {
+			return customFailure("host", `${location.message}: ${location.reason}`);
+		}
+		this.#workdir.ledgerDirectory().writeSubmission({
+			outcome: reported.data.outcome,
+			location,
+		});
+		return {
+			success: true,
+			data: {
+				...reported.data,
+				location,
+			},
+		};
 	}
 }

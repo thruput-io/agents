@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { rmSync } from "node:fs";
 import { after, before, beforeEach, test as it } from "node:test";
-import type { DispatchResult } from "../domain/contracts.g.ts";
 import { nonnull } from "../domain/nullish.ts";
 import { AZURE_REVIEWER_ID } from "./azure-mocks.ts";
 import {
@@ -44,8 +43,7 @@ after(async () => {
 });
 
 function submittedOutcomeOf(run: Awaited<ReturnType<typeof runScenario>>) {
-	return (run.dispatched as Extract<DispatchResult, { kind: "submitted" }>)
-		.outcome;
+	return nonnull(run.status.submittedOutcome);
 }
 
 it("Review CLI posts identical review outcomes to GitHub and AzureDevOps", async () => {
@@ -67,14 +65,11 @@ it("Review CLI posts identical review outcomes to GitHub and AzureDevOps", async
 	const runs = await Promise.all(
 		adapters.map(({ label, target }) => runScenario(repo, target, label)),
 	);
-	const baselineSubmitted = nonnull(runs[0]).dispatched as Extract<
-		DispatchResult,
-		{ kind: "submitted" }
-	>;
-	assert.equal(baselineSubmitted.outcome.verdict, "request-changes");
+	const baselineOutcome = nonnull(nonnull(runs[0]).status.submittedOutcome);
+	assert.equal(baselineOutcome.verdict, "request-changes");
 	assert.deepEqual(
 		runs.map(submittedOutcomeOf),
-		runs.map(() => baselineSubmitted.outcome),
+		runs.map(() => baselineOutcome),
 	);
 	assert.equal(ghReviews.length, 1);
 	const ghPosted = nonnull(ghReviews[0]);
@@ -86,14 +81,14 @@ it("Review CLI posts identical review outcomes to GitHub and AzureDevOps", async
 			path: "service.ts",
 			line: 2,
 			side: "RIGHT",
-			body: nonnull(baselineSubmitted.outcome.inline[0]).body,
+			body: nonnull(baselineOutcome.inline[0]).body,
 		},
 	]);
 	assert.deepEqual(azOutcome.inlineThreads, [
 		{
 			filePath: "/service.ts",
 			line: 2,
-			content: nonnull(baselineSubmitted.outcome.inline[0]).body,
+			content: nonnull(baselineOutcome.inline[0]).body,
 		},
 	]);
 	assert.equal(azOutcome.summaryThreads.length, 1);

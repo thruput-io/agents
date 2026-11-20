@@ -1,14 +1,12 @@
 import type { Workdir } from "../adapters/fs/workdir.ts";
 import {
-	type AckSuccess,
 	AckSuccessSchema,
-	AgentInstructionsSchema,
-	type DispatchResult,
-	DispatchResultSchema,
 	PageResponseSchema,
 	PrepareReadySchema,
 	PrepareResponseSchema,
 	ReportSuccessSchema,
+	type ReviewStatus,
+	ReviewStatusSchema,
 	SurfaceBoundarySchema,
 	type SurfacePage,
 } from "../domain/contracts.g.ts";
@@ -23,8 +21,6 @@ import {
 } from "./scenario-cli.ts";
 import { type ProbeDriver, probeDriverFor } from "./scenario-drivers.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
-
-type AckCliPayload = AckSuccess;
 
 const collectSurfacePages = async (
 	session: string,
@@ -55,23 +51,14 @@ const inspectAndAck = async (
 	readonly pages: readonly SurfacePage[];
 }> => {
 	const inspected = requireExitZero(
-		await invokeSubCli(
-			["inspect", session, probeName],
-			AgentInstructionsSchema,
-		),
-	);
-	const driver = probeDriverFor(inspected);
-	const acked: AckCliPayload = requireExitZero(
-		await invokeSubCli(
-			["ack", session, probeName, JSON.stringify(driver.ackPayload(probeName))],
-			AckSuccessSchema,
-		),
+		await invokeSubCli(["ack", session, probeName], AckSuccessSchema),
 	);
 	expectEqual(
-		acked.acknowledged,
+		inspected.acknowledged,
 		true,
 		`Expected probe ${probeName} to be acknowledged`,
 	);
+	const driver = probeDriverFor(inspected);
 	const pages = await collectSurfacePages(session, probeName);
 	return { inspected, driver, pages };
 };
@@ -119,6 +106,33 @@ const reportForReReviewProbe = async (
 	return inspected;
 };
 
+const submitStagedProbe = async (
+	session: string,
+	stagedProbe: {
+		readonly probeName: string;
+		readonly inspected: InspectedProbePayload;
+		readonly driver: ProbeDriver;
+		readonly pages: readonly SurfacePage[];
+	},
+) => {
+	const { probeName, inspected, driver, pages } = stagedProbe;
+	const reported = requireExitZero(
+		await invokeSubCli(
+			[
+				"report",
+				session,
+				probeName,
+				JSON.stringify({
+					oneRowPerRuleInOrder: driver.initialRows(pages),
+				}),
+			],
+			ReportSuccessSchema,
+		),
+	);
+	expectEqual(reported.success, true, `Probe report failed for ${probeName}`);
+	return { inspected, pages, reported };
+};
+
 const runScenario = async (
 	repo: ScenarioRepo,
 	target: string,
@@ -128,7 +142,7 @@ const runScenario = async (
 	readonly prepared: PreparedCliSuccess;
 	readonly inspected: readonly InspectedProbePayload[];
 	readonly pages: readonly SurfacePage[];
-	readonly dispatched: DispatchResult;
+	readonly status: ReviewStatus;
 	readonly invoked: readonly string[];
 }> => {
 	const workdir = repo.workdirFor(label);
@@ -151,38 +165,28 @@ const runScenario = async (
 			return { probeName, inspected, driver, pages };
 		}),
 	);
-	const probeRuns = await Promise.all(
-		staged.map(async ({ probeName, inspected, driver, pages }) => {
-			const reported = requireExitZero(
-				await invokeSubCli(
-					[
-						"report",
-						prep.session,
-						probeName,
-						JSON.stringify({
-							oneRowPerRuleInOrder: driver.initialRows(pages),
-						}),
-					],
-					ReportSuccessSchema,
-				),
-			);
-			expectEqual(
-				reported.success,
-				true,
-				`Probe report failed for ${probeName}`,
-			);
-			return { inspected, pages };
-		}),
+	const initialRuns = await Promise.all(
+		staged.slice(0, -1).map((entry) => submitStagedProbe(prep.session, entry)),
 	);
-	const dispatched = requireExitZero(
-		await invokeMainCli(["dispatch", workdir.toString()], DispatchResultSchema),
+	const finalRun = await submitStagedProbe(
+		prep.session,
+		nonnull(staged.at(-1)),
+	);
+	expectEqual(
+		finalRun.reported.kind,
+		"submitted",
+		"Expected final probe report to submit the review",
+	);
+	const probeRuns = [...initialRuns, finalRun];
+	const status = requireExitZero(
+		await invokeMainCli(["status", workdir.toString()], ReviewStatusSchema),
 	);
 	return {
 		workdir,
 		prepared: prep,
 		inspected: probeRuns.map((run) => run.inspected),
 		pages: nonnull(probeRuns[0]).pages,
-		dispatched,
+		status,
 		invoked,
 	};
 };

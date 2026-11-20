@@ -12,7 +12,6 @@ import {
 	writeJson,
 } from "./cli.ts";
 import {
-	handleDispatch,
 	handlePrepare,
 	type MainAgentCliDriver,
 } from "./controller-cli-handlers.ts";
@@ -33,16 +32,6 @@ const toRawControllerCommand = (args: readonly string[]): RawCommandResult => {
 	if (command === "status") {
 		return { ok: true, raw: { command, workdir: firstArg } };
 	}
-	if (command === "dispatch") {
-		return {
-			ok: true,
-			raw: {
-				command,
-				workdir: firstArg,
-				...optionalStringField("token", secondArg),
-			},
-		};
-	}
 	return { ok: true, raw: { command } };
 };
 
@@ -58,7 +47,6 @@ async function runMainAgentCli(
 				"review-tool.mjs -h | --help",
 				"review-tool.mjs prepare <url> <workdir> [<token>]",
 				"review-tool.mjs status <workdir>",
-				"review-tool.mjs dispatch <workdir> [<token>]",
 			],
 		}),
 		toRaw: toRawControllerCommand,
@@ -75,19 +63,17 @@ async function runMainAgentCli(
 	if (!parsedWorkdir.success) {
 		return failCli(`${z.prettifyError(parsedWorkdir.error)}\n`);
 	}
-	if (cmd.command === "status") {
-		const ledger = controller.ledger(parsedWorkdir.data);
-		const status: ReviewStatus = {
-			pending: [...ledger.pending()],
-			acknowledged: [...ledger.acknowledged()],
-			unacknowledged: [...ledger.unacknowledged()],
-			completed: [...ledger.completed()],
-			submittedOutcome: ledger.submittedOutcome(),
-		};
-		writeJson(status);
-		return 0;
-	}
-	return await handleDispatch(controller, parsedWorkdir.data, cmd.token);
+	const ledger = controller.ledger(parsedWorkdir.data);
+	const status: ReviewStatus = {
+		pending: [...ledger.pending()],
+		acknowledged: [...ledger.acknowledged()],
+		unacknowledged: [...ledger.unacknowledged()],
+		completed: [...ledger.completed()],
+		submittedOutcome: ledger.submittedOutcome(),
+		location: ledger.submittedLocation(),
+	};
+	writeJson(status);
+	return 0;
 }
 
 export { runMainAgentCli };

@@ -3,7 +3,6 @@ import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { after, before, beforeEach, test as it } from "node:test";
 import {
-	DispatchResultSchema,
 	PrepareReadySchema,
 	PrepareResponseSchema,
 	ReviewStatusSchema,
@@ -65,12 +64,12 @@ function summarizePreparedRun(run: Awaited<ReturnType<typeof runScenario>>) {
 			"rulesets" in run.prepared,
 		firstPromptMatches:
 			run.prepared.prompts[firstProbe] ===
-			`Run ${installedProbeBinPath()} inspect ${run.prepared.session} ${firstProbe} and follow its instructions.`,
+			`Run ${installedProbeBinPath()} -h, then run ${installedProbeBinPath()} ack ${run.prepared.session} ${firstProbe} and follow its instructions.`,
 		firstPermission: run.prepared.permissions[firstProbe],
 		author: firstInspected.change.author,
 		description: firstInspected.change.description,
 		changedFiles: firstInspected.surface.changedFiles,
-		pagePaths: run.pages.map((p) => p.path),
+		pagePaths: run.pages.flatMap((p) => p.files.map((f) => f.path)),
 		firstHasCheckout: "checkout" in firstInspected,
 		checkoutMatch: run.inspected.every(
 			(entry) => "checkout" in entry === (entry.kind !== "rules"),
@@ -100,7 +99,7 @@ it("Review CLI prepares identical surfaces across Git, GitHub, and AzureDevOps",
 	);
 	assert.equal(baselineInspected.surface.changedFiles, 2);
 	assert.deepEqual(
-		baseline.pages.map((p) => p.path),
+		baseline.pages.flatMap((p) => p.files.map((f) => f.path)),
 		["helper.ts", "service.ts"],
 	);
 	assert.deepEqual(
@@ -137,14 +136,6 @@ it("Review CLI reports pending probes on partial completion and submits once rem
 		rulebookProbes.map((name) => reportForProbe(ready.session, name)),
 	);
 
-	const firstDispatch = await invokeMainCli(
-		["dispatch", workdir.toString()],
-		DispatchResultSchema,
-	);
-	assert.equal(firstDispatch.exitCode, 0);
-	assert.equal(firstDispatch.payload.kind, "pending");
-	assert.deepEqual(firstDispatch.payload.remaining, contextProbes);
-
 	const firstStatus = await invokeMainCli(
 		["status", workdir.toString()],
 		ReviewStatusSchema,
@@ -152,16 +143,11 @@ it("Review CLI reports pending probes on partial completion and submits once rem
 	assert.equal(firstStatus.exitCode, 0);
 	assert.deepEqual(firstStatus.payload.pending, contextProbes);
 	assert.equal(firstStatus.payload.submittedOutcome, null);
+	assert.equal(firstStatus.payload.location, null);
 
 	await Promise.all(
 		contextProbes.map((name) => reportForProbe(ready.session, name)),
 	);
-	const secondDispatch = await invokeMainCli(
-		["dispatch", workdir.toString()],
-		DispatchResultSchema,
-	);
-	assert.equal(secondDispatch.exitCode, 0);
-	assert.equal(secondDispatch.payload.kind, "submitted");
 
 	const secondStatus = await invokeMainCli(
 		["status", workdir.toString()],
@@ -170,4 +156,6 @@ it("Review CLI reports pending probes on partial completion and submits once rem
 	assert.equal(secondStatus.exitCode, 0);
 	assert.deepEqual(secondStatus.payload.pending, []);
 	assert.deepEqual(secondStatus.payload.completed, [...ready.pending]);
+	assert.notEqual(secondStatus.payload.submittedOutcome, null);
+	assert.notEqual(secondStatus.payload.location, null);
 });

@@ -19,12 +19,15 @@ import {
 	type PersistedPullRequest,
 	PersistedPullRequestSchema,
 	PersistedRulesetsSchema,
+	type PersistedSubmission,
+	PersistedSubmissionSchema,
 	type Rulebook,
 } from "../../domain/contracts.g.ts";
 import type { LedgerStore } from "../../domain/ports.ts";
 
 const PULL_REQUEST_FILE = "pull-request.json";
 const RULESETS_FILE = "rulesets.json";
+const SUBMISSION_FILE = "submission.json";
 
 const writeJsonAtomically = (targetPath: string, payload: unknown): void => {
 	const tempPath = `${targetPath}.${randomUUID()}.tmp`;
@@ -95,6 +98,20 @@ export class LedgerDirectory implements LedgerStore {
 			return null;
 		}
 		return LedgerSchema.parse(JSON.parse(readFileSync(slicePath, "utf-8")));
+	}
+
+	writeSubmission(submission: PersistedSubmission): void {
+		writeJsonAtomically(join(this.#path, SUBMISSION_FILE), submission);
+	}
+
+	readSubmission(): PersistedSubmission | null {
+		const submissionPath = join(this.#path, SUBMISSION_FILE);
+		if (!existsSync(submissionPath)) {
+			return null;
+		}
+		return PersistedSubmissionSchema.parse(
+			JSON.parse(readFileSync(submissionPath, "utf-8")),
+		);
 	}
 
 	writeRulesets(rulesets: readonly Rulebook[]): void {

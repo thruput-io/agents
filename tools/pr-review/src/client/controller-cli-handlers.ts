@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { AccessToken } from "../domain/access-token.ts";
-import type { DispatchResult, PrepareResponse } from "../domain/contracts.g.ts";
+import type { PrepareResponse } from "../domain/contracts.g.ts";
 import type { AdapterResolution } from "../domain/host-adapter.ts";
 import type { MainAgentLedger } from "../domain/main-agent-ledger.ts";
 import { isNullOrEmpty } from "../domain/nullish.ts";
 import type { WorkspaceFactoryPort, WorkspacePort } from "../domain/ports.ts";
-import { failCli, failWithJson, writeJson } from "./cli.ts";
+import { failWithJson, writeJson } from "./cli.ts";
 
 interface MainAgentCliDriver {
 	prepare: (
@@ -36,11 +36,6 @@ interface MainAgentCliDriver {
 		  }
 	>;
 	ledger: (workdir: WorkspacePort) => MainAgentLedger;
-	dispatch: (workdir: WorkspacePort) => Promise<DispatchResult>;
-	dispatchWithToken: (
-		workdir: WorkspacePort,
-		token: AccessToken,
-	) => Promise<DispatchResult>;
 }
 
 const writePrepared = (
@@ -127,22 +122,5 @@ const handlePrepare = async (
 	);
 };
 
-const handleDispatch = async (
-	controller: MainAgentCliDriver,
-	workdir: WorkspacePort,
-	token: string | undefined,
-): Promise<number> => {
-	if (isNullOrEmpty(token)) {
-		writeJson(await controller.dispatch(workdir));
-		return 0;
-	}
-	const parsedToken = AccessToken.from(token);
-	if (!parsedToken.success) {
-		return failCli(`${z.prettifyError(parsedToken.error)}\n`);
-	}
-	writeJson(await controller.dispatchWithToken(workdir, parsedToken.data));
-	return 0;
-};
-
 export type { MainAgentCliDriver };
-export { handleDispatch, handlePrepare };
+export { handlePrepare };

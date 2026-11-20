@@ -112,12 +112,31 @@ const sessionForWorkdir = (
 	);
 };
 
-const prepareWithAdapter = async (
-	workdir: WorkspacePort,
-	parsedAdapter: z.ZodSafeParseResult<HostAdapter>,
-	loadProbes: ProbeCatalogPort,
-	sessions: Map<string, PreparedSession>,
-): Promise<PrepareResult> => {
+const toPersistedPullRequest = (
+	resolved: ReadyReview,
+	surface: PersistedPullRequest["surface"],
+	rawToken: string | null,
+): PersistedPullRequest => {
+	const base = {
+		change: resolved.change,
+		surface,
+		fragments: [...resolved.snapshot.fragments()],
+		threads: resolved.snapshot.threads(),
+	};
+	if (rawToken !== null) {
+		return { ...base, token: rawToken };
+	}
+	return base;
+};
+
+const prepareWithAdapter = async (input: {
+	readonly workdir: WorkspacePort;
+	readonly parsedAdapter: z.ZodSafeParseResult<HostAdapter>;
+	readonly loadProbes: ProbeCatalogPort;
+	readonly sessions: Map<string, PreparedSession>;
+	readonly rawToken: string | null;
+}): Promise<PrepareResult> => {
+	const { workdir, parsedAdapter, loadProbes, sessions, rawToken } = input;
 	if (!parsedAdapter.success) {
 		return {
 			success: false,
@@ -143,12 +162,9 @@ const prepareWithAdapter = async (
 		workdir.snapshotDirectory().toString(),
 		workdir.sessionToken(),
 	);
-	workdir.ledgerDirectory().writePullRequest({
-		change: resolved.change,
-		surface,
-		fragments: [...resolved.snapshot.fragments()],
-		threads: resolved.snapshot.threads(),
-	});
+	workdir
+		.ledgerDirectory()
+		.writePullRequest(toPersistedPullRequest(resolved, surface, rawToken));
 	workdir.ledgerDirectory().writeRulesets(rulesets);
 	for (const entry of probes) {
 		workdir.writeAudit(entry.name, entry.auditDocument);
@@ -163,4 +179,4 @@ const prepareWithAdapter = async (
 };
 
 export type { PreparedSession, PrepareResult };
-export { prepareWithAdapter, rehydrateSession, sessionForWorkdir };
+export { prepareWithAdapter, sessionForWorkdir };

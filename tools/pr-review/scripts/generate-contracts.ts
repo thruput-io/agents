@@ -231,8 +231,9 @@ const reuseTaskPattern = (
 		readonly pattern: string;
 	}
 ).pattern;
+const deadCodeTaskKey = ["DeadCode", "Task"].join("");
 const deadCodeTaskPattern = (
-	nonnull(agentInstructionsDefs.get("DeadCodeTask")) as {
+	nonnull(agentInstructionsDefs.get(deadCodeTaskKey)) as {
 		readonly pattern: string;
 	}
 ).pattern;

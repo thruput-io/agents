@@ -19,6 +19,7 @@ import {
 	stubPassingRowsForAudit,
 } from "./main-agent-fixtures.test.ts";
 import { createMemoryWorkspace } from "./memory-workspace.test.ts";
+import { SubAgentController } from "./sub-agent-controller.ts";
 
 it("MainAgentController.prepare returns invalid-target when HostAdapterPort rejects the target", async () => {
 	const fallback = stubAdapter(
@@ -71,7 +72,7 @@ it("MainAgentController.prepare forwards non-ready adapter resolutions without p
 	assert.equal(workdir.readAudits().length, 0);
 });
 
-it("MainAgentController prepares a ready snapshot, tracks pending probes, and dispatches via the adapter once slices are recorded", async () => {
+const createRecordingAdapter = () => {
 	const snapshot = sampleSnapshot();
 	const posted: Array<{ readonly outcome: Outcome; readonly ledger: Ledger }> =
 		[];
@@ -89,10 +90,27 @@ it("MainAgentController prepares a ready snapshot, tracks pending probes, and di
 			return Promise.resolve("local://review-42");
 		},
 	};
+	return { adapter, posted };
+};
+
+const submitAuditSlice = (
+	workdir: ReturnType<typeof createMemoryWorkspace>,
+	port: ReturnType<typeof createStubPort>,
+	audit: {
+		readonly name: string;
+		readonly document: Parameters<typeof stubPassingRowsForAudit>[0];
+	},
+) => {
+	const sub = SubAgentController.forWorkdir(workdir, audit.name);
+	sub.ack();
+	return sub.submitReport(stubPassingRowsForAudit(audit.document), port);
+};
+
+it("MainAgentController prepares a ready snapshot, tracks pending probes, and submits via the adapter when the final probe reports", async () => {
+	const { adapter, posted } = createRecordingAdapter();
 	const port = createStubPort(() => okAdapterParse(adapter), adapter);
 	const token = nonnull(AccessToken.from("unit-token").data);
 	const loadProbes = createStubLoadProbes();
-
 	const controller = MainAgentController.create(port, loadProbes);
 	const workdir = createMemoryWorkspace("/tmp/ctrl-unit/case-3");
 	const prepared = await controller.prepareWithToken(
@@ -101,28 +119,38 @@ it("MainAgentController prepares a ready snapshot, tracks pending probes, and di
 		token,
 	);
 	assert.equal(prepared.success, true);
+	assert.equal(controller.ledger(workdir).pending().length > 0, true);
+	assert.equal(controller.ledger(workdir).submittedOutcome(), null);
 
-	const pendingNames = [...controller.ledger(workdir).pending()];
-	assert.equal(pendingNames.length > 0, true);
-
-	const beforeDispatch = await controller.dispatch(workdir);
-	assert.equal(beforeDispatch.kind, "pending");
-	assert.deepEqual(beforeDispatch.remaining, pendingNames);
-	assert.equal(posted.length, 0);
-
-	const written = workdir.readAudits().map((audit) => {
-		workdir.ledgerDirectory().writeSlice(audit.name, {
-			headCommit: HEAD_COMMIT,
-			rows: stubPassingRowsForAudit(audit.document),
-		});
-		return audit.name;
-	});
-	assert.deepEqual(written, pendingNames);
+	const audits = workdir.readAudits();
+	const initialReports = await Promise.all(
+		audits.slice(0, -1).map((audit) => submitAuditSlice(workdir, port, audit)),
+	);
+	assert.equal(
+		initialReports.every((r) => r.success && r.data.kind === "recorded"),
+		true,
+	);
+	const finalReport = await submitAuditSlice(
+		workdir,
+		port,
+		nonnull(audits.at(-1)),
+	);
+	assert.equal(finalReport.success, true);
+	assert.equal(finalReport.data.kind, "submitted");
+	assert.equal(
+		(finalReport.data as { readonly location?: string }).location,
+		"local://review-42",
+	);
 
 	const freshController = MainAgentController.create(port, loadProbes);
-	const submitted = await freshController.dispatchWithToken(workdir, token);
-	assert.equal(submitted.kind, "submitted");
-	assert.equal(submitted.location, "local://review-42");
-	assert.equal(submitted.outcome.verdict, "approve");
+	assert.deepEqual(freshController.ledger(workdir).pending(), []);
+	assert.equal(
+		freshController.ledger(workdir).submittedOutcome()?.verdict,
+		"approve",
+	);
+	assert.equal(
+		freshController.ledger(workdir).submittedLocation(),
+		"local://review-42",
+	);
 	assert.equal(posted.length, 1);
 });

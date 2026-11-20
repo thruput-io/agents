@@ -6,6 +6,7 @@ import type {
 	Ledger,
 	Path,
 	PersistedPullRequest,
+	PersistedSubmission,
 	RepositoryPath,
 } from "../domain/contracts.g.ts";
 import { nonnull } from "../domain/nullish.ts";
@@ -31,6 +32,7 @@ const readFromMap = <T>(map: Map<string, T>, key: string): T | null => {
 function createMemoryLedgerStore(path: Checkout): LedgerStore {
 	let pullRequest: PersistedPullRequest | null = null;
 	let rulesets: readonly ExternalRulebook[] = [];
+	let submission: PersistedSubmission | null = null;
 	const acks = new Map<string, number>();
 	const cursors = new Map<string, number>();
 	const slices = new Map<string, Ledger>();
@@ -39,6 +41,7 @@ function createMemoryLedgerStore(path: Checkout): LedgerStore {
 		initialize: () => {
 			pullRequest = null;
 			rulesets = [];
+			submission = null;
 			acks.clear();
 			cursors.clear();
 			slices.clear();
@@ -68,6 +71,10 @@ function createMemoryLedgerStore(path: Checkout): LedgerStore {
 			slices.set(name, ledger);
 		},
 		readSlice: (name) => readFromMap(slices, name),
+		writeSubmission: (next) => {
+			submission = next;
+		},
+		readSubmission: () => submission,
 		equals: (other) => other.toString() === path,
 		toString: () => path,
 	};

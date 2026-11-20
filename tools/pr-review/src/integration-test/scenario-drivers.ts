@@ -1,6 +1,7 @@
 import {
 	type Row,
 	RulesetPageSchema,
+	RulesPageSchema,
 	type SurfaceLineId,
 	type SurfacePage,
 } from "../domain/contracts.g.ts";
@@ -13,7 +14,6 @@ import {
 } from "./scenario-cli.ts";
 
 interface ProbeDriver {
-	ackPayload: (probeName: string) => Record<string, unknown>;
 	verifyBeforeReport: (session: string, probeName: string) => Promise<void>;
 	initialRows: (pages: readonly SurfacePage[]) => readonly Row[];
 	reReviewRows: (pages: readonly SurfacePage[]) => readonly Row[];
@@ -26,8 +26,9 @@ const surfaceLineId = (
 ): SurfaceLineId =>
 	nonnull(
 		pages
-			.filter((page) => page.path === filePath)
-			.flatMap((page) => page.fragments)
+			.flatMap((page) => page.files)
+			.filter((file) => file.path === filePath)
+			.flatMap((file) => file.fragments)
 			.filter((fragment) => fragment.kind === "surface")
 			.flatMap((fragment) => fragment.lines)
 			.find((line) => line.text === lineText),
@@ -51,16 +52,9 @@ const reReviewViolationRow = (pages: readonly SurfacePage[]): Row => ({
 	],
 });
 
-function contextProbeDriver(
-	inspected: Extract<InspectedProbePayload, { readonly kind: "context" }>,
-): ProbeDriver {
-	const first = nonnull(inspected.rulesets[0]);
+function contextProbeDriver(inspected: InspectedProbePayload): ProbeDriver {
+	const first = nonnull(nonnull(inspected.rulesets)[0]);
 	return {
-		ackPayload: (probeName) => ({
-			message: `Run inspect ${probeName}`,
-			bookRuleRows: 3,
-			observationFormat: "<observation> breaks <principle>",
-		}),
 		verifyBeforeReport: async (session, probeName) => {
 			const rulesetPage = requireExitZero(
 				await invokeSubCli(
@@ -115,38 +109,39 @@ function contextProbeDriver(
 	};
 }
 
-function rulebookProbeDriver(
-	inspected: Exclude<InspectedProbePayload, { readonly kind: "context" }>,
-): ProbeDriver {
+function rulebookProbeDriver(inspected: InspectedProbePayload): ProbeDriver {
+	const { ruleIds } = nonnull(inspected.rulesOverview);
 	return {
-		ackPayload: (probeName) => ({
-			message: `Run inspect ${probeName}`,
-			rulesInOrder: inspected.ruleset.rules.map((r) => r.id),
-			observationFormat: "<observation> breaks <principle>",
-		}),
-		verifyBeforeReport: async () => {
-			await Promise.resolve();
+		verifyBeforeReport: async (session, probeName) => {
+			const rulesPage = requireExitZero(
+				await invokeSubCli(["rules", session, probeName], RulesPageSchema),
+			);
+			expectEqual(
+				rulesPage.ruleset.rules.length > 0,
+				true,
+				`Expected non-empty rules page for ${probeName}`,
+			);
 		},
 		initialRows: () =>
-			inspected.ruleset.rules.map((rule) => ({
-				rule: rule.id,
+			ruleIds.map((ruleId) => ({
+				rule: ruleId,
 				examined: ["service.ts", "helper.ts"],
 				verdict: "clean",
-				evidence: `Verified ${rule.id}`,
+				evidence: `Verified ${ruleId}`,
 			})),
 		reReviewRows: (pages) => {
 			const overrides = new Map<string, Row>([
 				["Stated purpose", reReviewViolationRow(pages)],
 			]);
-			return inspected.ruleset.rules.map((rule) => {
-				if (overrides.has(rule.id)) {
-					return nonnull(overrides.get(rule.id));
+			return ruleIds.map((ruleId) => {
+				if (overrides.has(ruleId)) {
+					return nonnull(overrides.get(ruleId));
 				}
 				return {
-					rule: rule.id,
+					rule: ruleId,
 					examined: ["helper.ts"],
 					verdict: "clean",
-					evidence: `Verified ${rule.id}`,
+					evidence: `Verified ${ruleId}`,
 				};
 			});
 		},

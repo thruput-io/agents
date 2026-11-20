@@ -64,14 +64,18 @@ it("controller CLIs support -h / --help and define routing without adapters", as
 		forSession: (session: string, name: string) =>
 			SubAgentController.forSession(factory, session, name),
 		resolveDefinition: stubResolveDefinition,
+		adapters: createStubAdapterPort(defaultStubAdapter),
 	};
-	assert.equal(runSubAgentCli(deps, ["-h"]), 0);
-	assert.equal(runSubAgentCli(deps, ["--help"]), 0);
-	assert.equal(runSubAgentCli(deps, ["define", "Encapsulated type"]), 0);
-	assert.equal(runSubAgentCli(deps, ["define", "Missing glossary term"]), 1);
+	assert.equal(await runSubAgentCli(deps, ["-h"]), 0);
+	assert.equal(await runSubAgentCli(deps, ["--help"]), 0);
+	assert.equal(await runSubAgentCli(deps, ["define", "Encapsulated type"]), 0);
+	assert.equal(
+		await runSubAgentCli(deps, ["define", "Missing glossary term"]),
+		1,
+	);
 });
 
-it("Sub-agent CLI handles ack, rules, next, prev, and rejects out-of-range rules page", () => {
+it("Sub-agent CLI handles ack, rules, next, prev, and rejects out-of-range rules page", async () => {
 	const { factory, workdir } = setupWorkspace();
 	const sessionToken = workdir.sessionToken();
 	const deps = {
@@ -79,15 +83,28 @@ it("Sub-agent CLI handles ack, rules, next, prev, and rejects out-of-range rules
 		forSession: (session: string, name: string) =>
 			SubAgentController.forSession(factory, session, name),
 		resolveDefinition: stubResolveDefinition,
+		adapters: createStubAdapterPort(defaultStubAdapter),
 	};
-	assert.equal(runSubAgentCli(deps, ["ack", sessionToken, "01-purpose"]), 0);
-	assert.equal(runSubAgentCli(deps, ["rules", sessionToken, "01-purpose"]), 0);
 	assert.equal(
-		runSubAgentCli(deps, ["rules", sessionToken, "01-purpose", "99"]),
+		await runSubAgentCli(deps, ["ack", sessionToken, "01-purpose"]),
+		0,
+	);
+	assert.equal(
+		await runSubAgentCli(deps, ["rules", sessionToken, "01-purpose"]),
+		0,
+	);
+	assert.equal(
+		await runSubAgentCli(deps, ["rules", sessionToken, "01-purpose", "99"]),
 		1,
 	);
-	assert.equal(runSubAgentCli(deps, ["next", sessionToken, "01-purpose"]), 0);
-	assert.equal(runSubAgentCli(deps, ["prev", sessionToken, "01-purpose"]), 0);
+	assert.equal(
+		await runSubAgentCli(deps, ["next", sessionToken, "01-purpose"]),
+		0,
+	);
+	assert.equal(
+		await runSubAgentCli(deps, ["prev", sessionToken, "01-purpose"]),
+		0,
+	);
 });
 
 it("Sub-agent and main-agent CLIs handle ack, report, and status", async () => {
@@ -102,6 +119,7 @@ it("Sub-agent and main-agent CLIs handle ack, report, and status", async () => {
 		forSession: (session: string, name: string) =>
 			SubAgentController.forSession(factory, session, name),
 		resolveDefinition: stubResolveDefinition,
+		adapters: createStubAdapterPort(defaultStubAdapter),
 	};
 	const reportPayload = JSON.stringify({
 		oneRowPerRuleInOrder: [
@@ -113,9 +131,17 @@ it("Sub-agent and main-agent CLIs handle ack, report, and status", async () => {
 			},
 		],
 	});
-	assert.equal(runSubAgentCli(deps, ["ack", sessionToken, "01-purpose"]), 0);
 	assert.equal(
-		runSubAgentCli(deps, ["report", sessionToken, "01-purpose", reportPayload]),
+		await runSubAgentCli(deps, ["ack", sessionToken, "01-purpose"]),
+		0,
+	);
+	assert.equal(
+		await runSubAgentCli(deps, [
+			"report",
+			sessionToken,
+			"01-purpose",
+			reportPayload,
+		]),
 		0,
 	);
 	const mainLedger = freshMain.ledger(workdir);
@@ -129,6 +155,7 @@ it("Sub-agent and main-agent CLIs handle ack, report, and status", async () => {
 		"Run /opt/pr-review/dist/bin/review-tool-probe.mjs -h, then run /opt/pr-review/dist/bin/review-tool-probe.mjs ack pr-review-session:default 01-purpose and follow its instructions.",
 	);
 	assert.equal(mainLedger.submittedOutcome()?.verdict, "approve");
+	assert.equal(mainLedger.submittedLocation(), "stub://review");
 	assert.equal(
 		await runMainAgentCli(freshMain, factory, ["status", workdir.toString()]),
 		0,

@@ -90,14 +90,12 @@ const stubPassingRowsForAudit = (auditDoc: Record<string, unknown>): Row[] => {
 	const builders: Readonly<Record<string, () => Row[]>> = {
 		true: () => {
 			const firstUrl = nonnull(nonnull(contextRulesets.data).rulesets[0]).url;
-			return [
-				{
-					bookRule: { ruleset: firstUrl, heading: "R1" },
-					examined: ["a.ts"],
-					verdict: "clean",
-					evidence: "Clean",
-				},
-			];
+			return (["R1", "R2", "R3"] as const).map((heading) => ({
+				bookRule: { ruleset: firstUrl, heading },
+				examined: ["a.ts"],
+				verdict: "clean",
+				evidence: "Clean",
+			}));
 		},
 		false: () =>
 			nonnull(rulebookProbe.data).ruleset.rules.map((rule) => ({

@@ -232,11 +232,7 @@ function paginateRulebookWithin(
 		if (
 			current.length > 0 &&
 			!fitsBytes(
-				rulesPageCandidate(
-					ruleset.instructions,
-					candidate,
-					ruleset.principles,
-				),
+				rulesPageCandidate(ruleset.instructions, candidate, ruleset.principles),
 				maxBytes,
 			)
 		) {

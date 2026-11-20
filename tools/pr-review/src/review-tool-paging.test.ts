@@ -23,8 +23,7 @@ const RULE_SECTION_COUNT = 200;
 const GUIDELINE_REPEATS = 8;
 const MAX_CLI_OUTPUT_BYTES = 9000;
 
-const setupPagingWorkdir = (tempRoot: string, bigRulesetUrl: string) => {
-	const workdir = nonnull(Workdir.from(join(tempRoot, "workspace")).data);
+const sampleCliPagingFiles = () => {
 	const bigFileOne = {
 		path: "large.ts",
 		fragments: [
@@ -45,33 +44,26 @@ const setupPagingWorkdir = (tempRoot: string, bigRulesetUrl: string) => {
 			},
 		],
 	};
-	const smallFileTwo = {
-		path: "small.ts",
+	const smallFile = (path: string, id: string, text: string) => ({
+		path,
 		fragments: [
 			{
 				kind: "surface" as const,
 				side: "head" as const,
-				lines: [
-					{ idToReportViolationOn: "small.ts:1", text: "export const ok = 1;" },
-				],
+				lines: [{ idToReportViolationOn: id, text }],
 			},
 		],
-	};
-	const smallFileThree = {
-		path: "small-two.ts",
-		fragments: [
-			{
-				kind: "surface" as const,
-				side: "head" as const,
-				lines: [
-					{
-						idToReportViolationOn: "small-two.ts:1",
-						text: "export const second = 2;",
-					},
-				],
-			},
-		],
-	};
+	});
+	return [
+		bigFileOne,
+		smallFile("small.ts", "small.ts:1", "export const ok = 1;"),
+		smallFile("small-two.ts", "small-two.ts:1", "export const second = 2;"),
+	];
+};
+
+const setupPagingWorkdir = (tempRoot: string, bigRulesetUrl: string) => {
+	const workdir = nonnull(Workdir.from(join(tempRoot, "workspace")).data);
+	const files = sampleCliPagingFiles();
 	const bigRuleset = {
 		url: bigRulesetUrl,
 		title: "Domain-Driven Design",
@@ -83,18 +75,11 @@ const setupPagingWorkdir = (tempRoot: string, bigRulesetUrl: string) => {
 				`## Rule ${i + 1}\n${"Guideline text ".repeat(GUIDELINE_REPEATS)}`,
 		).join("\n"),
 	};
-	const surface = {
-		headCommit: H,
-		files: [bigFileOne, smallFileTwo, smallFileThree],
-	};
+	const surface = { headCommit: H, files };
 	workdir.ledgerDirectory().writePullRequest({
 		change: sampleChange,
 		surface,
-		fragments: [
-			...bigFileOne.fragments,
-			...smallFileTwo.fragments,
-			...smallFileThree.fragments,
-		],
+		fragments: files.flatMap((file) => file.fragments),
 		threads: { threads: [] },
 	});
 	workdir.ledgerDirectory().writeRulesets([bigRuleset]);
@@ -170,7 +155,7 @@ function collectPages(
 	return nextStep[current.status]();
 }
 
-it("review-tool-probe ack, rules, next, prev, and ruleset page large changed files and large rulebooks strictly under 9KB", () => {
+it("review-tool-probe ack, rules, next, and prev page large changed files strictly under 9KB", () => {
 	const tempRoot = mkdtempSync(join(tmpdir(), "controller-paging-"));
 	const bigRulesetUrl =
 		"https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md";
@@ -219,7 +204,17 @@ it("review-tool-probe ack, rules, next, prev, and ruleset page large changed fil
 			nonnull(steppedBack.payload).files.some((f) => f.path === "small-two.ts"),
 			true,
 		);
+	} finally {
+		rmSync(tempRoot, { recursive: true, force: true });
+	}
+});
 
+it("review-tool-probe ruleset pages large rulebooks strictly under 9KB", () => {
+	const tempRoot = mkdtempSync(join(tmpdir(), "controller-paging-book-"));
+	const bigRulesetUrl =
+		"https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md";
+	try {
+		const session = setupPagingWorkdir(tempRoot, bigRulesetUrl);
 		const firstBook = runSubCliJson<{
 			readonly page: number;
 			readonly totalPages: number;

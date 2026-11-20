@@ -61,9 +61,7 @@ it("Instructions encapsulates the canonical probe tasks from the schema", () => 
 		true,
 	);
 	assert.equal(
-		Instructions.forKind("reuse")
-			.task()
-			.includes("WebSearch, WebFetch"),
+		Instructions.forKind("reuse").task().includes("WebSearch, WebFetch"),
 		true,
 	);
 });

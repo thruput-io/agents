@@ -2,10 +2,11 @@ import assert from "node:assert/strict";
 import { rmSync } from "node:fs";
 import { after, before, beforeEach, test as it } from "node:test";
 import {
-	DispatchResultSchema,
 	PrepareReadySchema,
 	PrepareResponseSchema,
+	ReviewStatusSchema,
 } from "../domain/contracts.g.ts";
+import { nonnull } from "../domain/nullish.ts";
 import {
 	type AzureReReviewRecorder,
 	createAzureReReviewHandlers,
@@ -31,7 +32,7 @@ import { createScenarioRepo } from "./scenario-repo.ts";
 
 const repo = createScenarioRepo();
 const TOKEN_STRING = scenarioToken;
-const EXPECTED_PROSE_LENGTH = 9;
+const EXPECTED_PROSE_LENGTH = 5;
 const EXPECTED_THREAD_COUNT = 2;
 
 before(async () => {
@@ -56,16 +57,21 @@ const runReReviewFlow = async (label: string, target: string) => {
 		PrepareResponseSchema,
 	);
 	const ready = PrepareReadySchema.parse(prep.payload);
-	const inspected = await Promise.all(
-		ready.pending.map((probeName) =>
-			reportForReReviewProbe(ready.session, probeName),
-		),
+	const initial = await Promise.all(
+		ready.pending
+			.slice(0, -1)
+			.map((probeName) => reportForReReviewProbe(ready.session, probeName)),
 	);
-	const dispatch = await invokeMainCli(
-		["dispatch", workdir.toString(), TOKEN_STRING],
-		DispatchResultSchema,
+	const last = await reportForReReviewProbe(
+		ready.session,
+		nonnull(ready.pending.at(-1)),
 	);
-	return { workdir, prep, inspected, dispatch };
+	const inspected = [...initial, last];
+	const status = await invokeMainCli(
+		["status", workdir.toString()],
+		ReviewStatusSchema,
+	);
+	return { workdir, prep, inspected, status };
 };
 
 it("Review CLI handles GitHub re-review with narrowed surface, GraphQL pagination, and thread settle/reopen", async () => {
@@ -75,7 +81,7 @@ it("Review CLI handles GitHub re-review with narrowed surface, GraphQL paginatio
 		postedBodies: [],
 	};
 	mockServer.use(...createGitHubReReviewHandlers(repo, ghRecorder));
-	const { workdir, prep, inspected, dispatch } = await runReReviewFlow(
+	const { workdir, prep, inspected, status } = await runReReviewFlow(
 		"rereview-github",
 		repo.githubTarget,
 	);
@@ -103,8 +109,9 @@ it("Review CLI handles GitHub re-review with narrowed surface, GraphQL paginatio
 			hasCheckout: entry.kind !== "rules",
 		})),
 	);
-	assert.equal(dispatch.exitCode, 0);
-	assert.equal(dispatch.payload.kind, "submitted");
+	assert.equal(status.exitCode, 0);
+	assert.notEqual(status.payload.submittedOutcome, null);
+	assert.notEqual(status.payload.location, null);
 	assert.deepEqual(ghRecorder.settledThreadIds, ["T_open_fixed"]);
 	assert.deepEqual(ghRecorder.reopenedThreadIds, ["T_resolved_recurring"]);
 	assert.equal(ghRecorder.postedBodies.length, 1);
@@ -116,7 +123,7 @@ it("Review CLI handles Azure re-review with narrowed surface, thread updates, an
 		createdThreads: [],
 	};
 	mockServer.use(...createAzureReReviewHandlers(repo, azRecorder));
-	const { workdir, prep, inspected, dispatch } = await runReReviewFlow(
+	const { workdir, prep, inspected, status } = await runReReviewFlow(
 		"rereview-azure",
 		repo.azureTarget,
 	);
@@ -140,8 +147,9 @@ it("Review CLI handles Azure re-review with narrowed surface, thread updates, an
 			instructionsLength: EXPECTED_PROSE_LENGTH,
 		})),
 	);
-	assert.equal(dispatch.exitCode, 0);
-	assert.equal(dispatch.payload.kind, "submitted");
+	assert.equal(status.exitCode, 0);
+	assert.notEqual(status.payload.submittedOutcome, null);
+	assert.notEqual(status.payload.location, null);
 	assert.deepEqual(azRecorder.patchedThreads[0], {
 		id: "90",
 		status: "closed",

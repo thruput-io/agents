@@ -19,10 +19,7 @@ const RULE_SECTION_COUNT = 200;
 const GUIDELINE_REPEATS = 8;
 const MAX_PAGE_BYTES = 9000;
 
-const setupPagingWorkspace = (
-	workdir: WorkspacePort,
-	bigRulesetUrl: string,
-) => {
+const samplePagingFiles = () => {
 	const bigFileOne = {
 		path: "large.ts",
 		fragments: [
@@ -43,36 +40,28 @@ const setupPagingWorkspace = (
 			},
 		],
 	};
-	const smallFileTwo = {
-		path: "small.ts",
+	const smallFile = (path: string, id: string, text: string) => ({
+		path,
 		fragments: [
 			{
 				kind: "surface" as const,
 				side: "head" as const,
-				lines: [
-					{
-						idToReportViolationOn: "small.ts:1",
-						text: "export const ok = 1;",
-					},
-				],
+				lines: [{ idToReportViolationOn: id, text }],
 			},
 		],
-	};
-	const smallFileThree = {
-		path: "small-two.ts",
-		fragments: [
-			{
-				kind: "surface" as const,
-				side: "head" as const,
-				lines: [
-					{
-						idToReportViolationOn: "small-two.ts:1",
-						text: "export const second = 2;",
-					},
-				],
-			},
-		],
-	};
+	});
+	return [
+		bigFileOne,
+		smallFile("small.ts", "small.ts:1", "export const ok = 1;"),
+		smallFile("small-two.ts", "small-two.ts:1", "export const second = 2;"),
+	];
+};
+
+const setupPagingWorkspace = (
+	workdir: WorkspacePort,
+	bigRulesetUrl: string,
+) => {
+	const files = samplePagingFiles();
 	const bigRuleset = {
 		url: bigRulesetUrl,
 		title: "Domain-Driven Design",
@@ -84,18 +73,11 @@ const setupPagingWorkspace = (
 				`## Rule ${i + 1}\n${"Guideline text ".repeat(GUIDELINE_REPEATS)}`,
 		).join("\n"),
 	};
-	const surface = {
-		headCommit: H,
-		files: [bigFileOne, smallFileTwo, smallFileThree],
-	};
+	const surface = { headCommit: H, files };
 	workdir.ledgerDirectory().writePullRequest({
 		change: sampleChange,
 		surface,
-		fragments: [
-			...bigFileOne.fragments,
-			...smallFileTwo.fragments,
-			...smallFileThree.fragments,
-		],
+		fragments: files.flatMap((file) => file.fragments),
 		threads: { threads: [] },
 	});
 	workdir.ledgerDirectory().writeRulesets([bigRuleset]);
@@ -139,7 +121,7 @@ function collectPages(
 	};
 }
 
-it("SubAgentController ack, rules, next, prev, and ruleset page large changed files and large rulebooks strictly under 9KB", () => {
+it("SubAgentController ack, rules, next, and prev page large changed files strictly under 9KB", () => {
 	const workdir = createMemoryWorkspace("/tmp/controller-paging/workspace");
 	const bigRulesetUrl =
 		"https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md";
@@ -181,7 +163,15 @@ it("SubAgentController ack, rules, next, prev, and ruleset page large changed fi
 		).files.some((f) => f.path === "small-two.ts"),
 		true,
 	);
+});
 
+it("SubAgentController ruleset pages large rulebooks strictly under 9KB", () => {
+	const workdir = createMemoryWorkspace(
+		"/tmp/controller-paging/workspace-book",
+	);
+	const bigRulesetUrl =
+		"https://github.com/ciembor/agent-rules-books/blob/main/ddd/ddd.md";
+	setupPagingWorkspace(workdir, bigRulesetUrl);
 	const contextSub = SubAgentController.forWorkdir(workdir, "02-context");
 	const firstBook = contextSub.ruleset(bigRulesetUrl, 1);
 	assert.equal(firstBook.success, true);

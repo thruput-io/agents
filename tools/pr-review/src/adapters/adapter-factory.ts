@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AccessToken } from "../domain/access-token.ts";
+import { AccessToken } from "../domain/access-token.ts";
 import {
 	type CodeUnderReview,
 	GithubPullRequest,
@@ -56,6 +56,12 @@ export const HostAdapterFactory = {
 		readonly pullRequest: CodeUnderReview;
 		readonly adapter: HostAdapter;
 	} {
+		if (persisted.token !== undefined) {
+			return this.rehydrateWithToken(
+				persisted,
+				nonnull(AccessToken.from(persisted.token).data),
+			);
+		}
 		const { host } = persisted.change;
 		if (host.kind === "github") {
 			const pullRequest = nonnull(GithubPullRequest.from(host).data).withReview(
