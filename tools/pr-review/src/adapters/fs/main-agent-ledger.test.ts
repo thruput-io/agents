@@ -4,14 +4,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test as it } from "node:test";
 import { GithubPullRequest } from "../../domain/code-under-review.ts";
-import { ContextSubAgentLedger } from "../../domain/context-sub-agent-ledger.ts";
 import type { Row } from "../../domain/contracts.g.ts";
 import { coordinateLedgers } from "../../domain/coordinate-ledgers.ts";
-import { DeadCodeSubAgentLedger } from "../../domain/dead-code-sub-agent-ledger.ts";
 import type { ContextProbe, RulesProbe } from "../../domain/ledger.ts";
 import { nonnull } from "../../domain/nullish.ts";
-import { ReuseSubAgentLedger } from "../../domain/reuse-sub-agent-ledger.ts";
-import { RulesSubAgentLedger } from "../../domain/rules-sub-agent-ledger.ts";
+import { ProbeLedger } from "../../domain/probe-ledger.ts";
 import { LedgerDirectory } from "./ledger-directory.ts";
 
 const SHA1_HEX_LENGTH = 40;
@@ -109,10 +106,10 @@ it("coordinateLedgers records each probe slice to disk, tracks MainAgentLedger s
 	rmSync(tempRoot, { recursive: true, force: true });
 });
 
-it("RulesSubAgentLedger, DeadCodeSubAgentLedger, ReuseSubAgentLedger, and ContextSubAgentLedger parse rows against their probes", () => {
+it("ProbeLedger parses rows against rules and context probes", () => {
 	const dir = nonnull(LedgerDirectory.from("/tmp/ledger").data);
 	const cleanRows = [cleanRow("A"), cleanRow("B")];
-	const rulesSub = RulesSubAgentLedger.from(dir, PR, probe);
+	const rulesSub = ProbeLedger.from(dir, PR, probe);
 	assert.equal(rulesSub.path().toString(), "/tmp/ledger");
 	const rulesResult = rulesSub.report(cleanRows);
 	assert.equal(rulesResult.success, true);
@@ -120,17 +117,7 @@ it("RulesSubAgentLedger, DeadCodeSubAgentLedger, ReuseSubAgentLedger, and Contex
 	assert.equal(rulesResult.data.ledger.headCommit, H);
 	assert.equal(rulesSub.report([cleanRow("A")]).success, false);
 
-	const deadCodeSub = DeadCodeSubAgentLedger.from(dir, PR, probe);
-	assert.equal(deadCodeSub.path().equals(dir), true);
-	assert.deepEqual(deadCodeSub.pullRequest().host(), PR.host());
-	assert.equal(deadCodeSub.report(cleanRows).success, true);
-
-	const reuseSub = ReuseSubAgentLedger.from(dir, PR, probe);
-	assert.equal(reuseSub.path().equals(dir), true);
-	assert.deepEqual(reuseSub.pullRequest().host(), PR.host());
-	assert.equal(reuseSub.report(cleanRows).success, true);
-
-	const contextSub = ContextSubAgentLedger.from(dir, PR, contextProbe);
+	const contextSub = ProbeLedger.from(dir, PR, contextProbe);
 	assert.equal(contextSub.path().equals(dir), true);
 	assert.deepEqual(contextSub.pullRequest().host(), PR.host());
 	assert.equal(

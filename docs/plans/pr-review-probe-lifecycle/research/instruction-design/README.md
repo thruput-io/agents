@@ -88,8 +88,25 @@ Run <skill>/dist/bin/review-tool-probe.mjs -h && <skill>/dist/bin/review-tool-pr
   Select from #/rulesets the ruleset whose focus and whenToUse match the pull request: (1) read its pages via ruleset; (2) page every changed file via next and inspect surrounding modules in #/checkout (Read, Grep, Glob, Find); (3) pick the three rules in that ruleset most relevant to the change and report three bookRule rows.
   ```
 
-### 3.4 `RulesetInstructions` (`agent-instructions.schema.json`)
+### 3.4 `Ruleset.properties.instructions` (`agent-instructions.schema.json`)
 
 ```text
 Evaluate each rule in order. If a rule's application is ambiguous, use its parent principle to decide. If a bracketed [[Term]] is unfamiliar, look it up with define.
 ```
+
+---
+
+## 4. How Schemas, Instructions, Codegen, and Adapters Sit Together
+
+1. **JSON Schema Draft 2020-12 Is Both Contract and Instruction**:
+   - Domain shapes and `const` instructions (`instructions`, `task`, `permissions`, `prompt`, `deadlineMs`) live inline on the properties of the objects that cross boundaries (`Probe`, `Ruleset`, `PrepareReady`, `AckStatus`, `AckSuccess`).
+   - Top-level `$defs` define domain data types (`Probe`, `Ruleset`, `SurfaceOverview`, `RulebookSummary`, `Checkout`), never static types named after `const` instructions or probe kinds (`InstructionsProse`, `RulesetInstructions`, `RulesTask`, `RulesInstructions`, etc.).
+   - CLI `-h` / `--help` emits `z.toJSONSchema(CommandSchema, { target: "draft-2020-12" })` directly so the schema itself instructs the caller without custom help wrappers.
+
+2. **Hands-Off Codegen (`generate-contracts.ts` and `generate-clients.ts`)**:
+   - `generate-contracts.ts` compiles `schemas/governance/*.schema.json` and `schemas/review/*.schema.json` into `src/domain/contracts.g.ts` with `.default(...)` attached to `const` properties.
+   - `generate-clients.ts` compiles external OpenAPI specifications (`references/hosts/*.json`) via Orval into `clients/*.g.ts` (fetch + MSW mocks) and `clients/*.zod.g.ts` (Zod v4 wire schemas).
+
+3. **All I/O and Transformations Run Through Zod (`zod.parse` and `z.codec`)**:
+   - Parsing a domain object at a boundary (`ProbeSchema.parse(...)`, `RulesetSchema.parse(...)`, `PrepareReadySchema.parse(...)`, `AckStatusSchema.parse(...)`, `AckSuccessSchema.parse(...)`) validates the input and populates all `const` instruction, permission, prompt, and deadline fields from the schema defaults—never calling `.parse(undefined)` on leaf schemas or constructing static `Instructions` / `*SubAgentLedger` wrapper classes.
+   - Adapters (`src/adapters/{github,azure,git,fs}/`) bridge external wire schemas (`clients/*.zod.g.ts`) and raw disk/git output into internal domain schemas (`src/domain/contracts.g.ts`) via `z.codec(ForeignSchema, DomainSchema, { decode, encode })`.

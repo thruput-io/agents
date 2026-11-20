@@ -1,6 +1,5 @@
 import type { z } from "zod";
 import type {
-	AgentInstructions,
 	Change,
 	Checkout,
 	DefineSuccess,
@@ -8,6 +7,7 @@ import type {
 	Path,
 	PersistedPullRequest,
 	PersistedSubmission,
+	Probe,
 	RepositoryPath,
 	Rulebook,
 	Summary,
@@ -57,7 +57,7 @@ interface SnapshotPort {
 interface WorkspacePort {
 	ledgerDirectory: () => LedgerStore;
 	snapshotDirectory: () => SnapshotPort;
-	writeAudit: (name: Checkout, document: AgentInstructions) => void;
+	writeAudit: (name: Checkout, document: Probe) => void;
 	readAudits: () => readonly PersistedAudit[];
 	sessionToken: () => Checkout;
 	warning: () => Summary | null;

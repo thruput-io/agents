@@ -14,7 +14,6 @@ import {
 	SubAgentCommandSchema,
 } from "../domain/contracts.g.ts";
 import type { HostAdapterPort } from "../domain/host-adapter.ts";
-import type { Instructions } from "../domain/instructions.ts";
 import type {
 	DefineLookupResult,
 	WorkspaceFactoryPort,
@@ -28,11 +27,9 @@ import {
 	writeJson,
 } from "./cli.ts";
 import { toRawSubAgentCommand } from "./sub-agent-args.ts";
-import { subAgentHelpPayload } from "./sub-agent-help.ts";
 
 interface SubAgentCliTarget {
 	workdir: () => WorkspacePort;
-	instructions: () => Instructions;
 	change: () => Change;
 	codeUnderReview: () => CodeUnderReview;
 	rules: () => ProbeRules;
@@ -136,7 +133,6 @@ async function runSubAgentCli(
 ): Promise<number> {
 	const dispatchedCli = parseSchemaCli(args, {
 		schema: SubAgentCommandSchema,
-		help: subAgentHelpPayload,
 		toRaw: toRawSubAgentCommand,
 		missingCommandUsage: MISSING_COMMAND_USAGE,
 		onInvalidCommand: (_command, details) => failWithJsonError(details),

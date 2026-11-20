@@ -11,7 +11,6 @@ export type SchemaCliDispatch<Command> =
 
 export interface SchemaCliConfig<Command> {
 	readonly schema: z.ZodType<Command>;
-	readonly help: () => object;
 	readonly toRaw: (args: readonly string[]) => RawCommandResult;
 	readonly onInvalidCommand: (
 		command: string | undefined,
@@ -66,7 +65,7 @@ export function parseSchemaCli<Command>(
 ): SchemaCliDispatch<Command> {
 	const [command] = args;
 	if (command === "-h" || command === "--help") {
-		writeJson(config.help());
+		writeJson(z.toJSONSchema(config.schema, { target: "draft-2020-12" }));
 		return { kind: "done", exitCode: 0 };
 	}
 	if (isNullOrEmpty(command) && !isNullOrEmpty(config.missingCommandUsage)) {

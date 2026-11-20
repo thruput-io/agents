@@ -1,29 +1,49 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
-import { Instructions, instructions } from "./instructions.ts";
+import { ProbeSchema } from "./contracts.g.ts";
+import { instructions } from "./instructions.ts";
 import { nonnull } from "./nullish.ts";
 import { Rulebook } from "./rulebook.ts";
 
 const SHA1_HEX_LENGTH = 40;
 const H = "a".repeat(SHA1_HEX_LENGTH);
 
+const change = {
+	host: {
+		kind: "github" as const,
+		owner: "thruput-io",
+		repository: "agents",
+		number: 14,
+	},
+	author: "author",
+	description: "Body",
+};
+const surface = { headCommit: H, changedFiles: 0, totalPages: 0 };
+const context = {
+	change,
+	surface: { headCommit: H, files: [] },
+	checkout: "/w/snapshot",
+};
+const rulesets = [
+	{
+		url: "https://raw.githubusercontent.com/ciembor/agent-rules-books/main/ddd.md",
+		title: "DDD",
+		focus: "Domain Modeling",
+		whenToUse: "Domain logic.",
+		text: "# R1\nUse domain terms.",
+	},
+];
+const rulesetSummaries = [
+	{
+		url: "https://raw.githubusercontent.com/ciembor/agent-rules-books/main/ddd.md",
+		title: "DDD",
+		focus: "Domain Modeling",
+		whenToUse: "Domain logic.",
+		totalPages: 1,
+	},
+];
+
 function buildInstructionsFixture() {
-	const change = {
-		host: {
-			kind: "github" as const,
-			owner: "thruput-io",
-			repository: "agents",
-			number: 14,
-		},
-		author: "author",
-		description: "Body",
-	};
-	const surface = { headCommit: H, changedFiles: 0, totalPages: 0 };
-	const context = {
-		change,
-		surface: { headCommit: H, files: [] },
-		checkout: "/w/snapshot",
-	};
 	const rb = nonnull(
 		Rulebook.slice(
 			[
@@ -46,33 +66,40 @@ function buildInstructionsFixture() {
 			},
 		).data,
 	);
-	const rulesets = [
-		{
-			url: "https://raw.githubusercontent.com/ciembor/agent-rules-books/main/ddd.md",
-			title: "DDD",
-			focus: "Domain Modeling",
-			whenToUse: "Domain logic.",
-			text: "# R1\nUse domain terms.",
-		},
-	];
-	const rulesetSummaries = [
-		{
-			url: "https://raw.githubusercontent.com/ciembor/agent-rules-books/main/ddd.md",
-			title: "DDD",
-			focus: "Domain Modeling",
-			whenToUse: "Domain logic.",
-			totalPages: 1,
-		},
-	];
-	return { change, surface, context, rb, rulesets, rulesetSummaries };
+	const parsedByKind = {
+		rules: ProbeSchema.parse({
+			kind: "rules",
+			change,
+			surface,
+			ruleset: rb.toRuleset(),
+		}),
+		reuse: ProbeSchema.parse({
+			kind: "reuse",
+			change,
+			surface,
+			ruleset: rb.toRuleset(),
+			checkout: "/w/snapshot",
+		}),
+		"dead-code": ProbeSchema.parse({
+			kind: "dead-code",
+			change,
+			surface,
+			ruleset: rb.toRuleset(),
+			checkout: "/w/snapshot",
+		}),
+		context: ProbeSchema.parse({
+			kind: "context",
+			change,
+			surface,
+			rulesets: rulesetSummaries,
+			checkout: "/w/snapshot",
+		}),
+	};
+	return { rb, parsedByKind };
 }
 
-const specForProbe = (kind: "rules" | "reuse" | "dead-code" | "context") =>
-	Instructions.forKind(kind);
-
 it("instructions hands every probe its instructions, task, change, surface overview, rulebook or rulesets summary, and checkout where needed", () => {
-	const { change, surface, context, rb, rulesets, rulesetSummaries } =
-		buildInstructionsFixture();
+	const { rb, parsedByKind } = buildInstructionsFixture();
 	const probes = [
 		{ name: "g1", kind: "rules" as const, rulebook: rb },
 		{ name: "g2", kind: "reuse" as const, rulebook: rb },
@@ -84,18 +111,18 @@ it("instructions hands every probe its instructions, task, change, surface overv
 		["01-g1", "02-g2", "03-g3", "04-context"],
 	);
 	assert.deepEqual(files[0]?.document, {
-		instructions: specForProbe("rules").prose(),
-		task: specForProbe("rules").task(),
-		permissions: specForProbe("rules").permissions(),
+		instructions: parsedByKind.rules.instructions,
+		task: parsedByKind.rules.task,
+		permissions: parsedByKind.rules.permissions,
 		kind: "rules",
 		change,
 		surface,
 		rulebook: rb,
 	});
 	assert.deepEqual(files[1]?.document, {
-		instructions: specForProbe("reuse").prose(),
-		task: specForProbe("reuse").task(),
-		permissions: specForProbe("reuse").permissions(),
+		instructions: parsedByKind.reuse.instructions,
+		task: parsedByKind.reuse.task,
+		permissions: parsedByKind.reuse.permissions,
 		kind: "reuse",
 		change,
 		surface,
@@ -103,9 +130,9 @@ it("instructions hands every probe its instructions, task, change, surface overv
 		checkout: "/w/snapshot",
 	});
 	assert.deepEqual(files[2]?.document, {
-		instructions: specForProbe("dead-code").prose(),
-		task: specForProbe("dead-code").task(),
-		permissions: specForProbe("dead-code").permissions(),
+		instructions: parsedByKind["dead-code"].instructions,
+		task: parsedByKind["dead-code"].task,
+		permissions: parsedByKind["dead-code"].permissions,
 		kind: "dead-code",
 		change,
 		surface,
@@ -113,9 +140,9 @@ it("instructions hands every probe its instructions, task, change, surface overv
 		checkout: "/w/snapshot",
 	});
 	assert.deepEqual(files[3]?.document, {
-		instructions: specForProbe("context").prose(),
-		task: specForProbe("context").task(),
-		permissions: specForProbe("context").permissions(),
+		instructions: parsedByKind.context.instructions,
+		task: parsedByKind.context.task,
+		permissions: parsedByKind.context.permissions,
 		kind: "context",
 		change,
 		surface,

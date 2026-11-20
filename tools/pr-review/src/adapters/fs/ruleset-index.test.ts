@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { z } from "zod";
-import { type IndexEntry, IndexSchema, withText } from "./ruleset.ts";
+import { type IndexEntry, IndexSchema, withText } from "./ruleset-index.ts";
 
 const WHEN_TO_USE_KEY = "when_to_use";
 const REVIEW_CHECKLIST_KEY = "review_checklist";

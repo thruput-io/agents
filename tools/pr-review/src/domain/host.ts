@@ -2,32 +2,13 @@ import { resolve } from "node:path";
 import { z } from "zod";
 import {
 	type AzureDevOps,
-	type AzureDevOpsKind,
-	AzureDevOpsKindSchema,
+	AzureDevOpsSchema,
 	type Git,
 	type GitHub,
-	type GitHubKind,
-	GitHubKindSchema,
-	type GitKind,
-	GitKindSchema,
+	GitHubSchema,
+	GitSchema,
 	type Host,
 	HostSchema,
-	type Organization,
-	OrganizationSchema,
-	type Owner,
-	OwnerSchema,
-	type Project,
-	ProjectSchema,
-	type PullRequestId,
-	PullRequestIdSchema,
-	type PullRequestNumber,
-	PullRequestNumberSchema,
-	type Ref,
-	RefSchema,
-	type Repository,
-	type RepositoryPath,
-	RepositoryPathSchema,
-	RepositorySchema,
 } from "./contracts.g.ts";
 import { isNullOrEmpty, nonEmptyString } from "./nullish.ts";
 
@@ -38,40 +19,30 @@ const AZURE_DEVOPS =
 const GIT_RANGE =
 	/^(?<repository>.+)@(?<base>[^.]+(?:\.[^.]+)*)\.\.(?<head>[^.].*)$/u;
 
-const toGitHub = (match: RegExpExecArray): GitHub => {
-	const kind: GitHubKind = GitHubKindSchema.decode("github");
-	const owner: Owner = OwnerSchema.decode(nonEmptyString(match[1]));
-	const repository: Repository = RepositorySchema.decode(
-		nonEmptyString(match[2]),
-	);
-	const number: PullRequestNumber = PullRequestNumberSchema.decode(
-		Number(match[3]),
-	);
-	return { kind, owner, repository, number };
-};
+const toGitHub = (match: RegExpExecArray): GitHub =>
+	GitHubSchema.parse({
+		kind: "github",
+		owner: nonEmptyString(match[1]),
+		repository: nonEmptyString(match[2]),
+		number: Number(match[3]),
+	});
 
-const toAzure = (match: RegExpExecArray): AzureDevOps => {
-	const kind: AzureDevOpsKind = AzureDevOpsKindSchema.decode("azure-devops");
-	const organization: Organization = OrganizationSchema.decode(
-		nonEmptyString(match[1]),
-	);
-	const project: Project = ProjectSchema.decode(nonEmptyString(match[2]));
-	const repository: Repository = RepositorySchema.decode(
-		nonEmptyString(match[3]),
-	);
-	const id: PullRequestId = PullRequestIdSchema.decode(Number(match[4]));
-	return { kind, organization, project, repository, id };
-};
+const toAzure = (match: RegExpExecArray): AzureDevOps =>
+	AzureDevOpsSchema.parse({
+		kind: "azure-devops",
+		organization: nonEmptyString(match[1]),
+		project: nonEmptyString(match[2]),
+		repository: nonEmptyString(match[3]),
+		id: Number(match[4]),
+	});
 
-const toGit = (match: RegExpExecArray): Git => {
-	const kind: GitKind = GitKindSchema.decode("git");
-	const repository: RepositoryPath = RepositoryPathSchema.decode(
-		resolve(nonEmptyString(match[1])),
-	);
-	const base: Ref = RefSchema.decode(nonEmptyString(match[2]));
-	const head: Ref = RefSchema.decode(nonEmptyString(match[3]));
-	return { kind, repository, base, head };
-};
+const toGit = (match: RegExpExecArray): Git =>
+	GitSchema.parse({
+		kind: "git",
+		repository: resolve(nonEmptyString(match[1])),
+		base: nonEmptyString(match[2]),
+		head: nonEmptyString(match[3]),
+	});
 
 export const TargetSchema = z
 	.string()

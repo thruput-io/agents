@@ -5,14 +5,13 @@ import {
 	type RulesetFocus,
 	RulesetFocusSchema,
 	type RulesetText,
-	RulesetTextSchema,
 	type RulesetTitle,
 	RulesetTitleSchema,
 	type RulesetUrl,
 	RulesetUrlSchema,
 	type RulesetUse,
 	RulesetUseSchema,
-} from "./contracts.g.ts";
+} from "../../domain/contracts.g.ts";
 
 const GITHUB_FILE = "https://github.com/";
 const GITHUB_BLOB = /^https:\/\/github\.com\/[^/]+\/[^/]+\/blob\/.+$/u;
@@ -54,10 +53,10 @@ export const IndexSchema = z.array(
 export type IndexEntry = z.infer<typeof IndexSchema>[number];
 
 export const withText = (entry: IndexEntry, text: RulesetText): Rulebook =>
-	RulebookSchema.decode({
+	RulebookSchema.parse({
 		url: entry.url,
 		title: entry.title,
 		focus: entry.focus,
 		whenToUse: entry.whenToUse,
-		text: RulesetTextSchema.decode(text),
+		text,
 	});

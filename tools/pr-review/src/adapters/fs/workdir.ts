@@ -2,10 +2,10 @@ import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { z } from "zod";
 import {
-	type AgentInstructions,
-	AgentInstructionsSchema,
 	type Checkout,
 	CheckoutSchema,
+	type Probe,
+	ProbeSchema,
 } from "../../domain/contracts.g.ts";
 import type {
 	WorkspaceFactoryPort,
@@ -131,7 +131,7 @@ export class Workdir implements WorkspacePort {
 		return this.#snapshot;
 	}
 
-	writeAudit(name: string, document: AgentInstructions): void {
+	writeAudit(name: string, document: Probe): void {
 		const dir = join(this.#path, "instructions");
 		writeFileSync(
 			join(dir, `${name}.json`),
@@ -147,7 +147,7 @@ export class Workdir implements WorkspacePort {
 			.sort()
 			.map((file) => ({
 				name: file.slice(0, -".json".length),
-				document: AgentInstructionsSchema.parse(
+				document: ProbeSchema.parse(
 					JSON.parse(readFileSync(join(dir, file), "utf-8")),
 				),
 			}));

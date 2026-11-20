@@ -5,7 +5,6 @@ import {
 } from "../domain/code-under-review.ts";
 import type { PersistedPullRequest } from "../domain/contracts.g.ts";
 import type { HostAdapter, HostAdapterPort } from "../domain/host-adapter.ts";
-import { Instructions } from "../domain/instructions.ts";
 import { nonnull } from "../domain/nullish.ts";
 import type { ProbeCatalogPort } from "../domain/ports.ts";
 import {
@@ -152,7 +151,6 @@ const createStubLoadProbes = (): ProbeCatalogPort => {
 
 const rulesAuditDocument = (rb: Rulebook) =>
 	toAgentInstructions({
-		instructions: Instructions.forKind("rules").prose(),
 		kind: "rules",
 		change: sampleChange,
 		surface: { headCommit: H, files: sampleSurface },

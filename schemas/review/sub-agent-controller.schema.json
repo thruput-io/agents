@@ -44,10 +44,6 @@
       "type": "integer",
       "minimum": 0
     },
-    "DeadlineMs": {
-      "description": "Reporting deadline in milliseconds from acknowledgment (5 minutes)",
-      "const": 300000
-    },
     "ToolPermission": {
       "description": "One granted tool permission string",
       "type": "string",
@@ -514,7 +510,8 @@
           "$ref": "#/$defs/EpochMs"
         },
         "deadlineMs": {
-          "$ref": "#/$defs/DeadlineMs"
+          "description": "Reporting deadline in milliseconds from acknowledgment (5 minutes)",
+          "const": 300000
         },
         "permissions": {
           "type": "array",
@@ -552,10 +549,10 @@
           "const": true
         },
         "deadlineMs": {
-          "$ref": "#/$defs/DeadlineMs"
+          "$ref": "#/$defs/AckStatus/properties/deadlineMs"
         },
         "instructions": {
-          "$ref": "agent-instructions.schema.json#/$defs/InstructionsProse"
+          "$ref": "agent-instructions.schema.json#/$defs/Probe/oneOf/0/properties/instructions"
         },
         "task": {
           "type": "string",

@@ -13,6 +13,7 @@ import {
 import { nonnull } from "../src/domain/nullish.ts";
 
 interface SchemaDocument {
+	readonly type?: unknown;
 	readonly $defs?: Record<string, unknown>;
 	readonly [key: string]: unknown;
 }
@@ -22,7 +23,6 @@ const OUTPUT_FILE = resolve(SCRIPT_DIR, "../src/domain/contracts.g.ts");
 const SCHEMAS_DIR = resolve(SCRIPT_DIR, "../../../schemas");
 const PASCAL_CASE_PATTERN = /(?:^|[^a-zA-Z0-9]+)(?<char>[a-zA-Z0-9])/gu;
 const DEREFERENCE_PASSES = 4;
-const DEFAULT_DEADLINE_MS = 300_000;
 
 const toPascalCase = (raw: string): string =>
 	raw.replace(PASCAL_CASE_PATTERN, (_, character: string) =>
@@ -43,7 +43,7 @@ const customOverride: ParserOverride = (
 	if (
 		(typeof schemaObject.const === "string" &&
 			schemaObject.const.includes(" ")) ||
-		schemaObject.const === DEFAULT_DEADLINE_MS
+		typeof schemaObject.const === "number"
 	) {
 		const literal = JSON.stringify(schemaObject.const);
 		return `z.literal(${literal}).default(${literal})`;
@@ -149,7 +149,10 @@ for (const relativePath of reviewPaths) {
 		}
 	}
 	const rootName = rootSchemaName(relativePath);
-	if (defs === undefined || !Object.hasOwn(defs, rootName)) {
+	if (
+		document.type === "object" &&
+		(defs === undefined || !Object.hasOwn(defs, rootName))
+	) {
 		emitSchema(rootName, document);
 	}
 }

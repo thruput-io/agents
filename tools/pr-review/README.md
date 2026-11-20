@@ -1,60 +1,23 @@
-# PR review: actors and interface
+# PR Review Tooling
 
-## Actors
+## Architecture
 
-- **Main agent.** Runs the review. It chooses the workdir, calls `prepare(url, workdir)`, and dispatches sub agents. It steps in again only if a sub agent times out before reporting. It writes no ledger rows and no review text itself.
-- **Sub agent.** One per probe. It reasons about the rules it is given, calls `report()` on its ledger, and returns. It never talks to the main agent during the review.
+1. **Schemas as Contracts and Instructions**:
+   - Governance and review JSON Schemas (Draft 2020-12) define every domain shape and embed `const` instructions, tasks, permissions, and deadlines directly on object properties.
+   - Probe kind is data, not a set of static instruction or ledger classes.
+   - CLI help emits the Draft 2020-12 JSON Schema directly from the command schema so the contract instructs the agent without separate prose wrappers.
 
-## Auth
+2. **Two Hands-Off Codegen Pipelines**:
+   - **Internal contracts**: Governance and review JSON Schemas compile into Zod v4 domain schemas with `const` defaults.
+   - **External host specifications**: Official GitHub and Azure DevOps OpenAPI specifications compile into typed fetch clients, MSW test mocks, and Zod v4 wire schemas.
 
-Set in the environment:
+3. **Zod Boundary Parsing and Transformation**:
+   - All I/O and structural transformations run through `zod.parse` and `z.codec`.
+   - Parsing a domain object validates its fields and populates all `const` instruction, permission, prompt, and deadline properties from the schema defaults.
+   - Adapters bridge generated external wire schemas and raw filesystem or git output into internal domain schemas via Zod codecs at the perimeter.
 
-- Git: none.
-- GitHub: `GH_TOKEN`, or none for public repositories.
-- Azure DevOps: `AZURE_DEVOPS_EXT_PAT`, or none for public repositories.
-
-## Contract
-
-Only immutable objects cross between actors and code. Everything that can be calculated in code—preconditions (CI checks, merge conflicts, file size), change surface, rule order, `headCommit`, citations, thread settlement, and review submission—is calculated in code.
-
-| Call                          | Who        | Input                                      | Output                                                                  |
-| ----------------------------- | ---------- | ------------------------------------------ | ----------------------------------------------------------------------- |
-| `prepare(url, workdir)`       | Main agent | Target URL and the workdir the agent chose | Immutable prepared review (or refusal posted to the host)               |
-| `dispatch(workdir)`           | Main agent | Workdir                                    | Pending sub agents run; the last sub agent to report submits the review |
-| `SubAgentLedger.report(rows)` | Sub agent  | Immutable rows for its probe               | Recorded slice, or the posted review when this is the last probe        |
-
-- `prepare` checks all preconditions in code (failing checks, merge conflicts, files over 200 lines, or an empty surface) and refuses on the host when blocked.
-- `dispatch` spawns one sub agent per pending probe. Each sub agent receives its immutable instructions and data, and it has no channel back to the main agent beyond its return.
-- The instructions are hard-coded constants from the schema, which the generated code already holds.
-- The data is the probe's rules or rulesets and its fragments. `dispatch` logs everything it sent under the workdir as an audit trail.
-- A sub agent calls `report(rows)` on its ledger. `report` validates the rows in code, attaches `headCommit`, writes the slice, and—when the last probe's slice is in—merges the ledger and submits the review to the host automatically.
-- If a sub agent times out before reporting, the main agent calls `dispatch(workdir)` again, which spawns only the probes whose ledger slice is still missing.
-
-## Classes
-
-- `CodeUnderReview` (interface). The canonical pull request: `surface()`, `fragments()`, `threads()`. Threads are for the ledger's submission step only; sub agents see only the surface.
-- `CodeUnderReviewFactory.from(url)` and `CodeUnderReviewFactory.from(url, token)`. Connect to the host and return a concrete, immutable `CodeUnderReview`.
-- Concrete, immutable: `GithubPullRequest`, `AzureMergeRequest`, `GitDiff`.
-- `CodeUnderReviewSnapshot` wraps a `CodeUnderReview` and adds `snapShot`.
-- `Rulebook`: iterable rules. `Instructions` holds `Instructions.Prose`.
-- `Ledger(path, pr)`, with one type per actor: `MainAgentLedger` (read-only view of pending/completed slices and the submitted report), and one per rule kind such as `DeadCodeSubAgentLedger` and `XxxSubAgentLedger`. Each sub agent ledger has `report(rows)`, which auto-submits once all slices are recorded.
-
-## Controllers
-
-Each actor has one controller, and it exposes only that actor's methods.
-
-- **Main agent controller.** `prepare(url, workdir)`, `dispatch(workdir)`, and a read-only ledger factory so the main agent can inspect status when a sub agent times out.
-- **Sub agent controller.** One write method (`report`) for its own ledger only. It is created with the workspace path it was given.
-
-## Ledger
-
-- The ledger is a sibling folder of the workspace. Nothing reads or writes it by path. It is reached only through the controllers and classes above.
-- The main agent holds a read-only view of the ledger.
-- Each sub agent is given a write method for its own ledger only. It knows nothing of the file system beyond its workspace path.
-- When the last sub agent records a valid slice, the ledger merges all slices, computes thread settlements and reopenings, and submits the review to the host itself.
-
-## Flow
-
-1. **Prepare.** The main agent chooses the workdir and calls `prepare(url, workdir)`. Preconditions and surface are computed in code.
-2. **Dispatch.** The main agent calls `dispatch(workdir)`. Sub agents run, call `report(rows)`, and the last one to finish submits the review automatically.
-3. **Re-dispatch on timeout.** If a sub agent times out before reporting, the main agent calls `dispatch(workdir)` again to re-run only the missing probes until the ledger submits itself.
+4. **Layers**:
+   - **Domain**: Pure domain types, ruleset pagination, surface diffing, ledger validation, and outcome calculation with zero I/O or transport imports.
+   - **Controller**: Session preparation, probe acknowledgment, paging, and automatic review submission on the final probe report through domain ports.
+   - **Client**: Main-agent and probe CLI entry points that parse arguments against command schemas and emit Draft 2020-12 JSON Schemas on help.
+   - **Adapters**: GitHub, Azure DevOps, local git, and filesystem adapters that own all network, process, and disk I/O and clean only managed subdirectories inside the working directory.

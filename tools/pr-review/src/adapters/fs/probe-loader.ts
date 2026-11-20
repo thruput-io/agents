@@ -24,7 +24,7 @@ import {
 	Rulebook,
 	rulebook,
 } from "../../domain/rulebook.ts";
-import { IndexSchema, withText } from "../../domain/ruleset.ts";
+import { IndexSchema, withText } from "./ruleset-index.ts";
 import { SKILL_DIR } from "./skill-dir.ts";
 
 const parseYaml = <T>(name: string, schema: z.ZodType<T>): T =>
@@ -70,16 +70,35 @@ function loadBundledRulesets(): Promise<readonly ExternalRulebook[]> {
 	);
 }
 
-const BUNDLED_EXTRA_BY_KIND: Record<
-	ProbeDocument["kind"],
-	(rulesets: readonly ExternalRulebook[]) => {
-		readonly rulesets?: readonly ExternalRulebook[];
+const toProbeDocument = (
+	raw: ReturnType<typeof instructions<Rulebook>>[number]["document"],
+	surface: Surface,
+	rulesets: readonly ExternalRulebook[],
+): ProbeDocument => {
+	if (raw.kind === "context") {
+		return {
+			kind: "context",
+			change: raw.change,
+			surface,
+			rulesets,
+			checkout: raw.checkout,
+		};
 	}
-> = {
-	context: (rulesets) => ({ rulesets }),
-	rules: () => ({}),
-	"dead-code": () => ({}),
-	reuse: () => ({}),
+	if ("checkout" in raw && raw.checkout !== undefined) {
+		return {
+			kind: raw.kind,
+			change: raw.change,
+			surface,
+			rulebook: raw.rulebook,
+			checkout: raw.checkout,
+		};
+	}
+	return {
+		kind: raw.kind,
+		change: raw.change,
+		surface,
+		rulebook: raw.rulebook,
+	};
 };
 
 async function loadBundledProbes(
@@ -91,12 +110,7 @@ async function loadBundledProbes(
 	const rulesets = await loadBundledRulesets();
 	const built = instructions({ change, surface, checkout }, groups, rulesets);
 	const probes = built.map((entry) => {
-		const raw = entry.document as unknown as ProbeDocument;
-		const probe: ProbeDocument = {
-			...raw,
-			surface,
-			...BUNDLED_EXTRA_BY_KIND[raw.kind](rulesets),
-		};
+		const probe = toProbeDocument(entry.document, surface, rulesets);
 		return {
 			name: entry.name,
 			probe,

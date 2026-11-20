@@ -2,10 +2,10 @@ import { z } from "zod";
 import type { CodeUnderReview } from "../domain/code-under-review.ts";
 import {
 	type AckStatus,
+	AckStatusSchema,
 	type AckSuccess,
 	type Change,
 	type Checkout,
-	DeadlineMsSchema,
 	type PageResponse,
 	type Row,
 	type RulesetPageResponse,
@@ -13,7 +13,6 @@ import {
 	type RulesPageResponse,
 } from "../domain/contracts.g.ts";
 import type { HostAdapterPort } from "../domain/host-adapter.ts";
-import type { Instructions } from "../domain/instructions.ts";
 import { isNullOrEmpty } from "../domain/nullish.ts";
 import type { WorkspaceFactoryPort, WorkspacePort } from "../domain/ports.ts";
 import type { ProbeDocument } from "../domain/probe-document.ts";
@@ -42,13 +41,10 @@ export interface AckResult {
 	readonly response: AckSuccess;
 }
 
-export const SUBAGENT_DEADLINE_MS = DeadlineMsSchema.parse(undefined);
-
 export class SubAgentController {
 	readonly #name: Checkout;
 	readonly #workdir: WorkspacePort;
 	readonly #ledger: SubAgentLedger;
-	readonly #instructions: Instructions;
 	readonly #change: Change;
 	readonly #behavior: ProbeBehavior;
 	readonly #storage: ProbeStorage;
@@ -58,7 +54,6 @@ export class SubAgentController {
 		this.#name = init.name;
 		this.#workdir = init.workdir;
 		this.#ledger = init.ledger;
-		this.#instructions = init.instructions;
 		this.#change = init.change;
 		this.#behavior = init.behavior;
 		this.#storage = init.storage;
@@ -128,10 +123,6 @@ export class SubAgentController {
 		return this.#workdir;
 	}
 
-	instructions(): Instructions {
-		return this.#instructions;
-	}
-
 	change(): Change {
 		return this.#change;
 	}
@@ -163,14 +154,14 @@ export class SubAgentController {
 	ack(): AckResult {
 		const acknowledgedAt = this.#now();
 		this.#storage.writeAck(acknowledgedAt);
+		const response = this.#behavior.ackAssignment(this.#name);
 		return {
 			success: true,
-			data: {
+			data: AckStatusSchema.parse({
 				acknowledgedAt,
-				deadlineMs: SUBAGENT_DEADLINE_MS,
-				permissions: this.#instructions.permissions(),
-			},
-			response: this.#behavior.ackAssignment(this.#name, SUBAGENT_DEADLINE_MS),
+				permissions: response.permissions,
+			}),
+			response,
 		};
 	}
 

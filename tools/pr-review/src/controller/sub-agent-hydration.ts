@@ -2,7 +2,6 @@ import { z } from "zod";
 import { rehydrateCodeUnderReview } from "../domain/code-under-review.ts";
 import type { Change, Checkout, Surface } from "../domain/contracts.g.ts";
 import { coordinateLedgers } from "../domain/coordinate-ledgers.ts";
-import { Instructions } from "../domain/instructions.ts";
 import { nonnull } from "../domain/nullish.ts";
 import type { WorkspacePort } from "../domain/ports.ts";
 import {
@@ -29,7 +28,6 @@ interface SubAgentControllerInit {
 	readonly name: Checkout;
 	readonly workdir: WorkspacePort;
 	readonly ledger: SubAgentLedger;
-	readonly instructions: Instructions;
 	readonly change: Change;
 	readonly behavior: ProbeBehavior;
 	readonly storage: ProbeStorage;
@@ -58,7 +56,6 @@ const fromLedgerInit = (
 		name: DEFAULT_PROBE_NAME,
 		workdir,
 		ledger,
-		instructions: Instructions.forKind("context"),
 		change,
 		behavior: probeBehaviorFor(
 			{ kind: "context", change, surface, rulesets: [], checkout },
@@ -77,7 +74,6 @@ const withLedgerInit = (
 	name: DEFAULT_PROBE_NAME,
 	workdir,
 	ledger,
-	instructions: Instructions.fromParts(probe),
 	change: probe.change,
 	behavior: probeBehaviorFor(probe, workdir.snapshotDirectory().toString()),
 	storage: inMemoryProbeStorage(),
@@ -115,7 +111,6 @@ const loadWorkdirInit = (
 		name,
 		workdir,
 		ledger: nonnull(ledgers[index]),
-		instructions: Instructions.fromParts(target.probe),
 		change: target.probe.change,
 		behavior: probeBehaviorFor(target.probe, checkoutDir),
 		storage: persistedProbeStorage(workdir.ledgerDirectory(), name),

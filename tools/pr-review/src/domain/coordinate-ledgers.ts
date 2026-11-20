@@ -1,8 +1,11 @@
 import type { CodeUnderReview } from "./code-under-review.ts";
-import { ContextSubAgentLedger } from "./context-sub-agent-ledger.ts";
-import type { Ledger, Outcome } from "./contracts.g.ts";
-import { DeadCodeSubAgentLedger } from "./dead-code-sub-agent-ledger.ts";
-import { Instructions } from "./instructions.ts";
+import {
+	type Ledger,
+	type Outcome,
+	type Probe,
+	ProbeSchema,
+	RulesetSchema,
+} from "./contracts.g.ts";
 import { merge } from "./ledger-table.ts";
 import {
 	type CoordinatedProbeSpec,
@@ -11,15 +14,79 @@ import {
 import { isNullOrEmpty, nonnull } from "./nullish.ts";
 import { outcome } from "./outcome.ts";
 import type { LedgerStore } from "./ports.ts";
-import type { OnReport, SubAgentLedger } from "./probe-ledger.ts";
-import { ReuseSubAgentLedger } from "./reuse-sub-agent-ledger.ts";
-import { RulesSubAgentLedger } from "./rules-sub-agent-ledger.ts";
+import {
+	type OnReport,
+	ProbeLedger,
+	type SubAgentLedger,
+} from "./probe-ledger.ts";
 
-const rulesLedgerFactories = {
-	rules: RulesSubAgentLedger.withCallback,
-	"dead-code": DeadCodeSubAgentLedger.withCallback,
-	reuse: ReuseSubAgentLedger.withCallback,
-} as const;
+const SHA1_HEX_LENGTH = 40;
+
+const DEFAULT_CHANGE: Probe["change"] = {
+	host: {
+		kind: "github",
+		owner: "thruput-io",
+		repository: "agents",
+		number: 1,
+	},
+	author: "author",
+	description: "",
+};
+
+const DEFAULT_RULESET = RulesetSchema.parse({
+	rules: [
+		{
+			id: "Stated purpose",
+			body: "State the [[Purpose]] of every [[Change]].",
+			parent: "You aren't gonna need it",
+			marker: "MUST",
+			group: "Purpose",
+		},
+	],
+	principles: [],
+});
+
+const permissionsForKind = (
+	kind: CoordinatedProbeSpec["kind"],
+): Probe["permissions"] => {
+	const surface = {
+		headCommit: "0".repeat(SHA1_HEX_LENGTH),
+		changedFiles: 0,
+		totalPages: 0,
+	};
+	if (kind === "context") {
+		return ProbeSchema.parse({
+			kind: "context",
+			change: DEFAULT_CHANGE,
+			surface,
+			rulesets: [
+				{
+					url: "https://thruput.se/agents/",
+					title: "Rules",
+					focus: "Focus",
+					whenToUse: "Use",
+					totalPages: 1,
+				},
+			],
+			checkout: "/opt/pr-review/snapshot",
+		}).permissions;
+	}
+	if (kind === "rules") {
+		return ProbeSchema.parse({
+			kind: "rules",
+			change: DEFAULT_CHANGE,
+			surface,
+			ruleset: DEFAULT_RULESET,
+		}).permissions;
+	}
+	return ProbeSchema.parse({
+		kind,
+		change: DEFAULT_CHANGE,
+		surface,
+		ruleset: DEFAULT_RULESET,
+		checkout: "/opt/pr-review/snapshot",
+	}).permissions;
+};
 
 function settleIfComplete(
 	directory: LedgerStore,
@@ -57,14 +124,6 @@ function settleIfComplete(
 	return result;
 }
 
-const instructionsForSpec = (spec: CoordinatedProbeSpec): Instructions =>
-	Instructions.fromParts({
-		kind: spec.kind,
-		instructions: spec.probe.instructions,
-		task: spec.probe.task,
-		permissions: spec.probe.permissions,
-	});
-
 export function coordinateLedgers(
 	directory: LedgerStore,
 	pullRequest: CodeUnderReview,
@@ -88,7 +147,7 @@ export function coordinateLedgers(
 	const mainLedger = MainAgentLedger.from(directory, pullRequest, {
 		probeNames: specs.map((spec) => spec.name),
 		permissionsByProbe: new Map(
-			specs.map((spec) => [spec.name, instructionsForSpec(spec).permissions()]),
+			specs.map((spec) => [spec.name, permissionsForKind(spec.kind)]),
 		),
 		sync: () => {
 			settle();
@@ -111,15 +170,7 @@ export function coordinateLedgers(
 				outcome: settled.outcome,
 			};
 		};
-		if (spec.kind === "context") {
-			return ContextSubAgentLedger.withCallback(
-				directory,
-				pullRequest,
-				spec.probe,
-				onReport,
-			);
-		}
-		return rulesLedgerFactories[spec.kind](
+		return ProbeLedger.withCallback(
 			directory,
 			pullRequest,
 			spec.probe,

@@ -4,18 +4,16 @@ import type { Ledger, LedgerSubmission, Row } from "./contracts.g.ts";
 import { type LedgerProbe, ledgerFor } from "./ledger.ts";
 import type { LedgerStore } from "./ports.ts";
 
-export type { LedgerSubmission } from "./contracts.g.ts";
-
-export interface SubAgentLedger {
+interface SubAgentLedger {
 	path: () => LedgerStore;
 	pullRequest: () => CodeUnderReview;
 	report: (rows: readonly Row[]) => z.ZodSafeParseResult<LedgerSubmission>;
 }
 
-export type OnReport = (ledger: Ledger) => LedgerSubmission;
-export const recordOnly: OnReport = (ledger) => ({ kind: "recorded", ledger });
+type OnReport = (ledger: Ledger) => LedgerSubmission;
+const recordOnly: OnReport = (ledger) => ({ kind: "recorded", ledger });
 
-export class ProbeLedger<Probe extends LedgerProbe> implements SubAgentLedger {
+class ProbeLedger<Probe extends LedgerProbe> implements SubAgentLedger {
 	readonly #directory: LedgerStore;
 	readonly #pullRequest: CodeUnderReview;
 	readonly #probe: Probe;
@@ -39,6 +37,21 @@ export class ProbeLedger<Probe extends LedgerProbe> implements SubAgentLedger {
 	): ProbeLedger<ProbeType> {
 		return new ProbeLedger(directory, pullRequest, probe, onReport);
 	}
+	static from<ProbeType extends LedgerProbe>(
+		directory: LedgerStore,
+		pullRequest: CodeUnderReview,
+		probe: ProbeType,
+	): ProbeLedger<ProbeType> {
+		return new ProbeLedger(directory, pullRequest, probe, recordOnly);
+	}
+	static withCallback<ProbeType extends LedgerProbe>(
+		directory: LedgerStore,
+		pullRequest: CodeUnderReview,
+		probe: ProbeType,
+		onReport: OnReport,
+	): ProbeLedger<ProbeType> {
+		return new ProbeLedger(directory, pullRequest, probe, onReport);
+	}
 	path(): LedgerStore {
 		return this.#directory;
 	}
@@ -54,3 +67,7 @@ export class ProbeLedger<Probe extends LedgerProbe> implements SubAgentLedger {
 			});
 	}
 }
+
+export type { LedgerSubmission } from "./contracts.g.ts";
+export type { OnReport, SubAgentLedger };
+export { ProbeLedger };

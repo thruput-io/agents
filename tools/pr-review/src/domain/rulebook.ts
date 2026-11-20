@@ -1,21 +1,20 @@
 import { z } from "zod";
 import {
 	type BookRule,
-	type DeadCodeKind,
 	type Observation,
 	type Principle,
 	PrincipleSchema,
-	type ReuseKind,
+	type Probe,
 	type Rule,
 	type Ruleset as RulebookData,
 	RuleSchema,
-	type RulesetInstructions,
 	RulesetSchema,
 	type RulesetUrl,
-	type RulesKind,
 	type ThreadBody,
 } from "./contracts.g.ts";
 import { isNullOrEmpty } from "./nullish.ts";
+
+type RulebookProbeKind = Exclude<Probe["kind"], "context">;
 
 const SITE = "https://thruput.se/agents/";
 const APOSTROPHE = /'/gu;
@@ -86,7 +85,7 @@ function partition<T extends { readonly group: Rule["group"] }>(
 	}));
 }
 
-const KIND_OF_GROUP = new Map<Rule["group"], ReuseKind | DeadCodeKind>([
+const KIND_OF_GROUP = new Map<Rule["group"], "reuse" | "dead-code">([
 	["Reuse", "reuse"],
 	["Dead Code", "dead-code"],
 ]);
@@ -95,7 +94,7 @@ const GovernanceSchema = z.object({
 	principles: z.array(PrincipleSchema).readonly(),
 });
 
-const kindOf = (group: Rule["group"]): ReuseKind | DeadCodeKind | RulesKind => {
+const kindOf = (group: Rule["group"]): RulebookProbeKind => {
 	const mapped = KIND_OF_GROUP.get(group);
 	if (mapped === undefined) {
 		return "rules";
@@ -160,7 +159,7 @@ export class Rulebook implements Iterable<Rule> {
 	): z.ZodSafeParseResult<Rulebook> {
 		return Rulebook.from(rulebook(rules, governance));
 	}
-	get instructions(): RulesetInstructions {
+	get instructions(): RulebookData["instructions"] {
 		return this.#data.instructions;
 	}
 	get rules(): readonly Rule[] {

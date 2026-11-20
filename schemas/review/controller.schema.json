@@ -24,9 +24,6 @@
     }
   ],
   "$defs": {
-    "HostErrorKind": {
-      "const": "host-error"
-    },
     "HttpStatusCode": {
       "description": "The HTTP status code returned by the host",
       "type": "integer",
@@ -55,7 +52,7 @@
       ],
       "properties": {
         "kind": {
-          "$ref": "#/$defs/HostErrorKind"
+          "const": "host-error"
         },
         "host": {
           "$ref": "change.schema.json#/$defs/Host"
@@ -233,24 +230,6 @@
         }
       ]
     },
-    "ProbePrompt": {
-      "description": "Exact single-sentence prompt template for spawning a probe subagent, with <skill>, <session>, and <probe> filled in from PrepareReady",
-      "const": "Run <skill>/dist/bin/review-tool-probe.mjs -h && <skill>/dist/bin/review-tool-probe.mjs ack <session> <probe> and follow its instructions."
-    },
-    "ProbePermissions": {
-      "description": "Allowed tools for a probe subagent, determined by its probe kind",
-      "oneOf": [
-        {
-          "$ref": "agent-instructions.schema.json#/$defs/RulesPermissions"
-        },
-        {
-          "$ref": "agent-instructions.schema.json#/$defs/DeadCodePermissions"
-        },
-        {
-          "$ref": "agent-instructions.schema.json#/$defs/ReusePermissions"
-        }
-      ]
-    },
     "ProbePermissionsMap": {
       "description": "Map of pending probe name to the allowed tool permissions to pass when spawning its subagent",
       "type": "object",
@@ -258,7 +237,18 @@
         "$ref": "#/$defs/ProbeName"
       },
       "additionalProperties": {
-        "$ref": "#/$defs/ProbePermissions"
+        "description": "Allowed tools for a probe subagent, determined by its probe kind",
+        "oneOf": [
+          {
+            "$ref": "agent-instructions.schema.json#/$defs/Probe/oneOf/3/properties/permissions"
+          },
+          {
+            "$ref": "agent-instructions.schema.json#/$defs/Probe/oneOf/0/properties/permissions"
+          },
+          {
+            "$ref": "agent-instructions.schema.json#/$defs/Probe/oneOf/2/properties/permissions"
+          }
+        ]
       }
     },
     "PrepareReady": {
@@ -285,7 +275,8 @@
           }
         },
         "prompt": {
-          "$ref": "#/$defs/ProbePrompt"
+          "description": "Exact single-sentence prompt template for spawning a probe subagent, with <skill>, <session>, and <probe> filled in from PrepareReady",
+          "const": "Run <skill>/dist/bin/review-tool-probe.mjs -h && <skill>/dist/bin/review-tool-probe.mjs ack <session> <probe> and follow its instructions."
         },
         "permissions": {
           "$ref": "#/$defs/ProbePermissionsMap"

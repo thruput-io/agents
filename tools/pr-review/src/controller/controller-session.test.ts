@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { z } from "zod";
-import { AgentInstructionsSchema } from "../domain/contracts.g.ts";
+import { ProbeSchema } from "../domain/contracts.g.ts";
 import { nonnull } from "../domain/nullish.ts";
 import type { WorkspaceFactoryPort, WorkspacePort } from "../domain/ports.ts";
 import { MainAgentController } from "./controller.ts";
@@ -58,7 +58,7 @@ it("SubAgentController.forSession rehydrates a probe, rejects tampered audit, an
 				readAudits: () => [
 					{
 						name: "01-purpose",
-						document: AgentInstructionsSchema.parse({
+						document: ProbeSchema.parse({
 							...originalAudit,
 							task: "Tampered task from main agent",
 						}),

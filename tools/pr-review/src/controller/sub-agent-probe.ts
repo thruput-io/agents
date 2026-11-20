@@ -1,28 +1,23 @@
 import type { CodeUnderReview } from "../domain/code-under-review.ts";
-import { ContextSubAgentLedger } from "../domain/context-sub-agent-ledger.ts";
-import type {
-	AckSuccess,
-	Checkout,
-	Rulebook as ExternalRulebook,
-	RulesetPageResponse,
-	RulesetUrl,
-	RulesPageResponse,
+import {
+	type AckSuccess,
+	AckSuccessSchema,
+	type Checkout,
+	type Rulebook as ExternalRulebook,
+	type RulesetPageResponse,
+	type RulesetUrl,
+	type RulesPageResponse,
 } from "../domain/contracts.g.ts";
-import { DeadCodeSubAgentLedger } from "../domain/dead-code-sub-agent-ledger.ts";
-import { Instructions, toRulebookSummaries } from "../domain/instructions.ts";
 import type { CoordinatedProbeSpec } from "../domain/main-agent-ledger.ts";
 import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
-import {
-	paginateRulebook,
-	paginateText,
-	surfaceOverview,
-} from "../domain/pagination.ts";
+import { paginateRulebook, paginateText } from "../domain/pagination.ts";
 import type { LedgerStore } from "../domain/ports.ts";
-import type { ProbeDocument } from "../domain/probe-document.ts";
-import type { SubAgentLedger } from "../domain/probe-ledger.ts";
-import { ReuseSubAgentLedger } from "../domain/reuse-sub-agent-ledger.ts";
+import {
+	type ProbeDocument,
+	toAgentInstructions,
+} from "../domain/probe-document.ts";
+import { ProbeLedger, type SubAgentLedger } from "../domain/probe-ledger.ts";
 import type { Rulebook } from "../domain/rulebook.ts";
-import { RulesSubAgentLedger } from "../domain/rules-sub-agent-ledger.ts";
 
 type ProbeRules =
 	| { readonly kind: "rulebook"; readonly rulebook: Rulebook }
@@ -39,16 +34,10 @@ interface ProbeBehavior {
 		pullRequest: CodeUnderReview,
 	) => SubAgentLedger;
 	toCoordinatedSpec: (name: Checkout) => CoordinatedProbeSpec;
-	ackAssignment: (probeName: Checkout, deadlineMs: 300000) => AckSuccess;
+	ackAssignment: (probeName: Checkout) => AckSuccess;
 	rulesPage: (page: number) => RulesPageResponse;
 	ruleset: (url: RulesetUrl, page: number) => RulesetPageResponse;
 }
-
-const rulesProbeLedgers = {
-	rules: RulesSubAgentLedger.from,
-	"dead-code": DeadCodeSubAgentLedger.from,
-	reuse: ReuseSubAgentLedger.from,
-} as const;
 
 type RulebookProbeDocument = Extract<
 	ProbeDocument,
@@ -144,24 +133,25 @@ function contextProbeBehavior(
 		probe: hydrated,
 		rules: { kind: "rulesets", rulesets: hydrated.rulesets },
 		toLedger: (directory, pullRequest) =>
-			ContextSubAgentLedger.from(directory, pullRequest, hydrated),
+			ProbeLedger.from(directory, pullRequest, hydrated),
 		toCoordinatedSpec: (name) => ({ name, kind: "context", probe: hydrated }),
-		ackAssignment: (probeName, deadlineMs) => {
-			const spec = Instructions.fromParts(hydrated);
-			return {
+		ackAssignment: (probeName) => {
+			const serialized = toAgentInstructions(hydrated);
+			if (serialized.kind !== "context") {
+				throw new Error(`Expected context probe, got ${serialized.kind}`);
+			}
+			return AckSuccessSchema.parse({
 				success: true,
 				probe: probeName,
 				acknowledged: true,
-				deadlineMs,
-				instructions: spec.prose(),
-				task: spec.task(),
-				permissions: [...spec.permissions()],
+				task: serialized.task,
+				permissions: serialized.permissions,
 				kind: "context",
-				change: hydrated.change,
-				surface: surfaceOverview(hydrated.surface),
-				rulesets: [...toRulebookSummaries(hydrated.rulesets)],
-				checkout: nonnull(hydrated.checkout),
-			};
+				change: serialized.change,
+				surface: serialized.surface,
+				rulesets: serialized.rulesets,
+				checkout: serialized.checkout,
+			});
 		},
 		rulesPage: () => ({
 			success: false,
@@ -182,35 +172,36 @@ function rulebookProbeBehavior(
 		probe: hydrated,
 		rules: { kind: "rulebook", rulebook: hydrated.rulebook },
 		toLedger: (directory, pullRequest) =>
-			rulesProbeLedgers[hydrated.kind](directory, pullRequest, hydrated),
+			ProbeLedger.from(directory, pullRequest, hydrated),
 		toCoordinatedSpec: (name) => ({
 			name,
 			kind: hydrated.kind,
 			probe: hydrated,
 		}),
-		ackAssignment: (probeName, deadlineMs) => {
-			const spec = Instructions.fromParts(hydrated);
+		ackAssignment: (probeName) => {
+			const serialized = toAgentInstructions(hydrated);
 			const chunks = paginateRulebook(hydrated.rulebook.toRuleset());
-			const base: AckSuccess = {
+			const base = {
 				success: true,
 				probe: probeName,
 				acknowledged: true,
-				deadlineMs,
-				instructions: spec.prose(),
-				task: spec.task(),
-				permissions: [...spec.permissions()],
+				task: serialized.task,
+				permissions: serialized.permissions,
 				kind: hydrated.kind,
-				change: hydrated.change,
-				surface: surfaceOverview(hydrated.surface),
+				change: serialized.change,
+				surface: serialized.surface,
 				rulesOverview: {
 					totalPages: chunks.length,
 					ruleIds: hydrated.rulebook.rules.map((r) => r.id),
 				},
 			};
 			if (hydrated.kind === "rules") {
-				return base;
+				return AckSuccessSchema.parse(base);
 			}
-			return { ...base, checkout: nonnull(hydrated.checkout) };
+			return AckSuccessSchema.parse({
+				...base,
+				checkout: nonnull(hydrated.checkout),
+			});
 		},
 		rulesPage: (page) => paginateProbeRulebook(hydrated.rulebook, page),
 		ruleset: () => ({

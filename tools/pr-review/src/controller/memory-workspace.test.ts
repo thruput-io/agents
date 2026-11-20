@@ -1,12 +1,12 @@
 import { z } from "zod";
 import type {
-	AgentInstructions,
 	Checkout,
 	Rulebook as ExternalRulebook,
 	Ledger,
 	Path,
 	PersistedPullRequest,
 	PersistedSubmission,
+	Probe,
 	RepositoryPath,
 } from "../domain/contracts.g.ts";
 import { nonnull } from "../domain/nullish.ts";
@@ -103,7 +103,7 @@ function createMemorySnapshotPort(path: Checkout): SnapshotPort {
 function createMemoryWorkspace(path: Checkout): WorkspacePort {
 	const ledger = createMemoryLedgerStore(`${path}/../ledger`);
 	const snapshot = createMemorySnapshotPort(`${path}/snapshot`);
-	const audits = new Map<Checkout, AgentInstructions>();
+	const audits = new Map<Checkout, Probe>();
 	const token = `${SESSION_PREFIX}${Buffer.from(path, "utf-8").toString("base64url")}`;
 
 	return {

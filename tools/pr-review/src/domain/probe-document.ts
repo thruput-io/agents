@@ -1,37 +1,25 @@
-import type {
-	AgentInstructions,
-	Change,
-	Checkout,
-	ContextKind,
-	ContextPermissions,
-	ContextTask,
-	DeadCodeKind,
-	DeadCodePermissions,
-	DeadCodeTask,
-	Rulebook as ExternalRulebook,
-	InstructionsProse,
-	ReuseKind,
-	ReusePermissions,
-	ReuseTask,
-	RulesKind,
-	RulesPermissions,
-	RulesTask,
-	Surface,
+import {
+	type Change,
+	type Checkout,
+	type Rulebook as ExternalRulebook,
+	type Probe,
+	ProbeSchema,
+	type Surface,
 } from "./contracts.g.ts";
-import { Instructions, toRulebookSummaries } from "./instructions.ts";
+import { toRulebookSummaries } from "./instructions.ts";
 import { nonnull } from "./nullish.ts";
 import { surfaceOverview } from "./pagination.ts";
 import { Rulebook } from "./rulebook.ts";
 
 interface PersistedAudit {
 	readonly name: Checkout;
-	readonly document: AgentInstructions;
+	readonly document: Probe;
 }
 
 interface NamedProbe {
 	readonly name: string;
 	readonly probe: ProbeDocument;
-	readonly auditDocument: AgentInstructions;
+	readonly auditDocument: Probe;
 }
 
 interface BundledProbes {
@@ -39,98 +27,69 @@ interface BundledProbes {
 	readonly rulesets: readonly ExternalRulebook[];
 }
 
+type RulebookProbeKind = Exclude<Probe["kind"], "context">;
+
 type ProbeDocument =
 	| {
-			readonly instructions?: InstructionsProse;
-			readonly task?: RulesTask | ReuseTask | DeadCodeTask;
-			readonly permissions?:
-				| RulesPermissions
-				| ReusePermissions
-				| DeadCodePermissions;
-			readonly kind: RulesKind | ReuseKind | DeadCodeKind;
+			readonly kind: RulebookProbeKind;
 			readonly change: Change;
 			readonly surface: Surface;
 			readonly rulebook: Rulebook;
 			readonly checkout?: Checkout;
 	  }
 	| {
-			readonly instructions?: InstructionsProse;
-			readonly task?: ContextTask;
-			readonly permissions?: ContextPermissions;
-			readonly kind: ContextKind;
+			readonly kind: "context";
 			readonly change: Change;
 			readonly surface: Surface;
 			readonly rulesets: readonly ExternalRulebook[];
 			readonly checkout?: Checkout;
 	  };
 
-const toContextInstructions = (
-	probe: Extract<ProbeDocument, { readonly kind: "context" }>,
-	spec: Instructions,
-	overview: AgentInstructions["surface"],
-): AgentInstructions => ({
-	instructions: spec.prose(),
-	task: spec.task() as Extract<
-		AgentInstructions,
-		{ readonly kind: "context" }
-	>["task"],
-	permissions: spec.permissions() as Extract<
-		AgentInstructions,
-		{ readonly kind: "context" }
-	>["permissions"],
-	kind: "context",
-	change: probe.change,
-	surface: overview,
-	rulesets: [...toRulebookSummaries(probe.rulesets)],
-	checkout: nonnull(probe.checkout),
-});
+const DEFAULT_CHECKOUT = "/opt/pr-review/snapshot";
 
-const toRulebookInstructions = (
-	probe: Exclude<ProbeDocument, { readonly kind: "context" }>,
-	spec: Instructions,
-	overview: AgentInstructions["surface"],
-): AgentInstructions => {
-	const base = {
-		instructions: spec.prose(),
-		task: spec.task() as Extract<
-			AgentInstructions,
-			{ readonly kind: "rules" | "dead-code" | "reuse" }
-		>["task"],
-		permissions: spec.permissions() as Extract<
-			AgentInstructions,
-			{ readonly kind: "rules" | "dead-code" | "reuse" }
-		>["permissions"],
+const resolveCheckout = (checkout: Checkout | undefined): Checkout => {
+	if (checkout === undefined) {
+		return DEFAULT_CHECKOUT;
+	}
+	return checkout;
+};
+
+const toAgentInstructions = (probe: ProbeDocument): Probe => {
+	const overview = surfaceOverview(probe.surface);
+	if (probe.kind === "context") {
+		return ProbeSchema.parse({
+			kind: "context",
+			change: probe.change,
+			surface: overview,
+			rulesets: [...toRulebookSummaries(probe.rulesets)],
+			checkout: resolveCheckout(probe.checkout),
+		});
+	}
+	if (probe.kind === "rules") {
+		return ProbeSchema.parse({
+			kind: "rules",
+			change: probe.change,
+			surface: overview,
+			ruleset: probe.rulebook.toRuleset(),
+		});
+	}
+	return ProbeSchema.parse({
 		kind: probe.kind,
 		change: probe.change,
 		surface: overview,
 		ruleset: probe.rulebook.toRuleset(),
-	};
-	if (probe.kind === "rules") {
-		return base as AgentInstructions;
-	}
-	return { ...base, checkout: nonnull(probe.checkout) } as AgentInstructions;
-};
-
-const toAgentInstructions = (probe: ProbeDocument): AgentInstructions => {
-	const spec = Instructions.fromParts(probe);
-	const overview = surfaceOverview(probe.surface);
-	if (probe.kind === "context") {
-		return toContextInstructions(probe, spec, overview);
-	}
-	return toRulebookInstructions(probe, spec, overview);
+		checkout: resolveCheckout(probe.checkout),
+	});
 };
 
 const fromAuditDocument = (
-	document: AgentInstructions,
+	document: Probe,
 	surface: Surface,
 	rulesets: readonly ExternalRulebook[],
 ): ProbeDocument => {
 	if (document.kind === "context") {
 		return {
-			instructions: document.instructions,
-			task: document.task,
-			permissions: document.permissions,
-			kind: document.kind,
+			kind: "context",
 			change: document.change,
 			surface,
 			rulesets,
@@ -140,19 +99,13 @@ const fromAuditDocument = (
 	const parsedRulebook = nonnull(Rulebook.from(document.ruleset).data);
 	if (document.kind === "rules") {
 		return {
-			instructions: document.instructions,
-			task: document.task,
-			permissions: document.permissions,
-			kind: document.kind,
+			kind: "rules",
 			change: document.change,
 			surface,
 			rulebook: parsedRulebook,
 		};
 	}
 	return {
-		instructions: document.instructions,
-		task: document.task,
-		permissions: document.permissions,
 		kind: document.kind,
 		change: document.change,
 		surface,
@@ -172,5 +125,11 @@ const loadPersistedProbes = (
 		auditDocument: document,
 	}));
 
-export type { BundledProbes, NamedProbe, PersistedAudit, ProbeDocument };
+export type {
+	BundledProbes,
+	NamedProbe,
+	PersistedAudit,
+	ProbeDocument,
+	RulebookProbeKind,
+};
 export { loadPersistedProbes, toAgentInstructions };

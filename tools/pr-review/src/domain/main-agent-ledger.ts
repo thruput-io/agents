@@ -1,53 +1,27 @@
 import type { CodeUnderReview } from "./code-under-review.ts";
-import type {
-	ContextKind,
-	ContextPermissions,
-	ContextTask,
-	DeadCodeKind,
-	DeadCodePermissions,
-	DeadCodeTask,
-	InstructionsProse,
-	Ledger,
-	Outcome,
-	ReuseKind,
-	ReusePermissions,
-	ReuseTask,
-	RulesKind,
-	RulesPermissions,
-	RulesTask,
-} from "./contracts.g.ts";
+import type { Ledger, Outcome } from "./contracts.g.ts";
 import type { ProbePermissions } from "./instructions.ts";
 import type { ContextProbe, RulesProbe } from "./ledger.ts";
 import { isNullOrEmpty, nonnull } from "./nullish.ts";
 import type { LedgerStore } from "./ports.ts";
+import type { RulebookProbeKind } from "./probe-document.ts";
 import type { CitationRule } from "./rulebook.ts";
 
-interface OptionalInstructionParts {
-	readonly instructions?: InstructionsProse;
-	readonly task?: RulesTask | ReuseTask | DeadCodeTask | ContextTask;
-	readonly permissions?:
-		| RulesPermissions
-		| ReusePermissions
-		| DeadCodePermissions
-		| ContextPermissions;
-}
+type CitationRulesProbe = RulesProbe & {
+	readonly rulebook: { readonly rules: readonly CitationRule[] };
+};
 
-type CitationRulesProbe = RulesProbe &
-	OptionalInstructionParts & {
-		readonly rulebook: { readonly rules: readonly CitationRule[] };
-	};
-
-type CoordinatedContextProbe = ContextProbe & OptionalInstructionParts;
+type CoordinatedContextProbe = ContextProbe;
 
 type CoordinatedProbeSpec =
 	| {
 			readonly name: string;
-			readonly kind: RulesKind | DeadCodeKind | ReuseKind;
+			readonly kind: RulebookProbeKind;
 			readonly probe: CitationRulesProbe;
 	  }
 	| {
 			readonly name: string;
-			readonly kind: ContextKind;
+			readonly kind: "context";
 			readonly probe: CoordinatedContextProbe;
 	  };
 
