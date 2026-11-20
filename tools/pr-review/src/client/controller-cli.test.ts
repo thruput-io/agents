@@ -148,12 +148,8 @@ it("Sub-agent and main-agent CLIs handle ack, report, and status", async () => {
 	assert.deepEqual(mainLedger.pending(), []);
 	assert.deepEqual(mainLedger.completed(), ["01-purpose"]);
 	assert.deepEqual(mainLedger.permissions("01-purpose"), [
-		"Bash(/opt/pr-review/dist/bin/review-tool-probe.mjs*)",
+		"Bash(review-tool-probe.mjs*)",
 	]);
-	assert.equal(
-		mainLedger.prompt("01-purpose"),
-		"Run /opt/pr-review/dist/bin/review-tool-probe.mjs -h && /opt/pr-review/dist/bin/review-tool-probe.mjs ack pr-review-session:default 01-purpose and follow its instructions.",
-	);
 	assert.equal(mainLedger.submittedOutcome()?.verdict, "approve");
 	assert.equal(mainLedger.submittedLocation(), "stub://review");
 	assert.equal(

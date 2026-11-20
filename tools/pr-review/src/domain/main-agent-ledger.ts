@@ -9,7 +9,6 @@ import type {
 	InstructionsProse,
 	Ledger,
 	Outcome,
-	ProbePrompt,
 	ReuseKind,
 	ReusePermissions,
 	ReuseTask,
@@ -55,7 +54,6 @@ type CoordinatedProbeSpec =
 interface MainAgentLedgerState {
 	readonly probeNames: readonly string[];
 	readonly permissionsByProbe: ReadonlyMap<string, ProbePermissions>;
-	readonly promptsByProbe: ReadonlyMap<string, ProbePrompt>;
 	readonly sync: () => void;
 	readonly completed: ReadonlySet<string>;
 	readonly submitted: ReadonlyMap<
@@ -104,10 +102,6 @@ class MainAgentLedger {
 
 	permissions(probeName: string): ProbePermissions {
 		return nonnull(this.#state.permissionsByProbe.get(probeName));
-	}
-
-	prompt(probeName: string): ProbePrompt {
-		return nonnull(this.#state.promptsByProbe.get(probeName));
 	}
 
 	acknowledged(): readonly string[] {

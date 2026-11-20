@@ -41,17 +41,6 @@ const customOverride: ParserOverride = (
 		return `${tuple}.default(${JSON.stringify(schemaObject.const)})`;
 	}
 	if (
-		Array.isArray(
-			(schemaObject as { readonly prefixItems?: unknown }).prefixItems,
-		) &&
-		schemaObject.items === false
-	) {
-		const items = (
-			schemaObject as { readonly prefixItems: readonly JsonSchema[] }
-		).prefixItems;
-		return `z.tuple([${items.map((item) => parseSchema(item, refs)).join(", ")}])`;
-	}
-	if (
 		(typeof schemaObject.const === "string" &&
 			schemaObject.const.includes(" ")) ||
 		schemaObject.const === DEFAULT_DEADLINE_MS
@@ -68,7 +57,7 @@ const customOverride: ParserOverride = (
 const toZod = (schema: unknown): string =>
 	jsonSchemaToZod(schema as JsonSchema, {
 		zodVersion: 4,
-		withoutDescribes: true,
+		withoutDescribes: false,
 		parserOverride: customOverride,
 	});
 
@@ -175,106 +164,4 @@ for (const group of ["rules", "principles", "definitions"] as const) {
 	emitSchema(toPascalCase(group), document);
 }
 
-const patternToTemplate = (pattern: string): string =>
-	pattern
-		.slice(1, -1)
-		.replaceAll("/.+/review-tool-probe\\.mjs", "<probe-bin>")
-		.replaceAll("pr-review-session:[A-Za-z0-9_-]+", "<session>")
-		.replaceAll("[0-9]{2}-[a-z0-9-]+", "<probe>")
-		.replaceAll(/\\(?<escaped>[.()[\]{}*])/gu, "$<escaped>");
-
-const itemToTemplate = (item: {
-	readonly const?: string;
-	readonly pattern?: string;
-}): string => {
-	if (typeof item.const === "string") {
-		return item.const;
-	}
-	return patternToTemplate(nonnull(item.pattern));
-};
-
-const agentInstructionsDefs = new Map(
-	Object.entries(
-		nonnull(
-			nonnull(
-				resolvedByPath.get(
-					join(SCHEMAS_DIR, "review/agent-instructions.schema.json"),
-				),
-			).$defs,
-		),
-	),
-);
-const controllerDefs = new Map(
-	Object.entries(
-		nonnull(
-			nonnull(
-				resolvedByPath.get(join(SCHEMAS_DIR, "review/controller.schema.json")),
-			).$defs,
-		),
-	),
-);
-const readRawDefs = (relativePath: string): ReadonlyMap<string, unknown> => {
-	const parsed = JSON.parse(
-		readFileSync(join(SCHEMAS_DIR, relativePath), "utf8"),
-	) as { readonly $defs: Readonly<Record<string, unknown>> };
-	return new Map(Object.entries(parsed.$defs));
-};
-const subAgentDefs = readRawDefs("review/sub-agent-controller.schema.json");
-const ledgerDefs = readRawDefs("review/ledger.schema.json");
-const rowSchemaKeys = [
-	"Violation",
-	"RuleViolationRow",
-	"RulePassRow",
-	"BookRuleViolationRow",
-	["BookRule", "PassRow"].join(""),
-] as const;
-const helpRowSchemas = Object.fromEntries(
-	rowSchemaKeys.map((key) => [key, nonnull(ledgerDefs.get(key))]),
-);
-const prosePrefixItems = (
-	nonnull(agentInstructionsDefs.get("InstructionsProse")) as {
-		readonly prefixItems: readonly {
-			readonly const?: string;
-			readonly pattern?: string;
-		}[];
-	}
-).prefixItems;
-const rulesTaskPattern = (
-	nonnull(agentInstructionsDefs.get("RulesTask")) as {
-		readonly pattern: string;
-	}
-).pattern;
-const reuseTaskPattern = (
-	nonnull(agentInstructionsDefs.get("ReuseTask")) as {
-		readonly pattern: string;
-	}
-).pattern;
-const deadCodeTaskKey = ["DeadCode", "Task"].join("");
-const deadCodeTaskPattern = (
-	nonnull(agentInstructionsDefs.get(deadCodeTaskKey)) as {
-		readonly pattern: string;
-	}
-).pattern;
-const contextTaskPattern = (
-	nonnull(agentInstructionsDefs.get("ContextTask")) as {
-		readonly pattern: string;
-	}
-).pattern;
-const probePromptPattern = (
-	nonnull(controllerDefs.get("ProbePrompt")) as { readonly pattern: string }
-).pattern;
-
-declarations.push(
-	`export const INSTRUCTIONS_PROSE_TEMPLATES = ${JSON.stringify(prosePrefixItems.map(itemToTemplate))} as const;`,
-	`export const RULES_TASK_TEMPLATE = ${JSON.stringify(patternToTemplate(rulesTaskPattern))};`,
-	`export const REUSE_TASK_TEMPLATE = ${JSON.stringify(patternToTemplate(reuseTaskPattern))};`,
-	`export const DEAD_CODE_TASK_TEMPLATE = ${JSON.stringify(patternToTemplate(deadCodeTaskPattern))};`,
-	`export const CONTEXT_TASK_TEMPLATE = ${JSON.stringify(patternToTemplate(contextTaskPattern))};`,
-	`export const PROBE_PROMPT_TEMPLATE = ${JSON.stringify(patternToTemplate(probePromptPattern))};`,
-	`export const HELP_ACK_SCHEMA: unknown = ${JSON.stringify(nonnull(subAgentDefs.get("AckSuccess")))};`,
-	`export const HELP_REPORT_SCHEMA: unknown = ${JSON.stringify(nonnull(subAgentDefs.get("ProbeReport")))};`,
-	`export const HELP_ROW_SCHEMAS: Readonly<Record<string, unknown>> = ${JSON.stringify(helpRowSchemas)};`,
-	'export const RULEBOOK_PROBE_KINDS: ReadonlySet<string> = new Set(["dead-code","reuse","context"]);\n',
-);
-
-writeFileSync(OUTPUT_FILE, declarations.join("\n"), "utf8");
+writeFileSync(OUTPUT_FILE, `${declarations.join("\n")}\n`, "utf8");

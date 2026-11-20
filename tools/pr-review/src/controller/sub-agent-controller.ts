@@ -42,7 +42,7 @@ export interface AckResult {
 	readonly response: AckSuccess;
 }
 
-export const SUBAGENT_DEADLINE_MS = DeadlineMsSchema.decode(undefined);
+export const SUBAGENT_DEADLINE_MS = DeadlineMsSchema.parse(undefined);
 
 export class SubAgentController {
 	readonly #name: Checkout;

@@ -1,9 +1,6 @@
+import { z } from "zod";
 import { SUBAGENT_DEADLINE_MS } from "../controller/sub-agent-controller.ts";
-import {
-	HELP_ACK_SCHEMA,
-	HELP_REPORT_SCHEMA,
-	HELP_ROW_SCHEMAS,
-} from "../domain/contracts.g.ts";
+import { ProbeReportSchema } from "../domain/contracts.g.ts";
 
 const subAgentHelpPayload = () => {
 	const reportJson = ["'{", '"oneRow', "PerRule", 'InOrder"', ":[...]}'"].join(
@@ -21,9 +18,9 @@ const subAgentHelpPayload = () => {
 			`review-tool-probe.mjs report <session> <probe> ${reportJson}`,
 		],
 		deadlineMs: SUBAGENT_DEADLINE_MS,
-		ackSchema: HELP_ACK_SCHEMA,
-		reportSchema: HELP_REPORT_SCHEMA,
-		rowSchemas: HELP_ROW_SCHEMAS,
+		reportSchema: z.toJSONSchema(ProbeReportSchema, {
+			target: "draft-2020-12",
+		}),
 	};
 };
 

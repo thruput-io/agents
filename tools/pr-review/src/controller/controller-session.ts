@@ -160,7 +160,6 @@ const prepareWithAdapter = async (input: {
 		resolved.change,
 		surface,
 		workdir.snapshotDirectory().toString(),
-		workdir.sessionToken(),
 	);
 	workdir
 		.ledgerDirectory()

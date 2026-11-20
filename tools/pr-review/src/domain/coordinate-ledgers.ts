@@ -90,9 +90,6 @@ export function coordinateLedgers(
 		permissionsByProbe: new Map(
 			specs.map((spec) => [spec.name, instructionsForSpec(spec).permissions()]),
 		),
-		promptsByProbe: new Map(
-			specs.map((spec) => [spec.name, instructionsForSpec(spec).prompt()]),
-		),
 		sync: () => {
 			settle();
 		},

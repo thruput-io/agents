@@ -16,7 +16,6 @@ import {
 import { reportForProbe, runScenario } from "./scenario.ts";
 import {
 	cleanupReviewToolForTest,
-	installedProbeBinPath,
 	installReviewToolForTest,
 	invokeMainCli,
 } from "./scenario-cli.ts";
@@ -63,8 +62,8 @@ function summarizePreparedRun(run: Awaited<ReturnType<typeof runScenario>>) {
 			"headCommit" in run.prepared ||
 			"rulesets" in run.prepared,
 		firstPromptMatches:
-			run.prepared.prompts[firstProbe] ===
-			`Run ${installedProbeBinPath()} -h && ${installedProbeBinPath()} ack ${run.prepared.session} ${firstProbe} and follow its instructions.`,
+			run.prepared.prompt ===
+			"Run <skill>/dist/bin/review-tool-probe.mjs -h && <skill>/dist/bin/review-tool-probe.mjs ack <session> <probe> and follow its instructions.",
 		firstPermission: run.prepared.permissions[firstProbe],
 		author: firstInspected.change.author,
 		description: firstInspected.change.description,
@@ -108,7 +107,7 @@ it("Review CLI prepares identical surfaces across Git, GitHub, and AzureDevOps",
 			invoked: baseline.invoked,
 			hasLeak: false,
 			firstPromptMatches: true,
-			firstPermission: [`Bash(${installedProbeBinPath()}*)`],
+			firstPermission: ["Bash(review-tool-probe.mjs*)"],
 			author: baselineInspected.change.author,
 			description: baselineInspected.change.description,
 			changedFiles: 2,

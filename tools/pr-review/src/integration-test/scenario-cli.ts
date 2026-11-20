@@ -49,10 +49,6 @@ function installReviewToolForTest(): void {
 	installedBinDir = join(stageDir, "dist", "bin");
 }
 
-function installedProbeBinPath(): string {
-	return join(installedBinDir, "review-tool-probe.mjs");
-}
-
 function cleanupReviewToolForTest(): void {
 	rmSync(installRootDir, { recursive: true, force: true });
 }
@@ -117,7 +113,6 @@ export {
 	cleanupReviewToolForTest,
 	expectEqual,
 	type InspectedProbePayload,
-	installedProbeBinPath,
 	installReviewToolForTest,
 	invokeMainCli,
 	invokeSubCli,

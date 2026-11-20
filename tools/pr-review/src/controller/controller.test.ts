@@ -76,14 +76,14 @@ it("SubAgentController sets probe-kind permissions and checkout paths", () => {
 	const reuseSub = probeFor("reuse", workdir);
 	assert.equal(contextSub.rules().kind, "rulesets");
 	assert.deepEqual(rulesSub.instructions().permissions(), [
-		"Bash(/opt/pr-review/dist/bin/review-tool-probe.mjs*)",
+		"Bash(review-tool-probe.mjs*)",
 	]);
 	assert.deepEqual(contextSub.instructions().permissions(), [
 		"Read",
 		"Grep",
 		"Glob",
 		"Find",
-		"Bash(/opt/pr-review/dist/bin/review-tool-probe.mjs*)",
+		"Bash(review-tool-probe.mjs*)",
 	]);
 	assert.deepEqual(
 		deadCodeSub.instructions().permissions(),
@@ -95,7 +95,7 @@ it("SubAgentController sets probe-kind permissions and checkout paths", () => {
 		"Glob",
 		"WebSearch",
 		"WebFetch",
-		"Bash(/opt/pr-review/dist/bin/review-tool-probe.mjs*)",
+		"Bash(review-tool-probe.mjs*)",
 	]);
 	assert.equal(
 		[contextSub, deadCodeSub, reuseSub].every(
@@ -133,7 +133,7 @@ it("SubAgentController requires ack before report and MainAgentController reject
 	assert.equal(ackResult.success, true);
 	assert.equal(ackResult.data.deadlineMs, FIVE_MINUTES_MS);
 	assert.deepEqual(ackResult.data.permissions, [
-		"Bash(/opt/pr-review/dist/bin/review-tool-probe.mjs*)",
+		"Bash(review-tool-probe.mjs*)",
 	]);
 	const result = sub.report([cleanRow]);
 	assert.equal(result.success, true);

@@ -10,7 +10,6 @@ import {
 	type Ruleset as RulebookData,
 	RuleSchema,
 	type RulesetInstructions,
-	RulesetInstructionsSchema,
 	RulesetSchema,
 	type RulesetUrl,
 	type RulesKind,
@@ -119,8 +118,8 @@ export function rulebook(
 	rules: readonly Rule[],
 	governance: z.input<typeof GovernanceSchema>,
 ): RulebookData {
-	const parsedRules = z.array(RuleSchema).decode([...rules]);
-	const parsedGovernance = GovernanceSchema.decode(governance);
+	const parsedRules = z.array(RuleSchema).parse([...rules]);
+	const parsedGovernance = GovernanceSchema.parse(governance);
 	const uniqueParents = [...new Set(parsedRules.map((child) => child.parent))];
 	const principles = uniqueParents.map((id) => {
 		const parent = parsedGovernance.principles.find((entry) => entry.id === id);
@@ -131,11 +130,10 @@ export function rulebook(
 		}
 		return parent;
 	});
-	return {
-		instructions: RulesetInstructionsSchema.decode(undefined),
+	return RulesetSchema.parse({
 		rules: parsedRules,
 		principles,
-	};
+	});
 }
 
 export class Rulebook implements Iterable<Rule> {

@@ -3,7 +3,6 @@ import { test as it } from "node:test";
 import { Instructions } from "./instructions.ts";
 
 const EXPECTED_PROSE_ITEM_COUNT = 5;
-const REPORT_KEY = ["oneRow", "PerRule", "InOrder"].join("");
 
 it("Instructions encapsulates the canonical probe prose from the schema", () => {
 	const rulesInstr = Instructions.forKind("rules");
@@ -18,7 +17,7 @@ it("Instructions encapsulates the canonical probe prose from the schema", () => 
 		rulesInstr
 			.prose()[0]
 			.includes(
-				"Run /opt/pr-review/dist/bin/review-tool-probe.mjs -h && /opt/pr-review/dist/bin/review-tool-probe.mjs ack pr-review-session:default 01-purpose and follow its instructions.",
+				"review-tool-probe.mjs ack <session> <probe> and follow its instructions.",
 			),
 		true,
 	);
@@ -33,21 +32,22 @@ it("Instructions encapsulates the canonical probe prose from the schema", () => 
 		true,
 	);
 	assert.equal(rulesInstr.prose()[1].includes("#/change/description"), true);
+	assert.equal(rulesInstr.prose()[2].includes("paging through next"), true);
 	assert.equal(
-		rulesInstr.prose()[2].includes("next pr-review-session:default 01-purpose"),
+		rulesInstr.prose()[3].includes("schema definitions returned by -h"),
 		true,
 	);
-	assert.equal(rulesInstr.prose()[3].includes("idToReportViolationOn"), true);
-	assert.equal(rulesInstr.prose()[4].includes(REPORT_KEY), true);
+	assert.equal(
+		rulesInstr.prose()[4].includes("Submit one row per rule in order"),
+		true,
+	);
 });
 
 it("Instructions encapsulates the canonical probe tasks from the schema", () => {
 	const rulesInstr = Instructions.forKind("rules");
 	assert.equal(rulesInstr.task().includes("report one row per rule"), true);
 	assert.equal(
-		rulesInstr
-			.task()
-			.includes("rules pr-review-session:default 01-purpose [page]"),
+		rulesInstr.task().includes("Fetch your assigned rules via rules"),
 		true,
 	);
 	assert.equal(

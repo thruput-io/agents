@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { AccessToken } from "../domain/access-token.ts";
-import type { PrepareResponse } from "../domain/contracts.g.ts";
+import {
+	PrepareReadySchema,
+	type PrepareResponse,
+} from "../domain/contracts.g.ts";
 import type { AdapterResolution } from "../domain/host-adapter.ts";
 import type { MainAgentLedger } from "../domain/main-agent-ledger.ts";
 import { isNullOrEmpty } from "../domain/nullish.ts";
@@ -45,9 +48,6 @@ const writePrepared = (
 	const warning = workdir.warning();
 	const session = workdir.sessionToken();
 	const pending = ledger.pending();
-	const prompts = Object.fromEntries(
-		pending.map((name) => [name, ledger.prompt(name)]),
-	);
 	const permissions = Object.fromEntries(
 		pending.map((name) => [name, ledger.permissions(name)]),
 	);
@@ -55,15 +55,13 @@ const writePrepared = (
 		success: true as const,
 		session,
 		pending: [...pending],
-		prompts,
 		permissions,
 	};
 	if (isNullOrEmpty(warning)) {
-		writeJson(baseResponse);
+		writeJson(PrepareReadySchema.parse(baseResponse));
 		return 0;
 	}
-	const response: PrepareResponse = { ...baseResponse, warning };
-	writeJson(response);
+	writeJson(PrepareReadySchema.parse({ ...baseResponse, warning }));
 	return 0;
 };
 

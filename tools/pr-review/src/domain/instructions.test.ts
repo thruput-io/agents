@@ -67,15 +67,8 @@ function buildInstructionsFixture() {
 	return { change, surface, context, rb, rulesets, rulesetSummaries };
 }
 
-const specForProbe = (
-	kind: "rules" | "reuse" | "dead-code" | "context",
-	probe: string,
-) =>
-	Instructions.forProbe(kind, {
-		probeBin: "/opt/pr-review/dist/bin/review-tool-probe.mjs",
-		session: "pr-review-session:default",
-		probe,
-	});
+const specForProbe = (kind: "rules" | "reuse" | "dead-code" | "context") =>
+	Instructions.forKind(kind);
 
 it("instructions hands every probe its instructions, task, change, surface overview, rulebook or rulesets summary, and checkout where needed", () => {
 	const { change, surface, context, rb, rulesets, rulesetSummaries } =
@@ -91,18 +84,18 @@ it("instructions hands every probe its instructions, task, change, surface overv
 		["01-g1", "02-g2", "03-g3", "04-context"],
 	);
 	assert.deepEqual(files[0]?.document, {
-		instructions: specForProbe("rules", "01-g1").prose(),
-		task: specForProbe("rules", "01-g1").task(),
-		permissions: specForProbe("rules", "01-g1").permissions(),
+		instructions: specForProbe("rules").prose(),
+		task: specForProbe("rules").task(),
+		permissions: specForProbe("rules").permissions(),
 		kind: "rules",
 		change,
 		surface,
 		rulebook: rb,
 	});
 	assert.deepEqual(files[1]?.document, {
-		instructions: specForProbe("reuse", "02-g2").prose(),
-		task: specForProbe("reuse", "02-g2").task(),
-		permissions: specForProbe("reuse", "02-g2").permissions(),
+		instructions: specForProbe("reuse").prose(),
+		task: specForProbe("reuse").task(),
+		permissions: specForProbe("reuse").permissions(),
 		kind: "reuse",
 		change,
 		surface,
@@ -110,9 +103,9 @@ it("instructions hands every probe its instructions, task, change, surface overv
 		checkout: "/w/snapshot",
 	});
 	assert.deepEqual(files[2]?.document, {
-		instructions: specForProbe("dead-code", "03-g3").prose(),
-		task: specForProbe("dead-code", "03-g3").task(),
-		permissions: specForProbe("dead-code", "03-g3").permissions(),
+		instructions: specForProbe("dead-code").prose(),
+		task: specForProbe("dead-code").task(),
+		permissions: specForProbe("dead-code").permissions(),
 		kind: "dead-code",
 		change,
 		surface,
@@ -120,9 +113,9 @@ it("instructions hands every probe its instructions, task, change, surface overv
 		checkout: "/w/snapshot",
 	});
 	assert.deepEqual(files[3]?.document, {
-		instructions: specForProbe("context", "04-context").prose(),
-		task: specForProbe("context", "04-context").task(),
-		permissions: specForProbe("context", "04-context").permissions(),
+		instructions: specForProbe("context").prose(),
+		task: specForProbe("context").task(),
+		permissions: specForProbe("context").permissions(),
 		kind: "context",
 		change,
 		surface,

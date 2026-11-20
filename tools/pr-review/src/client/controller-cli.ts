@@ -48,6 +48,9 @@ async function runMainAgentCli(
 				"review-tool.mjs prepare <url> <workdir> [<token>]",
 				"review-tool.mjs status <workdir>",
 			],
+			commandSchema: z.toJSONSchema(ControllerCommandSchema, {
+				target: "draft-2020-12",
+			}),
 		}),
 		toRaw: toRawControllerCommand,
 		onInvalidCommand: (_command, details) => failCli(`${details}\n`),

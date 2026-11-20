@@ -8,10 +8,9 @@ import {
 	type Rulebook as ExternalRulebook,
 	PrinciplesSchema,
 	RulesSchema,
-	type SessionToken,
 	type Surface,
 } from "../../domain/contracts.g.ts";
-import { instructionsForSession } from "../../domain/instructions.ts";
+import { instructions } from "../../domain/instructions.ts";
 import { nonnull } from "../../domain/nullish.ts";
 import {
 	type BundledProbes,
@@ -26,7 +25,7 @@ import {
 	rulebook,
 } from "../../domain/rulebook.ts";
 import { IndexSchema, withText } from "../../domain/ruleset.ts";
-import { PROBE_BIN_PATH, SKILL_DIR } from "./skill-dir.ts";
+import { SKILL_DIR } from "./skill-dir.ts";
 
 const parseYaml = <T>(name: string, schema: z.ZodType<T>): T =>
 	schema.parse(parse(readFileSync(join(SKILL_DIR, "rules", name), "utf8")));
@@ -87,15 +86,10 @@ async function loadBundledProbes(
 	change: Change,
 	surface: Surface,
 	checkout: Checkout,
-	session: SessionToken,
 ): Promise<BundledProbes> {
 	const groups = loadBundledRuleGroups();
 	const rulesets = await loadBundledRulesets();
-	const built = instructionsForSession(
-		{ change, surface, checkout, probeBin: PROBE_BIN_PATH, session },
-		groups,
-		rulesets,
-	);
+	const built = instructions({ change, surface, checkout }, groups, rulesets);
 	const probes = built.map((entry) => {
 		const raw = entry.document as unknown as ProbeDocument;
 		const probe: ProbeDocument = {
