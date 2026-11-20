@@ -64,7 +64,7 @@ function summarizePreparedRun(run: Awaited<ReturnType<typeof runScenario>>) {
 			"rulesets" in run.prepared,
 		firstPromptMatches:
 			run.prepared.prompts[firstProbe] ===
-			`Run ${installedProbeBinPath()} -h, then run ${installedProbeBinPath()} ack ${run.prepared.session} ${firstProbe} and follow its instructions.`,
+			`Run ${installedProbeBinPath()} -h && ${installedProbeBinPath()} ack ${run.prepared.session} ${firstProbe} and follow its instructions.`,
 		firstPermission: run.prepared.permissions[firstProbe],
 		author: firstInspected.change.author,
 		description: firstInspected.change.description,

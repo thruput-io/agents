@@ -23,7 +23,6 @@ import {
 import { nonnull } from "../../domain/nullish.ts";
 import type { CommitZipArchive, SnapshotPort } from "../../domain/ports.ts";
 
-const COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/u;
 const HEADS_PREFIX = /^refs\/heads\//u;
 const MAX_GIT_STDOUT_BYTES = 4_194_304;
 const GIT_TERMINAL_PROMPT_ENV = "GIT_TERMINAL_PROMPT";
@@ -133,11 +132,17 @@ export class SnapshotDirectory implements SnapshotPort {
 		]);
 	}
 	resolveRef(ref: string): string {
-		let target = `refs/remotes/origin/${ref.replace(HEADS_PREFIX, "")}`;
-		if (COMMIT_SHA_PATTERN.test(ref)) {
-			target = ref;
+		const cleanRef = ref.replace(HEADS_PREFIX, "");
+		const branches = this.git([
+			"branch",
+			"-r",
+			"--list",
+			`origin/${cleanRef}`,
+		]).trim();
+		if (branches.length > 0) {
+			return this.git(["rev-parse", `refs/remotes/origin/${cleanRef}`]).trim();
 		}
-		return this.git(["rev-parse", target]).trim();
+		return this.git(["rev-parse", "--verify", `${ref}^{commit}`]).trim();
 	}
 	readTextFile(relativePath: Path): string | null {
 		const fullPath = join(this.#path, relativePath);

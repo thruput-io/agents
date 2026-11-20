@@ -18,7 +18,7 @@ it("Instructions encapsulates the canonical probe prose from the schema", () => 
 		rulesInstr
 			.prose()[0]
 			.includes(
-				"Run /opt/pr-review/dist/bin/review-tool-probe.mjs -h, then run /opt/pr-review/dist/bin/review-tool-probe.mjs ack pr-review-session:default 01-purpose and follow its instructions.",
+				"Run /opt/pr-review/dist/bin/review-tool-probe.mjs -h && /opt/pr-review/dist/bin/review-tool-probe.mjs ack pr-review-session:default 01-purpose and follow its instructions.",
 			),
 		true,
 	);

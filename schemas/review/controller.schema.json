@@ -236,7 +236,7 @@
     "ProbePrompt": {
       "description": "Exact single-sentence prompt to pass when spawning a probe subagent, with the absolute review-tool-probe.mjs path, session token, and probe name already resolved",
       "type": "string",
-      "pattern": "^Run /.+/review-tool-probe\\.mjs -h, then run /.+/review-tool-probe\\.mjs ack pr-review-session:[A-Za-z0-9_-]+ [0-9]{2}-[a-z0-9-]+ and follow its instructions\\.$"
+      "pattern": "^Run /.+/review-tool-probe\\.mjs -h && /.+/review-tool-probe\\.mjs ack pr-review-session:[A-Za-z0-9_-]+ [0-9]{2}-[a-z0-9-]+ and follow its instructions\\.$"
     },
     "ProbePromptsMap": {
       "description": "Map of pending probe name to the exact single-sentence prompt to pass when spawning its subagent",
@@ -617,7 +617,7 @@
         "01-purpose"
       ],
       "prompts": {
-        "01-purpose": "Run /opt/pr-review/dist/bin/review-tool-probe.mjs -h, then run /opt/pr-review/dist/bin/review-tool-probe.mjs ack pr-review-session:L3RtcC9wci1yZXZpZXctd29ya2Rpcg 01-purpose and follow its instructions."
+        "01-purpose": "Run /opt/pr-review/dist/bin/review-tool-probe.mjs -h && /opt/pr-review/dist/bin/review-tool-probe.mjs ack pr-review-session:L3RtcC9wci1yZXZpZXctd29ya2Rpcg 01-purpose and follow its instructions."
       },
       "permissions": {
         "01-purpose": [

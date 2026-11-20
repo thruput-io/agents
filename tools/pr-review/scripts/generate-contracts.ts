@@ -213,6 +213,24 @@ const controllerDefs = new Map(
 		),
 	),
 );
+const readRawDefs = (relativePath: string): ReadonlyMap<string, unknown> => {
+	const parsed = JSON.parse(
+		readFileSync(join(SCHEMAS_DIR, relativePath), "utf8"),
+	) as { readonly $defs: Readonly<Record<string, unknown>> };
+	return new Map(Object.entries(parsed.$defs));
+};
+const subAgentDefs = readRawDefs("review/sub-agent-controller.schema.json");
+const ledgerDefs = readRawDefs("review/ledger.schema.json");
+const rowSchemaKeys = [
+	"Violation",
+	"RuleViolationRow",
+	"RulePassRow",
+	"BookRuleViolationRow",
+	["BookRule", "PassRow"].join(""),
+] as const;
+const helpRowSchemas = Object.fromEntries(
+	rowSchemaKeys.map((key) => [key, nonnull(ledgerDefs.get(key))]),
+);
 const prosePrefixItems = (
 	nonnull(agentInstructionsDefs.get("InstructionsProse")) as {
 		readonly prefixItems: readonly {
@@ -253,6 +271,9 @@ declarations.push(
 	`export const DEAD_CODE_TASK_TEMPLATE = ${JSON.stringify(patternToTemplate(deadCodeTaskPattern))};`,
 	`export const CONTEXT_TASK_TEMPLATE = ${JSON.stringify(patternToTemplate(contextTaskPattern))};`,
 	`export const PROBE_PROMPT_TEMPLATE = ${JSON.stringify(patternToTemplate(probePromptPattern))};`,
+	`export const HELP_ACK_SCHEMA: unknown = ${JSON.stringify(nonnull(subAgentDefs.get("AckSuccess")))};`,
+	`export const HELP_REPORT_SCHEMA: unknown = ${JSON.stringify(nonnull(subAgentDefs.get("ProbeReport")))};`,
+	`export const HELP_ROW_SCHEMAS: Readonly<Record<string, unknown>> = ${JSON.stringify(helpRowSchemas)};`,
 	'export const RULEBOOK_PROBE_KINDS: ReadonlySet<string> = new Set(["dead-code","reuse","context"]);\n',
 );
 

@@ -20,13 +20,14 @@ Run `<skill>/dist/bin/review-tool.mjs` directly (`-h` or `--help` prints usage).
 
 ## 1. Prepare (`controller.schema.json#/$defs/PrepareCommand`)
 
-1. Run `prepare` with `<url>`, `<workdir>` (e.g. `.pr-review`—`prepare` creates `<workdir>` and cleans its internal subdirectories automatically), and optional `<token>`:
+1. Run `prepare` with `<url>` and `<workdir>` (e.g. `.pr-review`—`prepare` creates `<workdir>` and cleans its internal subdirectories automatically), with or without `<token>`:
 
    ```sh
-   <skill>/dist/bin/review-tool.mjs prepare <url> <workdir> [<token>]
+   <skill>/dist/bin/review-tool.mjs prepare <url> <workdir>
+   <skill>/dist/bin/review-tool.mjs prepare <url> <workdir> <token>
    ```
 
-   Pass `<token>` when your operator-governed credentials (`get-gh-token.sh`, `get-ado-pat.sh`, or an explicit user token) provide one for the target host, or omit `<token>` when ambient CLI authentication (`gh` / `az`) or a local `file://` target is used. When `<token>` is passed to `prepare`, the final probe's `report` call reuses it to post the review.
+   Pass `<token>` when your environment or instructions provide an access token for the target host, or omit `<token>` when none is needed (such as a local `git` target or preconfigured environment credentials). When `<token>` is passed to `prepare`, the final probe's `report` call reuses it automatically to post the review.
 2. Handle `PrepareResponse` (`controller.schema.json#/$defs/PrepareResponse`):
    - **`PrepareFailure` with `InvalidInputError` (`controller.schema.json#/$defs/InvalidInputError`, `kind: "invalid-target" | "invalid-workdir" | "invalid-token"`)**: Correct `<workdir>`, `<url>`, or `<token>` and re-run `prepare`.
    - **`PrepareFailure` with `HostError` (`controller.schema.json#/$defs/HostError`, `kind: "host-error"`)**: When `status` is `401`, `403`, or `203` and a governed `<token>` is available and was omitted on the first call, re-run `prepare <url> <workdir> <token>`. For any other `HostError`, report `host`, `status`, `message`, and `reason` to the user and stop.
@@ -35,7 +36,9 @@ Run `<skill>/dist/bin/review-tool.mjs` directly (`-h` or `--help` prints usage).
 
 ## 2. Spawn Subagents, Ack & Verify Status
 
-1. **Spawn all `PrepareReady.pending` probes concurrently**: Invoke one boxed subagent per `probe` in `pending`—using a fast mid-tier coding model (`sonnet` or `flash`) for standard probes (`rules`, `reuse`, `dead-code`) and the most capable model (`opus` or `pro`) for the `-context` probe—with workspace instruction files (`CLAUDE.md`, `GEMINI.md`) omitted, allowed tools set to `permissions[probe]` (`controller.schema.json#/$defs/ProbePermissions`), and prompt set verbatim to `prompts[probe]` (`controller.schema.json#/$defs/ProbePrompt`).
+1. **Spawn all `PrepareReady.pending` probes concurrently**:
+   - If your harness defines custom subagents via `define_subagent`, define `pr-review-probe` once (`SystemPrompt: "Follow your prompt and the probe CLI instructions."`, `EnableWriteTools: true`, `EnableSubagentTools: false`, `EnableMCPTools: false`). If your harness accepts per-invocation tool allowlists and instruction-file exclusions, set allowed tools to `permissions[probe]` (`controller.schema.json#/$defs/ProbePermissions`) and omit workspace instruction files (`CLAUDE.md`, `GEMINI.md`).
+   - Invoke one subagent per `probe` in `pending` concurrently—using a fast mid-tier coding model (`sonnet` or `flash`) for standard probes (`rules`, `reuse`, `dead-code`) and the most capable model (`opus` or `pro`) for the `-context` probe—passing `prompts[probe]` (`controller.schema.json#/$defs/ProbePrompt`) verbatim as its prompt.
 2. **Ack check (`45s` timer -> `controller.schema.json#/$defs/StatusCommand`)**: Schedule a one-shot timer (`DurationSeconds: 45`, `TimerCondition: "never"`). When the `45s` timer fires, run `<skill>/dist/bin/review-tool.mjs status <workdir>` (`ReviewStatus`, `controller.schema.json#/$defs/ReviewStatus`). If `ReviewStatus.submittedOutcome` is present, report `submittedOutcome` and `location` to the user and stop. Otherwise, terminate and re-spawn every probe in `ReviewStatus.unacknowledged` with its `prompts[probe]` and `permissions[probe]` verbatim.
 3. **Review deadline from `ack` (`180s` reminder + `150s` kill)**:
    - As each probe subagent finishes, terminate any duplicate subagent for that probe (`manage_subagents` `kill`). Once all probes finish, cancel the active timer (`manage_task` `kill`) and proceed to step 4.

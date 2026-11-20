@@ -66,7 +66,7 @@ const buildPrompt = (target: ProbeTarget): ProbePrompt =>
 	ProbePromptSchema.parse(substituteTarget(PROBE_PROMPT_TEMPLATE, target));
 
 const PROMPT_IN_PROSE_PATTERN =
-	/"(?<prompt>Run \/[^"]+\/review-tool-probe\.mjs -h, then run \/[^"]+\/review-tool-probe\.mjs ack pr-review-session:[A-Za-z0-9_-]+ [0-9]{2}-[a-z0-9-]+ and follow its instructions\.)"/u;
+	/"(?<prompt>Run \/[^"]+\/review-tool-probe\.mjs -h && \/[^"]+\/review-tool-probe\.mjs ack pr-review-session:[A-Za-z0-9_-]+ [0-9]{2}-[a-z0-9-]+ and follow its instructions\.)"/u;
 
 const resolveDefined = <T>(value: T | undefined, fallback: T): T => {
 	if (value === undefined) {

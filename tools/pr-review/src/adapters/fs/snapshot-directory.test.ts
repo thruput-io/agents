@@ -13,6 +13,7 @@ const BINARY_BYTES = [0, 1, 2] as const;
 const LINE_WIDTH = 80;
 const LARGE_LINE_COUNT = 20_000;
 const ONE_MIB = 1_048_576;
+const SHORT_SHA_LENGTH = 7;
 
 it("SnapshotDirectory parses a non-empty path, compares by value, and reads text files while ignoring missing or binary files", () => {
 	const dir = SnapshotDirectory.from("/tmp/work/snapshot");
@@ -49,6 +50,7 @@ it("SnapshotDirectory.diff returns diffs larger than Node's 1 MiB default maxBuf
 		snap.git(["add", "big.txt"]);
 		snap.git(["commit", "--quiet", "-m", "head"]);
 		const headSha = snap.git(["rev-parse", "HEAD"]);
+		assert.equal(snap.resolveRef(baseSha.slice(0, SHORT_SHA_LENGTH)), baseSha);
 		const stats = parseNumstat(snap.numstat(baseSha, headSha));
 		assert.deepEqual(stats, [
 			{ path: "big.txt", added: LARGE_LINE_COUNT, deleted: 1 },
