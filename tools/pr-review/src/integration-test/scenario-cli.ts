@@ -12,7 +12,9 @@ import { mockBridgeUrl, scenarioToken } from "./mock-server.ts";
 type PreparedCliSuccess = PrepareReady;
 type InspectedProbePayload = AgentInstructions;
 
-const SKILL_DIR = fileURLToPath(new URL("../..", import.meta.url));
+const SKILL_DIR = fileURLToPath(
+	new URL("../../../../skills/pr-review", import.meta.url),
+);
 const PRELOAD_PATH = fileURLToPath(
 	new URL("./msw-child-preload.ts", import.meta.url),
 );
@@ -43,7 +45,6 @@ function installReviewToolForTest(): void {
 	cpSync(SKILL_DIR, stageDir, {
 		recursive: true,
 		dereference: true,
-		filter: (src) => !(src.includes("node_modules") || src.includes("/src/")),
 	});
 	installedBinDir = join(stageDir, "dist", "bin");
 }

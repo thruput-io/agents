@@ -3,8 +3,15 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const findSkillDir = (dir: string): string => {
-	if (existsSync(join(dir, "rules")) && existsSync(join(dir, "package.json"))) {
+	if (existsSync(join(dir, "SKILL.md")) && existsSync(join(dir, "rules"))) {
 		return dir;
+	}
+	const siblingSkill = join(dir, "skills", "pr-review");
+	if (
+		existsSync(join(siblingSkill, "SKILL.md")) &&
+		existsSync(join(siblingSkill, "rules"))
+	) {
+		return siblingSkill;
 	}
 	const parent = dirname(dir);
 	if (parent === dir) {
