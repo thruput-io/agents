@@ -19,7 +19,7 @@
   "additionalProperties": false,
   "$defs": {
     "Observation": {
-      "description": "What the code does wrong, briefly, worded as the subject of the sentence '{observation} breaks {principle name}'. It names no rule and no principle, by name, id, link, or wording, and it says what is wrong, not how to fix it",
+      "description": "A concise description of the concrete code defect alone, worded as the subject completing '{observation} breaks {principle name}'",
       "type": "string",
       "minLength": 1
     },
@@ -35,7 +35,7 @@
       "pattern": "^https?://"
     },
     "BookRule": {
-      "description": "A rule from outside ours, referenced by where it is read; no link is written into the observation",
+      "description": "An external rulebook rule identified by its canonical ruleset URL and section heading",
       "type": "object",
       "required": [
         "ruleset",
@@ -96,7 +96,7 @@
       "minLength": 1
     },
     "ExaminedList": {
-      "description": "What was actually opened to reach the verdict. Context the probe needed and was not handed is named here rather than silently dropped",
+      "description": "Every file, symbol, search query, or missing context resource inspected to reach the verdict",
       "type": "array",
       "minItems": 1,
       "items": {
