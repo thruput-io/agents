@@ -121,27 +121,21 @@ A naive application of `uql` Invariant 3 (`UQL005` Independence) might view a `P
      - Some are **Failure Modes / Causal Laws**: `Duplication drifts`, `Optionality Drives Complexity`, `Code is a liability, not an asset`, `Amdahl's Law and the I/O-bound reality`.
      - Some are **Imperative Commands** (indistinguishable from `Principle`s): `Crash, don't guess`, `Translate at the door`, `Make the wrong thing fail`, `Agree at the boundary`.
      - Some are **Exact Duplicates of their child `Principle` or `Reference`**: `The Practical Test Pyramid`, `Robustness Principle`, `Encapsulation`.
-3. **`Rule.smells` Hold Unpromoted Quantitative `Standards` or Inverted `Rule`s**:
-   - In `Rules.yaml`, 21 rules attach `smells:` bullets.
-   - Some `smells` are **merely the logical negation (`¬Rule`)** of the `Rule.body`: e.g., Rule `Every part solves the Purpose` (*"Every part of a Change traces to the part of the stated Purpose that it solves"*) has smell *"A Change solves more than its stated Purpose."* In `uql`, stating `P(x)` and `¬P(x)` is pure `UQL005` redundancy.
-   - Other `smells` contain **the only concrete, falsifiable numeric thresholds in the entire repository**:
-     - `Keep pull requests small` -> smell: *"A pull request exceeds 400 lines."*
-     - `Make it work first` -> smell: *"An unmerged pull request exceeds three days of age."*
-     - `Readable at a glance` -> smells: *"A line in a component exceeds 120 characters"*, *"A function or public method exceeds 30 lines"*, *"Branching logic or block nesting exceeds two levels"*, *"Cognitive complexity of a function exceeds 10"*.
-     - `Single-purpose components` -> smells: *"A component exceeds 200 lines"*, *"A function or public method exceeds three parameters"*, *"An interface exceeds four public methods"*.
-   - Because these numeric bounds live in `smells:` rather than in `Rule.body` or `Standards.yaml`, the `Rule.body` itself (*"Every component and function stays within readability bounds..."*, *"Every component serves a single cohesive purpose within size constraints"*) is non-falsifiable without reading the `smells`!
+3. **`Rule.smells`: Separating True Heuristic Indicators from Redundant Rule Negations (`UQL005`)**:
+   - A `Rule` is an **exceptionless universal truth** (`∀x : C(x) ⇒ P(x)`). Some architectural concepts (cohesion, readability, PR scope) cannot be forbidden via a hard numeric limit (`200` lines, `30` lines, `3` parameters) without creating legitimate exceptions—and allowing exceptions in `Rule`s turns enforcement into whack-a-mole.
+   - That is why **`Smells` exist as heuristic indicators (`Symptom(x)`)**: a `Smell` is not a `Rule` and not a `Standard`, but an observable signal (such as `"A component exceeds 200 lines"`, `"A function exceeds 30 lines"`, `"A function exceeds three parameters"`) that directs a human or lesser agent scanning a large codebase to inspect whether the exceptionless `Rule` (`Single-purpose components`, `Readable at a glance`, `Keep pull requests small`) is violated.
+   - However, in `Rules.yaml`, several `smells:` entries are **not observable indicators at all**, but **merely the logical negation (`¬Rule`) of the `Rule.body`**—for example, Rule `Every part solves the Purpose` (*"Every part of a Change traces to the part of the stated Purpose that it solves"*) lists smell *"A Change solves more than its stated Purpose."* Restating `¬P(x)` as a smell provides zero heuristic search signal to an agent and violates `UQL005`.
 
 ### 2.4 Concrete Recommendations for Level Structure & Naming
 
 To make the tree 100% `uql`-compliant while keeping `Principles` and `Rules` maximally ergonomic for humans:
 
-1. **Eliminate Shadow Sub-Arrays (`Rationale.solutions`, `Principle.solutions`, and redundant `Rule.smells`)**:
+1. **Eliminate `Rationale.solutions` / `Principle.solutions` and Keep `Rule.smells` Strictly as Observable Indicators**:
    - **Delete `solutions:` from `Rationales.yaml` and `Principles.yaml`**. For each of the 43 `solutions`:
      - If it is already covered by an existing `Principle` or `Rule` (true for ~30 of 43), delete it (`UQL005`).
      - If it states a genuine missing invariant (e.g., consumer-driven contract publishing, mutation testing, golden signals, first-class collections, type-state transitions), promote it to a first-class **`Rule`** or **`Standard`** with an `id` and `parent`.
-   - **Audit `Rule.smells`**:
-     - Delete any smell that simply negates the `Rule.body` (`UQL005`).
-     - Promote numeric/metric thresholds (`≤ 400` lines per PR, `≤ 200` lines per component, `≤ 30` lines per function, `≤ 120` chars per line, `≤ 3` parameters, `≤ 4` interface methods, `≤ 2` nesting levels, cognitive complexity `≤ 10`) into explicit **`Standard`s** (with `context: Repository` or `context: Static Analysis`) or directly into falsifiable `Rule` statements.
+   - **Keep `Rule.smells` for heuristic indicators (`200` lines, `30` lines, `3` params, `10` cognitive complexity) so `Rule`s stay exceptionless, and remove only tautological `¬Rule` negations (`UQL005`)**:
+     - Every `Smell` must name a concrete, observable code pattern or metric threshold (`Symptom(x)`) that is distinct from `¬Rule(x)` and triggers inspection of `Rule(x)` without introducing exceptions into the `Rule` itself.
 2. **Clarify the Role and Naming of `Rationale` (or Merge `Rationale` Citations into `Principle` if 1:1)**:
    - Notice that **16 of the 22 `Rationale`s have a 1-to-1 (`1:1`) relationship with a single `Principle`**! (And 1 has `0` Principles, leaving only 5 `Rationale`s that actually fan out to `> 1` Principle).
    - **Option A (Keep 6 levels, strict causal domain for `Rationale`)**: If `Rationale` is kept as a distinct level, every `Rationale` **must** state a **Causal Consequence / Trade-off Law** (`<Unconstrained State/Action> causes <Defect/Cost Category>`) backed by empirical `references`, and **never** state the prescriptive rule itself. Naming must consistently reflect the causal trade-off (e.g., rename `Crash, don't guess` -> `Silent recovery corrupts state`; rename `Translate at the door` -> `External schema coupling`; rename `Agree at the boundary` -> `Implicit boundary schemas diverge`). Consolidate the 1:1 `Rationale`s so each `Axiom` has 2–3 broad causal `Rationale`s that each fan out to 2–5 `Principle`s.
