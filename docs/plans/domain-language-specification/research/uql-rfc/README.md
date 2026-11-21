@@ -27,13 +27,13 @@ Practically, writing a statement in that domain language should work like writin
 
 ### 1. Declarative Legal-State Invariants
 
-Following Alloy, TLA+, and Attempto Controlled English (ACE), `uql` defines the **legal state space** ($\mathcal{M}$) of a domain using present-tense indicative `Statement`s:
+Following Alloy, TLA+, and Attempto Controlled English (ACE), `uql` defines the **legal state space** of a domain using present-tense indicative `Statement`s:
 
 - *"Every `Withdrawal` references an `Account`."*
 - *"A settled `Invoice` is `Immutable`."*
 - *"An `Account` contains no negative `Balance`."*
 
-A target artifact complies if and only if it is a model of the statements and definitions ($\mathcal{M} \models \mathcal{S} \cup \mathcal{D}$); any counterexample ($\mathcal{M} \not\models s_i$) is a `Violation`.
+A target artifact complies if and only if it satisfies all statements and definitions in scope; any counterexample where a statement does not hold is a `Violation`.
 
 ### 2. Before and After in `uql-md`
 
@@ -72,7 +72,7 @@ Every Ledger entry balances its Debit and Credit, as established in Summa de Ari
 
 ### 1. Abstract Syntax and Concrete Syntaxes
 
-Following Grammatical Framework (GF), `uql` separates its **Abstract Syntax** (the 5 invariants over ordered reference scope $\Sigma$, definitions $\mathcal{D}$, and statements $\mathcal{S}$) from three **Concrete Syntaxes**:
+Following Grammatical Framework (GF), `uql` separates its **Abstract Syntax** (the 5 invariants over the ordered reference scope `Σ`, definitions `D`, and statements `S`) from three **Concrete Syntaxes**:
 1. **`uql-md`**: CommonMark documents with a bottom `## References` section.
 2. **`uql-json`**: JSON/YAML documents validated by JSON Schema Draft 2020-12 (`contentMediaType: "text/markdown"`, `contentSchema`, and `anyOf`/`$ref`).
 3. **`uql-smt2`**: SMT-LIB 2.6 first-order logic assertions checked by Z3.
@@ -96,7 +96,7 @@ Aligned with W3C SKOS and OntoLex-Lemon:
 
 | Partition | Enumerated Word Classes | Rule in `uql` |
 |---|---|---|
-| **Open Word Classes** | `Noun`, `MainVerb` (*Fact Type*), `Adjective`, `Adverb` | Every open-class word or phrase outside a `CodeLiteral` resolves to a **`Term`** in $\mathcal{D} \cup \Sigma$. |
+| **Open Word Classes** | `Noun`, `MainVerb` (*Fact Type*), `Adjective`, `Adverb` | Every open-class word or phrase outside a `CodeLiteral` resolves to a **`Term`** in the active scope (`D ∪ Σ`). |
 | **Closed Word Classes** | `Determiner`, `Preposition`, `Conjunction`, `Pronoun`, present-tense `Copula` / `AuxiliaryVerb`, `Negation` | Form the grammatical structure connecting `Term`s. |
 
 ```ebnf
@@ -118,24 +118,24 @@ ReferenceDef    = "[" , TermOrSourceId , "]:" , URI , [ '"' , ProseQuote , '"' ]
 ```
 
 - **Deterministic Attachment (ACE Right Association)**: A `Preposition` phrase inside a `NounPhrase` attaches to the nearest preceding `Term`; a sentence-wide `Adverbial` is fronted before `,` or attached to the `Predicate`.
-- **Deterministic Anaphora (DRT/ACE)**: A `Pronoun` (`it`, `its`, `they`, `their`, `which`, `that`) binds to the nearest preceding `Term` matching in grammatical number; if $\ge 2$ preceding `Term`s in the `Statement` match in number, it fails with `UQL003 AmbiguousPronoun`.
+- **Deterministic Anaphora (DRT/ACE)**: A `Pronoun` (`it`, `its`, `they`, `their`, `which`, `that`) binds to the nearest preceding `Term` matching in grammatical number; if 2 or more preceding `Term`s in the `Statement` match in number, it fails with `UQL003 AmbiguousPronoun`.
 
 ### 4. Authoritative Semantics (Five Mathematical Invariants)
 
-The semantics of `uql` are defined once by five invariants over ordered reference scope $\Sigma = \langle V_1, \dots, V_k \rangle$, definitions $\mathcal{D}$, and statements $\mathcal{S}$:
+The semantics of `uql` are defined once by five invariants over the ordered reference scope `Σ = ⟨V₁, …, Vₖ⟩`, definitions `D`, and statements `S`:
 
 | Invariant | Authoritative Mathematical Definition | Human-Readable Projection in `uql` |
 |---|---|---|
-| **1. Well-Definedness (`Unambiguity`)** | $\|R_\Sigma(w)\| = 1 \;\land\; \|A(p)\| = 1 \;\land\; \|\mathcal{T}(s)\| = 1$ | $\|R_\Sigma(w)\| = 0$ is `UQL001 UndefinedTerm`; cardinality $> 1$ is a `UQL002`–`UQL004 Ambiguity` lint error. |
-| **2. Propositional Form (`Statement`)** | $\forall x \in S : C(x) \implies P(x, O)$ | Declarative present-tense clause of $\le 35$ words ($\le 220$ bytes) and $\le 1$ subordinate `Adverbial` clause. |
-| **3. Independence & Minimality (`SSOT`)** | $\forall s_i \in \mathcal{S} : (\mathcal{S} \setminus \{s_i\}) \cup \mathcal{D} \not\models s_i \;\land\; \forall c \in s_i : \llbracket s_i \setminus \{c\} \rrbracket \neq \llbracket s_i \rrbracket$ | No `Statement` re-explains a `Term` or another `Statement` (`UQL005`), and every constituent narrows $\llbracket s_i \rrbracket$ (`UQL006`). |
-| **4. Satisfiability (`No Contradiction`)** | $\mathcal{S} \cup \mathcal{D} \not\models \bot$ | Overlapping `Subject`/`Adverbial` conditions with mutually exclusive `Predicate`s are a `UQL007 Contradiction` lint error. |
-| **5. Finite Closure** | $\|V\| < \infty$ in dependency graph $G = (V, E)$, terminating at $\Sigma$ leaves or $V_{\text{root}}$ | Reachability from any `Term` with a visited set terminates in $\le \|V\|$ steps. |
+| **1. Well-Definedness (`Unambiguity`)** | `\|R(w)\| = 1  ∧  \|A(p)\| = 1  ∧  \|T(s)\| = 1` | `\|R(w)\| = 0` is `UQL001 UndefinedTerm`; cardinality `> 1` is a `UQL002`–`UQL004 Ambiguity` lint error. |
+| **2. Propositional Form (`Statement`)** | `∀x ∈ S : C(x) ⇒ P(x, O)` | Declarative present-tense clause of `≤ 35` words (`≤ 220` bytes) and `≤ 1` subordinate `Adverbial` clause. |
+| **3. Independence & Minimality (`SSOT`)** | `∀s ∈ S : (S \ {s}) ∪ D ⊭ s  ∧  ∀c ∈ s : truth(s \ {c}) ≠ truth(s)` | No `Statement` re-explains a `Term` or another `Statement` (`UQL005`), and every constituent narrows when the `Statement` holds (`UQL006`). |
+| **4. Satisfiability (`No Contradiction`)** | `S ∪ D ⊭ ⊥` | Overlapping `Subject`/`Adverbial` conditions with mutually exclusive `Predicate`s are a `UQL007 Contradiction` lint error. |
+| **5. Finite Closure** | `\|V\| < ∞` in dependency graph `G = (V, E)`, terminating at `Σ` leaves or `V_root` | Reachability from any `Term` with a visited set terminates in `≤ \|V\|` steps. |
 
 ### 5. Ordered `References` and Bounded Context Disambiguation
 
 A `uql` document resolves `Term`s against an ordered `References` list (`## References` in `uql-md`; `anyOf: [{ "$ref": "..." }]` in `uql-json`):
-1. **Order decides precedence**: Lookup $R_\Sigma(w)$ returns the first entry in $\Sigma$ where $w \in \text{forms}(T)$.
+1. **Order decides precedence**: Lookup `R(w)` returns the first entry in `Σ` where `w ∈ forms(T)`.
 2. **Disambiguation in `References`**: Placing `[Contract]: <external-uri>` above `[Definitions]` binds `Contract` to that context; binding `[Schema contract]: <external-uri>` lets a document refer to both contexts without brackets in the body text.
 
 ### 6. The 5-Step `uql` Rewriting, Parsing, and Linting Algorithm
@@ -143,17 +143,17 @@ A `uql` document resolves `Term`s against an ordered `References` list (`## Refe
 When rewriting loose English prose into `uql`, the loose prose is discarded and replaced by the resulting `uql` text. When linting `uql`, the parser builds a `UqlAst` (`Statement`s, `Constituent`s, resolved `Term`s, and `References`) and checks Invariants 1–5 to emit `Diagnostics` (see [Appendix A](#appendix-a-error-recovery)):
 
 1. **Extract Citations and Quotes**: Move every inline URL (`[label](https://...)`) and attributed verbatim quote out of the statement body into `## References` as `[Label]: <URI> "Author: Verbatim quote"`.
-2. **Strip Babble (Invariant 3)**: Delete any clause or sentence already entailed by $\mathcal{D}$ or an earlier `Statement` (`UQL005`), and any constituent $c$ where $\llbracket s \setminus \{c\} \rrbracket = \llbracket s \rrbracket$ (`UQL006`).
-3. **Form Declarative Present-Tense Clauses (Invariant 2)**: Drop external `marker:` fields (`MUST`, `MUST NOT`, `SHOULD`, `MAY`) and express each clause as a present-tense truth ($\le 35$ words) conforming to §3.2 EBNF.
-4. **Resolve Open-Class Words to `Term`s (Invariant 1)**: Strip `[[...]]` brackets. Match every Open-Class span (`Noun`, `MainVerb`, `Adjective`, `Adverb`) outside `CodeLiteral`s against $\mathcal{D} \cup \Sigma$; if $\|R_\Sigma(w)\| = 0$, replace $w$ with an existing synonym in $\mathcal{D}$, declare $w$ as a new `Term`, or emit `UQL001 UndefinedTerm(w)`.
-5. **Lint Unambiguity and Satisfiability (Invariants 1 & 4)**: Emit `UQL002` if $\|R_\Sigma(w)\| > 1$, `UQL003` if $\|A(p)\| > 1$, `UQL004` if $\|\mathcal{T}(s)\| > 1$, or `UQL007` if two `Statement`s have overlapping `Subject` + `Adverbial` domains and mutually exclusive `Predicate`s.
+2. **Strip Babble (Invariant 3)**: Delete any clause or sentence already entailed by `D` or an earlier `Statement` (`UQL005`), and any constituent whose removal leaves the truth condition unchanged (`UQL006`).
+3. **Form Declarative Present-Tense Clauses (Invariant 2)**: Drop external `marker:` fields (`MUST`, `MUST NOT`, `SHOULD`, `MAY`) and express each clause as a present-tense truth (`≤ 35` words) conforming to §3.2 EBNF.
+4. **Resolve Open-Class Words to `Term`s (Invariant 1)**: Strip `[[...]]` brackets. Match every Open-Class span (`Noun`, `MainVerb`, `Adjective`, `Adverb`) outside `CodeLiteral`s against `D ∪ Σ`; if `|R(w)| = 0`, replace `w` with an existing synonym in `D`, declare `w` as a new `Term`, or emit `UQL001 UndefinedTerm(w)`.
+5. **Lint Unambiguity and Satisfiability (Invariants 1 & 4)**: Emit `UQL002` if `|R(w)| > 1`, `UQL003` if `|A(p)| > 1`, `UQL004` if `|T(s)| > 1`, or `UQL007` if two `Statement`s have overlapping `Subject` + `Adverbial` domains and mutually exclusive `Predicate`s.
 
 ### 7. Conformance Levels and Complexity Budgets
 
 1. **Level 1 (Lexical & Reference Closure)**: Enforces maximal-munch `Term` matching against `glossary.g.json` `forms` and `References` (`UQL001`, `UQL002`).
-2. **Level 2 (Syntactic & Anaphora Unambiguity)**: Parses into `UqlAst` per §3.2 EBNF, enforcing the $\le 35$-word `Statement` bound and DRT pronoun resolution (`UQL003`, `UQL004`).
+2. **Level 2 (Syntactic & Anaphora Unambiguity)**: Parses into `UqlAst` per §3.2 EBNF, enforcing the `≤ 35`-word `Statement` bound and DRT pronoun resolution (`UQL003`, `UQL004`).
 3. **Level 3 (Logical Independence, Minimality & Satisfiability)**: Lowers `UqlAst` `Term`s to `(declare-fun T (Entity) Bool)` and *Fact Types* to `(declare-fun P (Entity Entity) Bool)` in Z3 SMT-LIB 2.6 (`UQL005`–`UQL007`).
-4. **Budgets**: Normative core (§§1–7) $\le 1,200$ words ($\le 8$ KB); complete RFC $\le 2,500$ words ($\le 18$ KB).
+4. **Budgets**: Normative core (§§1–7) `≤ 1,200` words (`≤ 8` KB); complete RFC `≤ 2,500` words (`≤ 18` KB).
 
 ---
 
@@ -180,10 +180,10 @@ When rewriting loose English prose into `uql`, the loose prose is discarded and 
 |---|---|---|
 | **Domain-Driven Design (Evans, 2003)** | *Ubiquitous Language* and *Bounded Context* boundaries. | Informal prose practice with no formal grammar or compiler. |
 | **Attempto Controlled English (ACE) & DRT** | Open/closed word split, present-tense FOL mapping, Right-Association, and DRT pronoun resolution. | Requires a Prolog runtime (APE), lacks CommonMark / JSON Schema bindings, and does not optimize LLM context budgets. |
-| **OMG SBVR v1.5** | *Noun Concepts* (`Term`), *Fact Types* ($P(x, O)$), and vocabulary imports. | Serialized as MOF/XMI XML with modal prefixes and visual font styling. |
+| **OMG SBVR v1.5** | *Noun Concepts* (`Term`), *Fact Types* (`P(x, O)`), and vocabulary imports. | Serialized as MOF/XMI XML with modal prefixes and visual font styling. |
 | **W3C SKOS & OntoLex-Lemon** | Canonical lemma (`id` / `skos:prefLabel`), acronyms (`skos:altLabel`), and inflected forms (`ontolex:otherForm`). | Requires RDF/Turtle/SPARQL infrastructure rather than static JSON Schema enums. |
 | **Grammatical Framework (GF)** | Separation of one **Abstract Syntax** from multiple **Concrete Syntaxes** (`uql-md`, `uql-json`, `uql-smt2`). | Requires Haskell/GF grammars rather than CommonMark + JSON Schema. |
-| **Alloy, TLA+, EARS & NASA FRET** | Declarative legal-state invariants ($\mathcal{M} \models \mathcal{S} \cup \mathcal{D}$), fronted conditions, and Z3 `unsat-core`. | FRET targets real-time temporal logic (`pmLTL`/Lustre) in an Electron database rather than repository governance. |
+| **Alloy, TLA+, EARS & NASA FRET** | Declarative legal-state invariants, fronted conditions, and Z3 `unsat-core`. | FRET targets real-time temporal logic (`pmLTL`/Lustre) in an Electron database rather than repository governance. |
 
 ---
 
@@ -195,7 +195,7 @@ None for the Level 1–3 specification; corpus-specific `Term`s are surfaced emp
 
 ## Future possibilities
 
-- Level 1–3 verification in `verify.sh`, automatic `<a href="#...">` link compilation in `build_site.sh`, on-demand `Reference` quote retrieval in `define`, and IDE autocomplete from `*.g.schema.json`.
+- Level 1–3 verification in `verify.sh`, automatic `<a href="#...">` link compilation in `build_site.sh`, on-demand `Reference` quote retrieval in `define`, and IDE autocomplete from `glossary.g.json`.
 
 ---
 
@@ -205,13 +205,13 @@ To continue past the first error instead of exiting immediately, each failure in
 
 | Code & Diagnostic Kind | Invariant | Local Recovery (Placeholder Node) | Diagnostic Payload |
 |---|---|---|---|
-| `UQL001 UndefinedTerm` | Invariant 1 ($\|R_\Sigma(w)\| = 0$) | Bind span to `?Term(w)` | Unresolved span $w$, location, and closest candidate `Term`s in $\mathcal{D}$ |
-| `UQL002 AmbiguousTerm` | Invariant 1 ($\|R_\Sigma(w)\| > 1$) | Bind span to `?AmbiguousTerm(w, candidates)` | Span $w$ and competing `Term` URIs at the same precedence level |
-| `UQL003 AmbiguousPronoun` | Invariant 1 ($\|A(p)\| > 1$) | Bind pronoun to `?AmbiguousPronoun(p, antecedents)` | Pronoun $p$ and matching antecedent `Term`s in the `Statement` |
-| `UQL004 AmbiguousAttachment` | Invariant 1 ($\|\mathcal{T}(s)\| > 1$) | Keep right-associated tree | Modifier span and competing head constituents |
-| `UQL005 RedundantStatement` | Invariant 3 ($(\mathcal{S}\setminus\{s_i\})\cup\mathcal{D} \models s_i$) | Keep $s_i$ marked as redundant | Statement $s_i$ and the subset of $\mathcal{S} \cup \mathcal{D}$ that entails it |
-| `UQL006 NonMinimalConstituent` | Invariant 3 ($\llbracket s \setminus \{c\} \rrbracket = \llbracket s \rrbracket$) | Keep $c$ marked as non-narrowing | Constituent/modifier $c$ whose removal leaves $\llbracket s \rrbracket$ unchanged |
-| `UQL007 Contradiction` | Invariant 4 ($\mathcal{S} \cup \mathcal{D} \models \bot$) | Keep both statements marked | Contradicting statements $(s_1, s_2)$ and their overlapping domain |
+| `UQL001 UndefinedTerm` | Invariant 1 (`\|R(w)\| = 0`) | Bind span to `?Term(w)` | Unresolved span `w`, location, and closest candidate `Term`s in `D` |
+| `UQL002 AmbiguousTerm` | Invariant 1 (`\|R(w)\| > 1`) | Bind span to `?AmbiguousTerm(w, candidates)` | Span `w` and competing `Term` URIs at the same precedence level |
+| `UQL003 AmbiguousPronoun` | Invariant 1 (`\|A(p)\| > 1`) | Bind pronoun to `?AmbiguousPronoun(p, antecedents)` | Pronoun `p` and matching antecedent `Term`s in the `Statement` |
+| `UQL004 AmbiguousAttachment` | Invariant 1 (`\|T(s)\| > 1`) | Keep right-associated tree | Modifier span and competing head constituents |
+| `UQL005 RedundantStatement` | Invariant 3 (`(S \ {s}) ∪ D ⊨ s`) | Keep `s` marked as redundant | Statement `s` and the subset of `S ∪ D` that entails it |
+| `UQL006 NonMinimalConstituent` | Invariant 3 (`truth(s \ {c}) = truth(s)`) | Keep `c` marked as non-narrowing | Constituent/modifier `c` whose removal leaves `truth(s)` unchanged |
+| `UQL007 Contradiction` | Invariant 4 (`S ∪ D ⊨ ⊥`) | Keep both statements marked | Contradicting statements `(s₁, s₂)` and their overlapping domain |
 
 ---
 
