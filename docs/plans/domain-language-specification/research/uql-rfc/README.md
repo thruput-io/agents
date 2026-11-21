@@ -15,11 +15,11 @@ Specify **Ubiquitous Language (`uql`)**, a controlled domain language that proje
 
 ## Motivation
 
-Natural English creates the illusion of communication while conveying no shared meaning: humans and AI agents exchange words while attaching private assumptions to them. Custom `[[Id]]` wiki-links validated by regular expressions fail in four ways:
-1. **Unmapped English passes validation**: Requiring a single `[[Id]]` per entry leaves all other words unmapped.
-2. **Bracket noise and duplicate plurals**: Exact-string matching forces awkward suffixes (`[[Term]]s`) and duplicate plural entries in glossaries.
-3. **Context bloat from inline URLs and quotes**: Embedding raw URLs and verbatim quotes inside statement bodies consumes agent context tokens on every read.
-4. **Clause inversion from externalized RFC 2119 markers**: Separating `MUST NOT` into an external field leaves the statement body reading as the opposite of the rule on its own.
+Everything in software development boils down to communication, and the introduction of AI makes this unmistakable. Years are spent trying to make AI agents follow human intent, yet the enormous potential of productivity is reached only in brief glimpses because the blocker is communication.
+
+When English passes back and forth between human and AI, we believe we are communicating, but it is faked: each side attaches private assumptions to the same words, and meaning is not conveyed. To describe good software engineering from bad—where good is deeply effective and bad is ineffective—English is not the language. We need a domain language where words carry explicit, shared meaning so that human and machine understand each other.
+
+Practically, writing a statement in that domain language should work like writing code: every word is accounted for by the syntax, an unmapped word produces an error just like an undefined variable, and an IDE can suggest and verify defined terms from a symbol table. Before a parser, linter, or IDE can exist, the language itself must be specified—just as a programming language requires a specification before its tooling is built. This RFC specifies that language: **Ubiquitous Language (`uql`)**.
 
 ---
 
