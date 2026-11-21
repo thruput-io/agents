@@ -9,120 +9,146 @@
 
 ## Summary
 
-Specify **Ubiquitous Language (`uql`)**, a controlled domain language that projects an independent axiomatic system (`Abstract Syntax`) onto CommonMark (`uql-md`), JSON Schema Draft 2020-12 (`uql-json`), and first-order logic (`SMT-LIB 2.6`).
+Specify **Ubiquitous Language (`uql`)**, a controlled domain language that projects an independent axiomatic system (`Abstract Syntax`) onto human-readable text with **Markdown** and **JSON Schema Draft 2020-12** bindings and **SMT-LIB 2.6** first-order logic semantics.
 
 ---
 
 ## Motivation
 
-Everything in software development boils down to communication, and the introduction of AI makes this unmistakable. Years are spent trying to make AI agents follow human intent, yet the enormous potential of productivity is reached only in brief glimpses because the blocker is communication.
+Communication fails whenever natural language passes back and forth without shared meaning. Humans—and even more visibly, humans and AI agents—exchange words while attaching private, conflicting assumptions to them. We believe we are communicating because sentences flow both ways, yet meaning is not conveyed.
 
-When English passes back and forth between human and AI, we believe we are communicating, but it is faked: each side attaches private assumptions to the same words, and meaning is not conveyed. To describe good software engineering from bad—where good is deeply effective and bad is ineffective—English is not the language. We need a domain language where words carry explicit, shared meaning so that human and machine understand each other.
-
-Practically, writing a statement in that domain language should work like writing code: every word is accounted for by the syntax, an unmapped word produces an error just like an undefined variable, and an IDE can suggest and verify defined terms from a symbol table. Before a parser, linter, or IDE can exist, the language itself must be specified—just as a programming language requires a specification before its tooling is built. This RFC specifies that language: **Ubiquitous Language (`uql`)**.
+To distinguish good from bad or true from false in any domain, natural English is not the language. Conveying exact meaning requires a **Ubiquitous Language (`uql`)** where every domain term carries a single defined meaning, every statement is a falsifiable present-tense truth, and any unmapped word, ambiguity, or contradiction is an error. Just as a programming language requires a specification before its parser, linter, and IDE tooling can exist, this RFC specifies **`uql`**.
 
 ---
 
 ## Guide-level explanation
 
-### 1. Declarative Legal-State Invariants
+### 1. Declarative Present-Tense Invariants
 
-Following Alloy, TLA+, and Attempto Controlled English (ACE), `uql` defines the **legal state space** of a domain using present-tense indicative `Statement`s:
+Following Alloy, TLA+, and Attempto Controlled English (ACE), `uql` defines the valid state space of a domain using present-tense indicative `Statement`s:
 
 - *"Every `Withdrawal` references an `Account`."*
 - *"A settled `Invoice` is `Immutable`."*
 - *"An `Account` contains no negative `Balance`."*
 
-A target artifact complies if and only if it satisfies all statements and definitions in scope; any counterexample where a statement does not hold is a `Violation`.
+A target complies if and only if it satisfies all statements and definitions in scope; any counterexample where a statement does not hold is a `Violation`.
 
-### 2. Before and After in `uql-md`
+### 2. Before and After
 
-Before (`Prose` with babble, inline URLs, verbatim quotes, and modal imperatives):
+Before (unstructured prose mixing redundant explanations, inline URLs, verbatim quotes, and modal imperatives):
 
-```yaml
-- id: Double-entry balance
-  body: |
-    Accounting is the measurement and communication of financial information. Every ledger entry must balance debits and credits ([Luca Pacioli](https://example.org/pacioli-1494)): "a person should not go to sleep at night until the debits equal the credits."
-  solutions:
-  - marker: SHOULD
-    body: |
-      Record both the debit account and credit account on every transfer.
+```markdown
+# Double-entry balance
+
+Accounting is the measurement and communication of financial information. Every ledger entry must balance debits and credits ([Luca Pacioli](https://example.org/pacioli-1494)): "a person should not go to sleep at night until the debits equal the credits."
+
+- You should record both the debit account and credit account on every transfer.
 ```
 
-After (`uql-md` — the redundant re-definition of accounting is removed, clauses are present-tense truths, and external citations/quotes move to `## References` via CommonMark §4.7 `[Label]: <URI> "Verbatim quote"`):
+After (`uql` — redundant re-definitions are removed, clauses are present-tense truths, and external citations/quotes move to `## References` via CommonMark §4.7 `[Label]: <URI> "Verbatim quote"`):
 
 ```markdown
 # Double-entry balance
 
 Every Ledger entry balances its Debit and Credit, as established in Summa de Arithmetica.
 
-## Solutions
-
 - Every Transfer records a Debit Account and a Credit Account.
 
 ## References
 
 [Summa de Arithmetica]: https://example.org/pacioli-1494 "Luca Pacioli: A person should not go to sleep at night until the debits equal the credits."
-[Definitions]: https://example.org/schemas/accounting-definitions.schema.json
+[Glossary]: https://example.org/accounting/glossary.json
 ```
 
 ---
 
 ## Reference-level explanation
 
-### 1. Abstract Syntax and Concrete Syntaxes
+### 1. Abstract Syntax and Host Bindings
 
-Following Grammatical Framework (GF), `uql` separates its **Abstract Syntax** (the 5 invariants over the ordered reference scope `Σ`, definitions `D`, and statements `S`) from three **Concrete Syntaxes**:
-1. **`uql-md`**: CommonMark documents with a bottom `## References` section.
-2. **`uql-json`**: JSON/YAML documents validated by JSON Schema Draft 2020-12 (`contentMediaType: "text/markdown"`, `contentSchema`, and `anyOf`/`$ref`).
-3. **`uql-smt2`**: SMT-LIB 2.6 first-order logic assertions checked by Z3.
+Following Grammatical Framework (GF), `uql` separates its **Abstract Syntax** (the 5 invariants over the ordered reference scope `Σ`, glossary definitions `D`, and statements `S`) from its host bindings:
+1. **Markdown Binding**: CommonMark documents whose body is written in `uql` and whose bottom `## References` section declares ordered CommonMark link reference definitions (`[Label]: <URI> "Optional quote"`).
+2. **JSON Schema Binding**: JSON or YAML documents where text properties are typed as `UbiquitousLanguage` (`contentMediaType: "text/markdown"`, `contentSchema: UqlAst`) alongside a structured `Glossary` and ordered `References`.
+3. **SMT-LIB 2.6 Binding**: First-order logic assertions (`declare-fun`, `assert (forall ...)`) for mechanical verification of Invariants 3–5.
 
-- **`Prose`**: Ordinary Markdown text (`"type": "string", "minLength": 1, "contentMediaType": "text/markdown"`), used for verbatim quotes (`Reference.quote`) and transcripts.
+- **`Prose`**: Unconstrained Markdown text (`"type": "string", "minLength": 1, "contentMediaType": "text/markdown"`), used for verbatim quotes (`Reference.quote`) and transcripts.
 - **`UbiquitousLanguage` (`uql`)**: Text conforming to §§2–7 below.
 
-### 2. Lexical Specification and `Term` Grounding
+### 2. Lexical Specification and `Glossary` Grounding
 
-Aligned with W3C SKOS and OntoLex-Lemon:
-1. **`Term.id` (`skos:prefLabel` / `ontolex:canonicalForm`)**: Canonical lemma of a `Noun` concept, `Adjective` property, or `MainVerb` relation (*SBVR Fact Type*), unique within its Bounded Context after ASCII case-folding and whitespace normalization.
-2. **`Term.forms` (`skos:altLabel` & `ontolex:otherForm`)**:
-   - **In source (`Definitions.yaml`)**: Deterministic English inflection suffixes on the head word (`-s`, `-es`, `-ies` for plurals and 3rd-person singular verbs; `-ed`, `-ing` for participles) apply automatically; optional `forms: string[]` declares irregular forms or acronyms (`["UQL", "uql"]`).
-   - **In the glossary data artifact (`glossary.g.json`)**: Every `Term` expands into its complete list of valid surface `forms` as data (validated by `ubiquitous-language.schema.json#/$defs/Glossary`).
-3. **Tokenization and Maximal Munch**:
+Aligned with W3C SKOS and OntoLex-Lemon, a **`Glossary`** (`D`) is a collection of **`Term`** entries:
+1. **`Term.id` (`skos:prefLabel` / `ontolex:canonicalForm`)**: Canonical lemma of an open-class `Term`, unique within its Bounded Context after ASCII case-folding and whitespace normalization.
+2. **`Term.partOfSpeech`**: One of `"noun"`, `"verb"` (*SBVR Fact Type*), `"adjective"`, or `"adverb"`.
+3. **`Term.forms` (`skos:altLabel` & `ontolex:otherForm`)**:
+   - Standard English inflection suffixes on the head word (`-s`, `-es`, `-ies` for plurals and 3rd-person singular verbs; `-ed`, `-ing` for participles) expand into the `Glossary`'s `forms` list; irregular forms or acronyms (`["UQL", "uql"]`) are declared explicitly in `forms`.
+4. **Tokenization and Maximal Munch**:
    - Backtick code spans (`inlineCode`) and fenced code blocks (`code`) are extracted first by the CommonMark AST parser as `CodeLiteral`s.
-   - Over the remaining text tokens, `Term` matching uses case-insensitive **longest-match (maximal munch)** left-to-right.
-   - Hyphenated compounds match as a single `Term` if declared in `forms`, or split on `-` into constituent tokens if undeclared.
+   - Over the remaining text tokens, `Term` matching uses case-insensitive **longest-match (maximal munch)** left-to-right against `forms`.
+   - Hyphenated compounds match as a single `Term` if present in `forms`, or split on `-` into constituent tokens if absent.
 
 ### 3. Syntactic Specification (ISO/IEC 14977 EBNF & Parts of Speech)
 
+#### 3.1 Parts of Speech
+
 | Partition | Enumerated Word Classes | Rule in `uql` |
 |---|---|---|
-| **Open Word Classes** | `Noun`, `MainVerb` (*Fact Type*), `Adjective`, `Adverb` | Every open-class word or phrase outside a `CodeLiteral` resolves to a **`Term`** in the active scope (`D ∪ Σ`). |
-| **Closed Word Classes** | `Determiner`, `Preposition`, `Conjunction`, `Pronoun`, present-tense `Copula` / `AuxiliaryVerb`, `Negation` | Form the grammatical structure connecting `Term`s. |
+| **Open Word Classes** | `NounTerm`, `VerbTerm` (*Fact Type*), `AdjectiveTerm`, `AdverbTerm` | Every open-class word or phrase outside a `CodeLiteral` resolves to a **`Term`** in `D ∪ Σ` with the corresponding `partOfSpeech`. |
+| **Closed Word Classes** | `Determiner`, `Preposition`, `CoordConj`, `SubConj`, `Pronoun`, `Copula`, `AuxiliaryVerb`, `Negation` | Form the grammatical structure connecting `Term`s. |
+
+#### 3.2 Complete Phrase Structure Grammar (ISO/IEC 14977 EBNF)
 
 ```ebnf
-Document        = { Paragraph } , [ ReferencesBlock ] ;
+Document        = { Block } , [ ReferencesBlock ] ;
+Block           = Heading | Paragraph | List ;
+Heading         = "#" , { "#" } , NounPhrase ;
+List            = ListItem , { ListItem } ;
+ListItem        = "-" , Statement ;
 Paragraph       = Statement , { Statement } ;
-Statement       = [ Adverbial , "," ] , Clause , { Conjunction , Clause } , "." ;
+Statement       = [ Adverbial , "," ] , Clause , { CoordConj , Clause } , "." ;
 Clause          = Subject , Predicate , [ ObjectOrComp ] , { Adverbial }
-                | Complement , "," , Subject , Copula ;
+                | ObjectOrComp , "," , Subject , Copula ;
 Subject         = NounPhrase ;
 ObjectOrComp    = NounPhrase | AdjectiveTerm | CodeLiteral ;
-Predicate       = Copula , [ Negation ]
-                | [ AuxiliaryVerb , Negation ] , VerbTerm ;
+Predicate       = Copula , [ Negation ] , [ VerbTerm ]
+                | [ AuxiliaryVerb , Negation ] , VerbTerm , [ AdverbTerm ] ;
 Adverbial       = ( Preposition , NounPhrase )
-                | ( SubConjunction , Clause ) ;
+                | ( SubConj , Clause ) ;
 NounPhrase      = [ Determiner ] , { AdjectiveTerm } , ( NounTerm | Pronoun | CodeLiteral ) ,
                   { Preposition , NounPhrase } ;
 ReferencesBlock = "## References" , { ReferenceDef } ;
-ReferenceDef    = "[" , TermOrSourceId , "]:" , URI , [ '"' , ProseQuote , '"' ] ;
+ReferenceDef    = "[" , ReferenceId , "]:" , URI , [ '"' , Prose , '"' ] ;
+
+(* Closed-Class Terminal Categories *)
+Determiner      = "a" | "an" | "the" | "this" | "that" | "these" | "those"
+                | "each" | "every" | "any" | "no" | "all" | "both" | "either"
+                | "neither" | "one" | "only" | "own" | "same" | "such" | "other" | "another" ;
+Preposition     = "in" | "on" | "at" | "to" | "from" | "by" | "with" | "without"
+                | "of" | "for" | "into" | "through" | "before" | "after" | "between"
+                | "under" | "over" | "across" | "within" | "outside" | "above"
+                | "below" | "against" | "per" | "via" | "as" ;
+CoordConj       = "and" | "or" | "but" | "nor" ;
+SubConj         = "when" | "whenever" | "if" | "unless" | "where" | "while"
+                | "because" | "so" | "than" | "whether" | "as" ;
+Pronoun         = "it" | "its" | "itself" | "they" | "them" | "their"
+                | "theirs" | "themselves" | "who" | "whom" | "whose" | "which" | "what" ;
+Copula          = "be" | "is" | "are" | "been" | "being" ;
+AuxiliaryVerb   = "have" | "has" | "do" | "does" ;
+Negation        = "not" ;
+
+(* Open-Class Terminals Resolved Against Glossary D ∪ Σ *)
+NounTerm        = ? surface form in D ∪ Σ with partOfSpeech = "noun" ? ;
+VerbTerm        = ? surface form in D ∪ Σ with partOfSpeech = "verb" ? ;
+AdjectiveTerm   = ? surface form in D ∪ Σ with partOfSpeech = "adjective" ? ;
+AdverbTerm      = ? surface form in D ∪ Σ with partOfSpeech = "adverb" ? ;
+CodeLiteral     = ? CommonMark inlineCode or fenced code node ? ;
 ```
 
 - **Deterministic Attachment (ACE Right Association)**: A `Preposition` phrase inside a `NounPhrase` attaches to the nearest preceding `Term`; a sentence-wide `Adverbial` is fronted before `,` or attached to the `Predicate`.
-- **Deterministic Anaphora (DRT/ACE)**: A `Pronoun` (`it`, `its`, `they`, `their`, `which`, `that`) binds to the nearest preceding `Term` matching in grammatical number; if 2 or more preceding `Term`s in the `Statement` match in number, it fails with `UQL003 AmbiguousPronoun`.
+- **Deterministic Anaphora (DRT/ACE)**: A `Pronoun` binds to the nearest preceding `Term` matching in grammatical number; if 2 or more preceding `Term`s in the `Statement` match in number, it fails with `UQL003 AmbiguousPronoun`.
 
 ### 4. Authoritative Semantics (Five Mathematical Invariants)
 
-The semantics of `uql` are defined once by five invariants over the ordered reference scope `Σ = ⟨V₁, …, Vₖ⟩`, definitions `D`, and statements `S`:
+The semantics of `uql` are defined once by five invariants over the ordered reference scope `Σ = ⟨V₁, …, Vₖ⟩`, glossary definitions `D`, and statements `S`:
 
 | Invariant | Authoritative Mathematical Definition | Human-Readable Projection in `uql` |
 |---|---|---|
@@ -132,25 +158,64 @@ The semantics of `uql` are defined once by five invariants over the ordered refe
 | **4. Satisfiability (`No Contradiction`)** | `S ∪ D ⊭ ⊥` | Overlapping `Subject`/`Adverbial` conditions with mutually exclusive `Predicate`s are a `UQL007 Contradiction` lint error. |
 | **5. Finite Closure** | `\|V\| < ∞` in dependency graph `G = (V, E)`, terminating at `Σ` leaves or `V_root` | Reachability from any `Term` with a visited set terminates in `≤ \|V\|` steps. |
 
-### 5. Ordered `References` and Bounded Context Disambiguation
+### 5. Ordered `References` and JSON Schema Binding
 
-A `uql` document resolves `Term`s against an ordered `References` list (`## References` in `uql-md`; `anyOf: [{ "$ref": "..." }]` in `uql-json`):
+A `uql` document resolves `Term`s against an ordered `References` list (`## References` in Markdown; `references` / `anyOf` `$ref` in JSON Schema):
 1. **Order decides precedence**: Lookup `R(w)` returns the first entry in `Σ` where `w ∈ forms(T)`.
-2. **Disambiguation in `References`**: Placing `[Contract]: <external-uri>` above `[Definitions]` binds `Contract` to that context; binding `[Schema contract]: <external-uri>` lets a document refer to both contexts without brackets in the body text.
+2. **Disambiguation in `References`**: Placing `[Contract]: <external-uri>` above `[Glossary]` binds `Contract` to that context; binding `[Schema contract]: <external-uri>` lets a document refer to both contexts without brackets in the body text.
+3. **JSON Schema Draft 2020-12 Binding**:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "Prose": {
+      "type": "string",
+      "minLength": 1,
+      "contentMediaType": "text/markdown"
+    },
+    "UbiquitousLanguage": {
+      "type": "string",
+      "minLength": 1,
+      "contentMediaType": "text/markdown",
+      "contentSchema": { "$ref": "#/$defs/UqlAst" }
+    },
+    "Term": {
+      "type": "object",
+      "required": ["id", "partOfSpeech", "forms", "definition"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "partOfSpeech": { "enum": ["noun", "verb", "adjective", "adverb"] },
+        "forms": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "definition": { "$ref": "#/$defs/UbiquitousLanguage" }
+      }
+    },
+    "Reference": {
+      "type": "object",
+      "required": ["id", "uri"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "uri": { "type": "string", "format": "uri" },
+        "quote": { "$ref": "#/$defs/Prose" }
+      }
+    }
+  }
+}
+```
 
 ### 6. The 5-Step `uql` Rewriting, Parsing, and Linting Algorithm
 
-When rewriting loose English prose into `uql`, the loose prose is discarded and replaced by the resulting `uql` text. When linting `uql`, the parser builds a `UqlAst` (`Statement`s, `Constituent`s, resolved `Term`s, and `References`) and checks Invariants 1–5 to emit `Diagnostics` (see [Appendix A](#appendix-a-error-recovery)):
+When rewriting loose prose into `uql`, the loose prose is discarded and replaced by the resulting `uql` text. When linting `uql`, the parser builds a `UqlAst` and checks Invariants 1–5 to emit `Diagnostics` (see [Appendix A](#appendix-a-error-recovery)):
 
 1. **Extract Citations and Quotes**: Move every inline URL (`[label](https://...)`) and attributed verbatim quote out of the statement body into `## References` as `[Label]: <URI> "Author: Verbatim quote"`.
 2. **Strip Babble (Invariant 3)**: Delete any clause or sentence already entailed by `D` or an earlier `Statement` (`UQL005`), and any constituent whose removal leaves the truth condition unchanged (`UQL006`).
-3. **Form Declarative Present-Tense Clauses (Invariant 2)**: Drop external `marker:` fields (`MUST`, `MUST NOT`, `SHOULD`, `MAY`) and express each clause as a present-tense truth (`≤ 35` words) conforming to §3.2 EBNF.
-4. **Resolve Open-Class Words to `Term`s (Invariant 1)**: Strip `[[...]]` brackets. Match every Open-Class span (`Noun`, `MainVerb`, `Adjective`, `Adverb`) outside `CodeLiteral`s against `D ∪ Σ`; if `|R(w)| = 0`, replace `w` with an existing synonym in `D`, declare `w` as a new `Term`, or emit `UQL001 UndefinedTerm(w)`.
+3. **Form Declarative Present-Tense Clauses (Invariant 2)**: Express each clause as a present-tense truth (`≤ 35` words) conforming to §3.2 EBNF.
+4. **Resolve Open-Class Words to `Term`s (Invariant 1)**: Match every Open-Class span (`NounTerm`, `VerbTerm`, `AdjectiveTerm`, `AdverbTerm`) outside `CodeLiteral`s against `D ∪ Σ`; if `|R(w)| = 0`, replace `w` with an existing synonym in `D`, declare `w` as a new `Term`, or emit `UQL001 UndefinedTerm(w)`.
 5. **Lint Unambiguity and Satisfiability (Invariants 1 & 4)**: Emit `UQL002` if `|R(w)| > 1`, `UQL003` if `|A(p)| > 1`, `UQL004` if `|T(s)| > 1`, or `UQL007` if two `Statement`s have overlapping `Subject` + `Adverbial` domains and mutually exclusive `Predicate`s.
 
 ### 7. Conformance Levels and Complexity Budgets
 
-1. **Level 1 (Lexical & Reference Closure)**: Enforces maximal-munch `Term` matching against `glossary.g.json` `forms` and `References` (`UQL001`, `UQL002`).
+1. **Level 1 (Lexical & Reference Closure)**: Enforces maximal-munch `Term` matching against the `Glossary` `forms` and `References` (`UQL001`, `UQL002`).
 2. **Level 2 (Syntactic & Anaphora Unambiguity)**: Parses into `UqlAst` per §3.2 EBNF, enforcing the `≤ 35`-word `Statement` bound and DRT pronoun resolution (`UQL003`, `UQL004`).
 3. **Level 3 (Logical Independence, Minimality & Satisfiability)**: Lowers `UqlAst` `Term`s to `(declare-fun T (Entity) Bool)` and *Fact Types* to `(declare-fun P (Entity Entity) Bool)` in Z3 SMT-LIB 2.6 (`UQL005`–`UQL007`).
 4. **Budgets**: Normative core (§§1–7) `≤ 1,200` words (`≤ 8` KB); complete RFC `≤ 2,500` words (`≤ 18` KB).
@@ -159,7 +224,7 @@ When rewriting loose English prose into `uql`, the loose prose is discarded and 
 
 ## Drawbacks
 
-- Authoring new statements requires declaring any new open-class noun, verb (*Fact Type*), or adjective as a `Term` (or binding it in `References`) before Level 1 verification passes.
+- Authoring new statements requires declaring any new open-class noun, verb (*Fact Type*), adjective, or adverb as a `Term` in the `Glossary` (or binding it in `References`) before Level 1 linting passes.
 
 ---
 
@@ -167,9 +232,8 @@ When rewriting loose English prose into `uql`, the loose prose is discarded and 
 
 | Alternative | Why it was rejected |
 |---|---|
-| Keep `[[Id]]` wiki-links and regex alternations | Validates only bracketed substrings while leaving unbracketed English unmapped; corrupts code spans; forces duplicate plural definitions. |
+| Validate only bracketed `[[Term]]` substrings with regular expressions | Leaves unbracketed words unmapped, corrupts code spans, and forces duplicate plural definitions. |
 | Require `[Term]` brackets around every `Term` in `uql` | Bracket markup around most words makes prose uncomfortable for humans to read and write. |
-| Enumerate individual English glue words instead of Parts of Speech and EBNF | Word lists drift; pinning Parts of Speech, EBNF clause structure, and `Term` resolution keeps the specification finite. |
 | Inline `[Contract][Context]` brackets inside sentences | Deferring disambiguation and aliasing to the bottom `References` section keeps the prose body 100% bracket-free. |
 
 ---
@@ -178,24 +242,24 @@ When rewriting loose English prose into `uql`, the loose prose is discarded and 
 
 | Prior Art | What `uql` Adopts | Why Existing Tooling Did Not Fit Directly |
 |---|---|---|
-| **Domain-Driven Design (Evans, 2003)** | *Ubiquitous Language* and *Bounded Context* boundaries. | Informal prose practice with no formal grammar or compiler. |
+| **Domain-Driven Design (Evans, 2003)** | *Ubiquitous Language* and *Bounded Context* boundaries. | Informal prose practice with no formal grammar or linter. |
 | **Attempto Controlled English (ACE) & DRT** | Open/closed word split, present-tense FOL mapping, Right-Association, and DRT pronoun resolution. | Requires a Prolog runtime (APE), lacks CommonMark / JSON Schema bindings, and does not optimize LLM context budgets. |
 | **OMG SBVR v1.5** | *Noun Concepts* (`Term`), *Fact Types* (`P(x, O)`), and vocabulary imports. | Serialized as MOF/XMI XML with modal prefixes and visual font styling. |
-| **W3C SKOS & OntoLex-Lemon** | Canonical lemma (`id` / `skos:prefLabel`), acronyms (`skos:altLabel`), and inflected forms (`ontolex:otherForm`). | Requires RDF/Turtle/SPARQL infrastructure rather than static JSON Schema enums. |
-| **Grammatical Framework (GF)** | Separation of one **Abstract Syntax** from multiple **Concrete Syntaxes** (`uql-md`, `uql-json`, `uql-smt2`). | Requires Haskell/GF grammars rather than CommonMark + JSON Schema. |
-| **Alloy, TLA+, EARS & NASA FRET** | Declarative legal-state invariants, fronted conditions, and Z3 `unsat-core`. | FRET targets real-time temporal logic (`pmLTL`/Lustre) in an Electron database rather than repository governance. |
+| **W3C SKOS & OntoLex-Lemon** | Canonical lemma (`id` / `skos:prefLabel`), acronyms (`skos:altLabel`), and inflected forms (`ontolex:otherForm`). | Requires RDF/Turtle/SPARQL infrastructure rather than JSON Schema. |
+| **Grammatical Framework (GF)** | Separation of one **Abstract Syntax** from host bindings. | Requires Haskell/GF grammars rather than CommonMark + JSON Schema. |
+| **Alloy, TLA+, EARS & NASA FRET** | Declarative legal-state invariants, fronted conditions, and Z3 `unsat-core`. | FRET targets real-time temporal logic (`pmLTL`/Lustre) in an Electron database. |
 
 ---
 
 ## Unresolved questions
 
-None for the Level 1–3 specification; corpus-specific `Term`s are surfaced empirically when applying this RFC to a target domain corpus.
+None.
 
 ---
 
 ## Future possibilities
 
-- Level 1–3 verification in `verify.sh`, automatic `<a href="#...">` link compilation in `build_site.sh`, on-demand `Reference` quote retrieval in `define`, and IDE autocomplete from `glossary.g.json`.
+- Automated Level 1–3 linting in CI pipelines, automatic anchor-link rendering from matched `Term`s in static site generators, on-demand `Reference` quote lookup for AI agents, and IDE Language Server Protocol (LSP) autocomplete and hover definitions backed by the `Glossary`.
 
 ---
 
