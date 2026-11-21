@@ -65,27 +65,27 @@ Every Ledger entry balances its Debit and Credit, as established in Summa de Ari
 
 ### 1. Core `Glossary` of `uql`
 
-| `Term.id` | `partOfSpeech` | `forms` | `definition` (in `uql`) |
+| `Term.id` | `partOfSpeech` | `forms` | `definition` |
 |---|---|---|---|
-| `Ubiquitous Language` | `noun` | `Ubiquitous Language`, `uql`, `UQL` | A controlled domain language where every open-class span resolves to a `Term` and every `Statement` satisfies Invariants 1–5. |
+| `Ubiquitous Language` | `noun` | `Ubiquitous Language`, `uql`, `UQL` | A domain language where open-class spans resolve to `Term`s and `Statement`s satisfy Invariants 1–5. |
 | `Prose` | `noun` | `Prose`, `prose` | Unconstrained `CommonMark` text used for verbatim quotes and transcripts. |
-| `Glossary` | `noun` | `Glossary`, `Glossaries` | A collection of `Term` definitions within a `Bounded Context`. |
-| `Term` | `noun` | `Term`, `Terms` | An open-class word or phrase with one definition, one `partOfSpeech`, and a finite list of surface `forms` in a `Bounded Context`. |
-| `Reference` | `noun` | `Reference`, `References` | A binding from an identifier to a canonical `URI` and an optional verbatim `Prose` quote. |
-| `Statement` | `noun` | `Statement`, `Statements` | A declarative present-tense sentence composed of `Clause`s that narrows the valid state space of its `Subject`. |
-| `Clause` | `noun` | `Clause`, `Clauses` | A grammatical unit containing a `Subject`, a `Predicate`, an optional `Object` or `Complement`, and optional `Adverbial`s. |
-| `Constituent` | `noun` | `Constituent`, `Constituents` | A structural part of a `Clause`: `Subject`, `Predicate`, `Object`, `Complement`, or `Adverbial`. |
-| `CodeLiteral` | `noun` | `CodeLiteral`, `CodeLiterals` | A `CommonMark` inline code span or fenced code block excluded from `Term` matching. |
-| `UqlAst` | `noun` | `UqlAst` | The parsed syntax tree of a `uql` document containing resolved `Term`s, `Statement`s, `Reference`s, and `Diagnostic`s. |
-| `Diagnostic` | `noun` | `Diagnostic`, `Diagnostics` | A structured lint error emitted when a `uql` document violates Invariants 1–5 (`UQL001`–`UQL007`). |
-| `Violation` | `noun` | `Violation`, `Violations` | A counterexample in a target artifact where a `Statement` evaluates to false. |
+| `Glossary` | `noun` | `Glossary`, `Glossaries` | A set of `Term` definitions in a `Bounded Context`. |
+| `Term` | `noun` | `Term`, `Terms` | An open-class word or phrase with one definition, one `partOfSpeech`, and surface `forms`. |
+| `Reference` | `noun` | `Reference`, `References` | A binding from an identifier to a `URI` and an optional `Prose` quote. |
+| `Statement` | `noun` | `Statement`, `Statements` | A present-tense sentence of `Clause`s that narrows the valid state space of its `Subject`. |
+| `Clause` | `noun` | `Clause`, `Clauses` | A unit with a `Subject`, a `Predicate`, an optional `Object` or `Complement`, and optional `Adverbial`s. |
+| `Constituent` | `noun` | `Constituent`, `Constituents` | A part of a `Clause`: `Subject`, `Predicate`, `Object`, `Complement`, or `Adverbial`. |
+| `CodeLiteral` | `noun` | `CodeLiteral`, `CodeLiterals` | A `CommonMark` code span or code block excluded from `Term` matching. |
+| `UqlAst` | `noun` | `UqlAst` | The syntax tree of a `uql` document holding `Term`s, `Statement`s, `Reference`s, and `Diagnostic`s. |
+| `Diagnostic` | `noun` | `Diagnostic`, `Diagnostics` | A lint error emitted when a `uql` document violates Invariants 1–5 (`UQL001`–`UQL007`). |
+| `Violation` | `noun` | `Violation`, `Violations` | A counterexample where a target artifact falsifies a `Statement`. |
 
 ### 2. Lexical Rules
 
 Aligned with `SKOS` and `OntoLex-Lemon`, lexical matching follows three rules:
-1. **Normalization**: `Term.id` (`skos:prefLabel`) is unique within a `Glossary` after ASCII case-folding and whitespace normalization.
-2. **Inflection Expansion**: Standard English suffixes on the head word (`-s`, `-es`, `-ies`, `-ed`, `-ing`) and irregular acronyms (`skos:altLabel`) expand into `Term.forms` (`ontolex:otherForm`).
-3. **Maximal Munch**: After the `CommonMark` parser extracts `CodeLiteral`s, the lexer matches `Term.forms` left-to-right using case-insensitive longest match. Undeclared hyphenated compounds split on `-`.
+1. **Normalization**: `Term.id` is unique within a `Glossary` after ASCII case-folding and whitespace normalization.
+2. **Inflection Expansion**: Head-word suffixes (`-s`, `-es`, `-ies`, `-ed`, `-ing`) and acronyms expand into `Term.forms`.
+3. **Maximal Munch**: Outside `CodeLiteral`s, the lexer matches `Term.forms` left-to-right by longest match; undeclared hyphenated words split on `-`.
 
 ### 3. Syntactic Specification (`ISO EBNF`)
 
@@ -93,8 +93,7 @@ Aligned with `SKOS` and `OntoLex-Lemon`, lexical matching follows three rules:
 Document        = { Block } , [ ReferencesBlock ] ;
 Block           = Heading | Paragraph | List ;
 Heading         = "#" , { "#" } , NounPhrase ;
-List            = ListItem , { ListItem } ;
-ListItem        = "-" , Statement ;
+List            = "-" , Statement , { "-" , Statement } ;
 Paragraph       = Statement , { Statement } ;
 Statement       = [ Adverbial , "," ] , Clause , { CoordConj , Clause } , "." ;
 Clause          = Subject , Predicate , [ ObjectOrComp ] , { Adverbial }
@@ -103,25 +102,20 @@ Subject         = NounPhrase ;
 ObjectOrComp    = NounPhrase | AdjectiveTerm | CodeLiteral ;
 Predicate       = Copula , [ Negation ] , [ VerbTerm ]
                 | [ AuxiliaryVerb , Negation ] , VerbTerm , [ AdverbTerm ] ;
-Adverbial       = ( Preposition , NounPhrase )
-                | ( SubConj , Clause ) ;
+Adverbial       = ( Preposition , NounPhrase ) | ( SubConj , Clause ) ;
 NounPhrase      = [ Determiner ] , { AdjectiveTerm } , ( NounTerm | Pronoun | CodeLiteral ) ,
                   { Preposition , NounPhrase } ;
-ReferencesBlock = "## References" , { ReferenceDef } ;
-ReferenceDef    = "[" , ReferenceId , "]:" , URI , [ '"' , Prose , '"' ] ;
+ReferencesBlock = "## References" , { "[" , ReferenceId , "]:" , URI , [ '"' , Prose , '"' ] } ;
 
-Determiner      = "a" | "an" | "the" | "this" | "that" | "these" | "those"
-                | "each" | "every" | "any" | "no" | "all" | "both" | "either"
-                | "neither" | "one" | "only" | "own" | "same" | "such" | "other" | "another" ;
-Preposition     = "in" | "on" | "at" | "to" | "from" | "by" | "with" | "without"
-                | "of" | "for" | "into" | "through" | "before" | "after" | "between"
-                | "under" | "over" | "across" | "within" | "outside" | "above"
-                | "below" | "against" | "per" | "via" | "as" ;
+Determiner      = "a" | "an" | "the" | "this" | "that" | "these" | "those" | "each" | "every"
+                | "any" | "no" | "all" | "both" | "either" | "neither" | "one" | "only" | "own"
+                | "same" | "such" | "other" | "another" ;
+Preposition     = "in" | "on" | "at" | "to" | "from" | "by" | "with" | "without" | "of" | "for"
+                | "into" | "through" | "before" | "after" | "between" | "under" | "over" | "across"
+                | "within" | "outside" | "above" | "below" | "against" | "per" | "via" | "as" ;
 CoordConj       = "and" | "or" | "but" | "nor" ;
-SubConj         = "when" | "whenever" | "if" | "unless" | "where" | "while"
-                | "because" | "so" | "than" | "whether" | "as" ;
-Pronoun         = "it" | "its" | "itself" | "they" | "them" | "their"
-                | "theirs" | "themselves" | "who" | "whom" | "whose" | "which" | "what" ;
+SubConj         = "when" | "whenever" | "if" | "unless" | "where" | "while" | "because" | "so" | "than" | "whether" | "as" ;
+Pronoun         = "it" | "its" | "itself" | "they" | "them" | "their" | "theirs" | "themselves" | "who" | "whom" | "whose" | "which" | "what" ;
 Copula          = "be" | "is" | "are" | "been" | "being" ;
 AuxiliaryVerb   = "have" | "has" | "do" | "does" ;
 Negation        = "not" ;
@@ -133,42 +127,33 @@ AdverbTerm      = ? surface form in D ∪ Σ with partOfSpeech = "adverb" ? ;
 CodeLiteral     = ? CommonMark inlineCode or fenced code node ? ;
 ```
 
-- **Right Association (`ACE`)**: A `Preposition` phrase inside a `NounPhrase` attaches to the nearest preceding `Term`. A clause-wide `Adverbial` precedes `,` or attaches to the `Predicate`.
-- **Anaphora Resolution (`DRT`)**: A `Pronoun` binds to the nearest preceding `Term` matching in grammatical number (`UQL003` when 2 or more preceding `Term`s in the `Statement` match).
+- **Right Association (`ACE`)**: A `Preposition` phrase in a `NounPhrase` attaches to the nearest preceding `Term`; a clause-wide `Adverbial` precedes `,` or attaches to `Predicate`.
+- **Anaphora (`DRT`)**: A `Pronoun` binds to the nearest preceding `Term` matching in number (`UQL003` when 2 or more preceding `Term`s in the `Statement` match).
 
-### 4. Authoritative Semantics (Five Mathematical Invariants & Diagnostics)
+### 4. Authoritative Semantics (Five Invariants & Diagnostics)
 
-The semantics of `uql` are defined once by five invariants over the ordered `Reference` scope `Σ = ⟨V₁, …, Vₖ⟩`, `Glossary` `D`, and `Statement`s `S`:
+Five invariants over ordered `Reference` scope `Σ = ⟨V₁, …, Vₖ⟩`, `Glossary` `D`, and `Statement`s `S` define `uql` semantics:
 
-| Invariant | Authoritative Mathematical Definition | Human-Readable Projection & `Diagnostic` Code |
+| Invariant | Mathematical Definition | Projection & `Diagnostic` |
 |---|---|---|
-| **1. Well-Definedness** | `\|R(w)\| = 1  ∧  \|A(p)\| = 1  ∧  \|T(s)\| = 1` | `\|R(w)\| = 0` emits `UQL001 UndefinedTerm`; `\|R(w)\| > 1` emits `UQL002 AmbiguousTerm`; `\|A(p)\| > 1` emits `UQL003 AmbiguousPronoun`; `\|T(s)\| > 1` emits `UQL004 AmbiguousAttachment`. |
-| **2. Propositional Form** | `∀x ∈ S : C(x) ⇒ P(x, O)` | Each `Statement` is a present-tense clause of `≤ 35` words (`≤ 220` bytes) and `≤ 1` subordinate `Adverbial` clause. |
-| **3. Independence & Minimality** | `∀s ∈ S : (S \ {s}) ∪ D ⊭ s  ∧  ∀c ∈ s : truth(s \ {c}) ≠ truth(s)` | A `Statement` entailed by `(S \ {s}) ∪ D` emits `UQL005 RedundantStatement`; a `Constituent` `c` with `truth(s \ {c}) = truth(s)` emits `UQL006 NonMinimalConstituent`. |
-| **4. Satisfiability** | `S ∪ D ⊭ ⊥` | Overlapping `Subject` and `Adverbial` domains with mutually exclusive `Predicate`s emit `UQL007 Contradiction`. |
-| **5. Finite Closure** | `\|V\| < ∞` in dependency graph `G = (V, E)`, terminating at `Σ` leaves or `V_root` | Traversal from any `Term` with a visited set terminates in `≤ \|V\|` steps. |
+| **1. Well-Definedness** | `\|R(w)\| = 1 ∧ \|A(p)\| = 1 ∧ \|T(s)\| = 1` | `\|R(w)\| = 0` emits `UQL001 UndefinedTerm`; `> 1` emits `UQL002 AmbiguousTerm`, `UQL003 AmbiguousPronoun`, or `UQL004 AmbiguousAttachment`. |
+| **2. Propositional Form** | `∀x ∈ S : C(x) ⇒ P(x, O)` | Present-tense clause of `≤ 35` words (`≤ 220` bytes) and `≤ 1` subordinate `Adverbial` clause. |
+| **3. Independence & Minimality** | `∀s ∈ S : (S \ {s}) ∪ D ⊭ s ∧ ∀c ∈ s : truth(s \ {c}) ≠ truth(s)` | Entailed `Statement` emits `UQL005 RedundantStatement`; non-narrowing `Constituent` emits `UQL006 NonMinimalConstituent`. |
+| **4. Satisfiability** | `S ∪ D ⊭ ⊥` | Overlapping `Subject` and `Adverbial` domains with opposite `Predicate`s emit `UQL007 Contradiction`. |
+| **5. Finite Closure** | `\|V\| < ∞` in graph `G = (V, E)`, terminating at `Σ` leaves or `V_root` | Traversal from any `Term` with a visited set terminates in `≤ \|V\|` steps. |
 
 ### 5. Ordered `References` and `JSON Schema 2020-12` Binding
 
 1. **Precedence**: Lookup `R(w)` returns the first entry in `Σ` where `w ∈ forms(T)`.
-2. **Disambiguation in `References`**: Placing `[Contract]: <external-uri>` above `[Glossary]` binds `Contract` to that `Bounded Context`. Binding `[Schema contract]: <external-uri>` lets a document refer to both contexts without brackets in the body.
-3. **JSON Schema Binding**:
+2. **Disambiguation**: Placing `[Contract]: <uri>` above `[Glossary]` binds `Contract` to that `Bounded Context`; binding `[Schema contract]: <uri>` disambiguates both contexts without brackets in the body.
+3. **Schema**:
 
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$defs": {
-    "Prose": {
-      "type": "string",
-      "minLength": 1,
-      "contentMediaType": "text/markdown"
-    },
-    "UbiquitousLanguage": {
-      "type": "string",
-      "minLength": 1,
-      "contentMediaType": "text/markdown",
-      "contentSchema": { "$ref": "#/$defs/UqlAst" }
-    },
+    "Prose": { "type": "string", "minLength": 1, "contentMediaType": "text/markdown" },
+    "UbiquitousLanguage": { "type": "string", "minLength": 1, "contentMediaType": "text/markdown", "contentSchema": { "$ref": "#/$defs/UqlAst" } },
     "Term": {
       "type": "object",
       "required": ["id", "partOfSpeech", "forms", "definition"],
@@ -194,20 +179,19 @@ The semantics of `uql` are defined once by five invariants over the ordered `Ref
 
 ### 6. The 5-Step `uql` Algorithm
 
-When rewriting loose `Prose` into `uql`, the loose `Prose` is discarded and replaced by the `uql` text. When linting `uql`, the parser builds a `UqlAst` and checks Invariants 1–5 (see [Appendix A](#appendix-a-error-recovery)):
+Rewriting loose `Prose` into `uql` discards the loose `Prose`; linting parses `uql` into `UqlAst` and checks Invariants 1–5 (see [Appendix A](#appendix-a-error-recovery)):
 
-1. **Step 1** moves every inline `URI` and attributed verbatim quote from the body into `## References` as `[Label]: <URI> "Quote"`.
+1. **Step 1** moves every inline `URI` and verbatim quote from the body into `## References` as `[Label]: <URI> "Quote"`.
 2. **Step 2** removes every redundant `Statement` (`UQL005`) and every non-narrowing `Constituent` (`UQL006`).
-3. **Step 3** expresses each clause as a present-tense `Statement` (`≤ 35` words) conforming to §3.2 `ISO EBNF`.
-4. **Step 4** matches every open-class span outside `CodeLiteral`s against `D ∪ Σ` and replaces synonyms, declares new `Term`s, or emits `UQL001`.
-5. **Step 5** checks cardinality `1` across `Term`s, `Pronoun`s, and attachments (`UQL002`–`UQL004`) and checks satisfiability across `Statement`s (`UQL007`).
+3. **Step 3** expresses each clause as a present-tense `Statement` (`≤ 35` words) conforming to §3 `ISO EBNF`.
+4. **Step 4** matches every open-class span outside `CodeLiteral`s against `D ∪ Σ` and replaces synonyms, declares `Term`s, or emits `UQL001`.
+5. **Step 5** checks cardinality `1` (`UQL002`–`UQL004`) and satisfiability across `Statement`s (`UQL007`).
 
-### 7. Conformance Levels and Complexity Budgets
+### 7. Conformance Levels
 
-1. **Level 1 (Lexical Closure)**: Enforces maximal-munch `Term` matching against `Glossary` `forms` and `References` (`UQL001`, `UQL002`).
-2. **Level 2 (Syntactic & Anaphora Unambiguity)**: Parses into `UqlAst` per §3.2 `ISO EBNF` and checks `DRT` pronoun resolution (`UQL003`, `UQL004`).
-3. **Level 3 (Logical Independence & Satisfiability)**: Lowers `UqlAst` `Term`s to `SMT-LIB` predicates and checks Invariants 3–5 (`UQL005`–`UQL007`).
-4. **Budgets**: The normative core (§§1–7) contains `≤ 1,200` words (`≤ 8` KB), and the complete RFC contains `≤ 2,500` words (`≤ 18` KB).
+1. **Level 1 (Lexical)**: Checks maximal-munch `Term` resolution against `D ∪ Σ` (`UQL001`, `UQL002`).
+2. **Level 2 (Syntactic)**: Parses into `UqlAst` per §3 `ISO EBNF` and checks `DRT` anaphora (`UQL003`, `UQL004`).
+3. **Level 3 (Semantic)**: Lowers `UqlAst` to `SMT-LIB` predicates and checks Invariants 3–5 (`UQL005`–`UQL007`).
 
 ---
 
@@ -248,7 +232,7 @@ None.
 
 ## Future possibilities
 
-- Automated Level 1–3 linting in CI pipelines, anchor-link rendering from matched `Term`s in static site generators, on-demand `Reference` quote lookup for AI agents, and IDE Language Server Protocol (LSP) support backed by the `Glossary`.
+- Automated Level 1–3 linting in CI, anchor-link rendering from matched `Term`s, on-demand `Reference` quote lookup for agents, and IDE LSP support backed by the `Glossary`.
 
 ---
 
