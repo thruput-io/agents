@@ -81,24 +81,14 @@ Every Ledger entry balances its Debit and Credit, as established in Summa de Ari
 | `Diagnostic` | `noun` | `Diagnostic`, `Diagnostics` | A structured lint error emitted when a `uql` document violates Invariants 1–5 (`UQL001`–`UQL007`). |
 | `Violation` | `noun` | `Violation`, `Violations` | A counterexample in a target artifact where a `Statement` evaluates to false. |
 
-### 2. Host Bindings and Lexical Rules
-
-Following `GF`, `uql` separates its `Abstract Syntax` (Invariants 1–5 over reference scope `Σ`, `Glossary` `D`, and `Statement`s `S`) from three host bindings:
-1. **Markdown Binding**: A `CommonMark` document whose body is written in `uql` and whose bottom `## References` block declares ordered link references.
-2. **JSON Schema Binding**: A `JSON Schema 2020-12` document typing strings as `UbiquitousLanguage` (`contentMediaType: "text/markdown"`, `contentSchema: UqlAst`) alongside `Glossary` and `Reference` objects.
-3. **SMT-LIB Binding**: `SMT-LIB` assertions (`declare-fun`, `assert (forall ...)`) for mechanical verification of Invariants 3–5.
+### 2. Lexical Rules
 
 Aligned with `SKOS` and `OntoLex-Lemon`, lexical matching follows three rules:
 1. **Normalization**: `Term.id` (`skos:prefLabel`) is unique within a `Glossary` after ASCII case-folding and whitespace normalization.
 2. **Inflection Expansion**: Standard English suffixes on the head word (`-s`, `-es`, `-ies`, `-ed`, `-ing`) and irregular acronyms (`skos:altLabel`) expand into `Term.forms` (`ontolex:otherForm`).
 3. **Maximal Munch**: After the `CommonMark` parser extracts `CodeLiteral`s, the lexer matches `Term.forms` left-to-right using case-insensitive longest match. Undeclared hyphenated compounds split on `-`.
 
-### 3. Syntactic Specification (`ISO EBNF` & Parts of Speech)
-
-| Partition | Enumerated Categories | Rule in `uql` |
-|---|---|---|
-| **Open Word Classes** | `NounTerm`, `VerbTerm` (`SBVR` *Fact Type*), `AdjectiveTerm`, `AdverbTerm` | Every open-class span outside a `CodeLiteral` resolves to a `Term` in `D ∪ Σ` with matching `partOfSpeech`. |
-| **Closed Word Classes** | `Determiner`, `Preposition`, `CoordConj`, `SubConj`, `Pronoun`, `Copula`, `AuxiliaryVerb`, `Negation` | Closed-class tokens connect `Term`s according to the `ISO EBNF` grammar below. |
+### 3. Syntactic Specification (`ISO EBNF`)
 
 ```ebnf
 Document        = { Block } , [ ReferencesBlock ] ;
