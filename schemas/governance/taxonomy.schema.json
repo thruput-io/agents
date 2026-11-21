@@ -2,11 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/governance/taxonomy.schema.json",
   "title": "Taxonomy",
-  "description": "A classification scheme: a hierarchy of levels, each a definition with criteria for what belongs to it",
+  "description": "A classification scheme: a hierarchy of levels, each a definition in the Ubiquitous Language",
   "type": "object",
   "properties": {
     "levels": {
       "$ref": "#/$defs/Levels"
+    },
+    "references": {
+      "$ref": "ubiquitous-language.schema.json#/$defs/References"
     }
   },
   "required": [
@@ -44,7 +47,7 @@
     },
     "ParentLevel": {
       "description": "The id of the level directly above",
-      "$dynamicRef": "id.schema.json#Id"
+      "$ref": "id.schema.json"
     }
   },
   "examples": [

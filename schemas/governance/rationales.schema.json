@@ -13,6 +13,9 @@
       "items": {
         "$ref": "#/$defs/Rationale"
       }
+    },
+    "references": {
+      "$ref": "ubiquitous-language.schema.json#/$defs/References"
     }
   },
   "$defs": {
@@ -28,21 +31,23 @@
         },
         "solutions": {
           "$ref": "#/$defs/Solutions"
+        },
+        "references": {
+          "$ref": "ubiquitous-language.schema.json#/$defs/References"
         }
       }
     },
     "Solutions": {
-      "description": "Ways to apply the rationale. Each says how, never restates a principle, and is phrased positively",
+      "description": "Ways to apply the rationale. Each states how in Ubiquitous Language (uql), never restates a principle, and is phrased positively",
       "type": "array",
       "items": {
         "$ref": "#/$defs/Solution"
       }
     },
     "Solution": {
-      "description": "One way to apply the rationale, opened by SHOULD or MAY; MUST belongs to rules",
+      "description": "One way to apply the rationale in Ubiquitous Language (uql)",
       "type": "object",
       "required": [
-        "marker",
         "body"
       ],
       "properties": {
@@ -53,7 +58,7 @@
           ]
         },
         "body": {
-          "$ref": "definitions.schema.json#/$defs/Prose"
+          "$ref": "ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
         }
       }
     },
@@ -70,8 +75,7 @@
           "body": "An example rationale weighs two goods and cites its source.",
           "solutions": [
             {
-              "marker": "SHOULD",
-              "body": "Apply the example rationale where it serves."
+              "body": "Each boundary applies the example rationale."
             }
           ]
         }

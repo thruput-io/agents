@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/governance/rules.schema.json",
   "title": "Rules",
-  "description": "The rules: entries whose parent is a principle, each opened by a marker and placed in a group",
+  "description": "The rules: entries whose parent is a principle, expressed in Ubiquitous Language (uql) and placed in a group",
   "type": "object",
   "required": [
     "rules"
@@ -14,6 +14,9 @@
       "items": {
         "$ref": "#/$defs/Rule"
       }
+    },
+    "references": {
+      "$ref": "ubiquitous-language.schema.json#/$defs/References"
     }
   },
   "$defs": {
@@ -24,7 +27,6 @@
         "id",
         "body",
         "parent",
-        "marker",
         "group"
       ],
       "properties": {
@@ -32,7 +34,7 @@
           "$ref": "#/$defs/RuleId"
         },
         "body": {
-          "$ref": "#/$defs/DefinedProse"
+          "$ref": "ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
         },
         "parent": {
           "$ref": "principles.schema.json#/$defs/PrincipleId"
@@ -48,6 +50,9 @@
         },
         "smells": {
           "$ref": "#/$defs/Smells"
+        },
+        "references": {
+          "$ref": "ubiquitous-language.schema.json#/$defs/References"
         }
       }
     },
@@ -56,18 +61,8 @@
       "type": "array",
       "minItems": 1,
       "items": {
-        "$ref": "#/$defs/DefinedProse"
+        "$ref": "ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
       }
-    },
-    "DefinedProse": {
-      "description": "Markdown text citing at least one glossary definition in [[Id]] brackets",
-      "$ref": "definitions.schema.json#/$defs/Prose",
-      "$dynamicRef": "#CitedDefinition",
-      "pattern": "^[^\\[]*(?:\\[[^\\[][^\\[]*)*\\[\\[[^\\[\\]]*[^\\[\\]\\s][^\\[\\]]*\\]\\][^\\[]*(?:(?:\\[\\[[^\\[\\]]*[^\\[\\]\\s][^\\[\\]]*\\]\\]|\\[[^\\[])[^\\[]*)*\\[?$"
-    },
-    "CitedDefinition": {
-      "description": "Prose that cites at least one declared definition id. Accepts any prose on its own; the build binds the dynamic anchor to the pattern of every declared definition id",
-      "$dynamicAnchor": "CitedDefinition"
     },
     "RuleId": {
       "$ref": "id.schema.json"
@@ -83,10 +78,9 @@
       "rules": [
         {
           "id": "Example rule",
-          "marker": "MUST",
           "group": "Example group",
           "parent": "Example principle",
-          "body": "Name the [[Bad Code]] the example rule forbids."
+          "body": "Production Code contains no Dead Code."
         }
       ]
     }

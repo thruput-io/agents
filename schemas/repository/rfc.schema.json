@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/repository/rfc.schema.json",
+  "title": "RFC",
+  "description": "One Request for Comments document under docs/rfcs/<number>-<feature-name>.md specifying a language, protocol, or cross-cutting specification",
+  "type": "object",
+  "required": [
+    "number",
+    "featureName",
+    "title",
+    "status",
+    "startDate",
+    "summary",
+    "motivation",
+    "guideLevelExplanation",
+    "referenceLevelExplanation",
+    "drawbacks",
+    "rationaleAndAlternatives",
+    "priorArt",
+    "unresolvedQuestions",
+    "futurePossibilities"
+  ],
+  "properties": {
+    "number": {
+      "$ref": "#/$defs/Number"
+    },
+    "featureName": {
+      "$ref": "#/$defs/FeatureName"
+    },
+    "title": {
+      "$ref": "#/$defs/Title"
+    },
+    "status": {
+      "$ref": "#/$defs/Status"
+    },
+    "startDate": {
+      "$ref": "#/$defs/StartDate"
+    },
+    "summary": {
+      "$ref": "../governance/ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
+    },
+    "motivation": {
+      "$ref": "../governance/ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
+    },
+    "guideLevelExplanation": {
+      "$ref": "../governance/ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
+    },
+    "referenceLevelExplanation": {
+      "$ref": "../governance/ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
+    },
+    "drawbacks": {
+      "$ref": "../governance/ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
+    },
+    "rationaleAndAlternatives": {
+      "$ref": "../governance/ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
+    },
+    "priorArt": {
+      "$ref": "../governance/ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
+    },
+    "unresolvedQuestions": {
+      "$ref": "../governance/ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
+    },
+    "futurePossibilities": {
+      "$ref": "../governance/ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
+    },
+    "references": {
+      "$ref": "../governance/ubiquitous-language.schema.json#/$defs/References"
+    }
+  },
+  "$defs": {
+    "Number": {
+      "description": "The 4-digit sequence number ordering the RFC under docs/rfcs/",
+      "type": "integer",
+      "minimum": 1
+    },
+    "FeatureName": {
+      "description": "The kebab-case identifier of the specified feature or language",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "Title": {
+      "description": "The title of the RFC",
+      "type": "string",
+      "minLength": 1
+    },
+    "Status": {
+      "description": "Lifecycle status of the RFC",
+      "enum": [
+        "Draft",
+        "Accepted",
+        "Superseded"
+      ]
+    },
+    "StartDate": {
+      "description": "The date the RFC was started",
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "examples": [
+    {
+      "number": 1,
+      "featureName": "ubiquitous-language",
+      "title": "Ubiquitous Language (uql)",
+      "status": "Draft",
+      "startDate": "2026-11-21",
+      "summary": "Ubiquitous Language (uql) is a controlled domain language.",
+      "motivation": "Communication fails whenever natural language passes back and forth without shared meaning.",
+      "guideLevelExplanation": "Every Withdrawal references an Account.",
+      "referenceLevelExplanation": "Every open-class span resolves to a Term in the Glossary.",
+      "drawbacks": "New domain concepts require a Term declaration.",
+      "rationaleAndAlternatives": "Bracket markup around every Term reduces readability.",
+      "priorArt": "Builds on DDD, Attempto Controlled English, OMG SBVR, and W3C SKOS.",
+      "unresolvedQuestions": "None.",
+      "futurePossibilities": "Automated linting and IDE LSP support."
+    }
+  ]
+}

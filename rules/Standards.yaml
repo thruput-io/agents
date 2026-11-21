@@ -13,24 +13,24 @@ standards:
   context: Bash
   parent: No suppressed exit status
   body: |
-    `|| true` and `|| :` after a command.
+    A command never appends `|| true` or `|| :` to suppress its exit status.
 - id: No 2>/dev/null
   context: Bash
   parent: No discarded diagnostics
   body: |
-    `2>/dev/null` on a command whose failure matters.
+    A command never redirects diagnostics to `2>/dev/null` when its failure matters.
 - id: set -euo pipefail
   context: Bash
   parent: Scripts abort on error
   body: |
-    `set -euo pipefail` as the first statement after the [[Shebang]] of every script.
+    Every script declares `set -euo pipefail` as the first statement after its shebang.
 - id: No any in domain signatures
   context: TypeScript
   parent: Strong typing
   body: |
-    `any`, `unknown`, `object`, or `Record<string, unknown>` in the signature of a [[Domain object]] or its operations.
+    The signature of a domain object or operation never contains `any`, `unknown`, `object`, or `Record<string, unknown>`.
 - id: Layer dependencies as an ArchUnit test
   context: ArchUnit
   parent: Respect layering
   body: |
-    A layered-architecture test that declares each layer and the layers it may depend on, failing the build on any other dependency.
+    An ArchUnit test declares permitted layer dependencies and fails the build on any undeclared dependency.
