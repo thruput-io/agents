@@ -89,39 +89,39 @@ Every Ledger entry balances its Debit and Credit, as established in Summa de Ari
 ### 3. Syntactic Specification (`ISO EBNF`)
 
 ```ebnf
-Document        = { Heading | Paragraph | List }, [ ReferencesBlock ];
-Heading         = "#", { "#" }, NounPhrase;
-List            = "-", Statement, { "-", Statement };
-Paragraph       = Statement, { Statement };
-Statement       = [ Adverbial, "," ], Clause, { CoordConj, Clause }, ".";
-Clause          = Subject, Predicate, [ ObjectOrComp ], { Adverbial }
-                | ObjectOrComp, ",", Subject, Copula;
-Subject         = NounPhrase;
-ObjectOrComp    = NounPhrase | AdjectiveTerm | CodeLiteral;
-Predicate       = Copula, [ Negation ], [ VerbTerm ]
-                | [ AuxiliaryVerb, Negation ], VerbTerm, [ AdverbTerm ];
-Adverbial       = ( Preposition, NounPhrase ) | ( SubConj, Clause );
-NounPhrase      = [ Determiner ], { AdjectiveTerm }, ( NounTerm | Pronoun | CodeLiteral ),
-                  { Preposition, NounPhrase };
+Document      = { Heading | Paragraph | List }, [ ReferencesBlock ];
+Heading       = "#", { "#" }, NounPhrase;
+List          = "-", Statement, { "-", Statement };
+Paragraph     = Statement, { Statement };
+Statement     = [ Adverbial, "," ], Clause, { CoordConj, Clause }, ".";
+Clause        = Subject, Predicate, [ ObjectOrComp ], { Adverbial }
+              | ObjectOrComp, ",", Subject, Copula;
+Subject       = NounPhrase;
+ObjectOrComp  = NounPhrase | AdjectiveTerm | CodeLiteral;
+Predicate     = Copula, [ Negation ], [ VerbTerm ]
+              | [ AuxiliaryVerb, Negation ], VerbTerm, [ AdverbTerm ];
+Adverbial     = ( Preposition, NounPhrase ) | ( SubConj, Clause );
+NounPhrase    = [ Determiner ], { AdjectiveTerm }, ( NounTerm | Pronoun | CodeLiteral ),
+                { Preposition, NounPhrase };
 ReferencesBlock = "## References", { "[", ReferenceId, "]:", URI, [ '"', Prose, '"' ] };
 
-Determiner      = "a"|"an"|"the"|"this"|"that"|"these"|"those"|"each"|"every"|"any"|"no"
-                | "all"|"both"|"either"|"neither"|"one"|"only"|"own"|"same"|"such"|"other"|"another";
-Preposition     = "in"|"on"|"at"|"to"|"from"|"by"|"with"|"without"|"of"|"for"|"into"|"through"
-                | "before"|"after"|"between"|"under"|"over"|"across"|"within"|"outside"|"above"
-                | "below"|"against"|"per"|"via"|"as";
-CoordConj       = "and"|"or"|"but"|"nor";
-SubConj         = "when"|"whenever"|"if"|"unless"|"where"|"while"|"because"|"so"|"than"|"whether"|"as";
-Pronoun         = "it"|"its"|"itself"|"they"|"them"|"their"|"theirs"|"themselves"|"who"|"whom"|"whose"|"which"|"what";
-Copula          = "be"|"is"|"are"|"been"|"being";
-AuxiliaryVerb   = "have"|"has"|"do"|"does";
-Negation        = "not";
+Determiner    = "a"|"an"|"the"|"this"|"that"|"these"|"those"|"each"|"every"|"any"|"no"
+              | "all"|"both"|"either"|"neither"|"one"|"only"|"own"|"same"|"such"|"other"|"another";
+Preposition   = "in"|"on"|"at"|"to"|"from"|"by"|"with"|"without"|"of"|"for"|"into"|"through"
+              | "before"|"after"|"between"|"under"|"over"|"across"|"within"|"outside"|"above"
+              | "below"|"against"|"per"|"via"|"as";
+CoordConj     = "and"|"or"|"but"|"nor";
+SubConj       = "when"|"whenever"|"if"|"unless"|"where"|"while"|"because"|"so"|"than"|"whether"|"as";
+Pronoun       = "it"|"its"|"itself"|"they"|"them"|"their"|"theirs"|"themselves"|"who"|"whom"|"whose"|"which"|"what";
+Copula        = "be"|"is"|"are"|"been"|"being";
+AuxiliaryVerb = "have"|"has"|"do"|"does";
+Negation      = "not";
 
-NounTerm        = ? surface form in D ∪ Σ with partOfSpeech = "noun" ?;
-VerbTerm        = ? surface form in D ∪ Σ with partOfSpeech = "verb" ?;
-AdjectiveTerm   = ? surface form in D ∪ Σ with partOfSpeech = "adjective" ?;
-AdverbTerm      = ? surface form in D ∪ Σ with partOfSpeech = "adverb" ?;
-CodeLiteral     = ? CommonMark inlineCode or fenced code node ?;
+NounTerm      = ? surface form in D ∪ Σ with partOfSpeech = "noun" ?;
+VerbTerm      = ? surface form in D ∪ Σ with partOfSpeech = "verb" ?;
+AdjectiveTerm = ? surface form in D ∪ Σ with partOfSpeech = "adjective" ?;
+AdverbTerm    = ? surface form in D ∪ Σ with partOfSpeech = "adverb" ?;
+CodeLiteral   = ? CommonMark inlineCode or fenced code node ?;
 ```
 
 - **Right Association (`ACE`)**: A `Preposition` phrase in a `NounPhrase` attaches to the nearest preceding `Term`; a clause-wide `Adverbial` precedes `,` or attaches to `Predicate`.
@@ -149,15 +149,15 @@ Five invariants over ordered `Reference` scope `Σ = ⟨V₁, …, Vₖ⟩`, `Gl
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$defs": {
-    "Prose": { "type": "string", "minLength": 1, "contentMediaType": "text/markdown" },
-    "UbiquitousLanguage": { "type": "string", "minLength": 1, "contentMediaType": "text/markdown", "contentSchema": { "$ref": "#/$defs/UqlAst" } },
+    "Prose": { "type": "string", "minLength": 1 },
+    "UbiquitousLanguage": { "type": "string", "minLength": 1 },
     "Term": {
       "type": "object",
       "required": ["id", "partOfSpeech", "forms", "definition"],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "partOfSpeech": { "enum": ["noun", "verb", "adjective", "adverb"] },
-        "forms": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "forms": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
         "definition": { "$ref": "#/$defs/UbiquitousLanguage" }
       }
     },
