@@ -35,18 +35,7 @@ Following Alloy, TLA+, and Attempto Controlled English (ACE), `uql` defines the 
 
 A target artifact complies if and only if it is a model of the statements and definitions ($\mathcal{M} \models \mathcal{S} \cup \mathcal{D}$); any counterexample ($\mathcal{M} \not\models s_i$) is a `Violation`.
 
-### 2. Variable-Depth Specialization Trees and Stopping Boundaries (`Indicators` / `Smells` in `uql`)
-
-Different truths require different numbers of specialization steps ($S_1 \supset S_2 \supset \dots \supset S_k$) before a smaller agent can evaluate them on code without guessing. Rather than forcing every branch into a fixed number of named tiers or writing noun-phrase fragments, every child node in `uql` is a **`Statement` that narrows its parent's `Subject` $S$ to a more concrete `Term` $S' \subset S$ (or a measurable literal)**, continuing down as many sublevels as needed until reaching two stopping boundaries:
-
-1. **The Agent-Testable Boundary**: Specialization continues until a smaller agent can evaluate the leaf `Statement` (`true` or `false`) on a code diff without whole-system inference:
-   - *Level $k$*: *"Every `Transaction` completes within its `Settlement window`."*
-   - *Level $k+1$* ($S' \subset S$): *"A synchronous `Card payment` completes within `2000` milliseconds."*
-2. **The Static-Analysis Hard Stop (Semgrep Boundary)**: When a `Statement` specializes `Subject` $S$ to a technology-specific syntax tree construct that static analysis (`Semgrep`, compiler, linter) evaluates deterministically in milliseconds, prose specialization stops and the leaf is implemented as a static-analysis rule.
-
-Any child statement that merely negates its parent ($\neg s$) without narrowing $S' \subset S$ adds no truth condition and is omitted under Single Source of Truth.
-
-### 3. Before and After in `uql-md`
+### 2. Before and After in `uql-md`
 
 Before (`Prose` with babble, inline URLs, verbatim quotes, and modal imperatives):
 
@@ -155,7 +144,7 @@ Execute these five steps in order (see [Appendix A](#appendix-a-error-recovery))
 
 1. **Extract Citations and Quotes**: Move every inline URL (`[label](https://...)`) and attributed verbatim quote out of the statement body into `## References` as `[Label]: <URI> "Author: Verbatim quote"`.
 2. **Strip Babble (Invariant 3)**: Delete any clause or sentence already entailed by $\mathcal{D}$ or an earlier `Statement` (`UQL005`), and any constituent $c$ where $\llbracket s \setminus \{c\} \rrbracket = \llbracket s \rrbracket$ (`UQL006`).
-3. **Form Declarative Present-Tense Clauses (Invariant 2)**: Drop external `marker:` fields (`MUST`, `MUST NOT`, `SHOULD`, `MAY`) and express each clause as a present-tense truth ($\le 35$ words) conforming to §3.2 EBNF. Rewrite concrete indicators (`Smells`) as `Statement`s narrowing $S' \subset S$, deleting any that merely negate their parent.
+3. **Form Declarative Present-Tense Clauses (Invariant 2)**: Drop external `marker:` fields (`MUST`, `MUST NOT`, `SHOULD`, `MAY`) and express each clause as a present-tense truth ($\le 35$ words) conforming to §3.2 EBNF.
 4. **Resolve Open-Class Words to `Term`s (Invariant 1)**: Strip `[[...]]` brackets. Match every Open-Class span (`Noun`, `MainVerb`, `Adjective`, `Adverb`) outside `CodeLiteral`s against $\mathcal{D} \cup \Sigma$; if $\|R_\Sigma(w)\| = 0$, replace $w$ with an existing synonym in $\mathcal{D}$, declare $w$ as a new `Term`, or fail with `UQL001 UndefinedTerm(w)`.
 5. **Verify Unambiguity and Satisfiability (Invariants 1 & 4)**: Fail with `UQL002` if $\|R_\Sigma(w)\| > 1$, `UQL003` if $\|A(p)\| > 1$, `UQL004` if $\|\mathcal{T}(s)\| > 1$, or `UQL007` if two `Statement`s have overlapping `Subject` + `Adverbial` domains and mutually exclusive `Predicate`s.
 
