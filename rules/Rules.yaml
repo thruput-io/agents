@@ -470,6 +470,12 @@ rules:
   parent: The Toolchain Is the Guardrail
   body: |
     Use the strictest possible [[Preset]]s on linting and style.
+- id: Obligation to report
+  marker: MUST
+  group: Toolchain & Environment
+  parent: The Toolchain Is the Guardrail
+  body: |
+    Report any spotted weakening of [[Guardrails Against Doing the Wrong Thing]] **on detection**, not later.
 - id: No optionality
   marker: MUST NOT
   group: Contracts
