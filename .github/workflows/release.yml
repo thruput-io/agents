@@ -28,9 +28,9 @@ jobs:
         with:
           node-version: 24
       - run: |
-          npm --prefix skills/pr-review ci --no-audit --no-fund
-          npm --prefix skills/pr-review run codegen
-          npm --prefix skills/pr-review run build
+          npm --prefix tools/pr-review ci --no-audit --no-fund
+          npm --prefix tools/pr-review run codegen
+          npm --prefix tools/pr-review run build
           npx --yes semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

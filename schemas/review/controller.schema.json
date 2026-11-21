@@ -14,19 +14,16 @@
       "$ref": "#/$defs/ReviewStatus"
     },
     {
-      "$ref": "#/$defs/DispatchResult"
-    },
-    {
       "$ref": "#/$defs/PersistedPullRequest"
     },
     {
       "$ref": "#/$defs/PersistedRulesets"
+    },
+    {
+      "$ref": "#/$defs/PersistedSubmission"
     }
   ],
   "$defs": {
-    "HostErrorKind": {
-      "const": "host-error"
-    },
     "HttpStatusCode": {
       "description": "The HTTP status code returned by the host",
       "type": "integer",
@@ -44,7 +41,7 @@
       "minLength": 1
     },
     "HostError": {
-      "description": "A non-successful response from the host of the [[Change]] during prepare or dispatch, presented to the main agent",
+      "description": "A non-successful response from the host of the [[Change]] during prepare or report submission",
       "type": "object",
       "required": [
         "kind",
@@ -55,7 +52,7 @@
       ],
       "properties": {
         "kind": {
-          "$ref": "#/$defs/HostErrorKind"
+          "const": "host-error"
         },
         "host": {
           "$ref": "change.schema.json#/$defs/Host"
@@ -210,7 +207,9 @@
       "type": "object",
       "required": [
         "command",
-        "workdir"
+        "workdir",
+        "ackTimeoutMs",
+        "pollIntervalMs"
       ],
       "properties": {
         "command": {
@@ -218,26 +217,14 @@
         },
         "workdir": {
           "$ref": "agent-instructions.schema.json#/$defs/Checkout"
-        }
-      },
-      "additionalProperties": false
-    },
-    "DispatchCommand": {
-      "description": "CLI arguments to review-tool.mjs dispatch <workdir> [<token>]",
-      "type": "object",
-      "required": [
-        "command",
-        "workdir"
-      ],
-      "properties": {
-        "command": {
-          "const": "dispatch"
         },
-        "workdir": {
-          "$ref": "agent-instructions.schema.json#/$defs/Checkout"
+        "ackTimeoutMs": {
+          "description": "Maximum milliseconds to wait for pending probes to acknowledge before returning unacknowledged probes (45 seconds)",
+          "const": 45000
         },
-        "token": {
-          "$ref": "#/$defs/RawToken"
+        "pollIntervalMs": {
+          "description": "Polling interval in milliseconds while status tracks probe acknowledgments and reporting deadlines",
+          "const": 250
         }
       },
       "additionalProperties": false
@@ -250,38 +237,6 @@
         },
         {
           "$ref": "#/$defs/StatusCommand"
-        },
-        {
-          "$ref": "#/$defs/DispatchCommand"
-        }
-      ]
-    },
-    "ProbePrompt": {
-      "description": "Exact single-sentence prompt to pass when spawning a probe subagent, with the absolute review-tool-probe.mjs path, session token, and probe name already resolved",
-      "type": "string",
-      "pattern": "^Run /.+/review-tool-probe\\.mjs inspect pr-review-session:[A-Za-z0-9_-]+ [0-9]{2}-[a-z0-9-]+ and follow its instructions\\.$"
-    },
-    "ProbePromptsMap": {
-      "description": "Map of pending probe name to the exact single-sentence prompt to pass when spawning its subagent",
-      "type": "object",
-      "propertyNames": {
-        "$ref": "#/$defs/ProbeName"
-      },
-      "additionalProperties": {
-        "$ref": "#/$defs/ProbePrompt"
-      }
-    },
-    "ProbePermissions": {
-      "description": "Allowed tools for a probe subagent, determined by its probe kind",
-      "oneOf": [
-        {
-          "$ref": "agent-instructions.schema.json#/$defs/RulesPermissions"
-        },
-        {
-          "$ref": "agent-instructions.schema.json#/$defs/DeadCodePermissions"
-        },
-        {
-          "$ref": "agent-instructions.schema.json#/$defs/ReusePermissions"
         }
       ]
     },
@@ -292,7 +247,18 @@
         "$ref": "#/$defs/ProbeName"
       },
       "additionalProperties": {
-        "$ref": "#/$defs/ProbePermissions"
+        "description": "Allowed tools for a probe subagent, determined by its probe kind",
+        "oneOf": [
+          {
+            "$ref": "agent-instructions.schema.json#/$defs/Probe/oneOf/3/properties/permissions"
+          },
+          {
+            "$ref": "agent-instructions.schema.json#/$defs/Probe/oneOf/0/properties/permissions"
+          },
+          {
+            "$ref": "agent-instructions.schema.json#/$defs/Probe/oneOf/2/properties/permissions"
+          }
+        ]
       }
     },
     "PrepareReady": {
@@ -302,7 +268,7 @@
         "success",
         "session",
         "pending",
-        "prompts",
+        "prompt",
         "permissions"
       ],
       "properties": {
@@ -318,8 +284,9 @@
             "$ref": "#/$defs/ProbeName"
           }
         },
-        "prompts": {
-          "$ref": "#/$defs/ProbePromptsMap"
+        "prompt": {
+          "description": "Exact single-sentence prompt template for spawning a probe subagent, with <skill>, <session>, and <probe> filled in from PrepareReady",
+          "const": "Run <skill>/dist/bin/review-tool-probe.mjs instructions <session> <probe> and follow its instructions."
         },
         "permissions": {
           "$ref": "#/$defs/ProbePermissionsMap"
@@ -475,14 +442,15 @@
       ]
     },
     "ReviewStatus": {
-      "description": "CLI return object of review-tool status <workdir>: current probe acknowledgment and completion state",
+      "description": "CLI return object of review-tool status <workdir>: current probe acknowledgment, completion state, and submitted review outcome and location",
       "type": "object",
       "required": [
         "pending",
         "acknowledged",
         "unacknowledged",
         "completed",
-        "submittedOutcome"
+        "submittedOutcome",
+        "location"
       ],
       "properties": {
         "pending": {
@@ -518,72 +486,22 @@
               "type": "null"
             }
           ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "DispatchPending": {
-      "description": "Returned by review-tool dispatch when one or more probes have not yet reported",
-      "type": "object",
-      "required": [
-        "kind",
-        "remaining"
-      ],
-      "properties": {
-        "kind": {
-          "const": "pending"
-        },
-        "remaining": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/$defs/ProbeName"
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    "DispatchSubmitted": {
-      "description": "Returned by review-tool dispatch when all probes reported and the review was posted to the host",
-      "type": "object",
-      "required": [
-        "kind",
-        "outcome",
-        "ledger",
-        "location"
-      ],
-      "properties": {
-        "kind": {
-          "const": "submitted"
-        },
-        "outcome": {
-          "$ref": "#/$defs/Outcome"
-        },
-        "ledger": {
-          "$ref": "ledger.schema.json"
         },
         "location": {
-          "$ref": "#/$defs/LocationUrl"
+          "oneOf": [
+            {
+              "$ref": "#/$defs/LocationUrl"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
     },
-    "DispatchResult": {
-      "description": "Return object of review-tool dispatch",
-      "oneOf": [
-        {
-          "$ref": "#/$defs/DispatchPending"
-        },
-        {
-          "$ref": "#/$defs/DispatchSubmitted"
-        },
-        {
-          "$ref": "#/$defs/HostError"
-        }
-      ]
-    },
     "PersistedPullRequest": {
-      "description": "The pull request state persisted to pull-request.json in the ledger directory by prepare and rehydrated by status, dispatch, and sub-agent-controller",
+      "description": "The pull request state persisted to pull-request.json in the ledger directory by prepare and rehydrated by status and sub-agent-controller",
       "type": "object",
       "required": [
         "change",
@@ -606,6 +524,26 @@
         },
         "threads": {
           "$ref": "change.schema.json#/$defs/Threads"
+        },
+        "token": {
+          "$ref": "#/$defs/RawToken"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PersistedSubmission": {
+      "description": "The submitted review outcome and host location persisted to submission.json in the ledger directory when the final probe reports",
+      "type": "object",
+      "required": [
+        "outcome",
+        "location"
+      ],
+      "properties": {
+        "outcome": {
+          "$ref": "#/$defs/Outcome"
+        },
+        "location": {
+          "$ref": "#/$defs/LocationUrl"
         }
       },
       "additionalProperties": false
@@ -668,12 +606,10 @@
       "pending": [
         "01-purpose"
       ],
-      "prompts": {
-        "01-purpose": "Run /opt/pr-review/dist/bin/review-tool-probe.mjs inspect pr-review-session:L3RtcC9wci1yZXZpZXctd29ya2Rpcg 01-purpose and follow its instructions."
-      },
+      "prompt": "Run <skill>/dist/bin/review-tool-probe.mjs instructions <session> <probe> and follow its instructions.",
       "permissions": {
         "01-purpose": [
-          "Bash(/opt/pr-review/dist/bin/review-tool-probe.mjs*)"
+          "Bash(review-tool-probe.mjs*)"
         ]
       }
     }
