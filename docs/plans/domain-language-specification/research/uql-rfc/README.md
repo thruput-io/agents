@@ -3,7 +3,6 @@
 - **Feature Name**: `ubiquitous-language` (`uql`)
 - **Status**: Draft
 - **Start Date**: 2026-11-21
-- **Normative References**: CommonMark 0.31.2, JSON Schema Draft 2020-12, ISO/IEC 14977 (EBNF), SMT-LIB 2.6
 
 ---
 
@@ -255,17 +254,17 @@ None.
 
 ## Appendix A: Error Recovery
 
-To continue past the first error instead of exiting immediately, each failure in Steps 2–5 inserts a placeholder node in `UqlAst` and appends to `Diagnostics`:
+To continue past the first error, each failure in Steps 2–5 inserts a placeholder node in `UqlAst` and appends a `Diagnostic`:
 
-| `Diagnostic` Code | Placeholder Node in `UqlAst` | `Diagnostic` Payload |
-|---|---|---|
-| `UQL001 UndefinedTerm` | `?Term(w)` | Unresolved span `w`, location, and closest candidate `Term`s in `D` |
-| `UQL002 AmbiguousTerm` | `?AmbiguousTerm(w, candidates)` | Span `w` and competing `Term` URIs at the same precedence level |
-| `UQL003 AmbiguousPronoun` | `?AmbiguousPronoun(p, antecedents)` | `Pronoun` `p` and matching antecedent `Term`s in the `Statement` |
-| `UQL004 AmbiguousAttachment` | Right-associated tree + alternative trees | Modifier span and competing head `Constituent`s |
-| `UQL005 RedundantStatement` | `Statement` `s` marked redundant | `Statement` `s` and the subset of `S ∪ D` that entails `s` |
-| `UQL006 NonMinimalConstituent` | `Constituent` `c` marked non-narrowing | `Constituent` `c` whose removal leaves `truth(s)` unchanged |
-| `UQL007 Contradiction` | Both `Statement`s marked | Contradicting `Statement`s `(s₁, s₂)` and their overlapping domain |
+| `Diagnostic` Code | Placeholder Node in `UqlAst` |
+|---|---|
+| `UQL001 UndefinedTerm` | `?Term(w)` |
+| `UQL002 AmbiguousTerm` | `?AmbiguousTerm(w, candidates)` |
+| `UQL003 AmbiguousPronoun` | `?AmbiguousPronoun(p, antecedents)` |
+| `UQL004 AmbiguousAttachment` | Right-associated tree + alternative trees |
+| `UQL005 RedundantStatement` | `Statement` `s` marked redundant |
+| `UQL006 NonMinimalConstituent` | `Constituent` `c` marked non-narrowing |
+| `UQL007 Contradiction` | Both `Statement`s `(s₁, s₂)` marked |
 
 ---
 
