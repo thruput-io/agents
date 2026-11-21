@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/governance/entry.schema.json",
   "title": "Entry",
-  "description": "What every entry in the taxonomy carries: an id and a body, and below the root the id of its parent one level up. Each level schema extends an entry and narrows its id and its parent to its own level",
+  "description": "What every entry in the taxonomy carries: an id and a body in Ubiquitous Language (uql), optional References, and below the root the id of its parent one level up. Each level schema extends an entry and narrows its id and its parent to its own level",
   "oneOf": [
     {
       "$ref": "#/$defs/RootEntry"
@@ -24,7 +24,10 @@
           "$ref": "id.schema.json"
         },
         "body": {
-          "$ref": "definitions.schema.json#/$defs/Prose"
+          "$ref": "ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
+        },
+        "references": {
+          "$ref": "ubiquitous-language.schema.json#/$defs/References"
         },
         "parent": false
       }
@@ -42,10 +45,13 @@
           "$ref": "id.schema.json"
         },
         "body": {
-          "$ref": "definitions.schema.json#/$defs/Prose"
+          "$ref": "ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
+        },
+        "references": {
+          "$ref": "ubiquitous-language.schema.json#/$defs/References"
         },
         "parent": {
-          "$dynamicRef": "id.schema.json#Id"
+          "$ref": "id.schema.json"
         }
       }
     }

@@ -2,264 +2,343 @@ rationales:
 - id: Robustness Principle
   parent: Easy to Change
   body: |
-    Be conservative in what you send and liberal in what you accept ([RFC 1122 § 1.2.2](https://datatracker.ietf.org/doc/html/rfc1122#page-12), Postel's law). A producer emits exactly the shape it defines; a consumer takes what it needs from what it receives and is not disturbed by what it does not know.
-
-    This includes Martin Fowler's [Tolerant Reader](https://martinfowler.com/bliki/TolerantReader.html): with one producer and many consumers, the producer is the single source of the shape and moves first, its consumers catch up at their own pace, and nothing breaks in between. Gating the producer on the slowest consumer is the unmaintainable order.
+    A producer emits the shape the producer defines. A consumer consumes required data and ignores unrecognized fields. The producer advances contract changes without gating deployments on consumer migrations.
+  references:
+  - id: RFC 1122 § 1.2.2
+    uri: https://datatracker.ietf.org/doc/html/rfc1122#page-12
+    quote: "Be conservative in what you send and liberal in what you accept"
+  - id: Tolerant Reader
+    uri: https://martinfowler.com/bliki/TolerantReader.html
+  - id: Parallel Change
+    uri: https://martinfowler.com/bliki/ParallelChange.html
+  - id: Consumer-Driven Contracts
+    uri: https://martinfowler.com/articles/consumerDrivenContracts.html
   solutions:
-  - marker: SHOULD
-    body: |
-      Ship the expanded contract, migrate its consumers, then remove what is left over, so every step deploys on its own (Danilo Sato, [Parallel Change](https://martinfowler.com/bliki/ParallelChange.html)).
-  - marker: MAY
-    body: |
-      Let consumers publish the parts of the contract they rely on, so the producer sees what a change would break before it ships (Ian Robinson, [Consumer-Driven Contracts](https://martinfowler.com/articles/consumerDrivenContracts.html)).
+  - body: |
+      A release expands the contract, migrates consumers, and removes deprecated fields in independent deployments.
+  - body: |
+      Consumers publish contract expectations to alert the producer before breaking changes deploy.
 - id: Code is a liability, not an asset
   parent: Simplicity
   body: |
-    Simplicity is the fit between a job and the tools and strategies chosen to do it: a solution is simple when it carries nothing the job does not call for, and complex in proportion to what it carries beyond that. Every line carries the ongoing cost of being read, supported, and updated as the ecosystem around it evolves, and is worth that cost only where it meets a user need ([Software Engineering at Google, Why Deprecate?](https://abseil.io/resources/swe-book/html/ch15.html#why_deprecatequestion_mark)). Edsger Dijkstra: if we count lines of code, "we should not regard them as 'lines produced' but as 'lines spent'" ([EWD1036](https://www.cs.utexas.edu/~EWD/transcriptions/EWD10xx/EWD1036.html)), and Jeff Atwood: "Every new line of code you willingly bring into the world is code that has to be debugged, code that has to be read and understood, code that has to be supported" ([The Best Code is No Code At All](https://blog.codinghorror.com/the-best-code-is-no-code-at-all/)). Ron Jeffries: "the best way to have fewer bugs is to implement less code."
+    Simplicity is the fit between a requirement and the chosen implementation. Every line of code incurs ongoing maintenance cost and delivers value only by satisfying a user need.
+  references:
+  - id: Software Engineering at Google, Why Deprecate?
+    uri: https://abseil.io/resources/swe-book/html/ch15.html#why_deprecatequestion_mark
+  - id: EWD1036
+    uri: https://www.cs.utexas.edu/~EWD/transcriptions/EWD10xx/EWD1036.html
+    quote: "we should not regard them as 'lines produced' but as 'lines spent'"
+  - id: The Best Code is No Code At All
+    uri: https://blog.codinghorror.com/the-best-code-is-no-code-at-all/
+    quote: "Every new line of code you willingly bring into the world is code that has to be debugged, code that has to be read and understood, code that has to be supported"
   solutions:
-  - marker: SHOULD
-    body: |
-      Record, for every level of the [[Development Stack]] above the one chosen, the search performed and what it found.
-  - marker: SHOULD
-    body: |
-      Choose the technology the team already operates before adopting a new one.
+  - body: |
+      The architectural record documents the evaluation of development stack layers above the selected technology.
+  - body: |
+      The team selects existing operational technology before adopting a new tool.
 - id: Validated user need over speculative scope
   parent: Great Products Require Users
   body: |
-    Code outside the stated [[Purpose]] is not free. Martin Fowler's [Yagni](https://martinfowler.com/bliki/Yagni.html) names four costs of speculative scope: building it, delaying real features, carrying its complexity, and repairing it when the guess proves wrong. Google's [Small CLs](https://google.github.io/eng-practices/review/developer/small-cls.html) keeps each [[Change]] to one self-contained purpose so every part is reviewed and verified against what [[Users]] actually need, and Saltzer and Kaashoek's [Principle of Least Astonishment](https://en.wikipedia.org/wiki/Principle_of_least_astonishment) extends that discipline to how the system behaves: features and interfaces match the mental model [[Users]] bring, rather than surprising them with unasked-for behaviour or hidden side effects.
+    Code outside the stated purpose incurs construction, maintenance, and defect costs. Each change addresses one self-contained purpose verified against validated user needs. System interfaces match user expectations without unrequested behavior or hidden side effects.
+  references:
+  - id: Yagni
+    uri: https://martinfowler.com/bliki/Yagni.html
+  - id: Small CLs
+    uri: https://google.github.io/eng-practices/review/developer/small-cls.html
+  - id: Principle of Least Astonishment
+    uri: https://en.wikipedia.org/wiki/Principle_of_least_astonishment
   solutions:
-  - marker: SHOULD
-    body: |
-      State the [[User]] need before the [[Change]] is reviewed, so every part of the [[Change]] can be traced to it.
+  - body: |
+      Each change description states the user need before review to establish traceability for every modification.
 - id: Duplication drifts
   parent: Single Source of Truth
   body: |
-    When the same piece of knowledge is written down in two places, the two copies drift apart on the first change that forgets one of them. Hunt and Thomas's [The Pragmatic Programmer](https://pragprog.com/tips/) distinguishes duplication of authoritative knowledge—which always belongs in one [[Representation]]—from coincidental similarity between independent pieces of code. Keeping one authoritative [[Representation]] and deriving or referencing everything else eliminates synchronization bugs at the source.
+    Duplicate representations of authoritative knowledge diverge over time. Every domain concept resides in exactly one authoritative representation. Secondary artifacts derive from or reference the authoritative representation.
+  references:
+  - id: The Pragmatic Programmer
+    uri: https://pragprog.com/tips/
   solutions:
-  - marker: SHOULD
-    body: |
-      Derive secondary artifacts from the authoritative [[Representation]] in the build rather than maintaining copies by hand.
+  - body: |
+      Build processes generate secondary artifacts from the authoritative representation.
 - id: Intent lives where it is checked
   parent: Single Source of Truth
   body: |
-    A comment is prose no tool checks, and it drifts from the code it describes. Knowledge placed where drift is caught stays true: a name appears at every call site, a [[Failing test]] turns unfinished work into a red build, an [[Architectural Direction]] record keeps the why of a design with its context. Michael Nygard's [Documenting Architecture Decisions](https://www.cognitect.com/blog/2011/11/15/documenting-architecture-decisions) shows the cost of losing that why: teams blindly accept a decision or blindly reverse it.
+    Unchecked prose comments drift from code. Verified names, automated tests, and architectural decision records preserve design intent within enforceable contexts.
+  references:
+  - id: Documenting Architecture Decisions
+    uri: https://www.cognitect.com/blog/2011/11/15/documenting-architecture-decisions
   solutions:
-  - marker: SHOULD
-    body: |
-      Name each test after the behaviour it pins, so the tests read as the specification.
+  - body: |
+      Each test name expresses the exact behavior under verification to provide an executable specification.
 - id: One concern, one owner
   parent: Easy to Change
   body: |
-    Edsger Dijkstra named separation of concerns the only reliable way to order one's thoughts ([EWD447](https://www.cs.utexas.edu/~EWD/transcriptions/EWD04xx/EWD447.html)); David Parnas made it structural: each module hides one decision likely to change. When a behaviour has one owner in one layer, changing it touches one place and one set of tests. Scattering it saves minutes today and costs a hunt, and a missed copy, on every future change.
+    Each module encapsulates one distinct concern and hides one design decision. Every behavior has one owner in one architectural layer. Modifications to a concern touch one module and its focused tests.
+  references:
+  - id: EWD447
+    uri: https://www.cs.utexas.edu/~EWD/transcriptions/EWD04xx/EWD447.html
+  - id: The Twelve-Factor App, III. Config
+    uri: https://12factor.net/config
   solutions:
-  - marker: SHOULD
-    body: |
-      Hide each design decision likely to change behind one module interface.
-  - marker: SHOULD
-    body: |
-      Keep configuration out of the code and read it from the environment ([The Twelve-Factor App, III. Config](https://12factor.net/config)).
-  - marker: SHOULD
-    body: |
-      Keep concerns separate where merging them would save lines; the lines saved are paid back on every later change.
+  - body: |
+      A single module interface encapsulates each volatile design decision.
+  - body: |
+      Application code reads configuration from the deployment environment.
+  - body: |
+      Modules maintain separation of concerns even when consolidation decreases immediate line count.
 - id: Polymorphism over conditionals
   parent: Easy to Change
   body: |
-    Repeated `if`/`else` or `switch` [[Branching logic]] scatters knowledge of variants across every caller: adding a variant means hunting down and editing every conditional. Bertrand Meyer's [Open/Closed Principle](https://en.wikipedia.org/wiki/Open%E2%80%93closed_principle) resolves this by keeping modules open for extension and closed for modification—new behaviour arrives as a new implementation of an [[Interface]], not a new branch in existing callers. Craig Larman's GRASP Polymorphism and Martin Fowler's [Replace Conditional with Polymorphism](https://refactoring.com/catalog/replaceConditionalWithPolymorphism.html) assign the varying behaviour to the type for which it varies, while [Tell, Don't Ask](https://martinfowler.com/bliki/TellDontAsk.html) keeps callers from querying a [[Domain object]]'s state to decide on its behalf. Decisions about which variant to run, which [[Feature]] to wire, or how to assemble optional parts belong once at the [[Perimeter]]—inside a [[Factory]], [[Feature]], or [[Builder]]—so core domain and application logic executes linearly through polymorphic contracts.
+    Repeated conditionals scatter variant handling across callers. New behavior extends an interface rather than modifying existing caller branches. Core domain logic executes linearly through polymorphic interfaces configured at the perimeter.
+  references:
+  - id: Open/Closed Principle
+    uri: https://en.wikipedia.org/wiki/Open%E2%80%93closed_principle
+  - id: Replace Conditional with Polymorphism
+    uri: https://refactoring.com/catalog/replaceConditionalWithPolymorphism.html
+  - id: Tell, Don't Ask
+    uri: https://martinfowler.com/bliki/TellDontAsk.html
   solutions:
-  - marker: SHOULD
-    body: |
-      Select the polymorphic implementation once at the [[Perimeter]] in a [[Factory]], [[Feature]], or [[Builder]], and pass the behaviour inward through an [[Interface]].
-  - marker: SHOULD
-    body: |
-      Tell a [[Domain object]] what action to perform through a [[Domain method]] rather than querying its state to branch in the caller.
+  - body: |
+      Perimeter factories and builders resolve polymorphic implementations and supply behavior through interfaces.
+  - body: |
+      Callers invoke domain methods directly on domain objects without querying internal state.
 - id: The Practical Test Pyramid
   parent: Shift Left
   body: |
-    Write tests of different granularity, and the higher the level, the fewer the tests: "Write lots of small and fast unit tests. Write some more coarse-grained tests and very few high-level tests that test your application from end to end" ([Ham Vocke, The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)). Below the [[Unit test]]s, Yaron Minsky's "[[Make illegal states unrepresentable]]" and Alexis King's [Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) remove whole classes of bugs before a test exists. Lower levels give faster, more precise feedback and leave less to maintain.
+    Automated test suites maintain many fast unit tests, fewer coarse integration tests, and minimal end-to-end tests. Strong type systems eliminate invalid states before test execution. Lower verification layers deliver faster feedback with lower maintenance cost.
+  references:
+  - id: The Practical Test Pyramid
+    uri: https://martinfowler.com/articles/practical-test-pyramid.html
+    quote: "Write lots of small and fast unit tests. Write some more coarse-grained tests and very few high-level tests that test your application from end to end"
+  - id: Parse, don't validate
+    uri: https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/
 - id: Crash, don't guess
   parent: Shift Left
   body: |
-    A program that continues past an unexpected state runs on a guess. Jim Shore's [Fail Fast](https://www.jamesshore.com/v2/blog/2004/fail-fast): code that works around errors fails mysteriously later; code that stops at once reveals the defect where it lives. Joe Armstrong's Erlang thesis: skip the defensive code, let the process die, recover elsewhere. [RFC 9413](https://www.rfc-editor.org/rfc/rfc9413.html) shows that tolerated faults become permanent contracts.
+    A program terminates immediately upon encountering an unexpected state. Defensive workarounds obscure root causes and establish unintended contracts. External supervisors manage process restart and fault recovery.
+  references:
+  - id: Fail Fast
+    uri: https://www.jamesshore.com/v2/blog/2004/fail-fast
+  - id: RFC 9413
+    uri: https://www.rfc-editor.org/rfc/rfc9413.html
+  - id: The Twelve-Factor App, IX. Disposability
+    uri: https://12factor.net/disposability
   solutions:
-  - marker: SHOULD
-    body: |
-      Make processes safe to kill at any moment, so a crash costs nothing but a restart ([The Twelve-Factor App, IX. Disposability](https://12factor.net/disposability)).
-  - marker: SHOULD
-    body: |
-      Leave recovery to a supervisor outside the failing process.
+  - body: |
+      Processes maintain disposability so termination requires only an immediate restart.
+  - body: |
+      An external supervisor handles recovery outside the failing process.
 - id: Translate at the door
   parent: Shift Left
   body: |
-    [[Code We Cannot Control]] speaks its own dialect, a [[Foreign shape]]. Alistair Cockburn's [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/) and Eric Evans's Anti-Corruption Layer both put translation at a port, so foreign models never leak inward. Parsed once at the [[Perimeter]] into types that cannot hold [[Illegal states]], a value is never checked again. Tony Hoare's [billion-dollar mistake](https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/) shows the cost of uncertainty travelling through every reference. One adapter per [[Foreign shape]] keeps upgrades local.
+    Foreign models translate into internal domain types at boundary ports. The perimeter parses external payloads into encapsulated types that exclude invalid states. Dedicated adapters isolate external dependency upgrades from internal domain logic.
+  references:
+  - id: Hexagonal Architecture
+    uri: https://alistair.cockburn.us/hexagonal-architecture/
+  - id: "Null References: The Billion Dollar Mistake"
+    uri: https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/
+  - id: Anti-Corruption Layer
+    uri: https://learn.microsoft.com/en-us/azure/architecture/patterns/anti-corruption-layer
   solutions:
-  - marker: SHOULD
-    body: |
-      Give every foreign system its own adapter behind a port.
-  - marker: SHOULD
-    body: |
-      Introduce an anti-corruption layer where the foreign model's meaning differs from ours ([Anti-Corruption Layer](https://learn.microsoft.com/en-us/azure/architecture/patterns/anti-corruption-layer)).
+  - body: |
+      Each external system interfaces through a dedicated adapter behind a port.
+  - body: |
+      An anti-corruption layer translates schemas when foreign models diverge from domain semantics.
 - id: Encapsulation
   parent: Shift Left
   body: |
-    An [[Encapsulated type]] with one [[Validating path of creation]] makes [[Illegal states]] unrepresentable. Yaron Minsky's [Effective ML Revisited](https://blog.janestreet.com/effective-ml-revisited/) names the idiom, [[Make illegal states unrepresentable]], and Scott Wlaschin's [Designing with types](https://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/) works it through. Any weaker typing, one that does not fully encapsulate or leaves a second path of creation open, hands the validation back to every caller.
-
-    When an API passes `int x, int y` as coordinates, fold them into a `CarPosition`, not a `Coordinate`. When `CarPosition` is written to the database at the [[Perimeter]], the database context consumes it as a `CarPosition` and, by contract, folds it into a database parameter belonging to the `CAR_POSITION` table.
-
-    Every typing add-on to a weakly typed language exists to be used for this. Even an environment without types can mint a naming standard in which a variable prefix carries the signature "validated by factory", and a linter enforcing that standard shifts the validated contract further left.
+    An encapsulated type with one validating path of creation makes invalid states unrepresentable. Primitive values fold into domain types at system boundaries. Callers rely on validated types rather than repeating primitive checks.
+  references:
+  - id: Effective ML Revisited
+    uri: https://blog.janestreet.com/effective-ml-revisited/
+  - id: Designing with types
+    uri: https://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/
   solutions:
-  - marker: SHOULD
-    body: |
-      Use every typing add-on the language offers to give every type one [[Validating path of creation]] and no other.
-  - marker: SHOULD
-    body: |
-      Where code smells of [[Optionality]] and [[Primitive Obsession]], improve it first by introducing encapsulation: refactor to opaque types, and retire the tests that only guarded against values the types can no longer hold.
-  - marker: MAY
-    body: |
-      Where the environment has no types, mint a naming prefix that marks a value validated by its factory, and enforce it with a linter.
-  - marker: SHOULD
-    body: |
-      Hide a type's representation outside its defining module, as a new type or a branded type, rather than share it through an alias, so values that share a representation but not a meaning cannot be mixed.
-  - marker: SHOULD
-    body: |
-      Encode a state machine in the type, each transition consuming the old state's type and returning the new one, so an operation invalid in the current state does not typecheck.
-  - marker: SHOULD
-    body: |
-      Enforce a collection's invariants in its type: a non-empty list makes `head` and `max` total, and a first-class collection enforces uniqueness, bounds, and ordering in one place.
-  - marker: SHOULD
-    body: |
-      Attach predicates to types and have them verified at compile time where the ecosystem provides it: refinement types, units of measure, checked type qualifiers.
-  - marker: MAY
-    body: |
-      Implement the language's comparison interface on a [[Domain object]] rather than compare its primitives.
+  - body: |
+      Each domain type exposes exactly one validating path of creation.
+  - body: |
+      Opaque types replace primitive obsession and eliminate tests that guard against unreachable states.
+  - body: |
+      Untyped environments use prefix conventions enforced by linters to denote validated factory outputs.
+  - body: |
+      Branded types and newtypes hide underlying representations and prevent mixing of semantically distinct values.
+  - body: |
+      Type-level state transitions consume preceding states and produce succeeding states to prevent invalid operations at compile time.
+  - body: |
+      First-class collections enforce invariants including ordering, non-emptiness, and bounds within the type definition.
+  - body: |
+      Compile-time predicates and refinement types verify domain invariants during compilation.
+  - body: |
+      Domain objects implement standard comparison interfaces rather than exposing primitive fields for external evaluation.
 - id: Optionality Drives Complexity
   parent: Simplicity
   body: |
-    Each optional flag doubles the paths a function can take, and most of them are never tested (Pete Hodgson, [Feature Toggles](https://martinfowler.com/articles/feature-toggles.html)). Martin Fowler's [FlagArgument](https://martinfowler.com/bliki/FlagArgument.html): a named operation states intent where a bare boolean hides it. Robert Harper's [Boolean Blindness](https://existentialtype.wordpress.com/2011/03/15/boolean-blindness/): a flag carries no meaning of its own.
+    Each boolean flag doubles execution paths within a function. Distinct named methods express operational intent without parameter flags. Strategy types encapsulate behavioral variants.
+  references:
+  - id: Feature Toggles
+    uri: https://martinfowler.com/articles/feature-toggles.html
+  - id: FlagArgument
+    uri: https://martinfowler.com/bliki/FlagArgument.html
+  - id: Boolean Blindness
+    uri: https://existentialtype.wordpress.com/2011/03/15/boolean-blindness/
   solutions:
-  - marker: SHOULD
-    body: |
-      Make the toggle a strategy so that it encodes all options it controls
-  - marker: SHOULD
-    body: |
-      Make overload or specific behaviour [[Explicitly named method]]s instead of optional flags
+  - body: |
+      A strategy object encapsulates the options and behaviors controlled by a toggle.
+  - body: |
+      Explicitly named methods replace boolean flags for specialized behaviors.
 - id: Tests prove behavior, not execution
   parent: Without Verification It Is Worthless
   body: |
-    A line that runs under test is not a line that is checked. Martin Fowler's [AssertionFreeTesting](https://martinfowler.com/bliki/AssertionFreeTesting.html) describes suites with full coverage that verified nothing; Inozemtseva and Holmes found coverage predicts little about fault detection once suite size is controlled for. A test that asserts outcomes is an executable specification that documents and guards behaviour on every commit.
+    Code execution during testing does not verify behavioral correctness. High test coverage without explicit assertions detects few defects. Assertions on observable outcomes turn test suites into executable specifications.
+  references:
+  - id: AssertionFreeTesting
+    uri: https://martinfowler.com/bliki/AssertionFreeTesting.html
+  - id: State of Mutation Testing at Google
+    uri: https://research.google.com/pubs/archive/46584.pdf
   solutions:
-  - marker: SHOULD
-    body: |
-      Run mutation testing to show that the tests fail when the code is wrong ([State of Mutation Testing at Google](https://research.google.com/pubs/archive/46584.pdf)).
-  - marker: SHOULD
-    body: |
-      Treat painful [[Test setup]] as a design signal: split the subject into smaller domain models or focused interfaces before reaching for a mock.
-  - marker: SHOULD
-    body: |
-      Almost all code has tools for verification; make sure they are used inside the project.
+  - body: |
+      Mutation testing verifies that tests fail when mutants inject faults into production code.
+  - body: |
+      Complex test setup indicates poor module decomposition and prompts refactoring into smaller domain models.
+  - body: |
+      Projects incorporate automated verification tools available within the ecosystem.
 - id: Make the wrong thing fail
   parent: Shift Left
   body: |
-    Documents advise; the build decides. Compiler strictness, linters, and thresholds live in the self-testing build ([Continuous Integration](https://martinfowler.com/articles/continuousIntegration.html)), where every change, by any [[Developer]], meets the same bar. As in Toyota's jidoka, an abnormality stops the line instead of travelling downstream. A gate that is relaxed is a broken window: it tells everyone the standard is gone.
+    The automated build enforces compiler checks, linters, and quality thresholds. Defects halt the build pipeline immediately. Relaxed validation gates degrade system standards.
+  references:
+  - id: Continuous Integration
+    uri: https://martinfowler.com/articles/continuousIntegration.html
   solutions:
-  - marker: SHOULD
-    body: |
-      Run the same build locally and in the pipeline, so a change meets one bar wherever it runs.
-  - marker: SHOULD
-    body: |
-      Let each tool write its report untouched, and compare the report against the thresholds in a separate step.
-  - marker: SHOULD
-    body: |
-      Resolve a [[Static code analysis]] warning at its root cause; where the code cannot satisfy a strict rule, seek architectural guidance, never a workaround.
-  - marker: SHOULD
-    body: |
-      Enable the strictest static-analysis presets and compiler checks the ecosystem offers, so safeguards are enforced without review.
+  - body: |
+      Local environments and continuous integration pipelines execute identical build checks.
+  - body: |
+      Analysis tools produce unmodified reports for evaluation against quality thresholds in subsequent steps.
+  - body: |
+      Engineers resolve static analysis warnings at root causes without applying suppressing workarounds.
+  - body: |
+      Build configurations activate the strictest compiler checks and static analysis presets.
 - id: The practitioner decides the outcome
   parent: Competence Applied Is Leverage
   body: |
-    AI is leverage applied to a [[Practitioner]] ([[Competence Applied Is Leverage]]). Applied by someone who does not know what good looks like, it produces a mess at a speed no one could reach unaided, and the mess arrives reviewed, formatted, and entirely plausible. Applied by someone working from these documents, it produces the same [[Quality]] faster, and more of it. Lisanne Bainbridge's [Ironies of Automation](https://doi.org/10.1016/0005-1098(83)90046-8) (1983) names the mechanism: automation takes over the routine and leaves the [[Practitioner]] exactly the judgement it could not encode, so the more capable the tool, the more the outcome rests on the person. Two measurements show it from both sides. [Generative AI at Work](https://www.nber.org/papers/w31161) (Brynjolfsson, Li, Raymond, 2023) found the gains concentrated in novices, because the model disseminated the practice of the most able workers: the tool carried competence that already existed. METR's [early-2025 study](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/) found experienced [[Developer]]s 19% slower with AI tools while believing themselves 20% faster: what the tool multiplied there was the confidence, not the result.
-
-    The distance between what a person and what a model can do narrows every day, so anything justified by "AI cannot do this yet" carries an expiry date and is not written as permanent. What does not narrow is Fred Brooks's [essential complexity](https://worrydream.com/refs/Brooks_1986_-_No_Silver_Bullet.pdf): tools attack the accidental, and knowing which problem is worth solving, what good means here, and whether the result is true stays with the [[Practitioner]]. Investment therefore goes to the [[Practitioner]]'s competence, and to stating our standard explicitly enough to be applied, over the expectation that a better model compensates for the absence of both.
+    Automated tools multiply practitioner competence rather than replacing domain judgement. Automation resolves routine tasks while elevating the impact of human evaluation. Tools address accidental complexity, while definition of standards and verification of correctness remain practitioner responsibilities.
+  references:
+  - id: Ironies of Automation
+    uri: https://doi.org/10.1016/0005-1098(83)90046-8
+  - id: Generative AI at Work
+    uri: https://www.nber.org/papers/w31161
+  - id: METR Early-2025 Study
+    uri: https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/
+  - id: No Silver Bullet - Essence and Accidents of Software Engineering
+    uri: https://worrydream.com/refs/Brooks_1986_-_No_Silver_Bullet.pdf
   solutions:
-  - marker: SHOULD
-    body: |
-      State a standard in these documents before handing it to a tool to apply, so the tool multiplies a definition and not a habit.
-  - marker: SHOULD
-    body: |
-      Keep the rules, prompts, harnesses, and pipelines that carry our standard under our own control; a vendor's default encodes the vendor's standard, an average of everyone's practice rather than ours. Everything below that layer is consumed through the [[Development Stack]] like any other component.
-  - marker: SHOULD
-    body: |
-      Verify generated output by the same means as any other change; fluency and confidence are properties of its form and say nothing about its [[Correctness]].
+  - body: |
+      Governance documents define explicit standards before tools apply automated assistance.
+  - body: |
+      Teams maintain authoritative control over rules, prompts, and evaluation pipelines rather than relying on vendor defaults.
+  - body: |
+      Automated verification pipelines validate generated artifacts through identical testing criteria applied to human contributions.
 - id: Environment parity
   parent: Without Verification It Is Worthless
   body: |
-    If it works on your machine but not in production, the environment is the bug. Keeping parity between production and test is what guarantees that a verification also holds in production, and that no time goes to hunting bugs that exist only in test. [The Twelve-Factor App, X. Dev/prod parity](https://12factor.net/dev-prod-parity) names three gaps that open between the two, in time, in personnel, and in tools, and every gap is a place where a defect hides until the deploy. Closing them means the environment stops being a state each machine has drifted into and becomes a definition every machine is provisioned from: one description, in code, from which local, staging, and production are all built. GitHub's [Scripts to Rule Them All](https://github.blog/engineering/scripts-to-rule-them-all/) applies the same idea at the entry point: one consistent bootstrap across every project, so a newcomer clones, builds, and tests with a single command instead of a page of steps. A manual step is a second definition of the procedure, kept in the head of whoever last ran it.
+    Differences between development and production environments conceal defects until deployment. Declarative code provisions identical development, testing, and production environments. Standardized entrypoint scripts automate build and test execution without manual intervention.
+  references:
+  - id: The Twelve-Factor App, X. Dev/prod parity
+    uri: https://12factor.net/dev-prod-parity
+  - id: Scripts to Rule Them All
+    uri: https://github.blog/engineering/scripts-to-rule-them-all/
   solutions:
-  - marker: SHOULD
-    body: |
-      Provision every environment, the local one included, from the same infrastructure-as-code definition.
-  - marker: SHOULD
-    body: |
-      Run the production artifact itself locally and in [[Integration test]]s, rather than a lighter stand-in for it.
+  - body: |
+      Infrastructure-as-code definitions provision all local, staging, and production environments.
+  - body: |
+      Integration tests and local environments execute production artifacts directly.
 - id: Telemetry over guesswork
   parent: Shift Left
   body: |
-    A feature that has shipped without a signal is a feature we hope works. The [[Shift Left]] axiom does not stop at release: the earliest point at which a production defect can be observed is by us, from telemetry, and the latest is by the customer, from the symptom. The Google SRE book's [Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/) reduces what to watch to four golden signals, latency, traffic, errors, and saturation, and pages only on symptoms already affecting users, which is possible only if the [[Signal]]s were in place before the change was. The [[Signal]] therefore ships with the behaviour it shows, not after its first incident, and a regression is found and resolved before the customer notices a flicker. Adding them afterwards is the same shortcut as adding the test afterwards, and is skipped for the same reasons.
+    Telemetry instrumentation deploys concurrently with application features. Four golden signals monitor latency, traffic, errors, and saturation. Telemetry alerts detect user-facing symptoms before customer reports occur.
+  references:
+  - id: Monitoring Distributed Systems
+    uri: https://sre.google/sre-book/monitoring-distributed-systems/
   solutions:
-  - marker: SHOULD
-    body: |
-      Instrument every service for the four golden signals before its first deploy.
-  - marker: SHOULD
-    body: |
-      Alert on symptoms [[Users]] experience, and keep cause-level [[Signal]]s for diagnosis rather than paging.
+  - body: |
+      Each service implements instrumentation for latency, traffic, errors, and saturation before initial deployment.
+  - body: |
+      Paging alerts trigger on user-impacting symptoms while underlying cause metrics support diagnostic investigation.
 - id: What wins when values collide
   parent: Quality Uncompromised
   body: |
-    Each [[Software quality axis]] is challenged by a [[Competing good]], and when they collide the axis wins. The pairs read in both directions: finding the [[Competing good]] in code is a symptom that its axis needs attention, and the repair belongs on the axis, not in more of the good. Quality is not measured by what a [[Competing good]] offers: [[Performance]] and [[Feature Rich]] are requirements like any other, and meeting one is part of [[Correctness]], but neither earns credit against the other axes.
+    Every software quality axis takes precedence over competing goods during architectural conflict. Auxiliary feature richness and raw throughput never compensate for deficits in core quality axes.
   solutions:
-  - marker: SHOULD
-    body: |
-      Name the [[Software quality axis]] a review comment is about, so a disagreement is about which kind of worse.
-  - marker: SHOULD
-    body: |
-      Where [[Ease of Doing the Right Thing]] and [[Guardrails Against Doing the Wrong Thing]] compete, build the easy path first, and let the guardrail point at it.
+  - body: |
+      Code review comments cite the specific software quality axis under evaluation.
+  - body: |
+      Teams establish ergonomic paths before introducing guardrails that direct developers toward compliant workflows.
 - id: Agree at the boundary
   parent: Shift Left
   body: |
-    Two sides of a boundary that each define the shape they expect hold two definitions of one thing, and the two drift until the day they disagree in production. One contract, written apart from either side, is the single definition: both sides are derived from it and checked against it, and a disagreement between code and contract is a defect in the code. Bertrand Meyer's [Design by Contract](https://www.eiffel.org/doc/eiffel/ET-_Design_by_Contract_%28tm%29,_Assertions_and_Exceptions) binds client and supplier to one specification, where each party's obligation is the other's benefit. The OpenAPI Initiative's [design-first guidance](https://learn.openapis.org/best-practices.html) makes the description the contract that the code is validated against in continuous integration, and [Protocol Buffers](https://protobuf.dev/overview/) define a structure once and generate every side from it.
+    A single independent contract defines boundary data structures. Boundary implementations derive directly from the shared contract specification. Automated verification validates boundary implementations against the contract.
+  references:
+  - id: Design by Contract
+    uri: https://www.eiffel.org/doc/eiffel/ET-_Design_by_Contract_%28tm%29,_Assertions_and_Exceptions
+  - id: OpenAPI Design-First Guidance
+    uri: https://learn.openapis.org/best-practices.html
+  - id: Protocol Buffers
+    uri: https://protobuf.dev/overview/
   solutions:
-  - marker: SHOULD
-    body: |
-      Generate both sides of a boundary from the contract rather than write either by hand.
-  - marker: SHOULD
-    body: |
-      Check the running code against the contract in the build, so a drift fails before it ships.
-  - marker: MAY
-    body: |
-      Publish the contract on its own, versioned apart from any implementation, so every consumer reads the same definition.
+  - body: |
+      Code generation tools generate client and server boundary interfaces directly from the contract.
+  - body: |
+      The build pipeline verifies code conformance against the boundary contract specification.
+  - body: |
+      Repositories publish versioned contracts independently from concrete client and server implementations.
 - id: Clarity over cleverness
   parent: Code Is Written for People
   body: |
-    A line of code is written once and read many times: by the reviewer, by the next [[Developer]], by whoever is on call when it fails. Professionals spend about 58 percent of their working time understanding code ([Xia et al., IEEE TSE 2018](https://doi.org/10.1109/TSE.2017.2734091)), and "code is read much more often than it is written" ([PEP 8](https://peps.python.org/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds)). Following the ecosystem's conventions and the [[Surrounding code]] lets a reader predict structure instead of decoding it ([The Rails Doctrine](https://rubyonrails.org/doctrine#convention-over-configuration)), and removing everything superfluous keeps each unit within human working memory ([Brian Kernighan, The Elements of Programming Style](https://en.wikipedia.org/wiki/The_Elements_of_Programming_Style)). The reader's cost decides how code is shaped, and [[Readability]] is the first [[Software quality axis]] a reader meets.
+    Engineers read code far more often than engineers write code. Consistent conventions and predictable structures reduce comprehension overhead for new readers. Concise modular units keep code within human working memory.
+  references:
+  - id: Xia et al., IEEE TSE 2018
+    uri: https://doi.org/10.1109/TSE.2017.2734091
+  - id: PEP 8
+    uri: https://peps.python.org/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds
+    quote: "code is read much more often than it is written"
+  - id: The Rails Doctrine
+    uri: https://rubyonrails.org/doctrine#convention-over-configuration
+  - id: The Elements of Programming Style
+    uri: https://en.wikipedia.org/wiki/The_Elements_of_Programming_Style
+  - id: Google Engineering Practices
+    uri: https://google.github.io/eng-practices/review/reviewer/looking-for.html
   solutions:
-  - marker: SHOULD
-    body: |
-      Shape every unit of code—a file, a type, a function—to be read in one sitting by a reader who has not seen it before.
-  - marker: SHOULD
-    body: |
-      Cite the convention followed: the section of the style guide, or the neighbouring code it mirrors ([Google Engineering Practices](https://google.github.io/eng-practices/review/reviewer/looking-for.html)).
+  - body: |
+      Each file, type, and function remains small enough for comprehension in a single reading.
+  - body: |
+      Code review comments cite established style guide sections or existing structural conventions.
 - id: Premature optimization and Jackson's rules
   parent: Code Is Written for People
   body: |
-    Donald Knuth asked that we stop "imagining that our main task is to instruct a computer what to do" and "concentrate rather on explaining to human beings what we want a computer to do" ([Literate Programming, 1984](http://www.literateprogramming.com/knuthweb.pdf)); Abelson and Sussman put it as "programs must be written for people to read, and only incidentally for machines to execute" ([SICP, preface](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/6515/sicp.zip/full-text/book/book-Z-H-7.html)). Knuth warned that "we should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil. Yet we should not pass up our opportunities in that critical 3%"—and that critical three percent is found by measurement, "only after that code has been identified" ([Computing Surveys 1974, p. 268](https://www.gwern.net/doc/cs/algorithm/1974-knuth.pdf)). Michael A. Jackson codified the discipline in two rules ([Principles of Program Design, 1975](https://en.wikipedia.org/wiki/Program_optimization#When_to_optimize)): Rule 1 is "Don't do it"; Rule 2 (for experts only) is "Don't do it yet—that is, not until you have a perfectly clear and unoptimized solution." A clear, well-decomposed architecture is the prerequisite to profiling: you cannot isolate or replace a bottleneck in tangled code.
+    Programs explain computational intent to human readers prior to machine execution. Clear modular architecture is the prerequisite for performance profiling and bottleneck isolation. Optimization occurs only after empirical measurement identifies a concrete bottleneck.
+  references:
+  - id: Literate Programming
+    uri: http://www.literateprogramming.com/knuthweb.pdf
+    quote: "concentrate rather on explaining to human beings what we want a computer to do"
+  - id: SICP, preface
+    uri: https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/6515/sicp.zip/full-text/book/book-Z-H-7.html
+    quote: "programs must be written for people to read, and only incidentally for machines to execute"
+  - id: Computing Surveys 1974
+    uri: https://www.gwern.net/doc/cs/algorithm/1974-knuth.pdf
+    quote: "premature optimization is the root of all evil"
+  - id: Principles of Program Design
+    uri: https://en.wikipedia.org/wiki/Program_optimization#When_to_optimize
+    quote: "Rule 1: Don't do it. Rule 2 (for experts only): Don't do it yet."
   solutions:
-  - marker: SHOULD
-    body: |
-      Measure before optimising, and optimise only the bottleneck the measurement names.
+  - body: |
+      Empirical profiling measures execution before developers apply performance optimizations.
 - id: Amdahl's Law and the I/O-bound reality
   parent: Simplicity
   body: |
-    Gene Amdahl's law ([AFIPS 1967](https://en.wikipedia.org/wiki/Amdahl%27s_law)) bounds the speedup of any system by the fraction of time spent in the part being improved. In enterprise software, execution time is dominated by I/O—database queries, filesystem access, and [[Calls over the network]] taking milliseconds to hundreds of milliseconds—while [[In-memory operation]]s execute in nanoseconds, representing promilles of the total latency budget. Micro-optimising [[In-memory operation]]s yields near-zero system return while trading away [[Readability]] and [[Maintainability]]; real [[Performance]] gains come from eliminating redundant I/O and batching [[Calls over the network]].
+    System speedup is bounded by the proportion of execution time in the improved component. Enterprise software latency is dominated by input and output operations rather than in-memory computations. Meaningful performance improvements eliminate redundant network calls and batch external requests.
+  references:
+  - id: AFIPS 1967
+    uri: https://en.wikipedia.org/wiki/Amdahl%27s_law
   solutions:
-  - marker: SHOULD
-    body: |
-      Group [[Calls over the network]] together and minimize round-trips.
+  - body: |
+      Network requests execute in batches to minimize round trips.

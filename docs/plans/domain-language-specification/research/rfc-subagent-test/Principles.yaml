@@ -1,0 +1,157 @@
+principles:
+- id: You aren't gonna need it
+  parent: Validated user need over speculative scope
+  body: |
+    Always implement things when you actually need them, never when you just foresee that you need them (Ron Jeffries).
+  references:
+  - label: "Ron Jeffries"
+    uri: https://ronjeffries.com/xprog/articles/practices/pracnotneed/
+- id: Do One Thing
+  parent: Validated user need over speculative scope
+  body: |
+    Make each Change a minimal, self-contained change that addresses its one stated Purpose and nothing outside it (Google Engineering Practices, Small CLs).
+  references:
+  - label: "Google Engineering Practices, Small CLs"
+    uri: https://google.github.io/eng-practices/review/developer/small-cls.html
+- id: Principle of Least Astonishment
+  parent: Validated user need over speculative scope
+  body: |
+    A system behaves in the way Users expect it to behave, without hidden side effects or surprising outcomes (Saltzer and Kaashoek).
+  references:
+  - label: "Saltzer and Kaashoek"
+    uri: https://en.wikipedia.org/wiki/Principle_of_least_astonishment
+- id: Choose boring technology
+  parent: Code is a liability, not an asset
+  body: |
+    Keep the Development Stack small and well known: "every company gets about three innovation tokens" (Dan McKinley).
+  references:
+  - label: "Dan McKinley"
+    uri: https://mcfunley.com/choose-boring-technology
+- id: Convention over Invention
+  parent: Clarity over cleverness
+  body: |
+    Structure follows the conventions of the ecosystem and of the Surrounding code; novelty belongs in the domain solution. Only a Demonstrable standard is a convention.
+- id: Push tests down the pyramid
+  parent: The Practical Test Pyramid
+  body: |
+    Catch a defect on the lowest level of the Test Pyramid that can catch it.
+- id: No Comments
+  parent: Intent lives where it is checked
+  body: |
+    What a comment would say lives where it is checked. Every Comment intent has such a home, and only a Machine-read comment stays in the code.
+- id: Fail fast
+  parent: Crash, don't guess
+  body: |
+    A system fails loudly and at once on an unexpected state; it never continues on a guess. A safeguard that swallows a failure is added only where Evidence shows the need.
+- id: Fold at Perimeter
+  parent: Translate at the door
+  body: |
+    The Foreign shape is folded into an Encapsulated type at the Perimeter and back only there. Inward of that point nothing sees it.
+- id: Make illegal states unrepresentable
+  parent: Encapsulation
+  body: |
+    Choose the Type system over a Runtime check, and model every business rule, transition, and entity as a dedicated type rather than a data bag. A state that cannot be held needs no validator, no test, and no bug report.
+- id: Parse, don't validate
+  parent: Translate at the door
+  body: |
+    Parse raw input once, at the Perimeter, through the Validating path of creation, and pass the type on; never check a primitive and pass the primitive on.
+- id: Immutable by default
+  parent: Encapsulation
+  body: |
+    A Domain object is Immutable. A validly constructed object that cannot change cannot become invalid.
+- id: No Primitive Obsession
+  parent: Encapsulation
+  body: |
+    Any primitive in a method signature is the Primitive Obsession smell: the value it carries deserves a type of its own. The only exception is a method at the Perimeter.
+- id: Avoid optionality
+  parent: Optionality Drives Complexity
+  body: |
+    Each allowed combination of options is its own operation with its own name; Optionality is never a parameter.
+- id: Test-Driven Development
+  parent: Tests prove behavior, not execution
+  body: |
+    Write a test first.
+- id: Never fix a bug without a test pinning it
+  parent: Tests prove behavior, not execution
+  body: |
+    A bug is pinned by a Failing test before it is fixed, and the fix is done when that test passes.
+- id: No gray tests
+  parent: Tests prove behavior, not execution
+  body: |
+    A test is either a black-box test of the shipped artifact or a test of one subject in isolation; nothing in between.
+- id: Never trust a test you haven't seen fail
+  parent: Tests prove behavior, not execution
+  body: |
+    A test counts only once it has failed for the behaviour it checks; a test that cannot fail checks nothing.
+- id: F.I.R.S.T.
+  parent: Tests prove behavior, not execution
+  body: |
+    Tests are Fast, Independent, Repeatable, Self-validating, and Timely.
+- id: Verification ends the chain
+  parent: Tests prove behavior, not execution
+  body: |
+    All Production code is tested. Verification code is not Production code and is not tested.
+- id: Separation of Concerns
+  parent: One concern, one owner
+  body: |
+    Each concern has one owner in one layer, and a change to a behaviour touches only its owner.
+- id: The Toolchain Is the Guardrail
+  parent: Make the wrong thing fail
+  body: |
+    The quality bar is defined once, in the build, and the build makes the wrong thing fail; it is never weakened to let a change through.
+- id: Prepare reader for evolving producer
+  parent: Robustness Principle
+  body: |
+    Every reader accepts changes it does not know, so the producer evolves without updating every reader first.
+- id: Adoption is articulation
+  parent: The practitioner decides the outcome
+  body: |
+    Adopting a tool that applies our standard begins by writing the standard down: the rule an AI agent needs is the rule a new colleague needs, and the reason it was never written is that it lived as habit. An adoption that leaves our craft no more clearly stated than before has adopted nothing.
+- id: Production Parity
+  parent: Environment parity
+  body: |
+    Tests run the Production code as production runs it.
+- id: Infrastructure as Code
+  parent: Environment parity
+  body: |
+    Every environment is provisioned from one definition in version control; none is assembled by hand.
+- id: Own the Runtime
+  parent: Telemetry over guesswork
+  body: |
+    A behavior ships with its Signal; if we cannot see it, it is not shipped.
+- id: Don't Repeat Yourself
+  parent: Duplication drifts
+  body: |
+    Every piece of knowledge must have a single, unambiguous, authoritative representation within a system (The Pragmatic Programmer, Tip 15).
+  references:
+  - label: "The Pragmatic Programmer, Tip 15"
+    uri: https://pragprog.com/tips/
+- id: Replace conditional with polymorphism
+  parent: Polymorphism over conditionals
+  body: |
+    Resolve variant selection and optional assembly once at the Perimeter through a Factory, Feature, or Builder, and execute domain and application logic through polymorphic Domain objects without conditional Branching logic.
+- id: Contract First
+  parent: Agree at the boundary
+  body: |
+    The contract stands above both sides of a boundary: each side is derived from it and conforms to it, and where code and contract disagree, the code is wrong.
+- id: Less is more
+  parent: Clarity over cleverness
+  body: |
+    Perfection is achieved, not when there is nothing more to add, but when there is nothing left to take away (Antoine de Saint-Exupéry). Keep only what serves the intent and remove everything else.
+  references:
+  - label: "Antoine de Saint-Exupéry"
+    uri: https://en.wikiquote.org/wiki/Antoine_de_Saint-Exup%C3%A9ry
+- id: Make it work, make it right, make it fast
+  parent: Premature optimization and Jackson's rules
+  body: |
+    Deliver working behaviour in small slices first, structure the code clearly for the reader second, and optimise only measured bottlenecks last (Kent Beck); speed is never bought with less readable code.
+  solutions:
+  - body: |
+      Reduce scope, split the Pull request into several smaller ones, and ship a working slice.
+  references:
+  - label: "Kent Beck"
+    uri: https://wiki.c2.com/?MakeItWorkMakeItRightMakeItFast
+- id: Iterations over calls over the network is bad design
+  parent: Amdahl's Law and the I/O-bound reality
+  body: |
+    Iterations over Calls over the network is bad design.

@@ -1,0 +1,280 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/governance/ubiquitous-language.schema.json",
+  "title": "UbiquitousLanguage",
+  "description": "Formal contract for Ubiquitous Language (uql) strings, Glossary Terms, ordered References, parsed UqlAst syntax trees, and Diagnostics (UQL001-UQL007)",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/UbiquitousLanguage"
+    },
+    {
+      "$ref": "#/$defs/Glossary"
+    },
+    {
+      "$ref": "#/$defs/UqlAst"
+    }
+  ],
+  "$defs": {
+    "Prose": {
+      "description": "Unconstrained CommonMark text used for verbatim quotes and transcripts",
+      "type": "string",
+      "minLength": 1
+    },
+    "UbiquitousLanguage": {
+      "description": "Controlled domain language (uql) where every open-class span resolves to a Term and every Statement is a declarative present-tense truth satisfying Invariants 1-5",
+      "type": "string",
+      "minLength": 1
+    },
+    "PartOfSpeech": {
+      "description": "Open-class grammatical category of a Term",
+      "enum": [
+        "noun",
+        "verb",
+        "adjective",
+        "adverb"
+      ]
+    },
+    "ClosedWordClass": {
+      "description": "Closed-class grammatical category connecting Terms in a Clause",
+      "enum": [
+        "determiner",
+        "preposition",
+        "coordConj",
+        "subConj",
+        "pronoun",
+        "copula",
+        "auxiliaryVerb",
+        "negation"
+      ]
+    },
+    "TermForms": {
+      "description": "Valid surface forms (inflections, plurals, acronyms) of a Term",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "Term": {
+      "description": "An open-class word or phrase with one definition, one partOfSpeech, and surface forms in a Bounded Context",
+      "type": "object",
+      "required": [
+        "id",
+        "partOfSpeech",
+        "forms",
+        "definition"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "id.schema.json"
+        },
+        "partOfSpeech": {
+          "$ref": "#/$defs/PartOfSpeech"
+        },
+        "forms": {
+          "$ref": "#/$defs/TermForms"
+        },
+        "definition": {
+          "$ref": "#/$defs/UbiquitousLanguage"
+        }
+      }
+    },
+    "Reference": {
+      "description": "A binding from an identifier to a canonical URI and an optional verbatim Prose quote",
+      "type": "object",
+      "required": [
+        "id",
+        "uri"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "id.schema.json"
+        },
+        "uri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "quote": {
+          "$ref": "#/$defs/Prose"
+        }
+      }
+    },
+    "References": {
+      "description": "Ordered list of Reference bindings where declaration order decides resolution precedence",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Reference"
+      }
+    },
+    "Glossary": {
+      "description": "A collection of Term definitions and optional ordered References within a Bounded Context",
+      "type": "object",
+      "required": [
+        "terms"
+      ],
+      "properties": {
+        "terms": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Term"
+          }
+        },
+        "references": {
+          "$ref": "#/$defs/References"
+        }
+      }
+    },
+    "ConstituentRole": {
+      "description": "Role of a Constituent inside a Clause",
+      "enum": [
+        "subject",
+        "predicate",
+        "object",
+        "complement",
+        "adverbial"
+      ]
+    },
+    "Constituent": {
+      "description": "A structural part of a Clause headed by a Term or CodeLiteral",
+      "type": "object",
+      "required": [
+        "role",
+        "text",
+        "terms"
+      ],
+      "properties": {
+        "role": {
+          "$ref": "#/$defs/ConstituentRole"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "terms": {
+          "type": "array",
+          "items": {
+            "$ref": "id.schema.json"
+          }
+        },
+        "closedWords": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ClosedWordClass"
+          }
+        }
+      }
+    },
+    "StatementAst": {
+      "description": "Parsed declarative present-tense Statement (at most 35 words and 220 bytes)",
+      "type": "object",
+      "required": [
+        "text",
+        "constituents",
+        "terms"
+      ],
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 220
+        },
+        "constituents": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/Constituent"
+          }
+        },
+        "terms": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "id.schema.json"
+          }
+        }
+      }
+    },
+    "DiagnosticCode": {
+      "description": "Diagnostic error code corresponding to Invariants 1-4",
+      "enum": [
+        "UQL001",
+        "UQL002",
+        "UQL003",
+        "UQL004",
+        "UQL005",
+        "UQL006",
+        "UQL007"
+      ]
+    },
+    "Diagnostic": {
+      "description": "A structured lint error emitted when a uql document violates Invariants 1-5",
+      "type": "object",
+      "required": [
+        "code",
+        "span",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/DiagnosticCode"
+        },
+        "span": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "UqlAst": {
+      "description": "The parsed syntax tree of a uql document containing Statements, resolved Terms, References, and Diagnostics",
+      "type": "object",
+      "required": [
+        "statements",
+        "terms",
+        "diagnostics"
+      ],
+      "properties": {
+        "statements": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/StatementAst"
+          }
+        },
+        "terms": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "id.schema.json"
+          }
+        },
+        "references": {
+          "$ref": "#/$defs/References"
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Diagnostic"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    "Every Withdrawal references an Account."
+  ]
+}
