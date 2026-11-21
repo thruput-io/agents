@@ -98,7 +98,7 @@ const setupPagingWorkdir = (tempRoot: string, bigRulesetUrl: string) => {
 };
 
 const runSubCliJson = <T>(args: readonly string[]) => {
-	const cliPath = join(SRC_DIR, "review-tool-probe.ts");
+	const cliPath = join(SRC_DIR, "review-tool-probe.mjs");
 	const res = spawnSync(process.execPath, [cliPath, ...args], {
 		encoding: "utf8",
 	});

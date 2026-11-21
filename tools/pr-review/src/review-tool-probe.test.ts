@@ -10,7 +10,7 @@ const SRC_DIR = fileURLToPath(new URL(".", import.meta.url));
 const MAX_CLI_OUTPUT_BYTES = 9000;
 
 it("review-tool-probe define resolves [[term]]s with default depth 1, configurable depth, and unknown-term errors", () => {
-	const cliPath = join(SRC_DIR, "review-tool-probe.ts");
+	const cliPath = join(SRC_DIR, "review-tool-probe.mjs");
 	const defaultRun = spawnSync(
 		process.execPath,
 		[cliPath, "define", "Encapsulated type"],
@@ -59,7 +59,7 @@ it("review-tool-probe executes -h / --help and errors correctly through symlinks
 	const tempRoot = mkdtempSync(join(tmpdir(), "cli-symlink-"));
 	try {
 		const linkedSubCli = join(tempRoot, "review-tool-probe");
-		symlinkSync(join(SRC_DIR, "review-tool-probe.ts"), linkedSubCli);
+		symlinkSync(join(SRC_DIR, "review-tool-probe.mjs"), linkedSubCli);
 		const helpRun = spawnSync(process.execPath, [linkedSubCli, "-h"], {
 			encoding: "utf8",
 		});
