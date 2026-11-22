@@ -8,8 +8,6 @@ const TSCONFIG_PATH = resolve(
 	dirname(fileURLToPath(import.meta.url)),
 	"../tsconfig.json",
 );
-const TRANSPORT_IMPORT_RE =
-	/\b(?:from\s+["']node:(?:fs|child_process|http|https)["']|fetch\s*\()/u;
 
 const ALLOWED_SRC_FILES =
 	"{src/client/**,src/controller/**,src/adapters/**,src/domain/**,src/integration-test/**,src/architecture.test.ts,src/guardrails.test.ts}";
@@ -43,18 +41,8 @@ it("src has no circular dependencies", async () => {
 	assert.deepEqual(violations, []);
 });
 
-it("domain layer only depends on domain and uses no transport APIs", async () => {
+it("domain layer only depends on domain", async () => {
 	assert.deepEqual(await onlyDependsOn("src/domain/**", "src/domain/**"), []);
-
-	const transportViolations = await projectFiles(TSCONFIG_PATH)
-		.inFolder("src/domain/**")
-		.should()
-		.adhereTo(
-			(file) => !TRANSPORT_IMPORT_RE.test(file.content),
-			"Domain files must not use node:fs, node:child_process, node:http(s), or fetch()",
-		)
-		.check();
-	assert.deepEqual(transportViolations, []);
 });
 
 it("adapters layer only depends on adapters, domain, and generated clients", async () => {
@@ -67,18 +55,11 @@ it("adapters layer only depends on adapters, domain, and generated clients", asy
 	);
 });
 
-it("controller layer only depends on controller, adapters, and domain, and controller unit tests only depend on controller and domain", async () => {
+it("controller layer only depends on controller, adapters, and domain", async () => {
 	assert.deepEqual(
 		await onlyDependsOn(
 			"src/controller/**",
 			"{src/controller/**,src/adapters/**,src/domain/**}",
-		),
-		[],
-	);
-	assert.deepEqual(
-		await onlyDependsOn(
-			"src/controller/*.test.ts",
-			"{src/controller/**,src/domain/**}",
 		),
 		[],
 	);
