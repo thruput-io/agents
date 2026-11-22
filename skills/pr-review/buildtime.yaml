@@ -3,7 +3,9 @@ schemas: schemas
 references: skills/pr-review/references
 bin: skills/pr-review/dist/bin
 client: tools/pr-review/src/client
-controller: tools/pr-review/src/controller
+controller:
+  main: tools/pr-review/src/controller/main
+  sub: tools/pr-review/src/controller/sub
 adapters:
   github: tools/pr-review/src/adapters/github
   azure: tools/pr-review/src/adapters/azure

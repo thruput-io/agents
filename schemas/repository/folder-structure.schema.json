@@ -27,7 +27,7 @@
       "$ref": "#/$defs/ClientFolder"
     },
     "controller": {
-      "$ref": "#/$defs/ControllerFolder"
+      "$ref": "#/$defs/ControllerFolders"
     },
     "adapters": {
       "$ref": "#/$defs/AdaptersFolders"
@@ -73,9 +73,24 @@
       "description": "Inbound CLI entrypoints and argument handling at build time, relative to PROJECT_ROOT",
       "$ref": "#/$defs/RelativeFolderPath"
     },
-    "ControllerFolder": {
-      "description": "Application controllers at build time, relative to PROJECT_ROOT",
-      "$ref": "#/$defs/RelativeFolderPath"
+    "ControllerFolders": {
+      "description": "Main-agent and sub-agent controller subfolders at build time, relative to PROJECT_ROOT",
+      "type": "object",
+      "required": [
+        "main",
+        "sub"
+      ],
+      "properties": {
+        "main": {
+          "description": "Main-agent controller folder, relative to PROJECT_ROOT",
+          "$ref": "#/$defs/RelativeFolderPath"
+        },
+        "sub": {
+          "description": "Sub-agent controller folder, relative to PROJECT_ROOT",
+          "$ref": "#/$defs/RelativeFolderPath"
+        }
+      },
+      "additionalProperties": false
     },
     "AdaptersFolders": {
       "description": "Outbound adapter subfolders implementing domain interfaces for each repository host at build time, relative to PROJECT_ROOT",
@@ -125,7 +140,10 @@
       "references": "skills/pr-review/references",
       "bin": "skills/pr-review/dist/bin",
       "client": "tools/pr-review/src/client",
-      "controller": "tools/pr-review/src/controller",
+      "controller": {
+        "main": "tools/pr-review/src/controller/main",
+        "sub": "tools/pr-review/src/controller/sub"
+      },
       "adapters": {
         "github": "tools/pr-review/src/adapters/github",
         "azure": "tools/pr-review/src/adapters/azure",
