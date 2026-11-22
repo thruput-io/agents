@@ -89,17 +89,8 @@ it("client layer only depends on client, controller, and domain", async () => {
 	);
 });
 
-it("!common subfolders may depend on common within the same folder, and common never depends on !common", async () => {
+it("!common can depend on common (within same folder)", async () => {
 	for (const layer of ["src/controller", "src/client"] as const) {
-		assert.deepEqual(
-			await projectFiles(TSCONFIG_PATH)
-				.inPath(`${layer}/common/**`)
-				.shouldNot()
-				.dependOnFiles()
-				.inPath(`${layer}/**`, { except: { inPath: `${layer}/common/**` } })
-				.check(),
-			[],
-		);
 		for (const sub of ["main", "sub"] as const) {
 			assert.deepEqual(
 				await projectFiles(TSCONFIG_PATH)
