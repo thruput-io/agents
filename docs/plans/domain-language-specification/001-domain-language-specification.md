@@ -1,11 +1,11 @@
-# 004 — Domain Language Specification (`uql`)
+# 001 — Domain Language Specification (`uql`)
 
 ## Implementing Agent Instructions
 
 Read this section first, and in full, before touching any code.
 
 **No authoring of this plan.**
-Once implementation begins and progress is recorded under `progress/`, this plan is frozen: executing agents **MUST NOT** author, edit, rewrite, or amend `docs/plans/domain-language-specification/004-domain-language-specification.md`. If any conflict, ambiguity, or unexpected error arises during execution, stop immediately and return control to the human.
+Once implementation begins and progress is recorded under `progress/`, this plan is frozen: executing agents **MUST NOT** author, edit, rewrite, or amend `docs/plans/domain-language-specification/001-domain-language-specification.md`. If any conflict, ambiguity, or unexpected error arises during execution, stop immediately and return control to the human.
 
 **Read before starting.**
 This repository's rules, [`rules/Rules.yaml`](../../../rules/Rules.yaml), with the principles ([`rules/Principles.yaml`](../../../rules/Principles.yaml)) and definitions ([`rules/Definitions.yaml`](../../../rules/Definitions.yaml)) they rest on, published at <https://thruput.se/agents/>, [ADR 0002](../../adrs/0002-schema-validated-yaml-governance-documents.md), [ADR 0004](../../adrs/0004-schemas-and-taxonomy-published-to-the-web.md), [ADR 0005](../../adrs/0005-structure-is-described-in-json-schema.md), the research reports in [`research/uql-rfc/README.md`](research/uql-rfc/README.md), [`research/pl-rfc-comparison/README.md`](research/pl-rfc-comparison/README.md), [`research/prior-art-audit/README.md`](research/prior-art-audit/README.md), [`research/ast-and-markdown-references/README.md`](research/ast-and-markdown-references/README.md), and [`research/json-schema-content-and-ast-validation/README.md`](research/json-schema-content-and-ast-validation/README.md), and this plan end to end. The rules outrank this plan; raise any conflict with the human instead of resolving it yourself.
@@ -23,7 +23,7 @@ Run `./build.sh` at the repository root at each milestone checkpoint. Do not tre
 
 Keep an append-only progress log for this attempt:
 
-- Open `docs/plans/domain-language-specification/progress/004-attempt-1-<YYYY-MM-DD>.md` before the first code change.
+- Open `docs/plans/domain-language-specification/progress/001-attempt-1-<YYYY-MM-DD>.md` before the first code change.
 - Append at each milestone checkpoint: what was implemented, what verification showed, and the commit hash.
 - **MUST NOT** rewrite, condense, or delete an existing entry. Corrections are new entries.
 - **MUST NOT** amend or force-push a commit that contains progress-log entries.
@@ -121,7 +121,7 @@ Formalize the **Ubiquitous Language (`uql`)** specification in `docs/rfcs/0001-u
 | D2 | Human | What parsing model should be researched alongside JSON Schema? | "i want you to research that matter and want you to also researsd asd parser in this regard" |
 | D3 | Human | What is the fundamental communication problem our governance documents are solving? | "Let me give it a try´: 1. Our documentation on our craft needs a very precise language. Everythign in software development boils down to communication. Introduction of AI makes this even more obvious. We waste years trying to make them follow our wishes but we all fail, productivity never reached but during short glimpses. The potence of productiviity is enourmous only blocker is communication. These documents are my take on being able to describe good from bad. I know how effective good is and how ineffective bad is. We believe we can communicate since english goes back and fourth but is all just faked. Meaning is not conveyed at all. In order to convey meaning we need a languga. English is not the lnaguage. It is the domain language we need to establish here. A domain language where we need to bring meaning to our words so that we understand each other." |
 | D4 | Human | How does that break down into distinct problems? | "Ibelieve you just did a little of it. The practically of it. If i write a rule somehow it has to be translated and i need to knwo if something is not "mapped". Just like when i write code i want everything to "syntax" an undefined variable shuold give an error an IDE should help me select from lists etc. We cannot reached there today. So problem 1 is that we dont have a spec for our language. Like we did not decide on javascript or python. Atfger that we need a compiler, linter etd as well that problem 2." |
-| D5 | Human | Should Plan `004` cover only the specification (Problem 1)? | "Lets follow our rules, breaking them will make this effort blow up and dissapear, focus is my weak point and you are constructed to lead astray, lets follow them, only specification" |
+| D5 | Human | Should Plan `001` cover only the specification (Problem 1)? | "Lets follow our rules, breaking them will make this effort blow up and dissapear, focus is my weak point and you are constructed to lead astray, lets follow them, only specification" |
 | D6 | Human | Do you want Option 1B (unbracketed symbols) or Option 1A (explicit brackets)? | "We want the language to readable as any prose so that humans feel comfortable reading and writing it" |
 | D7 | Human | Do you prefer Option 2A (standard English inflection rules + optional `forms` override), Option 2B (explicit `forms: [...]` list on each definition), or Option 2C? | "Yes 2A is of cource nicest the 2B can be a build artifact" |
 | D8 | Human | Should we list reserved grammar glue words in a schema/YAML whitelist, and what about RFC 2119 keywords? | "...Then we do not impose natural language tooling on downstream consumers. I really hate the 2119. It has no meaning since everything is MUST, we even externalixed it. It has no purpose. Restricting wording i am not sure we need. Disamiguition must somehow happen and if wording then either makes it ambigues or are 'not needed' we should have a linter remove and replacing them. It's more a ambiguity rule we let linter take care of. Im afraid listing words will be a never ending story. Can that be defined somehow, between defined (we need a word here) only unambity expressions are allowed" |
@@ -174,7 +174,7 @@ Delivers: Goals 1, 2, 3, and M1 of Goal 4 (`schemas/repository/rfc.schema.json`,
 
 Steps:
 
-1. Open `docs/plans/domain-language-specification/progress/004-attempt-1-<YYYY-MM-DD>.md`.
+1. Open `docs/plans/domain-language-specification/progress/001-attempt-1-<YYYY-MM-DD>.md`.
 2. Create `schemas/repository/rfc.schema.json` and add `rfcs` (`docs/rfcs/`) to `schemas/repository/repository.schema.json`.
 3. Create static `schemas/governance/ubiquitous-language.schema.json` (defining `Prose`, `UbiquitousLanguage`, `Glossary`, `Term`, `Reference`, `UqlAst`, and `Diagnostic` `UQL001`–`UQL007`), remove the legacy `criteria` (`include` / `exclude` lists) from `schemas/governance/coding-pyramid.schema.json` and `rules/CodingPyramid.yaml` ([D28](#discussions)), update `schemas/governance/definitions.schema.json`, and remove `scripts/declared-ids.schema.sh` / `declared-ids.g.schema.json` ([D29](#discussions)).
 4. Author `docs/rfcs/0001-ubiquitous-language.md` (using only domain-neutral examples, with zero examples from `rules/*.yaml`) and `docs/adrs/0011-ubiquitous-language.md` referring to `docs/rfcs/0001-ubiquitous-language.md`.
