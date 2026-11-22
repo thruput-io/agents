@@ -84,9 +84,12 @@ it("controller layer only depends on controller, adapters, and domain, and contr
 	);
 });
 
-it("client layer only depends on client and controller", async () => {
+it("client layer only depends on client, controller, and domain", async () => {
 	assert.deepEqual(
-		await onlyDependsOn("src/client/**", "{src/client/**,src/controller/**}"),
+		await onlyDependsOn(
+			"src/client/**",
+			"{src/client/**,src/controller/**,src/domain/**}",
+		),
 		[],
 	);
 });
