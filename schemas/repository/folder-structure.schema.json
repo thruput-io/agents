@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/repository/folder-structure.schema.json",
+  "title": "FolderStructure",
+  "description": "How a project's source tree is laid out. Each property is a folder in the source tree, named in its description, and its value is what lives there",
+  "type": "object",
+  "required": [
+    "client",
+    "controller",
+    "adapters",
+    "domain",
+    "integrationTest",
+    "clients"
+  ],
+  "properties": {
+    "client": {
+      "$ref": "#/$defs/Client"
+    },
+    "controller": {
+      "$ref": "#/$defs/Controller"
+    },
+    "adapters": {
+      "$ref": "#/$defs/Adapters"
+    },
+    "domain": {
+      "$ref": "#/$defs/Domain"
+    },
+    "integrationTest": {
+      "$ref": "#/$defs/IntegrationTest"
+    },
+    "clients": {
+      "$ref": "#/$defs/Clients"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "Client": {
+      "description": "Inbound CLI entrypoints and argument handling, under src/client",
+      "type": "object"
+    },
+    "Controller": {
+      "description": "Application controllers, under src/controller",
+      "type": "object"
+    },
+    "Adapters": {
+      "description": "Outbound adapters implementing domain interfaces and translating external API shapes via Zod codecs, under src/adapters",
+      "type": "object"
+    },
+    "Domain": {
+      "description": "Domain contracts, domain interfaces, and pure domain logic, under src/domain",
+      "type": "object"
+    },
+    "IntegrationTest": {
+      "description": "Black-box integration tests exercising the shipped runtime artifact through its public interface, under src/integration-test",
+      "type": "object"
+    },
+    "Clients": {
+      "description": "Generated external API clients and wire schemas, under clients",
+      "type": "object"
+    }
+  },
+  "examples": [
+    {
+      "client": {},
+      "controller": {},
+      "adapters": {},
+      "domain": {},
+      "integrationTest": {},
+      "clients": {}
+    }
+  ]
+}
