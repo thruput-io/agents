@@ -106,3 +106,19 @@ it("!common can depend on common (within same folder)", async () => {
 		}
 	}
 });
+
+it("!common x in client can rely on x in controller", async () => {
+	for (const x of ["main", "sub"] as const) {
+		assert.deepEqual(
+			await projectFiles(TSCONFIG_PATH)
+				.inPath(`src/client/${x}/**`)
+				.shouldNot()
+				.dependOnFiles()
+				.inPath("src/controller/**", {
+					except: { inPath: `src/controller/${x}/**` },
+				})
+				.check(),
+			[],
+		);
+	}
+});
