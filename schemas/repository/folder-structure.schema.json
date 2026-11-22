@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thruput.se/agents/schemas/repository/folder-structure.schema.json",
+  "title": "FolderStructure",
+  "description": "How a project's folder tree is laid out relative to PROJECT_ROOT at build time (buildtime.yaml) and in distribution at runtime (runtime.yaml)",
+  "type": "object",
+  "required": [
+    "rules",
+    "schemas",
+    "references",
+    "bin"
+  ],
+  "properties": {
+    "rules": {
+      "$ref": "#/$defs/RulesFolder"
+    },
+    "schemas": {
+      "$ref": "#/$defs/SchemasFolder"
+    },
+    "references": {
+      "$ref": "#/$defs/ReferencesFolder"
+    },
+    "bin": {
+      "$ref": "#/$defs/BinFolder"
+    },
+    "client": {
+      "$ref": "#/$defs/MainSubCommonFolders"
+    },
+    "controller": {
+      "$ref": "#/$defs/MainSubCommonFolders"
+    },
+    "adapters": {
+      "$ref": "#/$defs/AdaptersFolders"
+    },
+    "domain": {
+      "$ref": "#/$defs/DomainFolder"
+    },
+    "integrationTest": {
+      "$ref": "#/$defs/IntegrationTestFolder"
+    },
+    "clients": {
+      "$ref": "#/$defs/ClientsFolder"
+    },
+    "hostReferences": {
+      "$ref": "#/$defs/HostReferencesFolder"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "RelativeFolderPath": {
+      "description": "A folder path relative to PROJECT_ROOT, with no leading slash, trailing slash, or parent-directory traversal",
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![/\\.])(?!.*\\.\\.)(?:.*[^/])?$"
+    },
+    "RulesFolder": {
+      "description": "Folder containing the governance YAML documents (Rules.yaml, Principles.yaml, Definitions.yaml), relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
+    },
+    "SchemasFolder": {
+      "description": "Folder containing the JSON Schema contracts, relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
+    },
+    "ReferencesFolder": {
+      "description": "Folder containing runtime reference indexes bundled with the skill, relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
+    },
+    "BinFolder": {
+      "description": "Folder containing the bundled CLI executables (review-tool.mjs and review-tool-probe.mjs), relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
+    },
+    "MainSubCommonFolders": {
+      "description": "Main-agent, sub-agent, and shared common subfolders at build time, relative to PROJECT_ROOT",
+      "type": "object",
+      "required": [
+        "main",
+        "sub",
+        "common"
+      ],
+      "properties": {
+        "main": {
+          "description": "Main-agent subfolder, relative to PROJECT_ROOT",
+          "$ref": "#/$defs/RelativeFolderPath"
+        },
+        "sub": {
+          "description": "Sub-agent subfolder, relative to PROJECT_ROOT",
+          "$ref": "#/$defs/RelativeFolderPath"
+        },
+        "common": {
+          "description": "Shared common subfolder, relative to PROJECT_ROOT",
+          "$ref": "#/$defs/RelativeFolderPath"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AdaptersFolders": {
+      "description": "Outbound adapter subfolders implementing domain interfaces for each repository host at build time, relative to PROJECT_ROOT",
+      "type": "object",
+      "required": [
+        "github",
+        "azure",
+        "git"
+      ],
+      "properties": {
+        "github": {
+          "description": "GitHub repository adapter folder, relative to PROJECT_ROOT",
+          "$ref": "#/$defs/RelativeFolderPath"
+        },
+        "azure": {
+          "description": "Azure DevOps repository adapter folder, relative to PROJECT_ROOT",
+          "$ref": "#/$defs/RelativeFolderPath"
+        },
+        "git": {
+          "description": "Local Git repository adapter folder, relative to PROJECT_ROOT",
+          "$ref": "#/$defs/RelativeFolderPath"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DomainFolder": {
+      "description": "Domain contracts, domain interfaces, and pure domain logic at build time, relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
+    },
+    "IntegrationTestFolder": {
+      "description": "Black-box integration tests at build time, relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
+    },
+    "ClientsFolder": {
+      "description": "Generated external API clients and wire schemas at build time, relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
+    },
+    "HostReferencesFolder": {
+      "description": "Downloaded OpenAPI and GraphQL specifications used to generate external clients at build time, relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
+    }
+  },
+  "examples": [
+    {
+      "rules": "rules",
+      "schemas": "schemas",
+      "references": "skills/pr-review/references",
+      "bin": "skills/pr-review/dist/bin",
+      "client": {
+        "main": "tools/pr-review/src/client/main",
+        "sub": "tools/pr-review/src/client/sub",
+        "common": "tools/pr-review/src/client/common"
+      },
+      "controller": {
+        "main": "tools/pr-review/src/controller/main",
+        "sub": "tools/pr-review/src/controller/sub",
+        "common": "tools/pr-review/src/controller/common"
+      },
+      "adapters": {
+        "github": "tools/pr-review/src/adapters/github",
+        "azure": "tools/pr-review/src/adapters/azure",
+        "git": "tools/pr-review/src/adapters/git"
+      },
+      "domain": "tools/pr-review/src/domain",
+      "integrationTest": "tools/pr-review/src/integration-test",
+      "clients": "tools/pr-review/clients",
+      "hostReferences": "tools/pr-review/references/hosts"
+    },
+    {
+      "rules": "rules",
+      "schemas": "schemas",
+      "references": "skills/pr-review/references",
+      "bin": "skills/pr-review/dist/bin"
+    }
+  ]
+}

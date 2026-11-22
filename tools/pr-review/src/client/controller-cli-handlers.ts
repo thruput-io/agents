@@ -1,0 +1,126 @@
+import { z } from "zod";
+import { AccessToken } from "../domain/access-token.ts";
+import {
+	PrepareReadySchema,
+	type PrepareResponse,
+	type ReviewStatus,
+} from "../domain/contracts.g.ts";
+import type { AdapterResolution } from "../domain/host-adapter.ts";
+import type { MainAgentLedger } from "../domain/main-agent-ledger.ts";
+import { isNullOrEmpty } from "../domain/nullish.ts";
+import type { WorkspaceFactoryPort, WorkspacePort } from "../domain/ports.ts";
+import { failWithJson, writeJson } from "./cli.ts";
+
+interface MainAgentCliDriver {
+	prepare: (
+		target: string,
+		workdir: WorkspacePort,
+	) => Promise<
+		| { readonly success: true; readonly data: AdapterResolution }
+		| {
+				readonly success: false;
+				readonly error: Extract<
+					PrepareResponse,
+					{ readonly success: false }
+				>["error"];
+		  }
+	>;
+	prepareWithToken: (
+		target: string,
+		workdir: WorkspacePort,
+		token: AccessToken,
+	) => Promise<
+		| { readonly success: true; readonly data: AdapterResolution }
+		| {
+				readonly success: false;
+				readonly error: Extract<
+					PrepareResponse,
+					{ readonly success: false }
+				>["error"];
+		  }
+	>;
+	ledger: (workdir: WorkspacePort) => MainAgentLedger;
+	status: (workdir: WorkspacePort) => Promise<ReviewStatus>;
+}
+
+const writePrepared = (
+	workdir: WorkspacePort,
+	ledger: MainAgentLedger,
+): number => {
+	const warning = workdir.warning();
+	const session = workdir.sessionToken();
+	const pending = ledger.pending();
+	const permissions = Object.fromEntries(
+		pending.map((name) => [name, ledger.permissions(name)]),
+	);
+	const baseResponse = {
+		success: true as const,
+		session,
+		pending: [...pending],
+		permissions,
+	};
+	if (isNullOrEmpty(warning)) {
+		writeJson(PrepareReadySchema.parse(baseResponse));
+		return 0;
+	}
+	writeJson(PrepareReadySchema.parse({ ...baseResponse, warning }));
+	return 0;
+};
+
+const handlePrepare = async (
+	controller: MainAgentCliDriver,
+	workspaceFactory: WorkspaceFactoryPort,
+	cmd: {
+		readonly url: string;
+		readonly workdir: string;
+		readonly token?: string | undefined;
+	},
+): Promise<number> => {
+	const parsedWorkdir = workspaceFactory.from(cmd.workdir);
+	if (!parsedWorkdir.success) {
+		return failWithJson({
+			success: false,
+			error: {
+				kind: "invalid-workdir",
+				message: z.prettifyError(parsedWorkdir.error),
+			},
+		} satisfies PrepareResponse);
+	}
+	if (isNullOrEmpty(cmd.token)) {
+		const result = await controller.prepare(cmd.url, parsedWorkdir.data);
+		if (!result.success) {
+			writeJson(result satisfies PrepareResponse);
+			return 0;
+		}
+		return writePrepared(
+			parsedWorkdir.data,
+			controller.ledger(parsedWorkdir.data),
+		);
+	}
+	const parsedToken = AccessToken.from(cmd.token);
+	if (!parsedToken.success) {
+		return failWithJson({
+			success: false,
+			error: {
+				kind: "invalid-token",
+				message: z.prettifyError(parsedToken.error),
+			},
+		} satisfies PrepareResponse);
+	}
+	const result = await controller.prepareWithToken(
+		cmd.url,
+		parsedWorkdir.data,
+		parsedToken.data,
+	);
+	if (!result.success) {
+		writeJson(result satisfies PrepareResponse);
+		return 0;
+	}
+	return writePrepared(
+		parsedWorkdir.data,
+		controller.ledger(parsedWorkdir.data),
+	);
+};
+
+export type { MainAgentCliDriver };
+export { handlePrepare };
