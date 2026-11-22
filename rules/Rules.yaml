@@ -475,7 +475,7 @@ rules:
   group: Toolchain & Environment
   parent: The Toolchain Is the Guardrail
   body: |
-    Report any spotted weakening of [[Guardrails Against Doing the Wrong Thing]] **on detection**, not later.
+    [[Developers]] can base weeks of effort on the basis that tests and linting rules are operational. A non-operational [[Guardrails Against Doing the Wrong Thing]] may ruin such efforts and cause direct financial damage as well as legal. Report any spotted weakening of [[Guardrails Against Doing the Wrong Thing]] **on detection**—not later, never finishing a task before or delaying in any other way—and make sure via explicit confirmation from the human, as every [[Developer]]'s human or non-human responsibility.
 - id: No optionality
   marker: MUST NOT
   group: Contracts
