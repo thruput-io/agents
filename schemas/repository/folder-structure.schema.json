@@ -2,71 +2,121 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/repository/folder-structure.schema.json",
   "title": "FolderStructure",
-  "description": "How a project's source tree is laid out. Each property is a folder in the source tree, named in its description, and its value is what lives there",
+  "description": "How a project's folder tree is laid out relative to PROJECT_ROOT at build time (buildtime.json) and in distribution at runtime (runtime.json)",
   "type": "object",
   "required": [
-    "client",
-    "controller",
-    "adapters",
-    "domain",
-    "integrationTest",
-    "clients"
+    "rules",
+    "schemas",
+    "references",
+    "bin"
   ],
   "properties": {
+    "rules": {
+      "$ref": "#/$defs/RulesFolder"
+    },
+    "schemas": {
+      "$ref": "#/$defs/SchemasFolder"
+    },
+    "references": {
+      "$ref": "#/$defs/ReferencesFolder"
+    },
+    "bin": {
+      "$ref": "#/$defs/BinFolder"
+    },
     "client": {
-      "$ref": "#/$defs/Client"
+      "$ref": "#/$defs/ClientFolder"
     },
     "controller": {
-      "$ref": "#/$defs/Controller"
+      "$ref": "#/$defs/ControllerFolder"
     },
     "adapters": {
-      "$ref": "#/$defs/Adapters"
+      "$ref": "#/$defs/AdaptersFolder"
     },
     "domain": {
-      "$ref": "#/$defs/Domain"
+      "$ref": "#/$defs/DomainFolder"
     },
     "integrationTest": {
-      "$ref": "#/$defs/IntegrationTest"
+      "$ref": "#/$defs/IntegrationTestFolder"
     },
     "clients": {
-      "$ref": "#/$defs/Clients"
+      "$ref": "#/$defs/ClientsFolder"
+    },
+    "hostReferences": {
+      "$ref": "#/$defs/HostReferencesFolder"
     }
   },
   "additionalProperties": false,
   "$defs": {
-    "Client": {
-      "description": "Inbound CLI entrypoints and argument handling, under src/client",
-      "type": "object"
+    "RelativeFolderPath": {
+      "description": "A folder path relative to PROJECT_ROOT, with no leading slash, trailing slash, or parent-directory traversal",
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![/\\.])(?!.*\\.\\.)(?:.*[^/])?$"
     },
-    "Controller": {
-      "description": "Application controllers, under src/controller",
-      "type": "object"
+    "RulesFolder": {
+      "description": "Folder containing the governance YAML documents (Rules.yaml, Principles.yaml, Definitions.yaml), relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
     },
-    "Adapters": {
-      "description": "Outbound adapters implementing domain interfaces and translating external API shapes via Zod codecs, under src/adapters",
-      "type": "object"
+    "SchemasFolder": {
+      "description": "Folder containing the JSON Schema contracts, relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
     },
-    "Domain": {
-      "description": "Domain contracts, domain interfaces, and pure domain logic, under src/domain",
-      "type": "object"
+    "ReferencesFolder": {
+      "description": "Folder containing runtime reference indexes bundled with the skill, relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
     },
-    "IntegrationTest": {
-      "description": "Black-box integration tests exercising the shipped runtime artifact through its public interface, under src/integration-test",
-      "type": "object"
+    "BinFolder": {
+      "description": "Folder containing the bundled CLI executables (review-tool.mjs and review-tool-probe.mjs), relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
     },
-    "Clients": {
-      "description": "Generated external API clients and wire schemas, under clients",
-      "type": "object"
+    "ClientFolder": {
+      "description": "Inbound CLI entrypoints and argument handling at build time, relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
+    },
+    "ControllerFolder": {
+      "description": "Application controllers at build time, relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
+    },
+    "AdaptersFolder": {
+      "description": "Outbound adapters implementing domain interfaces and translating external API shapes via Zod codecs at build time, relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
+    },
+    "DomainFolder": {
+      "description": "Domain contracts, domain interfaces, and pure domain logic at build time, relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
+    },
+    "IntegrationTestFolder": {
+      "description": "Black-box integration tests at build time, relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
+    },
+    "ClientsFolder": {
+      "description": "Generated external API clients and wire schemas at build time, relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
+    },
+    "HostReferencesFolder": {
+      "description": "Downloaded OpenAPI and GraphQL specifications used to generate external clients at build time, relative to PROJECT_ROOT",
+      "$ref": "#/$defs/RelativeFolderPath"
     }
   },
   "examples": [
     {
-      "client": {},
-      "controller": {},
-      "adapters": {},
-      "domain": {},
-      "integrationTest": {},
-      "clients": {}
+      "rules": "rules",
+      "schemas": "schemas",
+      "references": "skills/pr-review/references",
+      "bin": "skills/pr-review/dist/bin",
+      "client": "tools/pr-review/src/client",
+      "controller": "tools/pr-review/src/controller",
+      "adapters": "tools/pr-review/src/adapters",
+      "domain": "tools/pr-review/src/domain",
+      "integrationTest": "tools/pr-review/src/integration-test",
+      "clients": "tools/pr-review/clients",
+      "hostReferences": "tools/pr-review/references/hosts"
+    },
+    {
+      "rules": "rules",
+      "schemas": "schemas",
+      "references": "skills/pr-review/references",
+      "bin": "skills/pr-review/dist/bin"
     }
   ]
 }
