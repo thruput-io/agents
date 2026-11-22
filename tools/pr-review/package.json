@@ -4,7 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"codegen": "node scripts/generate-contracts.ts && node scripts/generate-clients.ts",
-		"build": "rm -f ../../skills/pr-review/dist/bin/review-tool.mjs ../../skills/pr-review/dist/bin/review-tool-probe.mjs && esbuild src/review-tool.mjs --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=../../skills/pr-review/dist/bin/review-tool.mjs && esbuild src/review-tool-probe.mjs --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=../../skills/pr-review/dist/bin/review-tool-probe.mjs && chmod +x ../../skills/pr-review/dist/bin/review-tool.mjs ../../skills/pr-review/dist/bin/review-tool-probe.mjs",
+		"build": "rm -f ../../skills/pr-review/dist/bin/review-tool.mjs ../../skills/pr-review/dist/bin/review-tool-probe.mjs && esbuild src/review-tool.mjs --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=../../skills/pr-review/dist/bin/review-tool.mjs && esbuild src/review-tool-probe.mjs --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=../../skills/pr-review/dist/bin/review-tool-probe.mjs",
 		"knip": "knip",
 		"knip:fix": "knip --fix",
 		"lint": "biome check --error-on-warnings",
