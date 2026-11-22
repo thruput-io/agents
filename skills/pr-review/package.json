@@ -4,7 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"codegen": "node scripts/generate-contracts.ts && node scripts/generate-clients.ts",
-		"build": "esbuild src/review-tool.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=dist/bin/review-tool.mjs && esbuild src/review-tool-probe.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=dist/bin/review-tool-probe.mjs && chmod +x dist/bin/review-tool.mjs dist/bin/review-tool-probe.mjs",
+		"build": "esbuild src/review-tool.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=dist/bin/review-tool.mjs && esbuild src/review-tool-probe.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=dist/bin/review-tool-probe.mjs",
 		"knip": "knip",
 		"knip:fix": "knip --fix",
 		"lint": "biome check --error-on-warnings",
