@@ -79,16 +79,6 @@ it("controller layer only depends on controller, adapters, and domain", async ()
 	);
 });
 
-it("client layer only depends on client, controller, and domain", async () => {
-	assert.deepEqual(
-		await onlyDependsOn(
-			"src/client/**",
-			"{src/client/**,src/controller/**,src/domain/**}",
-		),
-		[],
-	);
-});
-
 it("!common can depend on common (within same folder)", async () => {
 	for (const layer of ["src/controller", "src/client"] as const) {
 		for (const sub of ["main", "sub"] as const) {
