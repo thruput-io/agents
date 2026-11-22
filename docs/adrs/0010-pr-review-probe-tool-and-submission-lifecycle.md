@@ -10,52 +10,57 @@ Returning instructions, change metadata, surface overview, rules, and principles
 truncation limits and forces probe subagents to parse a monolithic payload before they can acknowledge their assignment.
 Requiring the main agent to trigger review submission after probes finish exposes the ledger lifecycle to the
 orchestrator, while prescribing unauthenticated-first preparation forces an avoidable failure on private hosts. Shipping
-source code inside the installed skill directory exposes implementation internals to agents, and duplicating schema
-contracts or instruction prose in hand-written code or static types per probe kind causes drift across boundaries.
+source code inside the installed skill directory exposes implementation internals to agents, and scattering validation,
+hand-rolled classes, or path calculations outside schema contracts and single root definitions causes drift across
+boundaries.
 
 ## Decisions
 
-1. **JSON Schema Draft 2020-12 is the single source of truth for contracts and instructions**:
-   - Domain shapes and `const` instructions, permissions, and deadlines live directly on the schema properties of
-     the objects that cross boundaries, with probe `instructions` expressed as a single `Prose` field and no internal
-     probe `kind` or separate `task` field exposed to the subagent.
-   - Probe variants are data, not a hierarchy of static instruction or ledger types; schemas define domain data types
-     while leaving `const` instruction literals inline on their object properties.
+1. **JSON Schema Draft 2020-12 defines every interface, domain object, and perimeter API—the adapter layer included**:
+   - Every interface, domain object, and perimeter API—the adapter layer included—is described in JSON Schema Draft
+     2020-12.
+   - Probe variants are distinguished by data invariants on their schema properties rather than by a static type tag or
+     class hierarchy.
+   - Every instruction and prompt handed to an agent or subagent carries fully resolved paths, session tokens, and probe
+     identifiers with zero unfilled placeholders.
    - CLI help emits the Draft 2020-12 JSON Schema directly from the generated command schema so the contract itself
-     instructs the caller without hand-maintained usage wrappers.
+     instructs the caller.
 
-2. **Codegen is hands-off and Zod owns all boundary validation and transformation**:
-   - Internal domain schemas and external host OpenAPI specifications compile into Zod schemas and typed clients without
-     manual edits.
-   - Every boundary—CLI arguments and responses, persisted session state, and external host payloads—parses and
-     transforms through Zod schemas and codecs, folds foreign shapes into domain types at the adapter perimeter, and
-     populates `const` defaults when parsing parent objects.
+2. **External input is parsed exclusively via `zod.parse`, API-to-domain conversion uses Zod codecs on API objects, and only controllers are classes**:
+   - Internal schemas and external host OpenAPI specifications compile into Zod schemas and typed clients at build time
+     without manual edits.
+   - External input at every perimeter is parsed exclusively with `zod.parse` against generated schemas, and conversions
+     between API objects and domain objects are defined exclusively as Zod codecs on the API objects, with zero
+     non-codec parsing or validation code.
+   - Only controllers are modeled as classes; all domain and adapter shapes are schema-defined data transformed by
+     codecs.
 
-3. **The probe CLI exposes small, targeted commands and pages only code changes and external rulebooks**:
-   - Probes operate through six small, targeted commands: `instructions` (fetch probe instructions), `ack`
-     (acknowledge instructions with a small JSON object), `rules` (fetch the probe's rules or external rulebook pages),
-     `next` / `prev` (browse changed files and their surrounding context one file page at a time), `define` (on-demand
-     lookup for unfamiliar bracketed `[[Term]]`s), and `report` (submit verdict rows).
-   - Instructions state affirmative investigation strategies for the probe's role in plain English without repeating
-     schemas or lecturing on non-goals.
+3. **Build-time paths resolve from the project root and runtime paths resolve from a single-evaluated distribution root without symlinks**:
+   - Build-time scripts resolve every path relative to the single project root environment variable, and runtime code
+     resolves every path relative to a single distribution root evaluated once at startup, with no internal repository
+     symlinks or directory-climbing searches.
 
-4. **Acknowledgment verifies CLI JSON submission up front and timers run in code**:
-   - A probe begins by running `instructions`, which ends by asking the probe to call `ack` with a small JSON object
-     described the same way `report` is described—verifying up front that the subagent can invoke the tool, read its
-     instructions, and submit valid JSON on the command line before starting the reporting deadline.
-   - Acknowledgment and reporting deadline thresholds live as schema data on the status command and probe objects, and
-     the status command tracks them in code rather than delegating timer scheduling to the orchestrating agent.
+4. **The probe CLI exposes small, targeted commands and pages only code changes and external rulebooks**:
+   - Probes operate through targeted commands for instructions, acknowledgment, rules and external rulebook paging,
+     changed-file paging, glossary lookup, and report submission, with affirmative investigation strategies stated in
+     plain English.
 
-5. **The final probe report submits the review to the host in code**:
+5. **Acknowledgment verifies comprehension and JSON argument invocation up front, and timers run in code**:
+   - A probe begins by fetching its instructions and acknowledging its assignment with a structured JSON argument on the
+     command line—verifying up front that the subagent understands its instructions and can invoke the tool with valid
+     JSON before its reporting deadline starts.
+   - Acknowledgment and reporting deadline thresholds live as schema data and are tracked in code by the status command
+     rather than by agent-scheduled timers.
+
+6. **The final probe report submits the review to the host in code and fails fast on host errors**:
    - When the last pending probe records a valid slice, the probe tool merges the ledger and submits the review to the
-     host directly so the orchestrating agent cannot alter or delay the outcome.
+     host directly; a failed host submission fails fast without exposing a completed review outcome.
 
-6. **Authenticated and unauthenticated preparation are neutral choices**:
+7. **Authenticated and unauthenticated preparation are neutral choices**:
    - Preparation with or without a token is a neutral choice made up front by the main agent based on the target host
      and operator-governed credentials.
 
-7. **The installed skill ships only runtime artifacts and isolates filesystem state**:
-   - Source code, build scripts, and compiler or linter configuration live outside the shipped skill directory, and
-     plugin setup checks out only runtime directories so agents face minimal distraction.
-   - All filesystem operations live in the filesystem adapter, and session preparation cleans only its own managed
-     subdirectories inside the working directory.
+8. **Builds run only on GitHub, plugin installation copies pre-built release artifacts without sources, and integration tests verify the distributed layout**:
+   - Compilation and bundling run only in GitHub workflows; plugin installation copies the pre-built release artifacts
+     into place and checks out only runtime directories so no sources or build tools are shipped, and integration tests
+     exercise the installed distribution layout against the built artifacts.
