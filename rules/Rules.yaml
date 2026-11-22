@@ -1,561 +1,482 @@
 rules:
 - id: Stated purpose
-  marker: MUST
   group: Purpose
   parent: You aren't gonna need it
   body: |
-    State the [[Purpose]] of every [[Change]].
+    Every Change states its Purpose.
   smells:
-  - A [[Pull request]] description that does not state the business [[Purpose]].
+  - A pull request description omits its business Purpose.
 - id: Every part solves the Purpose
-  marker: MUST
   group: Purpose
   parent: Do One Thing
   body: |
-    Trace every part of the [[Change]] to the part of the stated [[Purpose]] it solves.
+    Every part of a Change traces to the part of the stated Purpose that it solves.
   smells:
-  - A [[Change]] that solves more than the stated [[Purpose]].
+  - A Change solves more than its stated Purpose.
 - id: Predictable user-facing behavior
-  marker: MUST
   group: Purpose
   parent: Principle of Least Astonishment
   body: |
-    Make every [[User]]-facing operation behave as its name and domain conventions lead [[Users]] to expect, with no hidden side effects.
+    Every user-facing operation behaves as its name and domain conventions indicate without hidden side effects.
   smells:
-  - A read or query [[Public method]] or [[Interface]] operation that mutates state.
-  - An [[Error output]] or status message that hides what failed or how the [[User]] recovers.
+  - A read operation or query method mutates state.
+  - An error output hides the failure cause or recovery procedure.
 - id: No speculative portability
-  marker: MUST NOT
   group: Purpose
   parent: You aren't gonna need it
   body: |
-    Add platform, shell, or environment [[Compatibility branch]]es for [[Environment]]s the task does not run in.
+    No Change adds a compatibility branch for an environment where the task does not run.
 - id: Keep pull requests small
-  marker: MUST
   group: Purpose
   parent: Make it work, make it right, make it fast
   body: |
-    Keep every [[Pull request]] small enough to merge quickly without diverging from the main branch.
+    Every pull request remains small enough to merge quickly without divergence from the main branch.
   smells:
-  - A [[Pull request]] larger than 400 lines.
+  - A pull request exceeds 400 lines.
 - id: Make it work first
-  marker: MUST
   group: Purpose
   parent: Make it work, make it right, make it fast
   body: |
-    Deliver working behaviour for the stated [[Purpose]] before refactoring structure or optimising [[Performance]].
+    Every Change delivers working behavior for its stated Purpose before structural refactoring or performance optimization.
   smells:
-  - Using [[Feature toggle]]s instead of shipping a small working slice.
-  - Preparations for future extensions of a [[Component]] not already laid out in a well-researched plan.
-  - A [[Pull request]] more than 3 days old that is still not merged.
+  - A Change uses a feature toggle instead of a small working slice.
+  - A Component prepares for future extensions outside an approved plan.
+  - An unmerged pull request exceeds three days of age.
 - id: No platform feature where reuse serves
-  marker: MUST NOT
   group: Reuse
   parent: Choose boring technology
   body: |
-    Meet a need with the [[Platform or framework]] when [[Codebase reuse]] meets it.
+    No Change implements a platform feature when codebase reuse satisfies the need.
 - id: No dependency where the platform serves
-  marker: MUST NOT
   group: Reuse
   parent: Choose boring technology
   body: |
-    Add an [[External dependency]] when the [[Platform or framework]] meets the need.
+    No Change adds an external dependency when the platform or framework satisfies the need.
 - id: No external service where a dependency serves
-  marker: MUST NOT
   group: Reuse
   parent: Choose boring technology
   body: |
-    Integrate an [[External tool or service]] when an [[External dependency]] meets the need.
+    No Change integrates an external service when an external dependency satisfies the need.
 - id: No new code where an external tool serves
-  marker: MUST NOT
   group: Reuse
   parent: Choose boring technology
   body: |
-    Write [[New code]] when an [[External tool or service]] meets the need.
+    No Change writes new code when an external tool or service satisfies the need.
 - id: Available
-  marker: MUST NOT
   group: Reuse
   parent: Choose boring technology
   body: |
-    Adopt existing code that requires payments or license models, or an extra [[Platform or framework]], that would increase the maintenance burden.
+    No adopted code requires fees, restrictive licenses, or additional platforms that increase maintenance burden.
 - id: Maintained
-  marker: MUST
   group: Reuse
   parent: Choose boring technology
   body: |
-    Adopt existing code only where it is a [[Maintained library or framework]] that is stable, documented, and maintained by several active contributors.
+    Every adopted library or framework is stable, documented, and actively maintained by multiple contributors.
 - id: No second representation
-  marker: MUST NOT
   group: Reuse
   parent: Don't Repeat Yourself
   body: |
-    Add a second [[Representation]] of knowledge the codebase already holds.
+    No Change introduces a second representation of knowledge that the codebase already contains.
   smells:
-  - A copy of a [[Representation]] that must be kept in step with its original.
+  - A duplicate representation requires manual synchronization with its source.
 - id: Consistent with the codebase
-  marker: MUST
   group: Conventions
   parent: Convention over Invention
   body: |
-    Follow the [[Surrounding code]] where no [[Demonstrable standard]] decides the question.
+    Every implementation follows surrounding code when no demonstrable standard applies.
   smells:
-  - A second way of doing the same thing in the [[Surrounding code]].
+  - Surrounding code contains a competing implementation pattern.
 - id: Demonstrable, not recalled
-  marker: MUST
   group: Conventions
   parent: Convention over Invention
   body: |
-    Point at a [[Demonstrable standard]] whenever you invoke a standard as justification. Novel work is not required to cite a standard it does not have.
+    Every invoked standard cites a demonstrable standard.
 - id: Readable at a glance
-  marker: MUST
   group: Conventions
   parent: Less is more
   body: |
-    Keep every [[Component]] and [[Function]] within human [[Readability]] bounds, with vertical spacing separating logical blocks, so a reader holds it in mind without scrolling or unwinding nested blocks.
+    Every component and function stays within readability bounds with vertical spacing separating logical blocks.
   smells:
-  - A line in a [[Component]] longer than 120 characters.
-  - A [[Function]] or [[Public method]] longer than 30 lines.
-  - "[[Branching logic]] or block nesting deeper than 2 levels."
-  - Cognitive complexity of a [[Function]] above 10.
-  - A dense [[Component]] or [[Representation]] with no blank lines separating top-level entries or logical blocks.
+  - A line in a component exceeds 120 characters.
+  - A function or public method exceeds 30 lines.
+  - Branching logic or block nesting exceeds two levels.
+  - Cognitive complexity of a function exceeds 10.
+  - A dense representation contains no blank lines between logical blocks.
 - id: On point prose
-  marker: MUST
   group: Conventions
   parent: Less is more
   body: |
-    Keep every prose [[Representation]] on point and adhering to [[Single Source of Truth]].
+    Every prose representation stays on point and adheres to single source of truth.
   smells:
-  - Repeating what the code or [[Contract]] already defines.
-  - Inline code snippets in a prose [[Representation]] when not motivated.
-  - Exact [[File]] names or paths referenced in a prose [[Representation]] when not motivated.
-  - Restating the same point across sections of a [[Representation]].
-  - A prose walkthrough in a [[Representation]] of logic or schemas that the code or [[Contract]] already states.
-  - Hedging, filler, or decorative phrasing in a [[Representation]] that can be removed without losing meaning.
+  - A prose representation repeats definitions from code or contracts.
+  - An unmotivated prose representation includes inline code snippets.
+  - An unmotivated prose representation references exact file names or paths.
+  - A representation restates the same point across sections.
+  - A prose representation walks through logic or schemas established in code.
+  - A prose representation contains filler phrasing that conveys no meaning.
 - id: ADRs state direction only
-  marker: MUST
   group: Conventions
   parent: Less is more
+  references:
+  - id: adr.schema.json
+    uri: https://thruput.se/agents/schemas/repository/adr.schema.json
   body: |
-    Write every [[Architectural Direction]] record to follow [adr.schema.json](https://thruput.se/agents/schemas/repository/adr.schema.json), in addition to [[On point prose]].
+    Every Architectural Direction record follows adr.schema.json and adheres to on point prose.
   smells:
-  - An [[Architectural Direction]] record placed outside `docs/adrs/` or carrying disallowed sections such as Status, Considered Options, Reasoning, How It Works, Acceptance Criteria, or Consequences.
-  - An [[Architectural Direction]] record describing current codebase state, file inventory, or a step-by-step implementation walkthrough.
-  - An [[Architectural Direction]] record that embeds code snippets or phase-by-phase rollout plans instead of the decision itself.
+  - An Architectural Direction record resides outside docs/adrs or contains disallowed sections.
+  - An Architectural Direction record describes current codebase inventory or step-by-step walkthroughs.
+  - An Architectural Direction record embeds code snippets or rollout phases instead of the decision.
 - id: Validating factory
-  marker: MUST
   group: Types
   parent: Parse, don't validate
   body: |
-    Provide [[Instance]]s only through a named [[Factory]] that establishes every [[Invariant]] before returning.
+    Every instance originates from a named factory that establishes every invariant before return.
 - id: Private constructor
-  marker: MUST
   group: Types
   parent: Parse, don't validate
   body: |
-    Keep the [[Constructor]] private, or unexported from its [[Module]].
+    Every constructor remains private or unexported from its module.
 - id: Creation failure in the signature
-  marker: MUST
   group: Types
   parent: Parse, don't validate
   body: |
-    Return the invalid-input case from a [[Factory]] in its type [[Signature]] rather than throw an [[Exception]].
+    Every factory expresses input validation failure in its return signature without throwing an exception.
 - id: Sum types
-  marker: MUST
   group: Types
   parent: Make illegal states unrepresentable
   body: |
-    Enumerate the legal alternatives as a closed [[Sum type]] rather than a [[Product type]] of optional fields.
+    Every legal alternative enumerates as a closed sum type rather than a product type of optional fields.
 - id: Closed enumerations
-  marker: MUST
   group: Types
   parent: Make illegal states unrepresentable
   body: |
-    Model every legal domain state as a closed enumeration of [[Encapsulated type]]s with belonging [[Domain method]]s and possible transitions.
+    Every domain state models as a closed enumeration of encapsulated types with belonging domain methods and valid transitions.
   smells:
-  - A boolean, free-form string, or [[Pure enum]] representing a domain state.
-  - "[[Branching]] outside of a [[Perimeter]] fold."
+  - A boolean, free-form string, or pure enum represents a domain state.
+  - Branching occurs outside a perimeter fold.
 - id: Compile-time optionality
-  marker: MUST
   group: Types
   parent: Make illegal states unrepresentable
   body: |
-    Make absence an explicit case the [[Compiler]] forces every caller to handle.
+    Every absent value represents an explicit case that the compiler forces callers to handle.
   smells:
-  - A [[Runtime check]] for absence.
+  - Code performs a runtime check for absence.
 - id: Wrap primitives
-  marker: MUST
   group: Types
   parent: No Primitive Obsession
   body: |
-    Wrap a [[Primitive]] in its [[Domain primitive]] before it crosses any [[Interface]] of ours.
+    Every primitive wraps in a domain primitive before crossing any owned interface.
   smells:
-  - A [[Primitive]] in a domain [[Signature]].
+  - A domain signature contains a primitive.
 - id: Opaque encapsulated types
-  marker: MUST
   group: Types
   parent: No Primitive Obsession
   body: |
-    Keep every [[Encapsulated type]] opaque so no code depends on its internal representation. Never collapse it back into [[Primitive]]s inside our code; convert it to another type only through a verified conversion, and fold it into a [[Foreign shape]] only through a contract of the type at an outbound [[Perimeter]].
+    Every encapsulated type remains opaque, avoids primitive collapse, converts through verified conversions, and folds into foreign shapes only at outbound perimeters.
   smells:
-  - Unwrapping [[Domain objects]] into [[Primitive]]s anywhere but at the [[Perimeter]].
+  - Code unwraps domain objects into primitives outside a perimeter.
 - id: Exhaustive matching
-  marker: MUST
   group: Domain Model
   parent: Make illegal states unrepresentable
   body: |
-    Use [[Pattern matching]] over the closed set of cases, with no [[Wildcard pattern]].
+    Every pattern match covers the closed case set without wildcard patterns.
 - id: Self-guarding aggregates
-  marker: MUST
   group: Domain Model
   parent: Make illegal states unrepresentable
   body: |
-    Route every state change of an [[Aggregate]] through a [[Domain method]] that re-establishes its [[Invariant]]s.
+    Every state transition of an aggregate executes through a domain method that preserves invariants.
 - id: No mutators
-  marker: MUST NOT
   group: Domain Model
   parent: Immutable by default
   body: |
-    Expose a [[Setter]] or any operation that changes a [[Domain object]] in place. A change returns a new [[Instance]] that passes the [[Validating path of creation]] again.
+    No domain object exposes mutators or mutates in place, and every update returns a new validated instance.
   smells:
-  - An exposed [[Setter]] or [[Raw collection]] on an [[Aggregate]].
+  - An aggregate exposes a setter or raw collection.
 - id: Strong typing
-  marker: MUST NOT
   group: Domain Model
   parent: Make illegal states unrepresentable
   body: |
-    Represent a domain concept with a [[Loose type]].
+    No domain concept uses a loose type representation.
 - id: Domain-only interfaces
-  marker: MUST
   group: Domain Model
   parent: Make illegal states unrepresentable
   body: |
-    Access a [[Domain object]] only through methods that accept and return [[Domain object]]s, the [[Validating factory]] at the [[Perimeter]] excepted.
+    Every domain object interface accepts and returns domain objects, excluding perimeter validating factories.
   smells:
-  - A [[Primitive]] in the [[Interface]] of a [[Component]] outside of a [[Perimeter]].
+  - An interface outside a perimeter contains a primitive.
 - id: Domain operations
-  marker: MUST
   group: Domain Model
   parent: Make illegal states unrepresentable
   body: |
-    Perform comparison, addition, subtraction, or any other domain operation via [[Domain method]]s.
+    Every domain computation and comparison executes through domain methods.
 - id: Branching belongs at the perimeter
-  marker: MUST
   group: Domain Model
   parent: Replace conditional with polymorphism
   body: |
-    Use a [[Factory]] with [[Inheritance]], a [[Feature]], a [[Strategy]], or a [[Builder]] instead of a boolean or [[Pure enum]].
+    Every polymorphic variant uses a factory, feature, strategy, or builder instead of booleans or pure enums.
   smells:
-  - "[[Branching]] outside of a [[Perimeter]] fold."
+  - Branching occurs outside a perimeter fold.
 - id: Tell, don't ask
-  marker: MUST NOT
   group: Domain Model
   parent: Replace conditional with polymorphism
   body: |
-    Query a [[Domain object]]'s state to decide how to act upon it instead of invoking a [[Domain method]] on it.
+    No caller queries domain object state to direct external actions instead of invoking a domain method.
 - id: Respect layering
-  marker: MUST NOT
   group: Domain Model
   parent: Separation of Concerns
   body: |
-    Import or call against the [[Dependency direction]] the architecture declares: from a [[Layer]] into the layer above it, or skipping a layer.
+    No layer imports from higher layers or bypasses adjacent layers against declared dependency direction.
 - id: Domain separated from transport and framework
-  marker: MUST
   group: Domain Model
   parent: Separation of Concerns
   body: |
-    Isolate [[Domain object]] representations in their own [[Module]] separated from transport [[Foreign shape]]s and [[Framework]] code, with no dependencies on other [[Module]]s in the project, using [[Interface]] abstractions that hide concerns of technical character.
+    Every domain module isolates domain objects from transport foreign shapes and frameworks without technical leakages.
   smells:
-  - "[[Domain object]]s placed in the same [[Module]] as transport [[Foreign shape]]s or [[Framework]] code."
-  - A [[Domain object]] or domain [[Module]] that references or depends on other [[Module]]s in the project, a [[Framework]], or transport [[Foreign shape]]s.
-  - An [[Interface]] in the domain [[Layer]] that exposes technical concerns rather than hiding them behind domain concepts.
+  - A domain module contains transport foreign shapes or framework code.
+  - A domain module depends on external modules, frameworks, or foreign shapes.
+  - A domain interface exposes technical transport concerns.
 - id: Single-purpose components
-  marker: MUST
   group: Domain Model
   parent: Separation of Concerns
   body: |
-    Decompose code into small, single-purpose [[Component]]s.
+    Every component serves a single cohesive purpose within size constraints.
   smells:
-  - A [[Component]] longer than 200 lines.
-  - A [[Function]] or [[Public method]] with more than 3 parameters.
-  - An [[Interface]] with more than 4 [[Public method]]s, not counting [[Overload]]s or convenience methods.
+  - A component exceeds 200 lines.
+  - A function or public method exceeds three parameters.
+  - An interface exceeds four public methods.
 - id: No primitive leakage
-  marker: MUST
   group: Domain Model
   parent: No Primitive Obsession
   body: |
-    Keep raw [[Primitive]]s from crossing a [[Layer]] boundary.
+    No raw primitive crosses a layer boundary.
 - id: Delete unused
-  marker: MUST
   group: Dead Code
   parent: You aren't gonna need it
   body: |
-    Delete [[Test]]s, [[Production code]], and [[Helper code]] that are no longer relevant or used.
+    Every unused or obsolete test, production function, and helper is deleted.
 - id: No comments in code
-  marker: MUST NOT
   group: Conventions
   parent: No Comments
   body: |
-    Comment any version-controlled artifact. Only a [[Machine-read comment]] is exempt.
+    No version-controlled artifact contains code comments, excluding machine-read comments.
 - id: No silent catch
-  marker: MUST NOT
   group: Failure Handling
   parent: Fail fast
   body: |
-    Use [[Try/catch block]]s that do not [[Rethrow]] (silencing failures).
+    No catch block suppresses exceptions without rethrowing.
 - id: No default on failure
-  marker: MUST NOT
   group: Failure Handling
   parent: Fail fast
   body: |
-    Return or use a [[Default value]] when failing.
+    No operation returns or substitutes a default value upon failure.
 - id: No strategy fallback
-  marker: MUST NOT
   group: Failure Handling
   parent: Fail fast
   body: |
-    Make code 'hardened' with a [[Fallback strategy]] tried when the first one fails.
+    No execution path engages a fallback strategy when an initial operation fails.
 - id: No suppressed exit status
-  marker: MUST NOT
   group: Failure Handling
   parent: Fail fast
   body: |
-    Discard or ignore a failed [[Exit status]], error return value, or faulted operation so that a failure passes as success.
+    No process ignores a non-zero exit status or error return to mask failure as success.
 - id: No discarded diagnostics
-  marker: MUST NOT
   group: Failure Handling
   parent: Fail fast
   body: |
-    Send a command's [[Error output]] nowhere, or use another tool to detect state instead of letting the failing tool report its error.
+    No command discards error output or masks diagnostic failures behind external state probes.
 - id: Scripts abort on error
-  marker: MUST NOT
   group: Failure Handling
   parent: Fail fast
   body: |
-    Let a script continue past a failing step. Every script runs in the language's [[Abort-on-error mode]], and a failing step ends it at once.
+    Every script executes in abort-on-error mode and terminates immediately upon any step failure.
 - id: No degraded continuation
-  marker: MUST NOT
   group: Failure Handling
   parent: Fail fast
   body: |
-    Proceed with stale, partial, or assumed input after the step that produces it failed with a failed [[Exit status]] or [[Exception]]; report and stop.
+    No process continues with partial or stale data when an upstream operation fails with an error or exception.
 - id: Linear deterministic code
-  marker: MUST NOT
   group: Failure Handling
   parent: Fail fast
   body: |
-    Write test, build, or configuration code that contains [[Branching logic]] or fallback [[Default value]]s, such as, but not limited to, `if` [[Statement]]s, `switch`/`case` expressions, or defaulted values.
+    No test, build, or configuration code contains branching logic, fallback defaults, conditional statements, or switch expressions.
 - id: No muted tests
-  marker: MUST NOT
   group: Tests
   parent: Test-Driven Development
   body: |
-    Leave a [[Muted test]] or skip [[Test]]s.
+    No test suite contains muted tests or skipped test cases.
 - id: Assert values
-  marker: MUST
   group: Tests
   parent: Never trust a test you haven't seen fail
   body: |
-    Verify the expected outcome of the [[Subject under test]] with an [[Assertion]] on the actual values produced, achieving [[True Test Coverage]] rather than merely executing code paths.
+    Every test verifies the subject under test with assertions on actual output values to achieve true test coverage.
   smells:
-  - "[[Test]]s that discard return values just to increase [[Code coverage]]."
-  - "[[Assertion]]s that only check no error occurred."
-  - "[[Assertion]]s on generalizations such as the presence or type of the asserted value."
+  - A test discards return values to inflate code coverage.
+  - An assertion checks only absence of errors without verifying output.
+  - An assertion checks only presence or type without verifying exact value.
 - id: Add tests for new code
-  marker: MUST
   group: Tests
   parent: Test-Driven Development
   body: |
-    Add [[Test]]s for new [[Production code]].
+    Every new production code unit includes corresponding tests.
 - id: Add tests for updated code
-  marker: MUST
   group: Tests
   parent: Test-Driven Development
   body: |
-    Add [[Test]]s for updated [[Production code]].
+    Every updated production code unit includes corresponding updated tests.
 - id: Troubleshooting unit test
-  marker: MUST
   group: Tests
   parent: Never fix a bug without a test pinning it
   body: |
-    Any bug fix has a [[Unit test]] pinning it.
+    Every bug fix includes a unit test that pins the defect before resolution.
 - id: No retry on failure
-  marker: MUST NOT
   group: Tests
   parent: F.I.R.S.T.
   body: |
-    Configure a [[Test]] to run again until it passes, by a retry count, a retry annotation, or a [[Flaky test]] marker.
+    No test configuration retries a failed test via retry counts, annotations, or flaky test markers.
 - id: One subject under test
-  marker: MUST NOT
   group: Tests
   parent: No gray tests
   body: |
-    Include more than one [[Subject under test]] in a [[Unit test]], [[Narrow integration test]], or [[Integration test]], or test the composition of objects within a [[Unit test]] or a [[Narrow integration test]].
+    Every unit test or narrow integration test isolates exactly one subject under test without testing composite object graphs.
 - id: No test case coupling
-  marker: MUST NOT
   group: Tests
   parent: F.I.R.S.T.
   body: |
-    Allow one [[Test case]] to depend on another; every [[Test case]] is executable on its own, in any order.
+    Every test case executes independently in any order without coupling to other test cases.
 - id: Integration Tests Are Black-Box
-  marker: MUST
   group: Tests
   parent: No gray tests
   body: |
-    Test the shipped [[Runtime artifact]] through its public [[API]]s using [[Black-box testing]].
+    Every integration test validates runtime artifacts through public interfaces via black-box testing.
 - id: Test setup leaves production code alone
-  marker: MUST NOT
   group: Toolchain & Environment
   parent: Production Parity
   body: |
-    Alter the behaviour of [[Production code]] in [[Test setup]].
+    No test setup alters the behavior of production code.
 - id: No global quality changes
-  marker: MUST NOT
   group: Toolchain & Environment
   parent: The Toolchain Is the Guardrail
   body: |
-    Change global or project-wide [[Quality]] standards, except in a [[Pull request]] that contains only that [[Change]].
+    No Change modifies global quality standards except within a dedicated pull request containing only that change.
   smells:
-  - Changing global or project-wide [[Lint rule]]s outside a dedicated [[Pull request]].
+  - A pull request modifies global lint rules alongside other changes.
 - id: No local disabling of lint rules
-  marker: MUST NOT
   group: Toolchain & Environment
   parent: The Toolchain Is the Guardrail
   body: |
-    Disable a [[Lint rule]] locally, by a comment, a [[Pragma]], or alike. An exception the team accepts is expressed globally, by a [[File]] filter in the lint configuration or alike.
+    No file disables a lint rule locally through comments or pragmas, and all exemptions configure globally.
 - id: No check the type system makes
-  marker: MUST NOT
   group: Test Pyramid
   parent: Push tests down the pyramid
   body: |
-    Write a [[Runtime check]] or a test for what the [[Type system]] can reject.
+    No test or runtime check validates conditions that the type system rejects at compile time.
 - id: No test a linter makes
-  marker: MUST NOT
   group: Test Pyramid
   parent: Push tests down the pyramid
   body: |
-    Write a test for what [[Static code analysis]] can reject.
+    No test suite validates conditions that static code analysis rejects.
 - id: No narrow integration test for a unit
-  marker: MUST NOT
   group: Test Pyramid
   parent: Push tests down the pyramid
   body: |
-    Write a [[Narrow integration test]] for what a [[Unit test]] can catch.
+    No narrow integration test validates behavior that a unit test covers.
 - id: No integration test for one component
-  marker: MUST NOT
   group: Test Pyramid
   parent: Push tests down the pyramid
   body: |
-    Write an [[Integration test]] for what a [[Narrow integration test]] can catch.
+    No integration test validates component behavior that a narrow integration test covers.
 - id: No end-to-end test for one service
-  marker: MUST NOT
   group: Test Pyramid
   parent: Push tests down the pyramid
   body: |
-    Write an [[End-to-end test]] for what an [[Integration test]] can catch.
+    No end-to-end test validates service behavior that an integration test covers.
 - id: No manual test for an automated one
-  marker: MUST NOT
   group: Test Pyramid
   parent: Push tests down the pyramid
   body: |
-    Leave to a [[Manual test]] what an [[End-to-end test]] can catch.
+    No manual test validates behavior that an automated test suite covers.
 - id: No committing generated code
-  marker: MUST NOT
   group: Toolchain & Environment
   parent: The Toolchain Is the Guardrail
   body: |
-    Commit [[Generated code]].
+    No commit includes generated code artifacts.
 - id: Strict presets
-  marker: MUST
   group: Toolchain & Environment
   parent: The Toolchain Is the Guardrail
   body: |
-    Use the strictest possible [[Preset]]s on linting and style.
+    Every toolchain configuration applies the strictest presets for linting and formatting.
 - id: No optionality
-  marker: MUST NOT
   group: Contracts
   parent: Avoid optionality
   body: |
-    Use optional variables or [[Optional parameter]]s unless [[Code We Cannot Control]] forces them.
+    No contract or function signature uses optional variables or optional parameters unless external code forces them.
 - id: Prefer APIs without optionality
-  marker: MUST
   group: Contracts
   parent: Avoid optionality
   body: |
-    Choose, among [[Code We Cannot Control]] that meets the need, an [[API]] without [[Optional parameter]]s over one with them.
+    Every integration chooses external APIs without optional parameters over alternatives with optional parameters.
 - id: Overload per option combination
-  marker: MUST
   group: Contracts
   parent: Avoid optionality
   body: |
-    Provide an [[Overload]] or an [[Explicitly named method]] for each allowed combination of options instead of [[Optional parameter]]s.
+    Every interface provides explicit overloads or named methods for parameter combinations instead of optional parameters.
 - id: Forced optionality at perimeter
-  marker: MUST
   group: Contracts
   parent: Fold at Perimeter
   body: |
-    Handle [[Optionality]] forced by [[Code We Cannot Control]] in the [[Statement]] that invokes it or receives its return.
+    Every invocation of external optionality resolves in the immediate invoking statement at the perimeter.
 - id: Accept unknown properties
-  marker: MUST
   group: Contracts
   parent: Prepare reader for evolving producer
   body: |
-    Accept a [[Foreign shape]] that carries properties you do not know, and ignore them.
+    Every consumer accepts foreign shapes with unrecognized properties and ignores unknown fields.
 - id: Generic parameters, specific returns
-  marker: MUST
   group: Contracts
   parent: Prepare reader for evolving producer
   body: |
-    Declare the most generic [[Parameter type]]s and the most specific [[Return type]] a [[Public method]] can honour.
+    Every public method declares the most generic parameter types and the most specific return type.
 - id: Shapes live in the contract
-  marker: MUST
   group: Contracts
   parent: Contract First
   body: |
-    Define a shape that crosses a boundary in the [[Contract]] and derive the code on both sides from it.
+    Every boundary shape defines in an authoritative contract that generates representations for both sides.
   smells:
-  - A shape that crosses a boundary defined only in code without a [[Contract]].
-  - A [[Change]] to a boundary shape that leaves the [[Contract]] unchanged.
+  - A boundary shape exists in code without an authoritative contract.
+  - A boundary shape change leaves the contract unchanged.
 - id: No unstated standard
-  marker: MUST NOT
   group: Conventions
   parent: Adoption is articulation
   body: |
-    Instruct an [[AI agent]] to follow a [[Coding standard]] that has no entry in these documents; add the entry and cite it.
+    No instruction directs an agent to follow an unrecorded standard absent from governing documents.
 - id: One-command setup
-  marker: MUST
   group: Toolchain & Environment
   parent: Infrastructure as Code
   body: |
-    Keep clone, build, and [[Test]] of the entire [[Environment]] to one documented command.
+    A single documented command executes clone, build, and test operations for the complete environment.
 - id: No manual environment setup
-  marker: MUST NOT
   group: Toolchain & Environment
   parent: Infrastructure as Code
   body: |
-    Set up a test or production [[Environment]] with a manual step.
+    No environment setup requires manual steps for test or production environments.
 - id: Twice is automated
-  marker: MUST
   group: Toolchain & Environment
   parent: Infrastructure as Code
   body: |
-    Script a procedure for [[Automation]] the second time it is performed.
+    Every procedure executed a second time is automated by script.
   smells:
-  - A manual procedure written down to be repeated instead of scripted for [[Automation]].
+  - A manual procedure is documented for repetition without automation scripts.
 - id: Ship with telemetry
-  marker: MUST
   group: Toolchain & Environment
   parent: Own the Runtime
   body: |
-    Add the [[Signal]] in the [[Change]] that adds the behavior it shows.
+    Every Change that adds runtime behavior includes corresponding telemetry signals.
 - id: No iteration over calls over the network
-  marker: MUST NOT
   group: Performance
   parent: Iterations over calls over the network is bad design
   body: |
-    Iterate over [[Calls over the network]].
+    No loop or iteration executes calls over the network.
 - id: No performance motivations on in-memory operations
-  marker: MUST NOT
   group: Performance
   parent: Make it work, make it right, make it fast
   body: |
-    Motivate any [[Change]] by [[Performance]] on [[In-memory operation]]s; a performance change reduces [[Calls over the network]] or addresses a bottleneck proven by a named measurement as [[Evidence]].
+    No Change optimizes in-memory operations unless evidence demonstrates a bottleneck or reduces network calls.

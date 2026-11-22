@@ -1,0 +1,479 @@
+rules:
+- id: Stated purpose
+  group: Purpose
+  parent: You aren't gonna need it
+  body: |
+    Every Change states its Purpose.
+  smells:
+  - A Pull request description that does not state the business Purpose.
+- id: Every part solves the Purpose
+  group: Purpose
+  parent: Do One Thing
+  body: |
+    Every part of a Change traces to the stated Purpose it solves.
+  smells:
+  - A Change that solves more than the stated Purpose.
+- id: Predictable user-facing behavior
+  group: Purpose
+  parent: Principle of Least Astonishment
+  body: |
+    Every User-facing operation behaves as its name and domain conventions lead Users to expect, with no hidden side effects.
+  smells:
+  - A read or query Public method or Interface operation that mutates state.
+  - An Error output or status message that hides what failed or how the User recovers.
+- id: No speculative portability
+  group: Purpose
+  parent: You aren't gonna need it
+  body: |
+    A Change contains no Compatibility branches for an Environment the task does not run in.
+- id: Keep pull requests small
+  group: Purpose
+  parent: Make it work, make it right, make it fast
+  body: |
+    Every Pull request remains small enough to merge quickly without diverging from the main branch.
+  smells:
+  - A Pull request larger than 400 lines.
+- id: Make it work first
+  group: Purpose
+  parent: Make it work, make it right, make it fast
+  body: |
+    A Change delivers working behaviour for its stated Purpose before refactoring structure or optimising Performance.
+  smells:
+  - Using Feature toggles instead of shipping a small working slice.
+  - Preparations for future extensions of a Component not already laid out in a well-researched plan.
+  - A Pull request more than 3 days old that is still not merged.
+- id: No platform feature where reuse serves
+  group: Reuse
+  parent: Choose boring technology
+  body: |
+    A Change meets a need through Codebase reuse rather than through the Platform or framework.
+- id: No dependency where the platform serves
+  group: Reuse
+  parent: Choose boring technology
+  body: |
+    A Change adds no External dependency when the Platform or framework meets the need.
+- id: No external service where a dependency serves
+  group: Reuse
+  parent: Choose boring technology
+  body: |
+    A Change integrates no External tool or service when an External dependency meets the need.
+- id: No new code where an external tool serves
+  group: Reuse
+  parent: Choose boring technology
+  body: |
+    A Change writes no New code when an External tool or service meets the need.
+- id: Available
+  group: Reuse
+  parent: Choose boring technology
+  body: |
+    A Change adopts no code that requires payments or license models, or an extra Platform or framework that increases the maintenance burden.
+- id: Maintained
+  group: Reuse
+  parent: Choose boring technology
+  body: |
+    Adopted code is a Maintained library or framework that is stable, documented, and maintained by several active contributors.
+- id: No second representation
+  group: Reuse
+  parent: Don't Repeat Yourself
+  body: |
+    A Change adds no second Representation of knowledge the codebase already holds.
+  smells:
+  - A copy of a Representation that must be kept in step with its original.
+- id: Consistent with the codebase
+  group: Conventions
+  parent: Convention over Invention
+  body: |
+    A Change follows the Surrounding code where no Demonstrable standard decides the question.
+  smells:
+  - A second way of doing the same thing in the Surrounding code.
+- id: Demonstrable, not recalled
+  group: Conventions
+  parent: Convention over Invention
+  body: |
+    Every citation of a standard points to a Demonstrable standard.
+- id: Readable at a glance
+  group: Conventions
+  parent: Less is more
+  body: |
+    Every Component and Function remains within human Readability bounds, with vertical spacing separating logical blocks.
+  smells:
+  - A line in a Component longer than 120 characters.
+  - A Function or Public method longer than 30 lines.
+  - Branching logic or block nesting deeper than 2 levels.
+  - Cognitive complexity of a Function above 10.
+  - A dense Component or Representation with no blank lines separating top-level entries or logical blocks.
+- id: On point prose
+  group: Conventions
+  parent: Less is more
+  body: |
+    Every prose Representation remains on point and adheres to Single Source of Truth.
+  smells:
+  - Repeating what the code or Contract already defines.
+  - Inline code snippets in a prose Representation when not motivated.
+  - Exact File names or paths referenced in a prose Representation when not motivated.
+  - Restating the same point across sections of a Representation.
+  - A prose walkthrough in a Representation of logic or schemas that the code or Contract already states.
+  - Hedging, filler, or decorative phrasing in a Representation that can be removed without losing meaning.
+- id: ADRs state direction only
+  group: Conventions
+  parent: Less is more
+  body: |
+    Every Architectural Direction record follows adr.schema.json and adheres to On point prose.
+  smells:
+  - An Architectural Direction record placed outside `docs/adrs/` or carrying disallowed sections such as Status, Considered Options, Reasoning, How It Works, Acceptance Criteria, or Consequences.
+  - An Architectural Direction record describing current codebase state, file inventory, or a step-by-step implementation walkthrough.
+  - An Architectural Direction record that embeds code snippets or phase-by-phase rollout plans instead of the decision itself.
+- id: Validating factory
+  group: Types
+  parent: Parse, don't validate
+  body: |
+    Instances are provided only through a named Factory that establishes every Invariant before returning.
+- id: Private constructor
+  group: Types
+  parent: Parse, don't validate
+  body: |
+    Every Constructor remains private or unexported from its Module.
+- id: Creation failure in the signature
+  group: Types
+  parent: Parse, don't validate
+  body: |
+    A Factory returns creation failure in its type Signature rather than throwing an Exception.
+- id: Sum types
+  group: Types
+  parent: Make illegal states unrepresentable
+  body: |
+    Legal alternatives form a closed Sum type rather than a Product type of optional fields.
+- id: Closed enumerations
+  group: Types
+  parent: Make illegal states unrepresentable
+  body: |
+    Every legal domain state is modeled as a closed enumeration of Encapsulated types with Domain methods and explicit transitions.
+  smells:
+  - A boolean, free-form string, or Pure enum representing a domain state.
+  - Branching outside of a Perimeter fold.
+- id: Compile-time optionality
+  group: Types
+  parent: Make illegal states unrepresentable
+  body: |
+    The Compiler forces every caller to handle absence explicitly.
+  smells:
+  - A Runtime check for absence.
+- id: Wrap primitives
+  group: Types
+  parent: No Primitive Obsession
+  body: |
+    A Primitive is wrapped in its Domain primitive before crossing any Interface of ours.
+  smells:
+  - A Primitive in a domain Signature.
+- id: Opaque encapsulated types
+  group: Types
+  parent: No Primitive Obsession
+  body: |
+    Every Encapsulated type remains opaque and folds into a Foreign shape only through a contract of the type at an outbound Perimeter.
+  smells:
+  - Unwrapping Domain objects into Primitives anywhere but at the Perimeter.
+- id: Exhaustive matching
+  group: Domain Model
+  parent: Make illegal states unrepresentable
+  body: |
+    Pattern matching over closed cases contains no Wildcard pattern.
+- id: Self-guarding aggregates
+  group: Domain Model
+  parent: Make illegal states unrepresentable
+  body: |
+    Every state change of an Aggregate routes through a Domain method that re-establishes its Invariants.
+- id: No mutators
+  group: Domain Model
+  parent: Immutable by default
+  body: |
+    A Domain object exposes no Setter or in-place mutator; every change returns a new Instance through the Validating path of creation.
+  smells:
+  - An exposed Setter or Raw collection on an Aggregate.
+- id: Strong typing
+  group: Domain Model
+  parent: Make illegal states unrepresentable
+  body: |
+    A domain concept is not represented with a Loose type.
+- id: Domain-only interfaces
+  group: Domain Model
+  parent: Make illegal states unrepresentable
+  body: |
+    Access to a Domain object occurs only through methods that accept and return Domain objects, outside a Perimeter Validating factory.
+  smells:
+  - A Primitive in the Interface of a Component outside of a Perimeter.
+- id: Domain operations
+  group: Domain Model
+  parent: Make illegal states unrepresentable
+  body: |
+    Domain operations execute through Domain methods.
+- id: Branching belongs at the perimeter
+  group: Domain Model
+  parent: Replace conditional with polymorphism
+  body: |
+    Branching resolves at the Perimeter through a Factory with Inheritance, a Feature, a Strategy, or a Builder rather than booleans or Pure enums.
+  smells:
+  - Branching outside of a Perimeter fold.
+- id: Tell, don't ask
+  group: Domain Model
+  parent: Replace conditional with polymorphism
+  body: |
+    Callers invoke a Domain method on a Domain object rather than querying its state to decide how to act upon it.
+- id: Respect layering
+  group: Domain Model
+  parent: Separation of Concerns
+  body: |
+    No Component imports or calls against the declared Dependency direction: into a Layer above it or skipping a Layer.
+- id: Domain separated from transport and framework
+  group: Domain Model
+  parent: Separation of Concerns
+  body: |
+    Domain object representations live in an isolated Module separated from transport Foreign shapes and Framework code, with no dependencies on other Modules.
+  smells:
+  - Domain objects placed in the same Module as transport Foreign shapes or Framework code.
+  - A Domain object or domain Module that references or depends on other Modules in the project, a Framework, or transport Foreign shapes.
+  - An Interface in the domain Layer that exposes technical concerns rather than hiding them behind domain concepts.
+- id: Single-purpose components
+  group: Domain Model
+  parent: Separation of Concerns
+  body: |
+    Code decomposes into small, single-purpose Components.
+  smells:
+  - A Component longer than 200 lines.
+  - A Function or Public method with more than 3 parameters.
+  - An Interface with more than 4 Public methods, not counting Overloads or convenience methods.
+- id: No primitive leakage
+  group: Domain Model
+  parent: No Primitive Obsession
+  body: |
+    Raw Primitives do not cross a Layer boundary.
+- id: Delete unused
+  group: Dead Code
+  parent: You aren't gonna need it
+  body: |
+    Tests, Production code, and Helper code that are no longer relevant or used are deleted.
+- id: No comments in code
+  group: Conventions
+  parent: No Comments
+  body: |
+    A version-controlled artifact contains no comments outside Machine-read comments.
+- id: No silent catch
+  group: Failure Handling
+  parent: Fail fast
+  body: |
+    Every Try/catch block rethrows caught exceptions without silencing failures.
+- id: No default on failure
+  group: Failure Handling
+  parent: Fail fast
+  body: |
+    A failing operation returns or uses no Default value.
+- id: No strategy fallback
+  group: Failure Handling
+  parent: Fail fast
+  body: |
+    Code contains no Fallback strategy tried upon initial failure.
+- id: No suppressed exit status
+  group: Failure Handling
+  parent: Fail fast
+  body: |
+    No step or operation discards or ignores a failed Exit status, error return value, or faulted operation.
+- id: No discarded diagnostics
+  group: Failure Handling
+  parent: Fail fast
+  body: |
+    A command sends its Error output to diagnostics without suppression or state detection tools.
+- id: Scripts abort on error
+  group: Failure Handling
+  parent: Fail fast
+  body: |
+    Every script runs in Abort-on-error mode and terminates immediately on a failing step.
+- id: No degraded continuation
+  group: Failure Handling
+  parent: Fail fast
+  body: |
+    Execution halts and reports failure when an input-producing step fails with a failed Exit status or Exception.
+- id: Linear deterministic code
+  group: Failure Handling
+  parent: Fail fast
+  body: |
+    Test, build, and configuration code contains no Branching logic or fallback Default values.
+- id: No muted tests
+  group: Tests
+  parent: Test-Driven Development
+  body: |
+    The test suite contains no Muted tests or skipped Tests.
+- id: Assert values
+  group: Tests
+  parent: Never trust a test you haven't seen fail
+  body: |
+    Tests verify the expected outcome of the Subject under test with an Assertion on actual values produced.
+  smells:
+  - Tests that discard return values just to increase Code coverage.
+  - Assertions that only check no error occurred.
+  - Assertions on generalizations such as the presence or type of the asserted value.
+- id: Add tests for new code
+  group: Tests
+  parent: Test-Driven Development
+  body: |
+    New Production code has covering Tests.
+- id: Add tests for updated code
+  group: Tests
+  parent: Test-Driven Development
+  body: |
+    Updated Production code has covering Tests.
+- id: Troubleshooting unit test
+  group: Tests
+  parent: Never fix a bug without a test pinning it
+  body: |
+    Every bug fix has a pinning Unit test.
+- id: No retry on failure
+  group: Tests
+  parent: F.I.R.S.T.
+  body: |
+    A Test contains no retry count, retry annotation, or Flaky test marker.
+- id: One subject under test
+  group: Tests
+  parent: No gray tests
+  body: |
+    A Unit test, Narrow integration test, or Integration test exercises exactly one Subject under test without object composition.
+- id: No test case coupling
+  group: Tests
+  parent: F.I.R.S.T.
+  body: |
+    Every Test case executes independently in any order without coupling to another Test case.
+- id: Integration Tests Are Black-Box
+  group: Tests
+  parent: No gray tests
+  body: |
+    Integration tests exercise the shipped Runtime artifact through public APIs using Black-box testing.
+- id: Test setup leaves production code alone
+  group: Toolchain & Environment
+  parent: Production Parity
+  body: |
+    Test setup leaves the behaviour of Production code unaltered.
+- id: No global quality changes
+  group: Toolchain & Environment
+  parent: The Toolchain Is the Guardrail
+  body: |
+    A Change to global or project-wide Quality standards occurs only in a dedicated Pull request.
+  smells:
+  - Changing global or project-wide Lint rules outside a dedicated Pull request.
+- id: No local disabling of lint rules
+  group: Toolchain & Environment
+  parent: The Toolchain Is the Guardrail
+  body: |
+    Code contains no local disabling of a Lint rule through comments or Pragmas; accepted exceptions are configured globally.
+- id: No check the type system makes
+  group: Test Pyramid
+  parent: Push tests down the pyramid
+  body: |
+    The Type system rejects invalid states without Runtime checks or Tests.
+- id: No test a linter makes
+  group: Test Pyramid
+  parent: Push tests down the pyramid
+  body: |
+    Static code analysis catches defects without duplicate test coverage.
+- id: No narrow integration test for a unit
+  group: Test Pyramid
+  parent: Push tests down the pyramid
+  body: |
+    A Unit test catches defects without a Narrow integration test.
+- id: No integration test for one component
+  group: Test Pyramid
+  parent: Push tests down the pyramid
+  body: |
+    A Narrow integration test catches defects without an Integration test.
+- id: No end-to-end test for one service
+  group: Test Pyramid
+  parent: Push tests down the pyramid
+  body: |
+    An Integration test catches defects without an End-to-end test.
+- id: No manual test for an automated one
+  group: Test Pyramid
+  parent: Push tests down the pyramid
+  body: |
+    An End-to-end test catches defects without a Manual test.
+- id: No committing generated code
+  group: Toolchain & Environment
+  parent: The Toolchain Is the Guardrail
+  body: |
+    A repository contains no committed Generated code.
+- id: Strict presets
+  group: Toolchain & Environment
+  parent: The Toolchain Is the Guardrail
+  body: |
+    Linting and style configurations use the strictest available Presets.
+- id: No optionality
+  group: Contracts
+  parent: Avoid optionality
+  body: |
+    Signatures contain no optional variables or Optional parameters outside Code We Cannot Control.
+- id: Prefer APIs without optionality
+  group: Contracts
+  parent: Avoid optionality
+  body: |
+    Selected APIs from Code We Cannot Control contain no Optional parameters.
+- id: Overload per option combination
+  group: Contracts
+  parent: Avoid optionality
+  body: |
+    An Interface provides an Overload or an Explicitly named method for each allowed combination of options instead of Optional parameters.
+- id: Forced optionality at perimeter
+  group: Contracts
+  parent: Fold at Perimeter
+  body: |
+    Optionality forced by Code We Cannot Control is handled at the Perimeter in the invoking Statement.
+- id: Accept unknown properties
+  group: Contracts
+  parent: Prepare reader for evolving producer
+  body: |
+    A reader accepts and ignores unknown properties in a Foreign shape.
+- id: Generic parameters, specific returns
+  group: Contracts
+  parent: Prepare reader for evolving producer
+  body: |
+    A Public method declares the most generic Parameter types and the most specific Return type.
+- id: Shapes live in the contract
+  group: Contracts
+  parent: Contract First
+  body: |
+    Shapes crossing a boundary are defined in the Contract and derive code on both sides.
+  smells:
+  - A shape that crosses a boundary defined only in code without a Contract.
+  - A Change to a boundary shape that leaves the Contract unchanged.
+- id: No unstated standard
+  group: Conventions
+  parent: Adoption is articulation
+  body: |
+    Instructions to an AI agent cite an explicit Coding standard entry declared in these documents.
+- id: One-command setup
+  group: Toolchain & Environment
+  parent: Infrastructure as Code
+  body: |
+    Clone, build, and Test of the Environment execute through one documented command.
+- id: No manual environment setup
+  group: Toolchain & Environment
+  parent: Infrastructure as Code
+  body: |
+    Every test and production Environment provisions without manual steps.
+- id: Twice is automated
+  group: Toolchain & Environment
+  parent: Infrastructure as Code
+  body: |
+    A procedure performed a second time is scripted for Automation.
+  smells:
+  - A manual procedure written down to be repeated instead of scripted for Automation.
+- id: Ship with telemetry
+  group: Toolchain & Environment
+  parent: Own the Runtime
+  body: |
+    A Change adding behaviour ships with its corresponding Signal.
+- id: No iteration over calls over the network
+  group: Performance
+  parent: Iterations over calls over the network is bad design
+  body: |
+    Code performs no iterations over Calls over the network.
+- id: No performance motivations on in-memory operations
+  group: Performance
+  parent: Make it work, make it right, make it fast
+  body: |
+    A Performance Change reduces Calls over the network or resolves a bottleneck proven by measured Evidence, not In-memory operations.

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/governance/definitions.schema.json",
   "title": "Definitions",
-  "description": "The glossary: the definitions of terms the other documents rely on",
+  "description": "The glossary: the definitions of terms in the Ubiquitous Language",
   "type": "object",
   "required": [
     "definitions"
@@ -13,6 +13,9 @@
       "items": {
         "$ref": "#/$defs/Definition"
       }
+    },
+    "references": {
+      "$ref": "ubiquitous-language.schema.json#/$defs/References"
     }
   },
   "$defs": {
@@ -21,17 +24,23 @@
       "$ref": "id.schema.json"
     },
     "Definition": {
-      "description": "A term, named by its id, with its specification and optionally the criteria deciding whether a concept is an instance of the term. A definition is refined over time by adding criteria. Schemas that extend it add properties",
+      "description": "A Term in the Ubiquitous Language, named by its id, with its specification, optional partOfSpeech and surface forms, optional References, and optional closed or open enumeration",
       "type": "object",
       "properties": {
         "id": {
           "$ref": "#/$defs/DefinitionId"
         },
+        "partOfSpeech": {
+          "$ref": "ubiquitous-language.schema.json#/$defs/PartOfSpeech"
+        },
+        "forms": {
+          "$ref": "ubiquitous-language.schema.json#/$defs/TermForms"
+        },
         "specification": {
           "$ref": "#/$defs/Specification"
         },
-        "criteria": {
-          "$ref": "#/$defs/Criteria"
+        "references": {
+          "$ref": "ubiquitous-language.schema.json#/$defs/References"
         },
         "closedEnumerationOf": {
           "$ref": "#/$defs/ClosedEnumeration"
@@ -66,79 +75,31 @@
       "minItems": 1,
       "uniqueItems": true,
       "items": {
-        "$ref": "id.schema.json",
-        "$dynamicRef": "id.schema.json#Id"
+        "$ref": "id.schema.json"
       }
     },
     "Specification": {
-      "description": "The precise meaning of the term",
-      "$ref": "#/$defs/Prose"
-    },
-    "Criteria": {
-      "description": "Classification criteria deciding whether a concept is an instance of the term",
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "$ref": "#/$defs/Criterion"
-      }
-    },
-    "Criterion": {
-      "description": "One classification criterion, either including a concept or excluding it",
-      "oneOf": [
-        {
-          "$ref": "#/$defs/IncludeCriterion"
-        },
-        {
-          "$ref": "#/$defs/ExcludeCriterion"
-        }
-      ]
-    },
-    "IncludeCriterion": {
-      "description": "A concept matching the statement is an instance of the term",
-      "type": "object",
-      "properties": {
-        "include": {
-          "$ref": "#/$defs/CriterionStatement"
-        }
-      },
-      "required": [
-        "include"
-      ]
-    },
-    "ExcludeCriterion": {
-      "description": "A concept matching the statement is not an instance of the term",
-      "type": "object",
-      "properties": {
-        "exclude": {
-          "$ref": "#/$defs/CriterionStatement"
-        }
-      },
-      "required": [
-        "exclude"
-      ]
-    },
-    "CriterionStatement": {
-      "description": "The heuristic a concept is matched against",
+      "description": "The precise meaning of the term in Ubiquitous Language (uql)",
       "$ref": "#/$defs/Prose"
     },
     "Prose": {
-      "description": "Markdown text. A reference to an entry or a glossary term is its id in double square brackets, [[Id]]: every [[ opens a reference that closes with ]], holds no brackets, and is not blank. The reference must name an existing id",
-      "type": "string",
-      "minLength": 1,
-      "$dynamicRef": "#References",
-      "pattern": "^[^\\[]*(?:(?:\\[\\[[^\\[\\]]*[^\\[\\]\\s][^\\[\\]]*\\]\\]|\\[[^\\[])[^\\[]*)*\\[?$"
-    },
-    "References": {
-      "description": "Prose whose every [[Id]] names a declared id. Accepts any prose on its own; the build binds the dynamic anchor to the pattern of every declared id",
-      "$dynamicAnchor": "References"
+      "description": "CommonMark text",
+      "$ref": "ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
     }
   },
   "examples": [
     {
       "definitions": [
         {
-          "id": "API",
-          "specification": "Alias for [[Interface]]."
+          "id": "Interface",
+          "partOfSpeech": "noun",
+          "forms": [
+            "Interface",
+            "Interfaces",
+            "API",
+            "APIs"
+          ],
+          "specification": "Boundary across which two Software Elements interact."
         }
       ]
     }

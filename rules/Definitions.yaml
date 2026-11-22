@@ -1,140 +1,292 @@
 definitions:
-- id: Marker
-  specification: |
-    The RFC 2119 priority word that opens a rule or a solution.
-  closedEnumerationOf:
-  - MUST
-  - MUST NOT
-  - SHOULD
-  - SHOULD NOT
-  - MAY
-- id: MUST
-  specification: |
-    An absolute requirement.
-- id: MUST NOT
-  specification: |
-    An absolute prohibition.
-- id: SHOULD
-  specification: |
-    A requirement that may be set aside only with a stated, valid reason.
-- id: SHOULD NOT
-  specification: |
-    A prohibition that may be set aside only with a stated, valid reason.
-- id: MAY
-  specification: |
-    An option.
-- id: Defined
-  specification: |
-    Exists as an entry in this glossary.
 - id: Id
+  partOfSpeech: noun
+  forms:
+  - Id
+  - Ids
+  - id
+  - ids
   specification: |
-    The name of an entry, and the only stable handle for citing it. Ids are unique across every document, compared case-insensitively with whitespace normalized. In prose an id is cited as [[Id]].
+    The unique, stable identifier of an entry across every document.
 - id: Group
+  partOfSpeech: noun
+  forms:
+  - Group
+  - Groups
+  - group
+  - groups
   specification: |
-    The topical cluster a rule belongs to, taken from the heading the rule sat under. It orders and clusters rules for readers and has no bearing on precedence.
+    The topical cluster ordering and categorizing rules.
 - id: Parent
+  partOfSpeech: noun
+  forms:
+  - Parent
+  - Parents
+  - parent
+  - parents
   specification: |
-    The id of the entry directly above. Every entry below the root has exactly one parent.
+    The identifier of the entry directly above in the hierarchy.
 - id: Purpose
+  partOfSpeech: noun
+  forms:
+  - Purpose
+  - Purposes
+  - purpose
+  - purposes
   specification: |
-    The stated reason something is built or changed, expressed as the benefit it delivers to [[Users]].
+    The stated reason software is built or changed, expressed as the benefit delivered to users.
 - id: Users
+  partOfSpeech: noun
+  forms:
+  - Users
+  - User
+  - users
+  - user
   specification: |
-    Whoever consumes the software or system to fulfill a need. A [[Developer]] is not a user.
+    An agent, person, or external system that consumes the software to fulfill a need.
   openEnumerationOf:
   - End user
   - Operator
   - External system
   - AI agent
 - id: End user
+  partOfSpeech: noun
+  forms:
+  - End user
+  - End users
+  - end user
+  - end users
   specification: |
     A person who uses the product to meet their own need.
 - id: Operator
+  partOfSpeech: noun
+  forms:
+  - Operator
+  - Operators
+  - operator
+  - operators
   specification: |
     A person who keeps the system running in production.
 - id: External system
+  partOfSpeech: noun
+  forms:
+  - External system
+  - External systems
+  - external system
+  - external systems
   specification: |
-    A system outside the current code base that calls it or is called by it.
+    A system outside the current codebase that calls or is called by the codebase.
 - id: AI agent
+  partOfSpeech: noun
+  forms:
+  - AI agent
+  - AI agents
+  - ai agent
+  - ai agents
   specification: |
-    A program that pursues a goal autonomously, using a model to decide its next action.
+    An autonomous program that uses a model to decide actions toward a goal.
 - id: Developer
+  partOfSpeech: noun
+  forms:
+  - Developer
+  - Developers
+  - developer
+  - developers
   specification: |
-    Whoever writes, reviews, or maintains the code: a person or an [[AI agent]]. Every rule is applied by a developer, on a diff, and holds the same for either kind. A developer is not a [[User]].
+    An agent or person who writes, reviews, or maintains code.
 - id: Component
+  partOfSpeech: noun
+  forms:
+  - Component
+  - Components
+  - File
+  - Files
+  - component
+  - components
+  - file
+  - files
   specification: |
-    A [[Class]] or any larger unit of code—such as a file, folder, module, package, or project—with its own [[Interface]] and namespace that decides which of its parts are visible outside it.
+    A unit of code with its own interface and namespace governing part visibility.
 - id: Class
+  partOfSpeech: noun
+  forms:
+  - Class
+  - Classes
+  - class
+  - classes
   specification: |
-    A construct that defines a type as a set of values together with the operations on them. A rule that names a Class applies to every construct that does this, whatever the language calls it.
-- id: File
-  specification: |
-    Alias for [[Component]].
+    A construct that defines a type as a set of values together with operations on them.
 - id: Function
+  partOfSpeech: noun
+  forms:
+  - Function
+  - Functions
+  - function
+  - functions
   specification: |
-    A callable unit of code that takes zero or more parameters and returns a result.
+    A callable unit of code that accepts parameters and returns a result.
 - id: Interface
+  partOfSpeech: noun
+  forms:
+  - Interface
+  - Interfaces
+  - API
+  - APIs
+  - interface
+  - interfaces
+  - api
+  - apis
   specification: |
-    The boundary through which code outside a [[Component]] invokes it.
+    The boundary through which code outside a component invokes it.
 - id: Public method
+  partOfSpeech: noun
+  forms:
+  - Public method
+  - Public methods
+  - public method
+  - public methods
   specification: |
-    A single invocation receiver of an [[Interface]]: one operation that code outside the [[Component]] can invoke through it. An operation that only code inside the [[Component]] can invoke is not a public method.
+    An invocation receiver of an interface callable by code outside the component.
 - id: Domain object
+  partOfSpeech: noun
+  forms:
+  - Domain object
+  - Domain objects
+  - domain object
+  - domain objects
   specification: |
-    A type in the domain layer that models a business concept and upholds its own invariants: [[Immutable]], created only through its [[Validating path of creation]], and operated on only through other [[Domain objects]].
+    An immutable type modeling a business concept created via a validating factory and upholding invariants.
 - id: Encapsulated type
+  partOfSpeech: noun
+  forms:
+  - Encapsulated type
+  - Encapsulated types
+  - encapsulated type
+  - encapsulated types
   specification: |
-    A [[Class]] into which one or more [[Primitive]]s are folded at the [[Perimeter]], named for what the values mean rather than for their shape, with a single [[Validating path of creation]], and [[Immutable]].
+    An immutable class folding one or more primitives at the perimeter with a single validating path of creation.
   openEnumerationOf:
   - Domain primitive
 - id: Domain primitive
+  partOfSpeech: noun
+  forms:
+  - Domain primitive
+  - Domain primitives
+  - domain primitive
+  - domain primitives
   specification: |
-    The special case where a single [[Primitive]] is wrapped.
+    An encapsulated type wrapping a single primitive.
 - id: Loose type
+  partOfSpeech: noun
+  forms:
+  - Loose type
+  - Loose types
+  - loose type
+  - loose types
   specification: |
-    The shape of a variable, defined so loosely that it admits [[Illegal state]]s by design, the opposite of [[Make illegal states unrepresentable]]. Its looseness shows in the type's cardinality, which every field and every open choice multiplies while the legal states stay few.
+    A type representation whose cardinality admits illegal states by design.
   openEnumerationOf:
   - Optionality
   - Primitive Obsession
-  - Mutator
+  - Setter
 - id: Primitive Obsession
+  partOfSpeech: noun
+  forms:
+  - Primitive Obsession
+  - primitive obsession
   specification: |
-    Representing a value by one or more [[Primitive]]s instead of a type of its own, leaving its meaning and constraints to every piece of code that handles it.
+    The practice of representing a domain value using primitives rather than a dedicated type.
 - id: Optionality
+  partOfSpeech: noun
+  forms:
+  - Optionality
+  - optionality
   specification: |
-    A choice left open in a value or parameter, such as whether it is present at all.
+    A choice left open in a value or parameter, such as absence.
 - id: Setter
+  partOfSpeech: noun
+  forms:
+  - Setter
+  - Setters
+  - Mutator
+  - Mutators
+  - setter
+  - setters
+  - mutator
+  - mutators
   specification: |
-    An operation that assigns a new value to a field of an existing object, a second path of creation that skips the validation of the first. A strong code smell.
+    An operation that assigns a new value to an existing object field, bypassing initial validation.
 - id: Immutable
+  partOfSpeech: adjective
+  forms:
+  - Immutable
+  - immutable
   specification: |
-    Unable to change after creation. A change produces a new value, which passes the same [[Validating path of creation]] as the first. Without it, a factory's validation holds only for the moment of creation.
+    Incapable of changing state after creation.
 - id: Code We Cannot Control
+  partOfSpeech: noun
+  forms:
+  - Code We Cannot Control
+  - code we cannot control
   specification: |
-    Code that is not part of the current code base and whose shape we cannot change.
+    Code outside the current codebase whose shape cannot be changed.
   openEnumerationOf:
   - Framework
   - Library
   - External system
   - User input
 - id: Framework
+  partOfSpeech: noun
+  forms:
+  - Framework
+  - Frameworks
+  - framework
+  - frameworks
   specification: |
-    Code outside the current code base that calls our code and owns the flow of control.
+    Code outside the codebase that calls application code and owns control flow.
 - id: Library
+  partOfSpeech: noun
+  forms:
+  - Library
+  - Libraries
+  - library
+  - libraries
   specification: |
-    Code outside the current code base that our code calls, leaving the flow of control with our code.
+    Code outside the codebase that application code calls while retaining control flow.
 - id: User input
+  partOfSpeech: noun
+  forms:
+  - User input
+  - user input
   specification: |
-    Data a person enters through a user interface.
+    Data entered through an interface by a person.
 - id: Perimeter
+  partOfSpeech: noun
+  forms:
+  - Perimeter
+  - Perimeters
+  - perimeter
+  - perimeters
   specification: |
-    A point in our code that either invokes, or is invoked by, [[Code We Cannot Control]].
+    A boundary in code that invokes or is invoked by code we cannot control.
 - id: Illegal state
+  partOfSpeech: noun
+  forms:
+  - Illegal state
+  - Illegal states
+  - illegal state
+  - illegal states
   specification: |
-    A combination of values that the domain never defined as valid.
+    A combination of values that the domain never defines as valid.
 - id: Development Stack
+  partOfSpeech: noun
+  forms:
+  - Development Stack
+  - Development Stacks
+  - development stack
+  - development stacks
   specification: |
-    The ways to meet a need, in order of how little code we own afterwards.
+    The ordered sequence of strategies meeting a need by minimizing owned code.
   closedEnumerationOf:
   - No code
   - Codebase reuse
@@ -143,26 +295,64 @@ definitions:
   - External tool or service
   - New code
 - id: No code
+  partOfSpeech: noun
+  forms:
+  - No code
+  - no code
   specification: |
-    Meeting the need without any code.
+    Meeting a need without introducing new code.
 - id: Codebase reuse
+  partOfSpeech: noun
+  forms:
+  - Codebase reuse
+  - codebase reuse
   specification: |
-    Meeting the need with code already in this codebase, refactored into a reusable [[Component]] where it is not one yet.
+    Meeting a need with existing code refactored into a reusable component.
 - id: Platform or framework
+  partOfSpeech: noun
+  forms:
+  - Platform or framework
+  - platform or framework
   specification: |
-    Meeting the need with what the platform or [[Framework]] in use already provides.
+    Meeting a need using capabilities provided by the active platform or framework.
 - id: External dependency
+  partOfSpeech: noun
+  forms:
+  - External dependency
+  - External dependencies
+  - Dependency
+  - Dependencies
+  - external dependency
+  - external dependencies
+  - dependency
+  - dependencies
   specification: |
-    Meeting the need by adding an existing external [[Component]] as a dependency.
+    An external component added to the codebase as a dependency.
 - id: External tool or service
+  partOfSpeech: noun
+  forms:
+  - External tool or service
+  - External tools or services
+  - external tool or service
+  - external tools or services
   specification: |
-    Meeting the need by integrating an existing external tool or calling an existing service.
+    Meeting a need by integrating an external tool or calling a service.
 - id: New code
+  partOfSpeech: noun
+  forms:
+  - New code
+  - new code
   specification: |
-    Meeting the need by writing new code.
+    Meeting a need by authoring new code.
 - id: Test Pyramid
+  partOfSpeech: noun
+  forms:
+  - Test Pyramid
+  - Test Pyramids
+  - test pyramid
+  - test pyramids
   specification: |
-    The places a defect can be caught, from the base, earliest and cheapest, to the top, latest and costliest.
+    The layered hierarchy of verification stages ordered from earliest and cheapest to latest and costliest.
   closedEnumerationOf:
   - Type system
   - Static code analysis
@@ -172,61 +362,153 @@ definitions:
   - End-to-end test
   - Manual test
 - id: Type system
+  partOfSpeech: noun
+  forms:
+  - Type system
+  - Type systems
+  - type system
+  - type systems
   specification: |
-    Preventing a defect by choosing a type in which the [[Illegal state]] cannot be constructed.
+    A mechanism preventing defects at compile time by making illegal states unrepresentable.
 - id: Static code analysis
+  partOfSpeech: noun
+  forms:
+  - Static code analysis
+  - static code analysis
   specification: |
-    Catching a defect by analysing the code before it runs, with a linter or another static tool.
+    Defect detection performed by inspecting code before execution.
 - id: Unit test
+  partOfSpeech: noun
+  forms:
+  - Unit test
+  - Unit tests
+  - unit test
+  - unit tests
   specification: |
-    Catching a defect by exercising one [[Subject under test]] in-process, without an [[External dependency]].
+    An in-process test exercising one subject under test without external dependencies.
 - id: Narrow integration test
+  partOfSpeech: noun
+  forms:
+  - Narrow integration test
+  - Narrow integration tests
+  - narrow integration test
+  - narrow integration tests
   specification: |
-    A [[Unit test]] without the in-process requirement: one [[Subject under test]] exercised against a real instance of the [[External dependency]] it talks to, such as a repository against a database in a container ([Martin Fowler, IntegrationTest](https://martinfowler.com/bliki/IntegrationTest.html)).
+    A test exercising one subject under test against a real external dependency instance without in-process isolation.
 - id: Integration test
+  partOfSpeech: noun
+  forms:
+  - Integration test
+  - Integration tests
+  - integration test
+  - integration tests
   specification: |
-    A [[Test]] of one [[Subject under test]]—the shipped [[Runtime artifact]]—running and tested through its public [[API]]s using [[Black-box testing]], with [[External dependency]] instances emulated via their official containers, or second-best containers as production-like as possible.
+    A black-box test exercising a shipped runtime artifact through public interfaces against emulated dependencies.
 - id: End-to-end test
+  partOfSpeech: noun
+  forms:
+  - End-to-end test
+  - End-to-end tests
+  - end-to-end test
+  - end-to-end tests
   specification: |
-    Catching a defect by exercising fully deployed services in a running staging environment.
+    A test exercising deployed services across a complete staging environment.
 - id: Manual test
+  partOfSpeech: noun
+  forms:
+  - Manual test
+  - Manual tests
+  - manual test
+  - manual tests
   specification: |
-    Catching a defect by a person exercising the running system.
+    Defect detection conducted by a person operating the running system.
 - id: Evidence
+  partOfSpeech: noun
+  forms:
+  - Evidence
+  - evidence
   specification: |
-    A verifiable reference that grounds a change or an assumption. A practice recalled from experience is not evidence.
+    A verifiable reference that grounds a change or assumption.
   closedEnumerationOf:
   - Code reference
   - Test reference
   - Document reference
 - id: Code reference
+  partOfSpeech: noun
+  forms:
+  - Code reference
+  - Code references
+  - code reference
+  - code references
   specification: |
-    A full URL to code on the main branch of an existing or public repository.
+    A full URL pointing to code on the main branch of a repository.
 - id: Test reference
+  partOfSpeech: noun
+  forms:
+  - Test reference
+  - Test references
+  - test reference
+  - test references
   specification: |
-    A test in an existing repository.
+    An executable test in an existing repository grounding an assumption.
 - id: Document reference
+  partOfSpeech: noun
+  forms:
+  - Document reference
+  - Document references
+  - document reference
+  - document references
   specification: |
-    A full URL to a specific section of an article or document.
+    A full URL pointing to a specific section of a document.
 - id: Demonstrable standard
+  partOfSpeech: noun
+  forms:
+  - Demonstrable standard
+  - Demonstrable standards
+  - demonstrable standard
+  - demonstrable standards
   specification: |
-    A standard that can be pointed at. A habit recalled from past experience, or a practice whose community has moved on, is not a demonstrable standard.
+    An established standard verifiable through published conventions, maintained libraries, or community patterns.
   closedEnumerationOf:
   - Published convention
   - Maintained library or framework
   - Community pattern
 - id: Published convention
+  partOfSpeech: noun
+  forms:
+  - Published convention
+  - Published conventions
+  - published convention
+  - published conventions
   specification: |
-    A convention that is written down and published.
+    An explicitly written and published ecosystem convention.
 - id: Maintained library or framework
+  partOfSpeech: noun
+  forms:
+  - Maintained library or framework
+  - Maintained libraries or frameworks
+  - maintained library or framework
+  - maintained libraries or frameworks
   specification: |
-    A [[Library]] or [[Framework]] that is actively maintained.
+    An actively maintained library or framework.
 - id: Community pattern
+  partOfSpeech: noun
+  forms:
+  - Community pattern
+  - Community patterns
+  - community pattern
+  - community patterns
   specification: |
-    A pattern in current use by a large, active community.
+    A design pattern in active use by a recognized community.
 - id: Machine-read comment
+  partOfSpeech: noun
+  forms:
+  - Machine-read comment
+  - Machine-read comments
+  - machine-read comment
+  - machine-read comments
   specification: |
-    A comment that something other than a human reader requires.
+    A code comment required by an automated tool rather than human readers.
   closedEnumerationOf:
   - Shebang
   - Machine-read directive
@@ -234,41 +516,96 @@ definitions:
   - Mandated license header
   - Generated-file banner
 - id: Shebang
+  partOfSpeech: noun
+  forms:
+  - Shebang
+  - Shebangs
+  - shebang
+  - shebangs
   specification: |
-    The first line of a script, naming the interpreter that runs it.
+    The initial line of a script designating its execution interpreter.
 - id: Machine-read directive
+  partOfSpeech: noun
+  forms:
+  - Machine-read directive
+  - Machine-read directives
+  - machine-read directive
+  - machine-read directives
   specification: |
-    A directive to a tool that is syntactically a comment.
+    A comment formatted as an instruction for compilers or linters.
 - id: Published API documentation
+  partOfSpeech: noun
+  forms:
+  - Published API documentation
+  - published API documentation
   specification: |
-    Documentation of an [[Interface]] that a tool extracts to a published documentation site.
+    Interface documentation extracted by tooling into a published reference site.
 - id: Mandated license header
+  partOfSpeech: noun
+  forms:
+  - Mandated license header
+  - Mandated license headers
+  - mandated license header
+  - mandated license headers
   specification: |
-    A license notice that a license or policy requires at the top of a file.
+    A required legal license notice placed at the top of a source file.
 - id: Generated-file banner
+  partOfSpeech: noun
+  forms:
+  - Generated-file banner
+  - Generated-file banners
+  - generated-file banner
+  - generated-file banners
   specification: |
-    A notice marking a file as generated by a tool.
+    A notice identifying a file as generated by an automated tool.
 - id: Great Code
+  partOfSpeech: noun
+  forms:
+  - Great Code
+  - Great software
+  - great code
+  - great software
   specification: |
-    Code that avoids becoming a [[System Failed State]].
-- id: Great software
-  specification: |
-    Alias for [[Great Code]].
+    Code that avoids entering a system failed state.
 - id: Bad Code
+  partOfSpeech: noun
+  forms:
+  - Bad Code
+  - bad code
   specification: |
-    Code that drives the system toward a [[System Failed State]].
-- id: Accuracy
+    Code that drives a software system toward a system failed state.
+- id: Correctness
+  partOfSpeech: noun
+  forms:
+  - Correctness
+  - Accuracy
+  - correctness
+  - accuracy
   specification: |
-    Alias for [[Correctness]].
+    The degree to which software accurately delivers what users require.
 - id: Inaccurate
+  partOfSpeech: adjective
+  forms:
+  - Inaccurate
+  - inaccurate
   specification: |
-    The state where the system diverges from what [[Users]] need, failing to fulfill their intended outcome.
+    Divergent from user needs and failing to achieve intended outcomes.
 - id: System Decay
+  partOfSpeech: noun
+  forms:
+  - System Decay
+  - system decay
   specification: |
-    The progressive transition of a software system from a healthy state into one or more [[System Failed State]]s, caused by the accumulation of [[Bad Code]].
+    The progressive degradation of a software system toward system failed states caused by bad code accumulation.
 - id: System Failed State
+  partOfSpeech: noun
+  forms:
+  - System Failed State
+  - System Failed States
+  - system failed state
+  - system failed states
   specification: |
-    A non-operational state the software transitions into when [[Bad Code]] accumulates.
+    A non-operational state entered when bad code accumulates within a system.
   openEnumerationOf:
   - Velocity Stagnation
   - Regression Cascades
@@ -276,26 +613,60 @@ definitions:
   - Deployment Paralysis
   - Value Failure
 - id: Velocity Stagnation
+  partOfSpeech: noun
+  forms:
+  - Velocity Stagnation
+  - velocity stagnation
   specification: |
-    The codebase has become so complex or fragile that the team can no longer deliver value at a sustainable pace.
+    A condition where complexity prevents sustainable delivery of new value.
 - id: Regression Cascades
+  partOfSpeech: noun
+  forms:
+  - Regression Cascades
+  - regression cascades
   specification: |
-    Fixing one bug consistently introduces new, unrelated bugs elsewhere in the application.
+    A failure mode where defect fixes introduce new defects elsewhere.
 - id: Knowledge Dissipation
+  partOfSpeech: noun
+  forms:
+  - Knowledge Dissipation
+  - knowledge dissipation
   specification: |
-    The codebase still runs, but no active team member understands how or why its core logic works.
+    A condition where active maintainers no longer understand how core logic functions.
 - id: Deployment Paralysis
+  partOfSpeech: noun
+  forms:
+  - Deployment Paralysis
+  - deployment paralysis
   specification: |
-    Code changes are complete, but the system cannot be safely or reliably shipped to production.
+    A condition where changes cannot safely ship to production.
 - id: Value Failure
+  partOfSpeech: noun
+  forms:
+  - Value Failure
+  - value failure
   specification: |
-    The system has become [[Inaccurate]], failing to do what [[Users]] need.
+    A state where software fails to fulfill user needs.
 - id: Architectural Direction
+  partOfSpeech: noun
+  forms:
+  - Architectural Direction
+  - Architectural Directions
+  - architectural direction
+  - architectural directions
   specification: |
-    The fold of every ADR, read from the highest-numbered downward: a later ADR supersedes an earlier one, so where ADRs are ambiguous or conflict, the first read holds. ADRs are immutable; a change is a new ADR, never an edit, because the history explains why decisions were made and why the project is designed the way it is. The Architectural Direction governs where the project is heading; it does not describe its current state.
+    The cumulative, immutable record of architectural decisions governing where a project heads.
 - id: Software quality axis
+  partOfSpeech: noun
+  forms:
+  - Software quality axis
+  - Software quality axes
+  - Quality
+  - software quality axis
+  - software quality axes
+  - quality
   specification: |
-    One of ten dimensions defining software quality.
+    One of ten structural dimensions defining software quality.
   closedEnumerationOf:
   - Correctness
   - Maintainability
@@ -307,39 +678,80 @@ definitions:
   - Guardrails Against Doing the Wrong Thing
   - Automation
   - Currency of Tools and Libraries
-- id: Correctness
-  specification: |
-    The degree to which software accurately delivers what [[Users]] need.
 - id: Maintainability
+  partOfSpeech: noun
+  forms:
+  - Maintainability
+  - maintainability
   specification: |
-    The property that changing a behavior requires understanding and touching only the component that owns it.
+    The property where modifying a behavior requires changing only its owning component.
 - id: Readability
+  partOfSpeech: noun
+  forms:
+  - Readability
+  - readability
   specification: |
-    The property that a reader unfamiliar with the code understands what it does and why without asking the author.
+    The property where an unfamiliar reader understands code intent without author consultation.
 - id: Testability
+  partOfSpeech: noun
+  forms:
+  - Testability
+  - testability
   specification: |
-    The property that behavior is exercised in isolation without standing up networks, clocks, or global state.
+    The property where behavior is exercised in isolation without network, clock, or global state coupling.
 - id: Structural simplicity
+  partOfSpeech: noun
+  forms:
+  - Structural simplicity
+  - structural simplicity
   specification: |
-    [[Simplicity]] as it shows in the design: the property that the design carries no structure that a present requirement does not demand.
+    The design quality of carrying no structure unneeded by current requirements.
 - id: True Test Coverage
+  partOfSpeech: noun
+  forms:
+  - True Test Coverage
+  - true test coverage
   specification: |
-    The property that tests fail when behavior breaks, rather than merely executing code paths.
+    The property where tests fail when behavior breaks rather than merely executing paths.
 - id: Ease of Doing the Right Thing
+  partOfSpeech: noun
+  forms:
+  - Ease of Doing the Right Thing
+  - Path of least resistance
+  - ease of doing the right thing
+  - path of least resistance
   specification: |
-    The property that the correct approach is the [[Path of least resistance]] for the next contributor.
+    The property where the correct implementation approach offers the path of least resistance.
 - id: Guardrails Against Doing the Wrong Thing
+  partOfSpeech: noun
+  forms:
+  - Guardrails Against Doing the Wrong Thing
+  - guardrails against doing the wrong thing
   specification: |
-    The property that types, tests, and tooling cause incorrect approaches to fail early at compile time rather than relying on human vigilance.
+    The property where tooling and types cause incorrect approaches to fail early at compile time.
 - id: Automation
+  partOfSpeech: noun
+  forms:
+  - Automation
+  - automation
   specification: |
-    The property that the path between a change and its verified deployment runs without manual intervention.
+    The property where the path from code change to verified deployment executes without manual steps.
 - id: Currency of Tools and Libraries
+  partOfSpeech: noun
+  forms:
+  - Currency of Tools and Libraries
+  - currency of tools and libraries
   specification: |
-    The property that dependencies are current and easily kept that way.
+    The property where project dependencies remain modern and easily updated.
 - id: Comment intent
+  partOfSpeech: noun
+  forms:
+  - Comment intent
+  - Comment intents
+  - comment intent
+  - comment intents
   specification: |
-    A reason prose is written as a comment in code. Every comment intent is replaced by a durable, verifiable mechanism, leaving only [[Machine-read comment]]s exempt.
+    A rationale for adding prose comments to code.
   closedEnumerationOf:
   - Clarification
   - Procrastination
@@ -347,78 +759,139 @@ definitions:
   - Usage guidance
   - Apology or confession
 - id: Clarification
+  partOfSpeech: noun
+  forms:
+  - Clarification
+  - Clarifications
+  - clarification
+  - clarifications
   specification: |
-    Explaining intent in code, replaced by intent-revealing variable names, focused functions, or negative tests.
+    Explaining intent in code, replaced by intent-revealing names and focused functions.
 - id: Procrastination
+  partOfSpeech: noun
+  forms:
+  - Procrastination
+  - procrastination
   specification: |
-    Deferring work via a TODO, replaced by a [[Failing test]] pinning the weakness, smaller production-ready changes, or an explicit plan document.
+    Deferring work via markers, replaced by failing tests or explicit plans.
 - id: Architectural decision
+  partOfSpeech: noun
+  forms:
+  - Architectural decision
+  - Architectural decisions
+  - architectural decision
+  - architectural decisions
   specification: |
-    Recording a design choice, replaced by an [[Architectural Direction]] record under `docs/adrs/`.
+    Recording design choices, replaced by architectural decision records.
 - id: Usage guidance
+  partOfSpeech: noun
+  forms:
+  - Usage guidance
+  - usage guidance
   specification: |
-    Explaining how to use code, replaced by user documentation or a README.
+    Explaining code usage, replaced by user documentation or readmes.
 - id: Apology or confession
+  partOfSpeech: noun
+  forms:
+  - Apology or confession
+  - Apologies or confessions
+  - apology or confession
+  - apologies or confessions
   specification: |
-    Apologizing for or confessing weak code, replaced by fixing the underlying design flaw or pinning the limitation with a [[Failing test]].
-- id: User
-  specification: |
-    Alias for [[Users]].
-- id: Quality
-  specification: |
-    Alias for [[Software quality axis]].
-- id: Domain objects
-  specification: |
-    Alias for [[Domain object]].
+    Excusing weak code, replaced by fixing design flaws or pinning limitations with tests.
 - id: Validating path of creation
+  partOfSpeech: noun
+  forms:
+  - Validating path of creation
+  - Validating paths of creation
+  - validating path of creation
+  - validating paths of creation
   specification: |
-    The single path through which an [[Encapsulated type]] or [[Domain primitive]] is constructed at the [[Perimeter]], running all required checks before a value is minted. Holding a value of the type is proof it was checked.
-- id: Path of least resistance
-  specification: |
-    Alias for [[Ease of Doing the Right Thing]].
-- id: Illegal states
-  specification: |
-    Alias for [[Illegal state]].
+    The single path through which an encapsulated type is constructed while verifying all invariants.
 - id: Failing test
+  partOfSpeech: noun
+  forms:
+  - Failing test
+  - Failing tests
+  - failing test
+  - failing tests
   specification: |
-    A test that exercises a capability or defect and fails until the correct behavior is implemented.
+    A test that exercises a capability or defect and fails until correct behavior is implemented.
 - id: Production code
+  partOfSpeech: noun
+  forms:
+  - Production code
+  - production code
   specification: |
-    Code that executes in a deployment runtime after the build and serves [[Users]].
+    Code that executes in a runtime environment and serves users.
 - id: Verification code
+  partOfSpeech: noun
+  forms:
+  - Verification code
+  - verification code
   specification: |
-    Code that verifies [[Production code]].
+    Code that validates and asserts production code behavior.
 - id: Explicitly named method
+  partOfSpeech: noun
+  forms:
+  - Explicitly named method
+  - Explicitly named methods
+  - explicitly named method
+  - explicitly named methods
   specification: |
-    A method whose name states the specific domain action or concept it performs rather than using generic control knobs or boolean flags.
-- id: Mutator
-  specification: |
-    Alias for [[Setter]].
-- id: Developers
-  specification: |
-    Alias for [[Developer]].
-
-
-
-
+    A method named after the specific domain action it performs without boolean flags.
 - id: Practitioner
+  partOfSpeech: noun
+  forms:
+  - Practitioner
+  - Practitioners
+  - practitioner
+  - practitioners
   specification: |
-    A human [[Developer]] in the act of applying a tool, method, or standard, and whose competence the tool multiplies. Not an [[Operator]], who keeps the system running, and not a [[User]], who consumes it.
+    A human developer applying tools, methods, or standards whose competence the tools multiply.
 - id: Signal
+  partOfSpeech: noun
+  forms:
+  - Signal
+  - Signals
+  - signal
+  - signals
   specification: |
-    A log line, metric, or alert that shows a behaviour working in production.
+    An observable log entry, metric, or alert demonstrating production behavior.
 - id: Runtime check
+  partOfSpeech: noun
+  forms:
+  - Runtime check
+  - Runtime checks
+  - runtime check
+  - runtime checks
   specification: |
-    A check on a value while the program runs, for a condition a type or a [[Static code analysis]] could have rejected before it ran.
+    A validation executed during runtime for conditions detectable by types or static analysis.
 - id: Foreign shape
+  partOfSpeech: noun
+  forms:
+  - Foreign shape
+  - Foreign shapes
+  - foreign shape
+  - foreign shapes
   specification: |
-    The form in which [[Code We Cannot Control]] represents a value.
+    The data representation used by code we cannot control.
 - id: Surrounding code
+  partOfSpeech: noun
+  forms:
+  - Surrounding code
+  - surrounding code
   specification: |
-    The code a change sits among. Its conventions decide what no [[Demonstrable standard]] decides.
+    The existing code among which a change sits and whose conventions govern unstandardized choices.
 - id: Competing good
+  partOfSpeech: noun
+  forms:
+  - Competing good
+  - Competing goods
+  - competing good
+  - competing goods
   specification: |
-    A good commonly offered in exchange for a [[Software quality axis]], which loses to the axis when the two collide.
+    A secondary benefit offered in exchange for a software quality axis that yields when conflicting.
   closedEnumerationOf:
   - Feature Rich
   - Performance
@@ -427,255 +900,752 @@ definitions:
   - Industry Standard
   - Measured Coverage
 - id: Feature Rich
+  partOfSpeech: noun
+  forms:
+  - Feature Rich
+  - feature rich
   specification: |
-    Many capabilities in one system or dependency. Challenges [[Correctness]] and [[Currency of Tools and Libraries]].
+    The condition of carrying numerous capabilities in one system or dependency.
 - id: Performance
+  partOfSpeech: noun
+  forms:
+  - Performance
+  - performance
   specification: |
-    A system that is perceived as fast by [[Users]]. Challenges [[Maintainability]].
+    The operational speed, latency, or throughput perceived by users.
 - id: Well documented
+  partOfSpeech: noun
+  forms:
+  - Well documented
+  - well documented
   specification: |
-    Human-readable artifacts that quickly explain the system to [[Developer]]s. Challenges [[Readability]], [[Automation]], and [[Guardrails Against Doing the Wrong Thing]].
+    The presence of human-readable documentation explaining system capabilities.
 - id: User Friendly
+  partOfSpeech: noun
+  forms:
+  - User Friendly
+  - user friendly
   specification: |
-    A system a person operates through its interface with little effort. Challenges [[Testability]].
+    An interface that a person operates with minimal effort.
 - id: Industry Standard
+  partOfSpeech: noun
+  forms:
+  - Industry Standard
+  - Industry Standards
+  - industry standard
+  - industry standards
   specification: |
-    A [[Community pattern]] adopted for its popularity rather than for the need at hand. Challenges [[Structural simplicity]].
+    A popular community pattern adopted irrespective of specific problem fit.
 - id: Measured Coverage
+  partOfSpeech: noun
+  forms:
+  - Measured Coverage
+  - measured coverage
   specification: |
-    [[Code coverage]] treated as a target: a measure of execution, not of checking. Challenges [[True Test Coverage]].
+    Code coverage percentage treated as an optimization target rather than defect verification.
 - id: Change
+  partOfSpeech: noun
+  forms:
+  - Change
+  - Changes
+  - change
+  - changes
   specification: |
-    A set of edits to the code base proposed or merged as one unit, such as a commit or a [[Pull request]].
+    A discrete set of edits proposed or merged into a codebase as one unit.
 - id: Pull request
+  partOfSpeech: noun
+  forms:
+  - Pull request
+  - Pull requests
+  - pull request
+  - pull requests
   specification: |
-    A proposed [[Change]] submitted for review before merging into the main branch.
+    A proposed code change submitted for review before merge into main.
 - id: Compatibility branch
+  partOfSpeech: noun
+  forms:
+  - Compatibility branch
+  - Compatibility branches
+  - compatibility branch
+  - compatibility branches
   specification: |
-    A conditional path that runs only on a particular platform, shell, or [[Environment]].
-- id: Dependency
-  specification: |
-    Alias for [[External dependency]].
+    A conditional code branch executing only on a specific platform, shell, or environment.
 - id: Representation
+  partOfSpeech: noun
+  forms:
+  - Representation
+  - Representations
+  - representation
+  - representations
   specification: |
-    One place where a piece of knowledge is written down: in code, configuration, schema, or documentation.
+    A recorded location of system knowledge across code, configuration, schemas, or documentation.
 - id: Instance
+  partOfSpeech: noun
+  forms:
+  - Instance
+  - Instances
+  - instance
+  - instances
   specification: |
-    One concrete value of a type, created from it.
+    A concrete value created from a type.
 - id: Factory
+  partOfSpeech: noun
+  forms:
+  - Factory
+  - Factories
+  - factory
+  - factories
   specification: |
-    A named function that creates instances of a type and returns invalid input as a value in its signature. A constructor cannot: it can only throw.
+    A named function that creates instances of a type and returns creation failures as signature values.
 - id: Invariant
+  partOfSpeech: noun
+  forms:
+  - Invariant
+  - Invariants
+  - invariant
+  - invariants
   specification: |
-    A condition that holds for every instance of a type, from creation onward.
+    A logical condition that holds true for every instance of a type throughout its lifecycle.
 - id: Constructor
+  partOfSpeech: noun
+  forms:
+  - Constructor
+  - Constructors
+  - constructor
+  - constructors
   specification: |
-    The operation a language runs to create and initialise a new instance of a type.
+    A language operation that initializes and allocates a new instance of a type.
 - id: Module
+  partOfSpeech: noun
+  forms:
+  - Module
+  - Modules
+  - module
+  - modules
   specification: |
-    A [[Component]] that forms a namespace and, where the language supports it, a compile-time dependency boundary—such as a project or assembly in C#, a package in Go, a crate in Rust, or a module in Java or TypeScript—that decides which of its parts are visible outside it and which other modules it may reference.
+    A component defining a namespace and compile-time dependency boundary.
 - id: Signature
+  partOfSpeech: noun
+  forms:
+  - Signature
+  - Signatures
+  - signature
+  - signatures
   specification: |
-    The declared [[Parameter type]]s and [[Return type]] of a function or method.
+    The declared parameter types and return type of a function or method.
 - id: Exception
+  partOfSpeech: noun
+  forms:
+  - Exception
+  - Exceptions
+  - exception
+  - exceptions
   specification: |
-    A signal that interrupts normal control flow to report a failure, unwinding the stack until something catches it.
+    An interruption of normal control flow signaling an unexpected failure.
 - id: Sum type
+  partOfSpeech: noun
+  forms:
+  - Sum type
+  - Sum types
+  - sum type
+  - sum types
   specification: |
-    A type whose value is exactly one of a fixed set of alternatives, each possibly carrying its own data.
+    A type whose value represents exactly one alternative from a fixed set.
 - id: Product type
+  partOfSpeech: noun
+  forms:
+  - Product type
+  - Product types
+  - product type
+  - product types
   specification: |
-    A type whose value holds one of each of its fields at once, such as a record, struct, or tuple.
+    A type whose value holds all defined fields simultaneously.
 - id: Enum
+  partOfSpeech: noun
+  forms:
+  - Enum
+  - Enums
+  - enum
+  - enums
   specification: |
     A type with a fixed, named set of values.
 - id: Pure enum
+  partOfSpeech: noun
+  forms:
+  - Pure enum
+  - Pure enums
+  - pure enum
+  - pure enums
   specification: |
-    An [[Enum]] that carries only labels or scalar values without [[Domain method]]s of its own, forcing callers to use [[Branching]] on its cases.
+    An enum carrying only labels without domain methods, forcing caller branching.
 - id: Inheritance
+  partOfSpeech: noun
+  forms:
+  - Inheritance
+  - inheritance
   specification: |
-    Defining specialised subtypes that fulfil a shared base type or [[Interface]] so each subtype supplies its own behaviour.
+    A mechanism defining specialized subtypes that fulfill a shared base type or interface.
 - id: Strategy
+  partOfSpeech: noun
+  forms:
+  - Strategy
+  - Strategies
+  - strategy
+  - strategies
   specification: |
-    An object that encapsulates one interchangeable behaviour behind a shared [[Interface]] so callers invoke the [[Interface]] without [[Branching]].
+    An object encapsulating an interchangeable behavior behind a shared interface.
 - id: Compiler
+  partOfSpeech: noun
+  forms:
+  - Compiler
+  - Compilers
+  - compiler
+  - compilers
   specification: |
-    A program that translates source code into another form and rejects code that breaks the language's rules.
+    A program that translates source code into another format and verifies language rules.
 - id: Pattern matching
+  partOfSpeech: noun
+  forms:
+  - Pattern matching
+  - pattern matching
   specification: |
-    Selecting code to run by the shape of a value, with one branch per case.
+    A control flow construct selecting branches based on value structure.
 - id: Wildcard pattern
+  partOfSpeech: noun
+  forms:
+  - Wildcard pattern
+  - Wildcard patterns
+  - wildcard pattern
+  - wildcard patterns
   specification: |
-    A pattern that matches any value, used as a catch-all case.
+    A pattern matching any value as a catch-all branch.
 - id: Aggregate
+  partOfSpeech: noun
+  forms:
+  - Aggregate
+  - Aggregates
+  - aggregate
+  - aggregates
   specification: |
-    A cluster of [[Domain objects]] treated as one unit for changes, entered only through its root, which keeps the cluster's invariants.
+    A cluster of domain objects treated as one unit and modified only through its root.
 - id: Domain method
+  partOfSpeech: noun
+  forms:
+  - Domain method
+  - Domain methods
+  - domain method
+  - domain methods
   specification: |
-    An operation defined on a domain type that expresses a business action in the domain's own terms.
+    An operation on a domain type expressing business logic in domain terminology.
 - id: Raw collection
+  partOfSpeech: noun
+  forms:
+  - Raw collection
+  - Raw collections
+  - raw collection
+  - raw collections
   specification: |
-    A plain list, set, or map exposed directly, so callers can change it without going through its owner.
+    A mutable list, set, or map exposed directly without owner encapsulation.
 - id: Primitive
+  partOfSpeech: noun
+  forms:
+  - Primitive
+  - Primitives
+  - primitive
+  - primitives
   specification: |
-    A type—or a value of such a type—with no bounded context. All language literals and built-in scalars (such as integers, strings, or booleans) automatically fall into this category, along with general-purpose value types (such as `Money`, `Date`, or `Span`) that carry no domain-specific [[Invariant]]s.
+    A built-in scalar, literal, or general value type carrying no domain-specific invariants.
 - id: Layer
+  partOfSpeech: noun
+  forms:
+  - Layer
+  - Layers
+  - layer
+  - layers
   specification: |
-    A horizontal slice of an architecture that groups code with the same responsibility and depends only in one declared direction.
+    A horizontal architectural slice grouping code with shared responsibilities and unidirectional dependencies.
 - id: Dependency direction
+  partOfSpeech: noun
+  forms:
+  - Dependency direction
+  - Dependency directions
+  - dependency direction
+  - dependency directions
   specification: |
-    The direction in which one layer or module may depend on another, as the architecture declares it.
+    The architectural direction in which layers and modules are permitted to depend.
 - id: Helper code
+  partOfSpeech: noun
+  forms:
+  - Helper code
+  - helper code
   specification: |
-    Small supporting code that exists to serve other code rather than a user-facing behaviour.
+    Supporting utility code serving other components rather than direct user-facing behavior.
 - id: Try/catch block
+  partOfSpeech: noun
+  forms:
+  - Try/catch block
+  - Try/catch blocks
+  - try/catch block
+  - try/catch blocks
   specification: |
-    A language construct that runs a block and, if it raises an exception, hands control to a handler.
+    A language construct executing a block and catching raised exceptions with a handler.
 - id: Rethrow
+  partOfSpeech: verb
+  forms:
+  - Rethrow
+  - Rethrows
+  - Rethrowing
+  - Rethrown
+  - rethrow
+  - rethrows
+  - rethrowing
+  - rethrown
   specification: |
-    Raising an exception again from its handler, so it keeps travelling up instead of being swallowed.
+    Raising a caught exception again from its handler to continue unwinding the stack.
 - id: Default value
+  partOfSpeech: noun
+  forms:
+  - Default value
+  - Default values
+  - default value
+  - default values
   specification: |
-    A value used when no other is given, or when obtaining the real one failed.
+    A fallback value used when no explicit value is supplied or retrieval fails.
 - id: Fallback strategy
+  partOfSpeech: noun
+  forms:
+  - Fallback strategy
+  - Fallback strategies
+  - fallback strategy
+  - fallback strategies
   specification: |
-    A second way of doing the same work, tried when the first one fails.
+    An alternate execution path attempted when a primary operation fails.
 - id: Exit status
+  partOfSpeech: noun
+  forms:
+  - Exit status
+  - Exit statuses
+  - exit status
+  - exit statuses
   specification: |
-    The outcome returned by a process, command, or operation indicating whether it succeeded or failed, such as a process exit code, an error return value, or a faulted task.
+    The outcome code or signal returned by a process, command, or task indicating success or failure.
 - id: Error output
+  partOfSpeech: noun
+  forms:
+  - Error output
+  - error output
   specification: |
-    The separate output stream a program writes its error messages and diagnostics to.
+    The dedicated output stream where programs emit diagnostics and error messages.
 - id: Abort-on-error mode
+  partOfSpeech: noun
+  forms:
+  - Abort-on-error mode
+  - abort-on-error mode
   specification: |
-    A setting in which a script stops at the first command that fails, such as `set -e` in Bash.
+    An execution mode terminating script execution upon the first encountered error.
 - id: Branching logic
+  partOfSpeech: noun
+  forms:
+  - Branching logic
+  - Branching
+  - branching logic
+  - branching
   specification: |
-    Code that chooses between paths at run time, such as if, switch, or a default in a lookup.
-- id: Branching
-  specification: |
-    Alias for [[Branching logic]].
+    Control flow selecting between execution paths at runtime.
 - id: Test
+  partOfSpeech: noun
+  forms:
+  - Test
+  - Tests
+  - test
+  - tests
   specification: |
-    Code that runs a piece of the system and checks that it behaves as specified.
+    Executable code verifying that a software component behaves according to specification.
 - id: Test case
+  partOfSpeech: noun
+  forms:
+  - Test case
+  - Test cases
+  - test case
+  - test cases
   specification: |
-    One scenario within a test suite: a setup, an action, and the expected outcome.
+    A discrete scenario in a test suite defining setup, action, and expected outcome.
 - id: Muted test
+  partOfSpeech: noun
+  forms:
+  - Muted test
+  - Muted tests
+  - muted test
+  - muted tests
   specification: |
-    A test that is present but switched off, so it no longer runs or no longer fails the build.
+    A test disabled from running or failing the build.
 - id: Code coverage
+  partOfSpeech: noun
+  forms:
+  - Code coverage
+  - code coverage
   specification: |
-    The share of the code that is executed while the tests run.
+    The proportion of source code executed while running a test suite.
 - id: Assertion
+  partOfSpeech: noun
+  forms:
+  - Assertion
+  - Assertions
+  - assertion
+  - assertions
   specification: |
-    A statement in a test that compares an actual result with the expected one and fails the test when they differ.
+    A statement comparing actual execution results against expected outcomes.
 - id: Flaky test
+  partOfSpeech: noun
+  forms:
+  - Flaky test
+  - Flaky tests
+  - flaky test
+  - flaky tests
   specification: |
-    A test that passes and fails on the same code without any change.
+    A test that yields inconsistent pass and fail results on identical code.
 - id: Subject under test
+  partOfSpeech: noun
+  forms:
+  - Subject under test
+  - Subjects under test
+  - subject under test
+  - subjects under test
   specification: |
-    The one [[Component]] a [[Test]] exercises and whose behaviour it checks.
+    The specific component exercised and verified by a test.
 - id: Runtime artifact
+  partOfSpeech: noun
+  forms:
+  - Runtime artifact
+  - Runtime artifacts
+  - runtime artifact
+  - runtime artifacts
   specification: |
-    The built output that is deployed and run, such as a container image, package, or binary.
+    A compiled, deployable deliverable such as a container image, package, or binary.
 - id: Black-box testing
+  partOfSpeech: noun
+  forms:
+  - Black-box testing
+  - black-box testing
   specification: |
-    Testing through the public [[Interface]] only, without depending on the internals.
+    Testing functionality exclusively through public interfaces without reliance on internal structure.
 - id: Test setup
+  partOfSpeech: noun
+  forms:
+  - Test setup
+  - Test setups
+  - test setup
+  - test setups
   specification: |
-    The code that brings the system into the state a [[Test]] needs before the action runs.
+    Code preparing the state required before executing a test action.
 - id: Lint rule
+  partOfSpeech: noun
+  forms:
+  - Lint rule
+  - Lint rules
+  - lint rule
+  - lint rules
   specification: |
-    One check a linter performs on the code, reporting each place that breaks it.
+    An automated static analysis check enforcing code correctness or conventions.
 - id: Pragma
+  partOfSpeech: noun
+  forms:
+  - Pragma
+  - Pragmas
+  - pragma
+  - pragmas
   specification: |
-    A directive to a [[Compiler]] or tool, written in the code, that changes how it treats that code.
+    An inline directive altering compiler or linter behavior for specific code regions.
 - id: Generated code
+  partOfSpeech: noun
+  forms:
+  - Generated code
+  - generated code
   specification: |
-    Code written by a tool from some other source, rather than by a person.
+    Source code written by an automated tool from other representations rather than human authors.
 - id: Preset
+  partOfSpeech: noun
+  forms:
+  - Preset
+  - Presets
+  - preset
+  - presets
   specification: |
-    A named set of [[Lint rule]]s and settings shared by many projects, used as a starting configuration.
+    A reusable configuration package of lint rules and settings.
 - id: Optional parameter
+  partOfSpeech: noun
+  forms:
+  - Optional parameter
+  - Optional parameters
+  - optional parameter
+  - optional parameters
   specification: |
-    A parameter a caller may leave out, in which case a [[Default value]] is used.
+    A method parameter that callers may omit in favor of a default value.
 - id: Overload
+  partOfSpeech: noun
+  forms:
+  - Overload
+  - Overloads
+  - overload
+  - overloads
   specification: |
-    One of several methods with the same name that differ in their [[Parameter type]]s.
-- id: API
-  specification: |
-    Alias for [[Interface]].
+    One of multiple method signatures sharing a name but differing in parameter types.
 - id: Statement
+  partOfSpeech: noun
+  forms:
+  - Statement
+  - Statements
+  - statement
+  - statements
   specification: |
-    The smallest unit of code that performs an action, such as an assignment, a call, or a return.
+    A present-tense sentence narrowing its subject state space, or the smallest unit of code performing an action.
 - id: Return type
+  partOfSpeech: noun
+  forms:
+  - Return type
+  - Return types
+  - return type
+  - return types
   specification: |
-    The declared type of what a [[Function]] returns.
+    The declared type of the value returned by a function.
 - id: Parameter type
+  partOfSpeech: noun
+  forms:
+  - Parameter type
+  - Parameter types
+  - parameter type
+  - parameter types
   specification: |
-    The declared type of what a [[Function]] accepts in one of its parameters.
+    The declared type accepted by a function parameter.
 - id: Feature
+  partOfSpeech: noun
+  forms:
+  - Feature
+  - Features
+  - feature
+  - features
   specification: |
-    A cohesive user-facing capability or vertical slice of behaviour isolated in its own [[Component]].
+    A cohesive, user-facing slice of system behavior encapsulated in its own component.
 - id: Feature toggle
+  partOfSpeech: noun
+  forms:
+  - Feature toggle
+  - Feature toggles
+  - feature toggle
+  - feature toggles
   specification: |
-    A conditional switch that enables or disables a [[Feature]] at run time without deploying new code.
+    A conditional switch enabling or disabling a feature at runtime without redeployment.
 - id: Builder
+  partOfSpeech: noun
+  forms:
+  - Builder
+  - Builders
+  - builder
+  - builders
   specification: |
-    A construct that assembles a valid, [[Immutable]] [[Domain object]] step by step instead of taking [[Optional parameter]]s or [[Branching logic]].
+    An object that constructs an immutable domain object incrementally.
 - id: In-memory operation
+  partOfSpeech: noun
+  forms:
+  - In-memory operation
+  - In-memory operations
+  - in-memory operation
+  - in-memory operations
   specification: |
-    Computation that executes entirely within process memory without [[Calls over the network]].
+    Computation executing entirely within local process memory without traversing a network.
 - id: Contract
+  partOfSpeech: noun
+  forms:
+  - Contract
+  - Contracts
+  - contract
+  - contracts
   specification: |
-    A specification, separate from the code, of what crosses a boundary and what each side must provide.
+    An independent specification defining boundary data shapes and operational obligations.
 - id: Coding standard
+  partOfSpeech: noun
+  forms:
+  - Coding standard
+  - Coding standards
+  - coding standard
+  - coding standards
   specification: |
-    A set of rules for how code is written in a team, so all of it reads as if one person wrote it.
+    An agreed specification governing code authoring conventions across a team.
 - id: Environment
+  partOfSpeech: noun
+  forms:
+  - Environment
+  - Environments
+  - environment
+  - environments
   specification: |
-    A place where the system runs with its own configuration and infrastructure, such as local, test, or production.
+    An infrastructure and configuration context where software executes.
 - id: Calls over the network
+  partOfSpeech: noun
+  forms:
+  - Calls over the network
+  - Call over the network
+  - calls over the network
+  - call over the network
   specification: |
-    Invocations that traverse a network boundary to communicate with another service, database, or process.
+    Invocations traversing a network boundary to reach external processes, databases, or services.
   openEnumerationOf:
   - Access to filesystem
   - Access to database
   - Access to HTTP
-- id: Call over the network
-  specification: |
-    Alias for [[Calls over the network]].
 - id: Access to filesystem
+  partOfSpeech: noun
+  forms:
+  - Access to filesystem
+  - access to filesystem
   specification: |
-    Accessing a local or remote file system.
+    An operation reading from or writing to local or remote filesystem storage.
 - id: Access to database
+  partOfSpeech: noun
+  forms:
+  - Access to database
+  - access to database
   specification: |
-    Accessing a relational, document, or key-value database.
+    An operation querying or modifying relational, document, or key-value database storage.
 - id: Access to HTTP
+  partOfSpeech: noun
+  forms:
+  - Access to HTTP
+  - access to HTTP
   specification: |
-    Accessing an HTTP or HTTPS endpoint.
+    An invocation targeting an HTTP or HTTPS network endpoint.
 - id: Head commit
+  partOfSpeech: noun
+  forms:
+  - Head commit
+  - Head commits
+  - head commit
+  - head commits
   specification: |
-    The commit a review of a [[Change]] is anchored to. Every file read and every inline comment resolves against it.
+    The specific commit to which code review comments and file evaluations anchor.
 - id: Checkout
+  partOfSpeech: noun
+  forms:
+  - Checkout
+  - Checkouts
+  - checkout
+  - checkouts
   specification: |
-    The [[Head commit]] checked out with a clean working tree. A checkout at any other commit is not a checkout of the [[Change]].
+    A clean working directory tree aligned to the head commit of a change.
 - id: Surface
+  partOfSpeech: noun
+  forms:
+  - Surface
+  - Surfaces
+  - surface
+  - surfaces
   specification: |
-    The code a [[Violation]] may be reported against, identified by file and line numbers on the left (base) and right (head): changes carrying an unresolved comment, changes carrying a comment the author has resolved since the prior review, and changes new since the prior review (on a first review, the whole [[Change]]).
+    The code regions against which violations may be reported during review.
 - id: Full context
+  partOfSpeech: noun
+  forms:
+  - Full context
+  - full context
   specification: |
-    The [[Surface]] together with every changed file in full, the call sites of changed public symbols, and the covering [[Verification code]]. Context is what a [[Verdict]] is reached from, never what a [[Violation]] is reported against.
+    The complete changed files, call sites, and verification code evaluated to reach a verdict.
 - id: Ruleset
+  partOfSpeech: noun
+  forms:
+  - Ruleset
+  - Rulesets
+  - ruleset
+  - rulesets
   specification: |
-    A subset or grouping of [[Rule]]s evaluated together as a unit.
+    A cohesive grouping of rules evaluated together as a single unit.
 - id: Violation
+  partOfSpeech: noun
+  forms:
+  - Violation
+  - Violations
+  - violation
+  - violations
   specification: |
-    A finding that code on the [[Surface]] breaks a [[Rule]].
+    A finding indicating that reviewed code breaches a rule.
 - id: Verdict
+  partOfSpeech: noun
+  forms:
+  - Verdict
+  - Verdicts
+  - verdict
+  - verdicts
   specification: |
-    The result of evaluating against a [[Rule]] or [[Ruleset]]: [[Violation]] or non-violation.
+    The formal evaluation outcome against a rule or ruleset, indicating violation or non-violation.
 - id: Ledger
+  partOfSpeech: noun
+  forms:
+  - Ledger
+  - Ledgers
+  - ledger
+  - ledgers
   specification: |
-    The list across the sum of [[Ruleset]]s providing reassurance that every [[Rule]] was reviewed: one row per [[Rule]], recording [[Evidence]] of what was examined and whether [[Violation]]s were found or not found.
+    A comprehensive review audit log recording evidence and verdicts across all rules.
+- id: Ubiquitous Language
+  partOfSpeech: noun
+  forms:
+  - Ubiquitous Language
+  - uql
+  - UQL
+  - ubiquitous language
+  specification: |
+    A domain language where open-class words resolve to defined terms and statements satisfy declarative invariants.
+- id: Prose
+  partOfSpeech: noun
+  forms:
+  - Prose
+  - prose
+  specification: |
+    Unconstrained CommonMark text used for verbatim quotes and transcripts.
+- id: Glossary
+  partOfSpeech: noun
+  forms:
+  - Glossary
+  - Glossaries
+  - glossary
+  - glossaries
+  specification: |
+    A set of term definitions within a bounded context.
+- id: Term
+  partOfSpeech: noun
+  forms:
+  - Term
+  - Terms
+  - term
+  - terms
+  specification: |
+    An open-class word or phrase with one definition, one part of speech, and surface forms.
+- id: Reference
+  partOfSpeech: noun
+  forms:
+  - Reference
+  - References
+  - reference
+  - references
+  specification: |
+    A binding from an identifier to a URI and optional prose quote.
+- id: Type
+  partOfSpeech: noun
+  forms:
+  - Type
+  - Types
+  - type
+  - types
+  specification: |
+    A construct defining a set of values together with valid operations on them.
+- id: Seam
+  partOfSpeech: noun
+  forms:
+  - Seam
+  - Seams
+  - seam
+  - seams
+  specification: |
+    A boundary where program behavior can be varied or observed without editing source code directly.
+references:
+- id: IntegrationTest
+  uri: https://martinfowler.com/bliki/IntegrationTest.html
+  quote: "Martin Fowler: IntegrationTest."

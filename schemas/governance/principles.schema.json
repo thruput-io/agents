@@ -13,6 +13,9 @@
       "items": {
         "$ref": "#/$defs/Principle"
       }
+    },
+    "references": {
+      "$ref": "ubiquitous-language.schema.json#/$defs/References"
     }
   },
   "$defs": {
@@ -24,13 +27,16 @@
           "$ref": "#/$defs/PrincipleId"
         },
         "body": {
-          "$ref": "definitions.schema.json#/$defs/Prose"
+          "$ref": "ubiquitous-language.schema.json#/$defs/UbiquitousLanguage"
         },
         "parent": {
           "$ref": "rationales.schema.json#/$defs/RationaleId"
         },
         "solutions": {
           "$ref": "rationales.schema.json#/$defs/Solutions"
+        },
+        "references": {
+          "$ref": "ubiquitous-language.schema.json#/$defs/References"
         }
       }
     },

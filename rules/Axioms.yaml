@@ -10,7 +10,7 @@ axioms:
 - id: Shift Left
   parent: Speed Through Discipline
   body: |
-    Do every activity at the earliest point where it can be done.
+    Every activity occurs at the earliest point where it is possible.
   analect:
     passage: Analects XV.IX
     text: The mechanic, who wishes to do his work well, must first sharpen his tools.
@@ -18,7 +18,7 @@ axioms:
 - id: Simplicity
   parent: Outcome Over Output
   body: |
-    Simple solutions are better than complex ones.
+    Simple solutions take precedence over complex solutions.
   analect:
     passage: Analects XV.XL
     text: In language it is simply required that it convey the meaning.
@@ -26,7 +26,7 @@ axioms:
 - id: Easy to Change
   parent: Joy Through Craft
   body: |
-    [[Great software]] stays great when it is easy to maintain and extend.
+    Software remains easy to maintain and extend.
   analect:
     passage: Analects XV.XXIX
     text: To have faults and not to reform them, this, indeed, should be pronounced having faults.
@@ -34,7 +34,7 @@ axioms:
 - id: Great Products Require Users
   parent: Outcome Over Output
   body: |
-    Code proves execution; [[Users]] prove [[Correctness]].
+    Code proves execution, and users prove correctness.
   analect:
     passage: Analects II.XIII
     text: He acts before he speaks, and afterwards speaks according to his actions.
@@ -42,7 +42,7 @@ axioms:
 - id: Without Verification It Is Worthless
   parent: Speed Through Discipline
   body: |
-    Without verification it is at best worthless, more often a source of confusion.
+    Without verification, an artifact is worthless.
   analect:
     passage: Analects II.XVII
     text: When you know a thing, to hold that you know it; and when you do not know a thing, to allow that you do not know it; this is knowledge.
@@ -50,7 +50,7 @@ axioms:
 - id: Competence Applied Is Leverage
   parent: Excellence Through Transparency
   body: |
-    A tool multiplies the competence applied to it and supplies none of its own; it decides how fast the outcome arrives, never what it is.
+    A tool multiplies applied competence, but it supplies no competence of its own.
   analect:
     passage: Mencius VII.II.V
     text: A carpenter or a carriage-maker may give a man the circle and square, but cannot make him skilful in the use of them.
@@ -58,7 +58,7 @@ axioms:
 - id: Quality Uncompromised
   parent: Speed Through Discipline
   body: |
-    Quality is always the highest priority; it is what makes the other priorities possible.
+    Quality is the highest priority.
   analect:
     passage: Analects I.VIII
     text: When you have faults, do not fear to abandon them.
@@ -66,7 +66,7 @@ axioms:
 - id: Code Is Written for People
   parent: Excellence Through Transparency
   body: |
-    Code is written to be read and understood by people.
+    Code is written for people to read and understand.
   analect:
     passage: Analects XIII.III
     text: If names be not correct, language is not in accordance with the truth of things. If language be not in accordance with the truth of things, affairs cannot be carried on to success.

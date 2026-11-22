@@ -18,6 +18,9 @@
     },
     "adrs": {
       "$ref": "#/$defs/Adrs"
+    },
+    "rfcs": {
+      "$ref": "#/$defs/Rfcs"
     }
   },
   "$defs": {
@@ -38,13 +41,21 @@
       "items": {
         "$ref": "adr.schema.json"
       }
+    },
+    "Rfcs": {
+      "description": "The Requests for Comments specifying languages, protocols, or cross-cutting designs, under docs/rfcs",
+      "type": "array",
+      "items": {
+        "$ref": "rfc.schema.json"
+      }
     }
   },
   "examples": [
     {
       "readme": {},
       "plans": [],
-      "adrs": []
+      "adrs": [],
+      "rfcs": []
     }
   ]
 }
