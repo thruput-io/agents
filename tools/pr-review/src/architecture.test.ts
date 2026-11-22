@@ -45,25 +45,25 @@ it("domain layer only depends on domain", async () => {
 	assert.deepEqual(await onlyDependsOn("src/domain/**", "src/domain/**"), []);
 });
 
-it("each adapter subfolder only depends on itself, domain, and generated clients", async () => {
+it("each adapter subfolder only depends on itself and domain", async () => {
 	assert.deepEqual(
 		await onlyDependsOn(
 			"src/adapters/github/**",
-			"{src/adapters/github/**,src/domain/**,clients/**}",
+			"{src/adapters/github/**,src/domain/**}",
 		),
 		[],
 	);
 	assert.deepEqual(
 		await onlyDependsOn(
 			"src/adapters/azure/**",
-			"{src/adapters/azure/**,src/domain/**,clients/**}",
+			"{src/adapters/azure/**,src/domain/**}",
 		),
 		[],
 	);
 	assert.deepEqual(
 		await onlyDependsOn(
 			"src/adapters/git/**",
-			"{src/adapters/git/**,src/domain/**,clients/**}",
+			"{src/adapters/git/**,src/domain/**}",
 		),
 		[],
 	);

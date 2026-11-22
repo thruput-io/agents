@@ -16,6 +16,7 @@ const ZOD_OPTIONS = {
 const HOSTS = [
 	{
 		name: "github",
+		outputDir: "./src/adapters/github",
 		target: "./references/hosts/github.openapi.json",
 		tags: ["pulls", "checks", "repos"],
 		baseUrl: "https://api.github.com",
@@ -28,6 +29,7 @@ const HOSTS = [
 	},
 	{
 		name: "azure-git",
+		outputDir: "./src/adapters/azure",
 		target: "./references/hosts/azure-devops-git.json",
 		tags: [
 			"Pull Requests",
@@ -41,6 +43,7 @@ const HOSTS = [
 	},
 	{
 		name: "azure-policy",
+		outputDir: "./src/adapters/azure",
 		target: "./references/hosts/azure-devops-policy.json",
 		tags: ["Evaluations"],
 		baseUrl: "https://dev.azure.com",
@@ -65,7 +68,7 @@ await Promise.all(
 			generate({
 				input,
 				output: {
-					target: `./clients/${spec.name}.g.ts`,
+					target: `${spec.outputDir}/${spec.name}.g.ts`,
 					client: "fetch",
 					mode: "single",
 					baseUrl: spec.baseUrl,
@@ -90,7 +93,7 @@ await Promise.all(
 			generate({
 				input,
 				output: {
-					target: `./clients/${spec.name}.zod.g.ts`,
+					target: `${spec.outputDir}/${spec.name}.zod.g.ts`,
 					client: "zod",
 					mode: "single",
 					override: { ...contentTypeOverride, zod: ZOD_OPTIONS },

@@ -38,9 +38,6 @@
     "integrationTest": {
       "$ref": "#/$defs/IntegrationTestFolder"
     },
-    "clients": {
-      "$ref": "#/$defs/ClientsFolder"
-    },
     "hostReferences": {
       "$ref": "#/$defs/HostReferencesFolder"
     }
@@ -125,10 +122,6 @@
       "description": "Black-box integration tests at build time, relative to PROJECT_ROOT",
       "$ref": "#/$defs/RelativeFolderPath"
     },
-    "ClientsFolder": {
-      "description": "Generated external API clients and wire schemas at build time, relative to PROJECT_ROOT",
-      "$ref": "#/$defs/RelativeFolderPath"
-    },
     "HostReferencesFolder": {
       "description": "Downloaded OpenAPI and GraphQL specifications used to generate external clients at build time, relative to PROJECT_ROOT",
       "$ref": "#/$defs/RelativeFolderPath"
@@ -157,7 +150,6 @@
       },
       "domain": "tools/pr-review/src/domain",
       "integrationTest": "tools/pr-review/src/integration-test",
-      "clients": "tools/pr-review/clients",
       "hostReferences": "tools/pr-review/references/hosts"
     },
     {

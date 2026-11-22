@@ -16,5 +16,4 @@ adapters:
   git: tools/pr-review/src/adapters/git
 domain: tools/pr-review/src/domain
 integrationTest: tools/pr-review/src/integration-test
-clients: tools/pr-review/clients
 hostReferences: tools/pr-review/references/hosts
