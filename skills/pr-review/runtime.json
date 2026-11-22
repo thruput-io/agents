@@ -1,6 +1,0 @@
-{
-  "rules": "rules",
-  "schemas": "schemas",
-  "references": "skills/pr-review/references",
-  "bin": "skills/pr-review/dist/bin"
-}

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://thruput.se/agents/schemas/repository/folder-structure.schema.json",
   "title": "FolderStructure",
-  "description": "How a project's folder tree is laid out relative to PROJECT_ROOT at build time (buildtime.json) and in distribution at runtime (runtime.json)",
+  "description": "How a project's folder tree is laid out relative to PROJECT_ROOT at build time (buildtime.yaml) and in distribution at runtime (runtime.yaml)",
   "type": "object",
   "required": [
     "rules",
