@@ -69,50 +69,49 @@ it("each adapter subfolder only depends on itself, domain, and generated clients
 	);
 });
 
-it("each controller subfolder only depends on itself, controller/common, adapters, and domain", async () => {
+it("controller layer only depends on controller, adapters, and domain", async () => {
 	assert.deepEqual(
 		await onlyDependsOn(
-			"src/controller/main/**",
-			"{src/controller/main/**,src/controller/common/**,src/adapters/**,src/domain/**}",
-		),
-		[],
-	);
-	assert.deepEqual(
-		await onlyDependsOn(
-			"src/controller/sub/**",
-			"{src/controller/sub/**,src/adapters/**,src/controller/common/**,src/domain/**}",
-		),
-		[],
-	);
-	assert.deepEqual(
-		await onlyDependsOn(
-			"src/controller/common/**",
-			"{src/controller/common/**,src/adapters/**,src/domain/**}",
+			"src/controller/**",
+			"{src/controller/**,src/adapters/**,src/domain/**}",
 		),
 		[],
 	);
 });
 
-it("each client subfolder only depends on itself, client/common, controller, and domain", async () => {
+it("client layer only depends on client, controller, and domain", async () => {
 	assert.deepEqual(
 		await onlyDependsOn(
-			"src/client/main/**",
-			"{src/client/main/**,src/client/common/**,src/controller/main/**,src/controller/common/**,src/domain/**}",
+			"src/client/**",
+			"{src/client/**,src/controller/**,src/domain/**}",
 		),
 		[],
 	);
-	assert.deepEqual(
-		await onlyDependsOn(
-			"src/client/sub/**",
-			"{src/client/sub/**,src/client/common/**,src/controller/sub/**,src/controller/common/**,src/domain/**}",
-		),
-		[],
-	);
-	assert.deepEqual(
-		await onlyDependsOn(
-			"src/client/common/**",
-			"{src/client/common/**,src/controller/common/**,src/domain/**}",
-		),
-		[],
-	);
+});
+
+it("!common subfolders may depend on common within the same folder, and common never depends on !common", async () => {
+	for (const layer of ["src/controller", "src/client"] as const) {
+		assert.deepEqual(
+			await projectFiles(TSCONFIG_PATH)
+				.inPath(`${layer}/common/**`)
+				.shouldNot()
+				.dependOnFiles()
+				.inPath(`${layer}/**`, { except: { inPath: `${layer}/common/**` } })
+				.check(),
+			[],
+		);
+		for (const sub of ["main", "sub"] as const) {
+			assert.deepEqual(
+				await projectFiles(TSCONFIG_PATH)
+					.inPath(`${layer}/${sub}/**`)
+					.shouldNot()
+					.dependOnFiles()
+					.inPath(`${layer}/**`, {
+						except: { inPath: `{${layer}/${sub}/**,${layer}/common/**}` },
+					})
+					.check(),
+				[],
+			);
+		}
+	}
 });
