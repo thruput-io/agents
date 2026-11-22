@@ -10,7 +10,7 @@ const TSCONFIG_PATH = resolve(
 );
 
 const ALLOWED_SRC_FILES =
-	"{src/client/**,src/controller/**,src/adapters/**,src/domain/**,src/integration-test/**,src/architecture.test.ts,src/guardrails.test.ts}";
+	"{src/client/**,src/controller/**,src/adapters/github/**,src/adapters/azure/**,src/adapters/git/**,src/domain/**,src/integration-test/**,src/architecture.test.ts,src/guardrails.test.ts}";
 
 const onlyDependsOn = (sourceGlob: string, allowedGlob: string) =>
 	projectFiles(TSCONFIG_PATH)
@@ -26,7 +26,7 @@ it("every file in src/** lives in an allowed layer folder", async () => {
 		.should()
 		.adhereTo(
 			() => false,
-			"All files in src/ must reside in src/client, src/controller, src/adapters, src/domain, or src/integration-test",
+			"All files in src/ must reside in src/client, src/controller, src/adapters/{github,azure,git}, src/domain, or src/integration-test",
 		)
 		.check();
 	assert.deepEqual(violations, []);
@@ -45,11 +45,25 @@ it("domain layer only depends on domain", async () => {
 	assert.deepEqual(await onlyDependsOn("src/domain/**", "src/domain/**"), []);
 });
 
-it("adapters layer only depends on adapters, domain, and generated clients", async () => {
+it("each adapter subfolder only depends on itself, domain, and generated clients", async () => {
 	assert.deepEqual(
 		await onlyDependsOn(
-			"src/adapters/**",
-			"{src/adapters/**,src/domain/**,clients/**}",
+			"src/adapters/github/**",
+			"{src/adapters/github/**,src/domain/**,clients/**}",
+		),
+		[],
+	);
+	assert.deepEqual(
+		await onlyDependsOn(
+			"src/adapters/azure/**",
+			"{src/adapters/azure/**,src/domain/**,clients/**}",
+		),
+		[],
+	);
+	assert.deepEqual(
+		await onlyDependsOn(
+			"src/adapters/git/**",
+			"{src/adapters/git/**,src/domain/**,clients/**}",
 		),
 		[],
 	);

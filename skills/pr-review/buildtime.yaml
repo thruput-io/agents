@@ -4,7 +4,10 @@ references: skills/pr-review/references
 bin: skills/pr-review/dist/bin
 client: tools/pr-review/src/client
 controller: tools/pr-review/src/controller
-adapters: tools/pr-review/src/adapters
+adapters:
+  github: tools/pr-review/src/adapters/github
+  azure: tools/pr-review/src/adapters/azure
+  git: tools/pr-review/src/adapters/git
 domain: tools/pr-review/src/domain
 integrationTest: tools/pr-review/src/integration-test
 clients: tools/pr-review/clients

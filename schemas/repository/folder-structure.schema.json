@@ -30,7 +30,7 @@
       "$ref": "#/$defs/ControllerFolder"
     },
     "adapters": {
-      "$ref": "#/$defs/AdaptersFolder"
+      "$ref": "#/$defs/AdaptersFolders"
     },
     "domain": {
       "$ref": "#/$defs/DomainFolder"
@@ -77,9 +77,29 @@
       "description": "Application controllers at build time, relative to PROJECT_ROOT",
       "$ref": "#/$defs/RelativeFolderPath"
     },
-    "AdaptersFolder": {
-      "description": "Outbound adapters implementing domain interfaces and translating external API shapes via Zod codecs at build time, relative to PROJECT_ROOT",
-      "$ref": "#/$defs/RelativeFolderPath"
+    "AdaptersFolders": {
+      "description": "Outbound adapter subfolders implementing domain interfaces for each repository host at build time, relative to PROJECT_ROOT",
+      "type": "object",
+      "required": [
+        "github",
+        "azure",
+        "git"
+      ],
+      "properties": {
+        "github": {
+          "description": "GitHub repository adapter folder, relative to PROJECT_ROOT",
+          "$ref": "#/$defs/RelativeFolderPath"
+        },
+        "azure": {
+          "description": "Azure DevOps repository adapter folder, relative to PROJECT_ROOT",
+          "$ref": "#/$defs/RelativeFolderPath"
+        },
+        "git": {
+          "description": "Local Git repository adapter folder, relative to PROJECT_ROOT",
+          "$ref": "#/$defs/RelativeFolderPath"
+        }
+      },
+      "additionalProperties": false
     },
     "DomainFolder": {
       "description": "Domain contracts, domain interfaces, and pure domain logic at build time, relative to PROJECT_ROOT",
@@ -106,7 +126,11 @@
       "bin": "skills/pr-review/dist/bin",
       "client": "tools/pr-review/src/client",
       "controller": "tools/pr-review/src/controller",
-      "adapters": "tools/pr-review/src/adapters",
+      "adapters": {
+        "github": "tools/pr-review/src/adapters/github",
+        "azure": "tools/pr-review/src/adapters/azure",
+        "git": "tools/pr-review/src/adapters/git"
+      },
       "domain": "tools/pr-review/src/domain",
       "integrationTest": "tools/pr-review/src/integration-test",
       "clients": "tools/pr-review/clients",
