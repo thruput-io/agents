@@ -10,7 +10,7 @@ const TSCONFIG_PATH = resolve(
 );
 
 const ALLOWED_SRC_FILES =
-	"{src/client/**,src/controller/main/**,src/controller/sub/**,src/adapters/github/**,src/adapters/azure/**,src/adapters/git/**,src/domain/**,src/integration-test/**,src/architecture.test.ts,src/guardrails.test.ts}";
+	"{src/client/main/**,src/client/sub/**,src/client/common/**,src/controller/main/**,src/controller/sub/**,src/controller/common/**,src/adapters/github/**,src/adapters/azure/**,src/adapters/git/**,src/domain/**,src/integration-test/**,src/architecture.test.ts,src/guardrails.test.ts}";
 
 const onlyDependsOn = (sourceGlob: string, allowedGlob: string) =>
 	projectFiles(TSCONFIG_PATH)
@@ -26,7 +26,7 @@ it("every file in src/** lives in an allowed layer folder", async () => {
 		.should()
 		.adhereTo(
 			() => false,
-			"All files in src/ must reside in src/client, src/controller/{main,sub}, src/adapters/{github,azure,git}, src/domain, or src/integration-test",
+			"All files in src/ must reside in src/client/{main,sub,common}, src/controller/{main,sub,common}, src/adapters/{github,azure,git}, src/domain, or src/integration-test",
 		)
 		.check();
 	assert.deepEqual(violations, []);
@@ -69,28 +69,49 @@ it("each adapter subfolder only depends on itself, domain, and generated clients
 	);
 });
 
-it("each controller subfolder only depends on itself, adapters, and domain", async () => {
+it("each controller subfolder only depends on itself, controller/common, adapters, and domain", async () => {
 	assert.deepEqual(
 		await onlyDependsOn(
 			"src/controller/main/**",
-			"{src/controller/main/**,src/adapters/**,src/domain/**}",
+			"{src/controller/main/**,src/controller/common/**,src/adapters/**,src/domain/**}",
 		),
 		[],
 	);
 	assert.deepEqual(
 		await onlyDependsOn(
 			"src/controller/sub/**",
-			"{src/controller/sub/**,src/adapters/**,src/domain/**}",
+			"{src/controller/sub/**,src/adapters/**,src/controller/common/**,src/domain/**}",
+		),
+		[],
+	);
+	assert.deepEqual(
+		await onlyDependsOn(
+			"src/controller/common/**",
+			"{src/controller/common/**,src/adapters/**,src/domain/**}",
 		),
 		[],
 	);
 });
 
-it("client layer only depends on client, controller, and domain", async () => {
+it("each client subfolder only depends on itself, client/common, controller, and domain", async () => {
 	assert.deepEqual(
 		await onlyDependsOn(
-			"src/client/**",
-			"{src/client/**,src/controller/**,src/domain/**}",
+			"src/client/main/**",
+			"{src/client/main/**,src/client/common/**,src/controller/main/**,src/controller/common/**,src/domain/**}",
+		),
+		[],
+	);
+	assert.deepEqual(
+		await onlyDependsOn(
+			"src/client/sub/**",
+			"{src/client/sub/**,src/client/common/**,src/controller/sub/**,src/controller/common/**,src/domain/**}",
+		),
+		[],
+	);
+	assert.deepEqual(
+		await onlyDependsOn(
+			"src/client/common/**",
+			"{src/client/common/**,src/controller/common/**,src/domain/**}",
 		),
 		[],
 	);

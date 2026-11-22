@@ -24,10 +24,10 @@
       "$ref": "#/$defs/BinFolder"
     },
     "client": {
-      "$ref": "#/$defs/ClientFolder"
+      "$ref": "#/$defs/MainSubCommonFolders"
     },
     "controller": {
-      "$ref": "#/$defs/ControllerFolders"
+      "$ref": "#/$defs/MainSubCommonFolders"
     },
     "adapters": {
       "$ref": "#/$defs/AdaptersFolders"
@@ -69,24 +69,25 @@
       "description": "Folder containing the bundled CLI executables (review-tool.mjs and review-tool-probe.mjs), relative to PROJECT_ROOT",
       "$ref": "#/$defs/RelativeFolderPath"
     },
-    "ClientFolder": {
-      "description": "Inbound CLI entrypoints and argument handling at build time, relative to PROJECT_ROOT",
-      "$ref": "#/$defs/RelativeFolderPath"
-    },
-    "ControllerFolders": {
-      "description": "Main-agent and sub-agent controller subfolders at build time, relative to PROJECT_ROOT",
+    "MainSubCommonFolders": {
+      "description": "Main-agent, sub-agent, and shared common subfolders at build time, relative to PROJECT_ROOT",
       "type": "object",
       "required": [
         "main",
-        "sub"
+        "sub",
+        "common"
       ],
       "properties": {
         "main": {
-          "description": "Main-agent controller folder, relative to PROJECT_ROOT",
+          "description": "Main-agent subfolder, relative to PROJECT_ROOT",
           "$ref": "#/$defs/RelativeFolderPath"
         },
         "sub": {
-          "description": "Sub-agent controller folder, relative to PROJECT_ROOT",
+          "description": "Sub-agent subfolder, relative to PROJECT_ROOT",
+          "$ref": "#/$defs/RelativeFolderPath"
+        },
+        "common": {
+          "description": "Shared common subfolder, relative to PROJECT_ROOT",
           "$ref": "#/$defs/RelativeFolderPath"
         }
       },
@@ -139,10 +140,15 @@
       "schemas": "schemas",
       "references": "skills/pr-review/references",
       "bin": "skills/pr-review/dist/bin",
-      "client": "tools/pr-review/src/client",
+      "client": {
+        "main": "tools/pr-review/src/client/main",
+        "sub": "tools/pr-review/src/client/sub",
+        "common": "tools/pr-review/src/client/common"
+      },
       "controller": {
         "main": "tools/pr-review/src/controller/main",
-        "sub": "tools/pr-review/src/controller/sub"
+        "sub": "tools/pr-review/src/controller/sub",
+        "common": "tools/pr-review/src/controller/common"
       },
       "adapters": {
         "github": "tools/pr-review/src/adapters/github",

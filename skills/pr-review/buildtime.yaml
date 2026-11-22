@@ -2,10 +2,14 @@ rules: rules
 schemas: schemas
 references: skills/pr-review/references
 bin: skills/pr-review/dist/bin
-client: tools/pr-review/src/client
+client:
+  main: tools/pr-review/src/client/main
+  sub: tools/pr-review/src/client/sub
+  common: tools/pr-review/src/client/common
 controller:
   main: tools/pr-review/src/controller/main
   sub: tools/pr-review/src/controller/sub
+  common: tools/pr-review/src/controller/common
 adapters:
   github: tools/pr-review/src/adapters/github
   azure: tools/pr-review/src/adapters/azure
