@@ -272,6 +272,9 @@ quotations.
 90. What may pass between the tool and the mock hosts? Only HTTP. For plain git that means git over HTTP.
 91. Where do the three live? Each in a folder of its own, and nothing connects them except HTTP.
 92. How much of the production code do the unit tests cover? At least 90%, of the branches as well as of the lines.
+93. Which files are linted, and how? Every source file has a linter, used with its strictest settings: semgrep,
+    biome, shellcheck, the JSON Schema tooling and knip. The number of violations only ever decreases, until it is
+    zero. A workaround is a complete disqualification.
 
 ## Open questions
 
@@ -430,6 +433,27 @@ agent it constrains. The harness is a pull request of its own against main, sinc
    outside a push names the command and its exit status.
 8. **A sub agent changing what it is checked against.** A sub agent is given no permission to edit a protected
    path, and its work is judged by the same pull request check.
+
+**Every source file is linted.** Each kind of source file has a linter, run with its strictest settings: semgrep,
+biome, shellcheck, the JSON Schema tooling and knip. Their violations are counts of the pass command: each starts
+from its baseline, only ever decreases, and ends at zero. A workaround disqualifies the work completely: a rule
+switched off, a file left out, a suppression, a weaker preset, or code bent to slip past a rule without solving
+what the rule is for.
+
+Where the linters stand, measured 2026-11-23 over the tracked files:
+
+| Files                                   | Count | Linted today by                                            |
+|-----------------------------------------|-------|------------------------------------------------------------|
+| TypeScript and JavaScript of the tool   | 146   | biome with every rule, knip, the compiler at its strictest |
+| TypeScript of the tracer bullets        | 26    | nothing                                                    |
+| JSON schemas                            | 51    | the JSON Schema tooling; biome inside the tool             |
+| Markdown                                | 43    | nothing                                                    |
+| YAML: rules, workflows                  | 15    | validated against schemas where one exists; not linted     |
+| HTML and CSS of the site                | 12    | the HTML checker, on the built site                        |
+| Shell scripts                           | 7     | shellcheck, with its default checks, not all of them       |
+| Dockerfiles and other files             | 11    | nothing                                                    |
+
+Semgrep is installed on the machine and is run by nothing; the repository holds no rules for it.
 
 Reporting at the moment of detection has no mechanism. It is a halt, and the human judges it at every halt against
 the progress log.
