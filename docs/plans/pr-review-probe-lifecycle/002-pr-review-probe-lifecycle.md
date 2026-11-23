@@ -271,6 +271,7 @@ quotations.
     other code.
 90. What may pass between the tool and the mock hosts? Only HTTP. For plain git that means git over HTTP.
 91. Where do the three live? Each in a folder of its own, and nothing connects them except HTTP.
+92. How much of the production code do the unit tests cover? At least 90%, of the branches as well as of the lines.
 
 ## Open questions
 
@@ -305,6 +306,9 @@ quotations.
 The work starts on branch `pr-review-opaque-domain`, created at `a146b24`, the last commit of pull request 48 with a
 passing check. Measured there on 2026-11-23: code generation, build, unused-code check, lint and type check pass, and
 131 of 131 tests pass.
+
+Unit test coverage, measured there on 2026-11-23 without the integration tests and the generated code: 83.0% of the
+lines and 90.3% of the branches, counted only over the files the unit tests load.
 
 For reference, the head of pull request 48, measured 2026-11-23 with its working tree as it was:
 
@@ -341,6 +345,10 @@ Every milestone is worked in passes. A pass is one push with one purpose, under 
 6. Push. The pull request check judges the pass again from a checkout of its own: the checks, the counts and the
    protected paths.
 7. Record the pass in the progress log, citing the check run of the push.
+
+The unit tests alone cover at least 90% of the lines and 90% of the branches of the production code. Coverage is
+one of the counts of step 4: it starts from the baseline and may not fall, and at 90% the pass command fails below
+it. The integration tests add nothing to it, since they run the built artifact.
 
 Nothing is introduced that makes goals 4 to 6 harder to deliver later: no dependence on one agent's command-line
 tool, no install step of our own, and no dependence of the tool on the skill being present.
