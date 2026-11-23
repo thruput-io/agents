@@ -1,0 +1,13 @@
+{
+	"name": "@bullet/controller",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./undeclared": "./src/reaches-perimeters-undeclared.ts"
+	},
+	"dependencies": {
+		"@bullet/domain": "0.0.0"
+	}
+}

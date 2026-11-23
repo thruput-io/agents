@@ -53,15 +53,6 @@
         }
       ]
     },
-    "GitHubKind": {
-      "const": "github"
-    },
-    "AzureDevOpsKind": {
-      "const": "azure-devops"
-    },
-    "GitKind": {
-      "const": "git"
-    },
     "GitHub": {
       "description": "A GitHub pull request",
       "type": "object",
@@ -73,7 +64,7 @@
       ],
       "properties": {
         "kind": {
-          "$ref": "#/$defs/GitHubKind"
+          "const": "github"
         },
         "owner": {
           "$ref": "#/$defs/Owner"
@@ -99,7 +90,7 @@
       ],
       "properties": {
         "kind": {
-          "$ref": "#/$defs/AzureDevOpsKind"
+          "const": "azure-devops"
         },
         "organization": {
           "$ref": "#/$defs/Organization"
@@ -127,7 +118,7 @@
       ],
       "properties": {
         "kind": {
-          "$ref": "#/$defs/GitKind"
+          "const": "git"
         },
         "repository": {
           "$ref": "#/$defs/RepositoryPath"

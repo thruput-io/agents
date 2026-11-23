@@ -1,0 +1,8 @@
+{
+	"workspaces": {
+		"packages/*": {
+			"entry": ["src/*.ts"],
+			"project": ["src/**/*.ts"]
+		}
+	}
+}

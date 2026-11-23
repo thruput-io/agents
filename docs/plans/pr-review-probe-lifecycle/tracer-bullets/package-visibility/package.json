@@ -1,0 +1,17 @@
+{
+	"name": "package-visibility-tracer-bullet",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"workspaces": ["packages/*"],
+	"scripts": {
+		"test": "tsc --noEmit && node --test 'packages/*/src/**/*.test.ts'"
+	},
+	"devDependencies": {
+		"@tsconfig/node24": "24.0.6",
+		"@tsconfig/strictest": "2.0.8",
+		"@types/node": "24.19.2",
+		"knip": "6.43.0",
+		"typescript": "7.0.2"
+	}
+}

@@ -1,0 +1,13 @@
+{
+	"name": "@bullet/client",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"dependencies": {
+		"@bullet/controller": "0.0.0",
+		"@bullet/core": "0.0.0"
+	}
+}
