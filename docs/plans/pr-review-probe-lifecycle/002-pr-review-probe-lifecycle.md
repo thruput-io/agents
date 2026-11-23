@@ -338,6 +338,31 @@ responses from, in the shapes orval generates. The list of use cases is agreed w
 Verification: the suite passes for all three hosts, and an architecture rule holds it to itself, the mock server and
 the generated mocks.
 
+Use cases, proposed by the agent from the names of the existing integration tests and not yet agreed. Each is one
+branch against `main`, reviewed through all three hosts unless it says otherwise:
+
+1. A first review: lines added in several files and in several commits, with a file whose mode changes. The three
+   hosts yield the same [[Surface]], and the same outcome is posted to each.
+2. A review whose finding applies to the pull request as a whole and sits on no line.
+3. A [[Surface]] larger than one page, read page by page.
+4. Removed lines, a deleted file and a renamed file.
+5. A second review after new commits: the [[Surface]] narrows to what is new and to the lines of threads the author
+   resolved.
+6. A second review that settles a thread whose finding is fixed, and reopens one the author resolved without fixing.
+7. A head commit already reviewed, with no thread resolved by the author: answered as already reviewed without any
+   further request to the host.
+8. A change over the limit on the lines of one file, and one over the limit on the total diff: answered as too large.
+9. Checks that failed or are still running, a merge conflict, and an empty [[Surface]]: answered as refused, with the
+   refusal posted once, and an earlier refusal closed when the cause is gone.
+10. A URL no host recognises: answered as an unknown format.
+11. The host refusing: no credentials, missing permission to read, missing permission to write, a pull request that
+    cannot be written to, and a failed download of the files. Hosts only.
+12. A token set in the environment is sent, and none is sent when it is not set. Hosts only.
+13. The status command waiting while probes acknowledge and report, and the last report posting the review.
+
+What a host knows beyond the branch itself (author, purpose, checks, earlier threads, and the fault to answer with) is
+kept in the same repository, on a branch of its own that no review reads, so that the mock server stays stateless.
+
 ### Milestone M3: Adapter interfaces and controller implementation
 
 The host and persistence adapter interfaces, and the controllers written against them and against the domain
