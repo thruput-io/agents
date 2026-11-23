@@ -12,6 +12,10 @@ hand-written, and the architecture test now defines a layout the specs do not de
 Version 001 of this plan and [ADR 0010](../../adrs/0010-pr-review-probe-tool-and-submission-lifecycle.md) stand where
 this version does not say otherwise.
 
+The progress log of this plan records that the agent working it broke the loop it had written: it committed on a
+failing check, changed guardrails before they were approved, and reported weaknesses late. The loop was prose the
+agent was trusted to follow. The harness of M2 holds without the agent's cooperation.
+
 ### Goals
 
 The cheapest passing interpretations and exclusions are the agent's proposals, not yet accepted.
@@ -97,12 +101,18 @@ enabled, until every count is zero and the pinned tests pass.
 - The unused-code checker stops in the container with an allocation failure, so it has not been shown to report an
   import of a package that was not declared.
 - Packages replace part of the folder layout the architecture test describes.
+- The main branch has no branch protection and the repository has no code owners file, measured 2026-11-23; one
+  organization ruleset named linear is active.
+- A hook in a working copy can be skipped by whoever pushes, so only the pull request check binds.
+- Reporting at the moment of detection, and keeping to the design instead of to the existing code, have no
+  mechanism.
 
 ### Preconditions
 
 - A new ADR supersedes ADR 0010 decision 1 (interfaces in OpenAPI), ADR 0010 decision 7 (token from the environment)
   and ADR 0009 decision 1 (a [[Change]] without host coordinates, probes as YAML data), and adds the adapter
   operations, the perimeters folder, opaque [[Domain object]]s and the generated mirror.
+- The human, not the agent, sets the main branch to require the pull request check and the review of a code owner.
 
 ## References
 
@@ -226,13 +236,22 @@ quotations.
 71. Does the Azure policy specification stay, kept for the one operation that lists the policy evaluations of a pull
     request? It stays for now, and it is removed if that simplifies. It needs no permission beyond reading the pull
     request, and its API version is a preview.
+72. Where does generated code go? Into subfolders of the generated folder that mirror the layers, as asked from the
+    start. The host clients go under its adapters folder.
+73. Which failure of the agent is the most severe? Breaking the obligation to inform. A weakness, a warning or a
+    weakened guardrail is reported at the moment it is seen, and the work goes on only after the human confirms.
+74. Who writes the remedies for the agent's shortcuts into the plan? The agent, since it is making the plan.
+75. What counts as delivered? What is pushed. Commits are not reported.
+76. Through which pull request does the work travel while pull request 48 is a draft? One of its own, number 52. How
+    the two join is solved at the end.
+77. Does a change made after progress was reported go into a copy numbered 003? No. This plan is updated in place.
 
 ## Open questions
 
 1. How do the commits of this branch join the branch of pull request 48, which has 19 commits of its own after
    `a146b24` and uncommitted work in a stash?
 2. Which OpenAPI tool generates the in-process interfaces? No documented orval output does; openapi-typescript emits
-   operation types. M3 settles it.
+   operation types. M4 settles it.
 3. Which use cases make up every way a review needs to support? The agent drafts the list, as the branches of the
    fixture repository, for the human to check.
 4. How does the status command wait for acknowledgements, probe deadlines and host submission without iterating over
@@ -242,6 +261,13 @@ quotations.
 6. Orval writes the import in a separate mock file without a file extension, which native modules cannot resolve.
    Until that is solved the mocks stay inside the generated client files. Versions 8.47.0 to 8.49.0 do not solve it,
    with or without a named tsconfig, as the tracer bullet `orval-mock-folder` records.
+7. How does the built tool reach the mock server? Today a request interceptor is preloaded into the tool's process,
+   which changes the artifact under test.
+8. How is the fixture repository made immutable while it is still built inside this repository?
+9. Which copy of the review tool reviews a pass? The installed copy stops on a range of two commit ids, and the build
+   of the branch is the worker's own.
+10. Can the agent's token change the rules of the main branch or approve a pull request? If it can, the protection of
+    the protected paths rests on the token being narrowed.
 
 ## Baseline
 
@@ -264,24 +290,26 @@ For reference, the head of pull request 48, measured 2026-11-23 with its working
 
 ## Execution Plan
 
-Draft. The order of the milestones is the human's. What follows the fourth is planned once the fourth is done.
+Draft. The order of the milestones after the harness is the human's. What follows the fifth is planned once the
+fifth is done.
 
 ### The loop
 
-Every milestone is worked in passes. A pass is one commit with one purpose, under 400 hand-written lines:
+Every milestone is worked in passes. A pass is one push with one purpose, under 400 hand-written lines:
 
 1. Start from a clean working tree. Reread the goals, the guidance in the summary and the list of things not to be
    touched, then state the purpose of the pass and the goal it serves. Work that serves no goal is dropped.
 2. Write the failing test or check first, and see it fail.
 3. Make the smallest change that turns it.
-4. Run every check to its end and record its count in the progress log. The build is not clean while the target is
-   being put in place: the baseline is saved first, no count rises above it without the reason being recorded, and
-   the counts are driven to zero. No check is disabled, muted, excluded or weakened.
-5. Review the diff of the pass with this project's review protocol against the rules and fix what it finds, back to
-   4 until the review is clean.
-6. Confirm the diff of the pass touches nothing on the list below. A pass that does is rejected, whoever wrote it,
-   so that a sub agent cannot pass by changing what it is checked against.
-7. Commit. Nothing is pushed.
+4. Run the pass command of M2. It runs every check to its end, writes the counts, and refuses the pass when a count
+   rose or a check did not run. The build is not clean while the target is being put in place: the counts start
+   from the baseline and are driven to zero. No check is disabled, muted, excluded or weakened.
+5. Have the pass reviewed against the rules by this project's review protocol, on the range since the last push,
+   and fix what it finds, back to 4 until the review is clean. A range refused as too large is split. A pass that
+   changes only a lock file is reviewed by the human.
+6. Push. The pull request check judges the pass again from a checkout of its own: the checks, the counts and the
+   protected paths.
+7. Record the pass in the progress log, citing the check run of the push.
 
 Nothing is introduced that makes goals 4 to 6 harder to deliver later: no dependence on one agent's command-line
 tool, no install step of our own, and no dependence of the tool on the skill being present.
@@ -291,21 +319,24 @@ tool, no install step of our own, and no dependence of the tool on the skill bei
 The agent stops and hands control to the human:
 
 - at once, on an unexpected error, warning or ambiguous result from a tool;
-- before a change to a guardrail, a lint setting, a pinned test or a published ADR, and before anything is pushed or
-  posted;
+- at once, on seeing a weakness, a weakened guardrail or a departure from the guidance: it is the first thing in
+  the agent's message, and the work goes on only after the human confirms;
+- before a change to anything on the list below, and before anything is posted outside the pull request;
 - when the review of a pass is still not clean after three rounds;
-- after M2, for approval, before any existing code is moved;
-- after M3 and after M4, for review of what was built.
+- after M2, for approval of the harness;
+- after M3, for approval, before any existing code is moved;
+- after M4 and after M5, for review of what was built.
 
-At a halt the agent reports what changed, the result of every check, how the work stands against each goal, and
+At a halt the agent reports what changed, the check run of every push, how the work stands against each goal, and
 what it needs decided.
 
 ### Not to be touched
 
-Unless the human approves it first, in a pass that does nothing else:
+Unless the human approves it first, in a pull request that does nothing else:
 
 - the guardrails: the lint, unused-code and compiler settings, the architecture test and the guardrails test;
-- the pinned integration tests and the fixture repository, once M2 is approved;
+- the harness of M2: the pass command, the list of protected paths and the pull request check;
+- the pinned integration tests and the fixture repository, once M3 is approved;
 - published ADRs, and frozen plans with their progress logs;
 - the governance documents and their schemas;
 - the downloaded host specifications, which are replaced only by a fresh download;
@@ -318,13 +349,13 @@ Unless the human approves it first, in a pass that does nothing else:
 
 | Goal | Milestones               |
 |------|--------------------------|
-| 1    | M2, M3, M4               |
-| 2    | M3                       |
-| 3    | M3, M4                   |
+| 1    | M2, M3, M4, M5           |
+| 2    | M4                       |
+| 3    | M4, M5                   |
 | 4    | later plan; guarded here |
 | 5    | later plan; guarded here |
 | 6    | later plan; guarded here |
-| 7    | M1 to M4                 |
+| 7    | M1 to M5                 |
 
 ### Running all tests
 
@@ -337,7 +368,38 @@ A declarative orval configuration generates only the host operations in use, wit
 Verification: the configuration holds no branching, the generated clients hold only the declared operations, and the
 verification command passes.
 
-### Milestone M2: Integration tests on one immutable repository
+Done. The progress log holds its passes.
+
+### Milestone M2: A harness that enforces the loop
+
+Each failure the progress log records gets a mechanism that works without the cooperation of the
+agent it constrains. The harness is a pull request of its own against main, since it changes the pipeline.
+
+1. **A commit on a failing check.** One pass command runs every check to its end and exits with a failure when a
+   check fails to run or a count rose. A hook kept in the repository runs it before a push.
+2. **Counts typed by hand.** The pass command writes the counts to a file beside the progress log. The pull request
+   check runs the same command and fails when its counts differ from the file, or rose since the push before.
+3. **A guardrail changed inside feature work.** A code owners file is the one list of protected paths. The pull
+   request check fails a pull request that changes a protected path together with any other path.
+4. **A guardrail changed before it was approved.** The human owns the protected paths in that file, and main
+   requires the review of a code owner and the pull request check.
+5. **A pinned test edited to pass.** The pinned integration tests and the fixture repository join the protected
+   paths when M3 is approved.
+6. **A reviewer briefed by the worker.** The review of step 5 is run by the review tool, which writes each probe's
+   instructions itself, in a copy the worker did not build.
+7. **Works, claimed without evidence.** An entry of the progress log cites the check run of its push, and a claim
+   outside a push names the command and its exit status.
+8. **A sub agent changing what it is checked against.** A sub agent is given no permission to edit a protected
+   path, and its work is judged by the same pull request check.
+
+Reporting at the moment of detection has no mechanism. It is a halt, and the human judges it at every halt against
+the progress log.
+
+Verification: each mechanism is seen to fail once on a planted violation, with the check run recorded: a raised
+count, a check that did not run, a protected path changed beside another path, a counts file that differs from the
+run, and an edit of a protected path by a sub agent.
+
+### Milestone M3: Integration tests on one immutable repository
 
 A black-box suite drives only the built artifact. One real, immutable git repository, whose branches are the use
 cases, is used as it is by the git adapter and is the source a stateless mock server derives the other hosts'
@@ -371,17 +433,16 @@ branch against `main`, reviewed through all three hosts unless it says otherwise
 What a host knows beyond the branch itself (author, purpose, checks, earlier threads, and the fault to answer with) is
 kept in the same repository, on a branch of its own that no review reads, so that the mock server stays stateless.
 
-### Milestone M3: Adapter interfaces and controller implementation
+### Milestone M4: Adapter interfaces and controller implementation
 
 The host and persistence adapter interfaces, and the controllers written against them and against the domain
 interfaces.
 
 Verification: the controller tests pass with every dependency replaced by a stand-in.
 
-### Milestone M4: The simplest round trip
+### Milestone M5: The simplest round trip
 
 One command travels from the client to an endpoint and back: parsed at the perimeter, carried by the controller,
 answered by an adapter, and encoded at the perimeter.
 
-Verification: the round trip passes in the black-box suite of M2.
-
+Verification: the round trip passes in the black-box suite of M3.
