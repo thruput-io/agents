@@ -260,7 +260,8 @@ Draft. The order of the milestones is the human's. What follows the fourth is pl
 
 Every milestone is worked in passes. A pass is one commit with one purpose, under 400 hand-written lines:
 
-1. Start from a clean working tree and state the purpose of the pass.
+1. Start from a clean working tree. Reread the goals, the guidance in the summary and the list of things not to be
+   touched, then state the purpose of the pass and the goal it serves. Work that serves no goal is dropped.
 2. Write the failing test or check first, and see it fail.
 3. Make the smallest change that turns it.
 4. Run every check to its end and record its count in the progress log. The build is not clean while the target is
@@ -286,7 +287,8 @@ The agent stops and hands control to the human:
 - after M2, for approval, before any existing code is moved;
 - after M3 and after M4, for review of what was built.
 
-At a halt the agent reports what changed, the result of every check, and what it needs decided.
+At a halt the agent reports what changed, the result of every check, how the work stands against each goal, and
+what it needs decided.
 
 ### Not to be touched
 
