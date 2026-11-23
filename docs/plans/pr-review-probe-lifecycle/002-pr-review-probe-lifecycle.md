@@ -271,6 +271,11 @@ quotations.
    of the branch is the worker's own.
 10. Can the agent's token change the rules of the main branch or approve a pull request? If it can, the protection of
     the protected paths rests on the token being narrowed.
+11. Does plain git have a second review, a refusal or a merge conflict, or are cases 4, 7 and 8 for hosting
+    services only, as proposed?
+12. What does the tool answer today for an empty [[Surface]]? The agent found no code that recognises one.
+13. How does a black-box test see what was posted, when the mock server keeps no state?
+14. What is kept when posting the outcome fails, and can the post be made again without reviewing again?
 
 ## Baseline
 
@@ -411,27 +416,59 @@ responses from, in the shapes orval generates. The list of use cases is agreed w
 Verification: the suite passes for all three hosts, and an architecture rule holds it to itself, the mock server and
 the generated mocks.
 
-Use cases, proposed by the agent from the names of the existing integration tests and not yet agreed. Each is one
-branch against `main`, reviewed through all three hosts unless it says otherwise:
+Use cases, proposed by the agent and not yet agreed. The fixture is immutable and the mock server keeps no state, so
+every case has a workdir of its own, depends on no other case, and all of them run in parallel.
 
-1. A first review: lines added in several files and in several commits, with a file whose mode changes. The three
-   hosts yield the same [[Surface]], and the same outcome is posted to each.
-2. A review whose finding applies to the pull request as a whole and sits on no line.
-3. A [[Surface]] larger than one page, read page by page.
-4. Removed lines, a deleted file and a renamed file.
-5. A second review after new commits: the [[Surface]] narrows to what is new and to the lines of threads the author
-   resolved.
-6. A second review that settles a thread whose finding is fixed, and reopens one the author resolved without fixing.
-7. A head commit already reviewed, with no thread resolved by the author: answered as already reviewed without any
-   further request to the host.
-8. A change over the limit on the lines of one file, and one over the limit on the total diff: answered as too large.
-9. Checks that failed or are still running, a merge conflict, and an empty [[Surface]]: answered as refused, with the
-   refusal posted once, and an earlier refusal closed when the cause is gone.
-10. A URL no host recognises: answered as an unknown format.
-11. The host refusing: no credentials, missing permission to read, missing permission to write, a pull request that
-    cannot be written to, and a failed download of the files. Hosts only.
-12. A token set in the environment is sent, and none is sent when it is not set. Hosts only.
-13. The status command waiting while probes acknowledge and report, and the last report posting the review.
+The three hosts are GitHub, Azure DevOps and plain git. A case runs on the hosts that can differ in it: on all three
+where the answer comes from the change itself, on GitHub and Azure DevOps where it comes from what only a hosting
+service knows, and once, on plain git, where no host takes part.
+
+**Group A: the complete happy path.** One review from the first command to the posted outcome, through every command
+of the main agent and of the sub agent. Runs on all three hosts, which yield the same [[Surface]] and are posted the
+same outcome.
+
+1. A first review: lines added and removed over several files and commits, a file whose mode changes, a deleted
+   file and a renamed file, on a base branch that has moved on since the branch was cut.
+2. A [[Surface]] larger than one page, read page by page, forwards and back.
+3. A finding on a line, a finding on the pull request as a whole, and a probe that finds nothing.
+4. A second review after new commits: the [[Surface]] narrows to what is new and to the lines of threads the author
+   resolved, a thread whose finding is fixed is settled, and one resolved without a fix is reopened. GitHub and
+   Azure DevOps.
+
+**Group B: early exits on the content.** Answered by prepare. No probe is started.
+
+5. Too large: one file over the limit on its lines, and a change over the limit on the total diff. All three hosts.
+6. Nothing to review: an empty [[Surface]]. All three hosts.
+7. Already reviewed: the head commit is reviewed and the author resolved no thread, answered without a further
+   request to the host. GitHub and Azure DevOps.
+8. Refused: checks that failed, checks still running, and a merge conflict. The refusal is posted once, and an
+   earlier refusal is closed when its cause is gone. GitHub and Azure DevOps.
+9. A URL no host recognises, answered as an unknown format. Once; no host takes part.
+
+**Group C: technical failures.** Each is answered with what failed and how the user recovers, and nothing is posted.
+
+10. The workspace: a workdir that cannot be written to, and one reached through a symbolic link. Once, on plain git.
+11. A command for a review the workdir does not hold: status before prepare, and a probe command with an unknown
+    session or an unknown probe. Once, on plain git.
+12. Input no command accepts: a report that is not valid, and a term the glossary does not hold. Once, on plain git.
+13. A repository path that is no repository, and a branch that does not exist. Plain git.
+14. Not allowed: no credentials (401), no permission to read (403, and the sign-in page Azure DevOps answers with
+    203), no permission to write, and a pull request that cannot be written to (400 on Azure DevOps, 422 on
+    GitHub). GitHub and Azure DevOps, each in its own shapes.
+15. The host failing: a server error (500), a pull request that does not exist (404), and a failed download of the
+    files. GitHub and Azure DevOps.
+16. The host failing while the outcome is posted, after every probe has reported. GitHub and Azure DevOps.
+17. A token set in the environment is sent, and none is sent when it is not set. GitHub and Azure DevOps.
+
+**Group D: concurrency and timing.** The controllers and the persistence do not differ by host, so these run on
+plain git; 18 also runs on GitHub and Azure DevOps, where posting once can be seen.
+
+18. Every probe of a review acknowledges and reports at the same moment: each report is kept and the outcome is
+    posted once.
+19. Status read while reports are written never shows a half-written review.
+20. Two reports for one probe, as when a silent probe was started again: the probe counts once.
+21. A probe that never acknowledges, and one that passes its deadline: status names each.
+22. Two reviews at the same time, each in a workdir of its own, do not touch each other.
 
 What a host knows beyond the branch itself (author, purpose, checks, earlier threads, and the fault to answer with) is
 kept in the same repository, on a branch of its own that no review reads, so that the mock server stays stateless.
