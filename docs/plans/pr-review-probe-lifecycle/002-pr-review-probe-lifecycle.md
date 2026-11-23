@@ -270,6 +270,7 @@ quotations.
 89. How is that held? By dependency protection for the integration tests, which are completely separate from the
     other code.
 90. What may pass between the tool and the mock hosts? Only HTTP. For plain git that means git over HTTP.
+91. Where do the three live? Each in a folder of its own, and nothing connects them except HTTP.
 
 ## Open questions
 
@@ -452,8 +453,9 @@ only the mock hosts do.
 Each part that needs the shapes of a host derives them by itself from the specification the host publishes. The
 production code generates no mocks, and those M1 left in its generated clients are removed.
 
-**Dependency protection.** Each of the three is a package of its own, so that an import from one into another does
-not resolve, and an architecture rule in each fails on any import from outside it. Those rules are protected paths.
+**Dependency protection.** Each of the three has a folder of its own, and nothing connects the folders except HTTP.
+Each folder is a package of its own, so that an import from one into another does not resolve, and an architecture
+rule in each fails on any import from outside it. Those rules are protected paths.
 
 Verification: the suite passes for all three hosts, and an import planted from each part into each of the other two
 fails the build, in all six directions.
