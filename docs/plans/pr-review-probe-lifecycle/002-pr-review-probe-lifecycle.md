@@ -206,12 +206,18 @@ quotations.
 58. What happens to pull request 48? It is made a draft and used as reference.
 59. Where does the work start? At the commit the agent recommended: the last one of pull request 48 with a passing
     check.
+60. In what order is the existing code moved? First code generation is made to work. Then proper integration tests
+    are created on the mock with one immutable repository, with git backing it all. Then the agent halts for approval.
+    Then the adapter interfaces and the controller implementation. Then the simplest round trip from the client to an
+    endpoint and back.
+61. How does the agent work through it? It defines the loop and when it halts for review.
+62. May the agent change what the work needs, such as a dependency version? Yes, whatever it needs.
 
 ## Open questions
 
 1. How is the base commit `a146b24` brought into main, given that pull request 48 stays a draft?
 2. Which OpenAPI tool generates the in-process interfaces? No documented orval output does; openapi-typescript emits
-   operation types. M0 proves one.
+   operation types. M3 settles it.
 3. Which use cases make up every way a review needs to support? The agent drafts the list, as the branches of the
    fixture repository, for the human to check.
 4. How does the status command wait for acknowledgements, probe deadlines and host submission without iterating over
@@ -240,101 +246,79 @@ For reference, the head of pull request 48, measured 2026-11-23 with its working
 
 ## Execution Plan
 
-Draft. Every milestone is one or more pull requests, each with one purpose and under 400 hand-written lines.
+Draft. The order of the milestones is the human's. What follows the fourth is planned once the fourth is done.
 
-Every milestone holds to these rules:
+### The loop
 
-- No check is disabled, muted, excluded or weakened, and no count in the baseline rises.
-- An unexpected error stops the work and returns control to the human.
-- It closes with the verification command, then a review of its diff by this project's review protocol against the
-  rules. Violations are fixed before the next milestone starts.
-- The pinned integration tests are not edited after M1.
-- Nothing is introduced that makes goals 4 to 6 harder to deliver later: no dependence on one agent's command-line
-  tool, no install step of our own, and no dependence of the tool on the skill being present.
+Every milestone is worked in passes. A pass is one commit with one purpose, under 400 hand-written lines:
+
+1. Start from a clean working tree and state the purpose of the pass.
+2. Write the failing test or check first, and see it fail.
+3. Make the smallest change that turns it.
+4. Run the verification command. No check is disabled, muted, excluded or weakened to pass it.
+5. Review the diff of the pass with this project's review protocol against the rules and fix what it finds, back to
+   4 until the review is clean.
+6. Commit. Nothing is pushed.
+
+Nothing is introduced that makes goals 4 to 6 harder to deliver later: no dependence on one agent's command-line
+tool, no install step of our own, and no dependence of the tool on the skill being present.
+
+### Halts
+
+The agent stops and hands control to the human:
+
+- at once, on an unexpected error, warning or ambiguous result from a tool;
+- before a change to a guardrail, a lint setting, a pinned test or a published ADR, and before anything is pushed or
+  posted;
+- when the review of a pass is still not clean after three rounds;
+- after M2, for approval, before any existing code is moved;
+- after M3 and after M4, for review of what was built.
+
+At a halt the agent reports what changed, the result of every check, and what it needs decided.
 
 ### Goal coverage
 
 | Goal | Milestones               |
 |------|--------------------------|
-| 1    | M1, M6, M9               |
-| 2    | M2, M7, M9               |
-| 3    | M2, M8, M9               |
+| 1    | M2, M3, M4               |
+| 2    | M3                       |
+| 3    | M3, M4                   |
 | 4    | later plan; guarded here |
 | 5    | later plan; guarded here |
 | 6    | later plan; guarded here |
-| 7    | M0, M2, M3 to M10        |
+| 7    | M1 to M4                 |
 
 ### Running all tests
 
 `./build.sh` at the repository root (existing).
 
-### Milestone M0: Proofs and direction
+### Milestone M1: Code generation works
 
-Container experiments kept under this plan's directory prove a codec with an opaque [[Domain object]] on its domain
-side and the generation of an in-process interface from OpenAPI. A new ADR records the direction.
+A declarative orval configuration generates only the host operations in use, with their schemas and their mocks.
 
-Verification: each experiment runs with one documented command and its test passes; the ADR validates against the ADR
-schema.
+Verification: the configuration holds no branching, the generated clients hold only the declared operations, and the
+verification command passes.
 
-### Milestone M1: Pin the integration tests
+### Milestone M2: Integration tests on one immutable repository
 
-The fixture repository, the stateless mock server on orval-generated mocks, and a black-box suite that drives only the
-built artifact. An architecture rule holds the suite to itself, the mock server and the generated mocks.
+A black-box suite drives only the built artifact. One real, immutable git repository, whose branches are the use
+cases, is used as it is by the git adapter and is the source a stateless mock server derives the other hosts'
+responses from, in the shapes orval generates. The list of use cases is agreed with the human first.
 
-Verification: the suite passes once on the last state where the tool ran, and the architecture rule passes.
+Verification: the suite passes for all three hosts, and an architecture rule holds it to itself, the mock server and
+the generated mocks.
 
-### Milestone M2: Define the target
+### Milestone M3: Adapter interfaces and controller implementation
 
-Separate pull requests for the specs, for the folder layout with its architecture rules, for the guardrails, and for
-the generation configuration with generated output ignored by git.
+The host and persistence adapter interfaces, and the controllers written against them and against the domain
+interfaces.
 
-Verification: the specs and the folder configuration validate; code generation succeeds; the architecture and
-guardrails tests fail only on rules the later milestones resolve.
+Verification: the controller tests pass with every dependency replaced by a stand-in.
 
-### Milestone M3: Domain
+### Milestone M4: The simplest round trip
 
-Opaque, [[Immutable]] [[Domain object]]s with methods and no zod.
+One command travels from the client to an endpoint and back: parsed at the perimeter, carried by the controller,
+answered by an adapter, and encoded at the perimeter.
 
-Verification: the domain rules of the architecture and guardrails tests pass.
+Verification: the round trip passes in the black-box suite of M2.
 
-### Milestone M4: Perimeters
-
-The codecs and the inward and outward calls on them.
-
-Verification: the perimeters rules pass and no parsing exists outside the perimeters folder.
-
-### Milestone M5: Persistence adapter
-
-The in-memory and disk implementations behind the generated interface.
-
-Verification: both implementations pass the same tests of that interface.
-
-### Milestone M6: Host adapters
-
-The github, azure and git adapters behind the generated interface, and the delegating adapter.
-
-Verification: the adapter rules pass and the pinned tests pass for all three hosts.
-
-### Milestone M7: Controller
-
-The common, main and sub controllers.
-
-Verification: the controller rules pass.
-
-### Milestone M8: Client
-
-The common, main and sub clients and the two entry points.
-
-Verification: the client rules pass and each built artifact prints only its own agent's commands.
-
-### Milestone M9: Probes
-
-Probe entries in YAML with one group each and least permissions.
-
-Verification: the probe entries validate, and a normal probe is granted no disk access.
-
-### Milestone M10: Zero
-
-What is left over is removed.
-
-Verification: every row of the baseline shows no failure and the pinned integration tests pass.
