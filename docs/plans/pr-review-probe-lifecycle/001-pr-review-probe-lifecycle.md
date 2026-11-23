@@ -1,4 +1,4 @@
-# 003 — PR Review Probe Tool, Intentional Instructions, and Automatic Host Submission
+# 001 — PR Review Probe Tool, Intentional Instructions, and Automatic Host Submission
 |
 ## Implementing Agent Instructions
 
@@ -6,7 +6,7 @@ Read this section first, and in full, before touching any code.
 
 **No authoring of this plan.**
 This plan is committed and immutable during execution. Executing agents **MUST NOT** author, edit, rewrite, or amend
-this plan document (`docs/plans/pr-review-probe-lifecycle/003-pr-review-probe-lifecycle.md`) as part of immediate
+this plan document (`docs/plans/pr-review-probe-lifecycle/001-pr-review-probe-lifecycle.md`) as part of immediate
 instructions or milestone execution. If any conflict, ambiguity, or unexpected error arises, stop immediately and
 return control to the human rather than modifying the plan.
 
@@ -35,7 +35,7 @@ alone.
 
 Keep an append-only progress log for this attempt:
 
-- Open `docs/plans/pr-review-probe-lifecycle/progress/003-attempt-1-2026-11-19.md` before the first code change.
+- Open `docs/plans/pr-review-probe-lifecycle/progress/001-attempt-1-2026-11-19.md` before the first code change.
 - Append at each milestone checkpoint: what was implemented, what verification showed, and the commit hash.
 - **MUST NOT** rewrite, condense, or delete an existing entry. Corrections are new entries.
 - **MUST NOT** amend or force-push a commit that contains progress-log entries.
@@ -182,7 +182,7 @@ Delivers: Goal 1 (`tools/pr-review/` holds all TypeScript sources, client genera
 
 Steps:
 
-1. Open `docs/plans/pr-review-probe-lifecycle/progress/003-attempt-1-2026-11-19.md`.
+1. Open `docs/plans/pr-review-probe-lifecycle/progress/001-attempt-1-2026-11-19.md`.
 2. `git mv` `src/`, `clients/`, `scripts/`, `package.json`, `package-lock.json`, `tsconfig.json`, `biome.json`,
    `knip.json`, and `README.md` from `skills/pr-review/` to `tools/pr-review/`.
 3. Update `tools/pr-review/package.json` `build` script so `esbuild` outputs `../../skills/pr-review/dist/bin/review-tool.mjs`
