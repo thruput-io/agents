@@ -246,6 +246,8 @@ quotations.
     the two join is solved at the end.
 77. Does a change made after progress was reported go into a copy numbered 003? Not here. The human regards this
     plan as not started, which is the only reason it is updated in place.
+78. What becomes of the progress log, if the plan is not started? It stays as the record of what happened. The plan
+    counts as not started from M2 on, and M1 is work done ahead of it.
 
 ## Open questions
 
