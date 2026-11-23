@@ -59,7 +59,9 @@ it("client layer only depends on domain, controller, and client (never adapters)
 		.inFolder("src/client/**")
 		.shouldNot()
 		.dependOnFiles()
-		.inPath("{src/adapters/**,src/integration-test/**,src/generated/adapters/**}")
+		.inPath(
+			"{src/adapters/**,src/integration-test/**,src/generated/adapters/**}",
+		)
 		.check();
 	assert.deepEqual(violations, []);
 });
