@@ -262,7 +262,7 @@ quotations.
     is immutable.
 85. Does the tool write in a scenario? Yes. It posts its review, and a mock asserts what it is sent. What was
     written is not persisted.
-86. Does a real user of plain git get the stored review? Yes, somehow. How is open question 13.
+86. Does a real user of plain git get the stored review? Yes, somehow. How is open question 12.
 
 ## Open questions
 
@@ -286,13 +286,10 @@ quotations.
    of the branch is the worker's own.
 10. Can the agent's token change the rules of the main branch or approve a pull request? If it can, the protection of
     the protected paths rests on the token being narrowed.
-11. A review stored in `.reviews` is committed after the commit it reviewed. Is that folder left out of the
-    [[Surface]], and does a commit that only adds a review count as the head commit when the tool asks whether the
-    head is already reviewed?
-12. What does the tool answer today for an empty [[Surface]]? The agent found no code that recognises one.
-13. How does a real user of plain git get the review the tool posts into `.reviews` of their repository, while the
+11. What does the tool answer today for an empty [[Surface]]? The agent found no code that recognises one.
+12. How does a real user of plain git get the review the tool posts into `.reviews` of their repository, while the
     fixture stays unchanged in the tests?
-14. What is kept when posting the outcome fails, and can the post be made again without reviewing again?
+13. What is kept when posting the outcome fails, and can the post be made again without reviewing again?
 
 ## Baseline
 
@@ -491,7 +488,8 @@ plain git; 18 runs on all three, since each is posted to once.
 22. Two reviews at the same time, each in a workdir of its own, do not touch each other.
 
 An earlier review is stored in the repository, in the `.reviews` folder of the scenario's branch, as JSON in the
-shape it was reported in. What else a scenario starts from beyond its commits (author, purpose, checks, and the
+shape it was reported in, which names the commit it reviewed. That folder is the tool's own and is never part of
+the [[Surface]], so a head is already reviewed when nothing but it has changed since that commit. What else a scenario starts from beyond its commits (author, purpose, checks, and the
 fault to answer with) is encoded on its branch as well, written once when the fixture is built.
 
 ### Milestone M4: Adapter interfaces and controller implementation
