@@ -216,6 +216,10 @@ quotations.
 64. Is the build clean on every pass? No. A baseline is saved, and failing tests and architecture errors are then
     reduced until they reach zero.
 65. How are sub agents kept from cheating? By not allowing changes to the things on the list.
+66. Does the agent reread the goals as it works? It has to, now and then.
+67. How is a pass reviewed while the review tool stops on a range of commit ids? By sub agents.
+68. What does the agent do with a decision it has recommended an answer to? It stops stalling and goes on, keeps
+    the plans saved, and reports.
 
 ## Open questions
 
@@ -228,9 +232,7 @@ quotations.
    reads of the stored review?
 5. Where does the checkout come from for a probe that is granted disk access, now that the host adapter returns only
    the [[Change]]?
-6. The orval command needs its configuration as a default export, which the lint rule against default exports
-   reports. Is that file excepted in the lint configuration, or is orval called from a script?
-7. Orval writes the import in a separate mock file without a file extension, which native modules cannot resolve.
+6. Orval writes the import in a separate mock file without a file extension, which native modules cannot resolve.
    Until that is solved the mocks stay inside the generated client files. Does a later orval version solve it?
 
 ## Baseline
