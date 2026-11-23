@@ -269,6 +269,7 @@ quotations.
     completely independent, and reuse between them is forbidden. The earlier allowance to reuse is withdrawn.
 89. How is that held? By dependency protection for the integration tests, which are completely separate from the
     other code.
+90. What may pass between the tool and the mock hosts? Only HTTP. For plain git that means git over HTTP.
 
 ## Open questions
 
@@ -285,8 +286,9 @@ quotations.
 6. Orval writes the import in a separate mock file without a file extension, which native modules cannot resolve.
    Until that is solved the mocks stay inside the generated client files. Versions 8.47.0 to 8.49.0 do not solve it,
    with or without a named tsconfig, as the tracer bullet `orval-mock-folder` records.
-7. How does the built tool reach the mock server? Today a request interceptor is preloaded into the tool's process,
-   which changes the artifact under test.
+7. How is the built tool pointed at the mock hosts over HTTP, when the addresses of GitHub and Azure DevOps are fixed
+   in it? Today a request interceptor is preloaded into the tool's process, which changes the artifact under test.
+   And a plain git target is taken as a path on disk today, so git over HTTP is a change to the tool.
 8. How is the fixture repository made immutable while it is still built inside this repository?
 9. Which copy of the review tool reviews a pass? The installed copy stops on a range of two commit ids, and the build
    of the branch is the worker's own.
@@ -443,8 +445,10 @@ no import in any direction, no helper, no type, no schema and no generated file.
 - **The integration tests** drive the built artifact from outside and compare what it answers. They know the tool's
   commands and answers as a user sees them, and nothing of the tool's code or of the mock hosts' code.
 
-The three meet only while running: the tests start the built artifact through its command line, the artifact
-speaks to a mock host as it would to the real host, and the artifact and the mock hosts each read the fixture.
+The three meet only while running. The tests start the built artifact through its command line. Between the
+artifact and the mock hosts only HTTP is allowed, and that is all: the artifact speaks to a mock host as it would
+to the real host, and plain git is served to it as git over HTTP. The artifact never reads the fixture from disk;
+only the mock hosts do.
 Each part that needs the shapes of a host derives them by itself from the specification the host publishes. The
 production code generates no mocks, and those M1 left in its generated clients are removed.
 
