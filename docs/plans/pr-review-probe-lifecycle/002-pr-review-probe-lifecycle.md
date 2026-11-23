@@ -248,6 +248,12 @@ quotations.
     plan as not started, which is the only reason it is updated in place.
 78. What becomes of the progress log, if the plan is not started? It stays as the record of what happened. The plan
     counts as not started from M2 on, and M1 is work done ahead of it.
+79. How are the use cases grouped? Into the complete happy path, early exits on the content, technical failures of
+    the workspace and of the hosts, and concurrency. Each says which of the three hosts run it, and all run in
+    parallel, since the fixture is immutable.
+80. What does stateless mean? Each scenario is a branch, with the state of its threads and the rest in the fixture.
+    Immutable means no write ever sticks, and every scenario ends with a post, which is what is compared.
+81. Does plain git remember reviews? No. It is left as it is.
 
 ## Open questions
 
@@ -271,10 +277,11 @@ quotations.
    of the branch is the worker's own.
 10. Can the agent's token change the rules of the main branch or approve a pull request? If it can, the protection of
     the protected paths rests on the token being narrowed.
-11. Does plain git have a second review, a refusal or a merge conflict, or are cases 4, 7 and 8 for hosting
-    services only, as proposed?
+11. Where in the fixture does a scenario hold what only a hosting service knows, without it becoming part of the
+    change under review?
 12. What does the tool answer today for an empty [[Surface]]? The agent found no code that recognises one.
-13. How does a black-box test see what was posted, when the mock server keeps no state?
+13. Does the mock server reject a post that does not match the generated shape, so that a wrong post fails its
+    scenario without anything being stored?
 14. What is kept when posting the outcome fails, and can the post be made again without reviewing again?
 
 ## Baseline
@@ -416,8 +423,10 @@ responses from, in the shapes orval generates. The list of use cases is agreed w
 Verification: the suite passes for all three hosts, and an architecture rule holds it to itself, the mock server and
 the generated mocks.
 
-Use cases, proposed by the agent and not yet agreed. The fixture is immutable and the mock server keeps no state, so
-every case has a workdir of its own, depends on no other case, and all of them run in parallel.
+Use cases, proposed by the agent and not yet agreed. Each scenario is a branch of the fixture, and the state a
+scenario starts from, such as earlier threads, is read from the fixture and never written: no write sticks, on any
+host. A scenario ends with what the tool posts or answers, and that is what the test compares; nothing is read back.
+So every case has a workdir of its own, depends on no other case, and all of them run in parallel.
 
 The three hosts are GitHub, Azure DevOps and plain git. A case runs on the hosts that can differ in it: on all three
 where the answer comes from the change itself, on GitHub and Azure DevOps where it comes from what only a hosting
@@ -470,8 +479,9 @@ plain git; 18 also runs on GitHub and Azure DevOps, where posting once can be se
 21. A probe that never acknowledges, and one that passes its deadline: status names each.
 22. Two reviews at the same time, each in a workdir of its own, do not touch each other.
 
-What a host knows beyond the branch itself (author, purpose, checks, earlier threads, and the fault to answer with) is
-kept in the same repository, on a branch of its own that no review reads, so that the mock server stays stateless.
+Plain git keeps no reviews, so on it every review is a first review, and its post is the outcome it hands back.
+What a hosting service knows about a scenario beyond the branch itself (author, purpose, checks, earlier threads,
+and the fault to answer with) is held in the fixture for that scenario and is not part of the change under review.
 
 ### Milestone M4: Adapter interfaces and controller implementation
 
