@@ -295,6 +295,8 @@ quotations.
      later.
 105. How does a real user of plain git get the stored review? Out of scope.
 106. What is kept when a post fails? In a mock host there is a log. In the production code, nothing.
+107. What are the assertions about a post made on? The log of the mock host. Without a log there is nothing to
+     assert on.
 
 ## Open questions
 
@@ -486,8 +488,8 @@ The three meet only while running. The tests start the built artifact through it
 artifact and the mock hosts only HTTP is allowed, and that is all: the artifact speaks to a mock host as it would
 to the real host, and plain git is served to it as git over HTTP. The artifact never reads the fixture from disk;
 only the mock hosts do. The addresses of GitHub and Azure DevOps are not fixed in the tool, so the unchanged
-artifact is pointed at the mock hosts. A mock host keeps a log of what it is sent; the production code keeps
-nothing when a post fails.
+artifact is pointed at the mock hosts. A mock host keeps a log of what it is sent, and the assertions are made on
+that log: without it there is nothing to assert on. The production code keeps nothing when a post fails.
 
 The mock hosts have two targets: one builds them, with the fixture, and one serves them. Building happens before
 the server is started, and no test mutates what was built. The JSON the fixture holds is defined in a schema.
@@ -501,11 +503,11 @@ rule in each fails on any import from outside it. Those rules are protected path
 Verification: the suite passes for all three hosts, and an import planted from each part into each of the other two
 fails the build, in all six directions.
 
-Use cases, proposed by the agent and not yet agreed. Cases 23 to 30 are what the agent filled in afterwards. Each scenario is a branch of the fixture, and the state a
-scenario starts from, such as earlier threads, is read from the fixture. The tool writes when it posts, and a mock
-asserts what it is sent, but no write is persisted, on any host. A scenario ends with what the tool posts or
-answers.
-So every case has a workdir of its own, depends on no other case, and all of them run in parallel.
+Use cases, proposed by the agent and not yet agreed. Cases 23 to 30 are what the agent filled in afterwards. Each
+scenario is a branch of the fixture, and the state a scenario starts from, such as earlier threads, is read from the
+fixture. The tool writes when it posts, and a mock asserts what it is sent, but no write is persisted, on any host.
+A scenario ends with what the tool posts or answers. So every case has a workdir of its own, depends on no other
+case, and all of them run in parallel.
 
 The three hosts are GitHub, Azure DevOps and plain git. Plain git is the single source of truth: the fixture holds
 everything a scenario starts from, earlier reviews included, plain git reads it as it is, and the mock server answers
