@@ -61,7 +61,7 @@ export default defineConfig({
 	github: {
 		input: { target: GITHUB_SPEC, filters: GITHUB_OPERATIONS },
 		output: {
-			target: "./src/generated/github/github.g.ts",
+			target: "./src/generated/adapters/github/github.g.ts",
 			client: "fetch",
 			mode: "single",
 			baseUrl: GITHUB_URL,
@@ -86,7 +86,7 @@ export default defineConfig({
 	githubZod: {
 		input: { target: GITHUB_SPEC, filters: GITHUB_OPERATIONS },
 		output: {
-			target: "./src/generated/github/github.zod.g.ts",
+			target: "./src/generated/adapters/github/github.zod.g.ts",
 			client: "zod",
 			mode: "single",
 			override: { contentType: GITHUB_CONTENT_TYPES, zod: ZOD },
@@ -95,7 +95,7 @@ export default defineConfig({
 	azureGit: {
 		input: { target: AZURE_GIT_SPEC, filters: AZURE_GIT_OPERATIONS },
 		output: {
-			target: "./src/generated/azure/azure-git.g.ts",
+			target: "./src/generated/adapters/azure/azure-git.g.ts",
 			client: "fetch",
 			mode: "single",
 			baseUrl: AZURE_URL,
@@ -111,7 +111,7 @@ export default defineConfig({
 	azureGitZod: {
 		input: { target: AZURE_GIT_SPEC, filters: AZURE_GIT_OPERATIONS },
 		output: {
-			target: "./src/generated/azure/azure-git.zod.g.ts",
+			target: "./src/generated/adapters/azure/azure-git.zod.g.ts",
 			client: "zod",
 			mode: "single",
 			override: { zod: ZOD },
@@ -120,7 +120,7 @@ export default defineConfig({
 	azurePolicy: {
 		input: { target: AZURE_POLICY_SPEC, filters: AZURE_POLICY_OPERATIONS },
 		output: {
-			target: "./src/generated/azure/azure-policy.g.ts",
+			target: "./src/generated/adapters/azure/azure-policy.g.ts",
 			client: "fetch",
 			mode: "single",
 			baseUrl: AZURE_URL,
@@ -136,7 +136,7 @@ export default defineConfig({
 	azurePolicyZod: {
 		input: { target: AZURE_POLICY_SPEC, filters: AZURE_POLICY_OPERATIONS },
 		output: {
-			target: "./src/generated/azure/azure-policy.zod.g.ts",
+			target: "./src/generated/adapters/azure/azure-policy.zod.g.ts",
 			client: "zod",
 			mode: "single",
 			override: { zod: ZOD },

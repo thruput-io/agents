@@ -14,7 +14,7 @@ import type {
 } from "../../domain/host-adapter.ts";
 import type { SnapshotPort } from "../../domain/ports.ts";
 import { refusalRecorder } from "../../domain/review-baseline.ts";
-import { pullsGet } from "../../generated/github/github.g.ts";
+import { pullsGet } from "../../generated/adapters/github/github.g.ts";
 import { buildHostError } from "../http-error.ts";
 import {
 	type HostHttpResponse,

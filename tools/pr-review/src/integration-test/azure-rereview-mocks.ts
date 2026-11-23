@@ -8,11 +8,11 @@ import {
 	getPullRequestThreadsListMockHandler,
 	getPullRequestThreadsListResponseMock,
 	getPullRequestThreadsUpdateResponseMock,
-} from "../generated/azure/azure-git.g.ts";
+} from "../generated/adapters/azure/azure-git.g.ts";
 import {
 	PullRequestThreadsCreateBody,
 	PullRequestThreadsUpdateBody,
-} from "../generated/azure/azure-git.zod.g.ts";
+} from "../generated/adapters/azure/azure-git.zod.g.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
 
 const BASE_CREATED_THREAD_ID = 200;

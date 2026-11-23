@@ -3,11 +3,11 @@ import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
 import {
 	getPullRequestReviewersCreatePullRequestReviewerResponseMock,
 	getPullRequestThreadsCreateResponseMock,
-} from "../generated/azure/azure-git.g.ts";
+} from "../generated/adapters/azure/azure-git.g.ts";
 import {
 	PullRequestReviewersCreatePullRequestReviewerBody,
 	PullRequestThreadsCreateBody,
-} from "../generated/azure/azure-git.zod.g.ts";
+} from "../generated/adapters/azure/azure-git.zod.g.ts";
 import { AZURE_REVIEWER_ID } from "./azure-mocks.ts";
 
 const BASE_CREATED_THREAD_ID = 100;

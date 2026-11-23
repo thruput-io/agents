@@ -4,8 +4,8 @@ import {
 	InlineFindingSchema,
 	type Side,
 } from "../../domain/contracts.g.ts";
-import type { PullsCreateReviewBodyCommentsItem } from "../../generated/github/github.g.ts";
-import { PullsCreateReviewBody } from "../../generated/github/github.zod.g.ts";
+import type { PullsCreateReviewBodyCommentsItem } from "../../generated/adapters/github/github.g.ts";
+import { PullsCreateReviewBody } from "../../generated/adapters/github/github.zod.g.ts";
 
 const HOST_SIDE_OF = { head: "RIGHT", base: "LEFT" } as const;
 const DOMAIN_SIDE_OF = new Map<string, Side>([

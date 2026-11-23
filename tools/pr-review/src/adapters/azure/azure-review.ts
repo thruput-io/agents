@@ -17,12 +17,12 @@ import {
 	CommentThreadStatus,
 	type GitPullRequestCommentThread,
 	type IdentityRefWithVote,
-} from "../../generated/azure/azure-git.g.ts";
+} from "../../generated/adapters/azure/azure-git.g.ts";
 import {
 	PullRequestReviewersCreatePullRequestReviewerBody,
 	PullRequestThreadsCreateBody,
 	PullRequestThreadsUpdateBody,
-} from "../../generated/azure/azure-git.zod.g.ts";
+} from "../../generated/adapters/azure/azure-git.zod.g.ts";
 import {
 	decodeAzureThreadContext,
 	encodeAzureThreadContext,

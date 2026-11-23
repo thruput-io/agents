@@ -7,7 +7,7 @@ import {
 	getPullsCreateReviewResponseMock,
 	getPullsGetResponseMock,
 	getPullsListReviewsResponseMock,
-} from "../../generated/github/github.g.ts";
+} from "../../generated/adapters/github/github.g.ts";
 import {
 	GitHubCheckRunsCodec,
 	GitHubCreatedReviewCodec,

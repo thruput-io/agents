@@ -21,8 +21,8 @@ import {
 	pullsListFiles,
 	pullsListReviews,
 	reposDownloadZipballArchive,
-} from "../../generated/github/github.g.ts";
-import type { PullsGetResponse } from "../../generated/github/github.zod.g.ts";
+} from "../../generated/adapters/github/github.g.ts";
+import type { PullsGetResponse } from "../../generated/adapters/github/github.zod.g.ts";
 import { buildBinaryHostError } from "../http-error.ts";
 import {
 	type HostHttpResponse,

@@ -11,7 +11,7 @@ import {
 	pullRequestReviewersCreatePullRequestReviewer,
 	pullRequestThreadsCreate,
 	pullRequestThreadsUpdate,
-} from "../../generated/azure/azure-git.g.ts";
+} from "../../generated/adapters/azure/azure-git.g.ts";
 import {
 	type HostHttpResponse,
 	type HostTransport,

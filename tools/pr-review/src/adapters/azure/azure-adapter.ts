@@ -16,8 +16,8 @@ import {
 	pullRequestReviewersUpdatePullRequestReviewers,
 	pullRequestsGetPullRequest,
 	pullRequestThreadsList,
-} from "../../generated/azure/azure-git.g.ts";
-import { evaluationsList } from "../../generated/azure/azure-policy.g.ts";
+} from "../../generated/adapters/azure/azure-git.g.ts";
+import { evaluationsList } from "../../generated/adapters/azure/azure-policy.g.ts";
 import { buildHostError } from "../http-error.ts";
 import {
 	type HostHttpResponse,

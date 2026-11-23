@@ -16,7 +16,7 @@ import { buildReviewSnapshot } from "../../domain/review-snapshot-builder.ts";
 import {
 	checksListForRef,
 	pullsListReviews,
-} from "../../generated/github/github.g.ts";
+} from "../../generated/adapters/github/github.g.ts";
 import {
 	type HostHttpResponse,
 	type HostTransport,

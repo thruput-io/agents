@@ -4,7 +4,7 @@ import {
 	getChecksListForRefMockHandler,
 	getChecksListForRefResponseMock,
 	getPullsGetResponseMock,
-} from "../generated/github/github.g.ts";
+} from "../generated/adapters/github/github.g.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
 
 const TOTAL_COUNT_KEY = "total_count";

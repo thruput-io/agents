@@ -13,8 +13,8 @@ import {
 	type PullsCreateReviewBodyCommentsItem,
 	PullsCreateReviewBodyEvent,
 	type PullsCreateReviewBody as PullsCreateReviewBodyType,
-} from "../../generated/github/github.g.ts";
-import { PullsCreateReviewBody } from "../../generated/github/github.zod.g.ts";
+} from "../../generated/adapters/github/github.g.ts";
+import { PullsCreateReviewBody } from "../../generated/adapters/github/github.zod.g.ts";
 import { comment, GitHubReviewCommentCodec } from "./github-review-comment.ts";
 
 const EVENT_OF = {

@@ -7,8 +7,8 @@ import {
 	getPullsGetResponseMock,
 	getPullsListReviewsMockHandler,
 	getPullsListReviewsResponseMock,
-} from "../generated/github/github.g.ts";
-import { PullsCreateReviewBody } from "../generated/github/github.zod.g.ts";
+} from "../generated/adapters/github/github.g.ts";
+import { PullsCreateReviewBody } from "../generated/adapters/github/github.zod.g.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
 
 const MERGEABLE_STATE_KEY = "mergeable_state";

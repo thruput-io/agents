@@ -13,7 +13,7 @@ import { ours } from "../../domain/rulebook.ts";
 import type {
 	CheckRun,
 	PullRequestReview,
-} from "../../generated/github/github.g.ts";
+} from "../../generated/adapters/github/github.g.ts";
 import {
 	ChecksListForRefResponse,
 	PullsCreateReviewResponse,
@@ -21,7 +21,7 @@ import {
 	type PullsGetResponse as PullsGetResponseType,
 	PullsListFilesResponse,
 	PullsListReviewsResponse,
-} from "../../generated/github/github.zod.g.ts";
+} from "../../generated/adapters/github/github.zod.g.ts";
 
 const PASSED = new Set(["success", "skipped", "neutral"]);
 const PRIOR = / probes at (?<commit>[0-9a-f]{40})\b/u;

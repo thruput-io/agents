@@ -5,7 +5,7 @@ import type {
 } from "../../domain/contracts.g.ts";
 import { isNullOrEmpty } from "../../domain/nullish.ts";
 import type { CommitZipArchive } from "../../domain/ports.ts";
-import { itemsList } from "../../generated/azure/azure-git.g.ts";
+import { itemsList } from "../../generated/adapters/azure/azure-git.g.ts";
 import { buildBinaryHostError } from "../http-error.ts";
 import { type HostTransport, isBinaryResponse } from "../http-transport.ts";
 

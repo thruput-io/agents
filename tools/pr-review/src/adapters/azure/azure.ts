@@ -11,8 +11,8 @@ import {
 import {
 	PullRequestsGetPullRequestResponse,
 	PullRequestThreadsCreateResponse,
-} from "../../generated/azure/azure-git.zod.g.ts";
-import { EvaluationsListResponse } from "../../generated/azure/azure-policy.zod.g.ts";
+} from "../../generated/adapters/azure/azure-git.zod.g.ts";
+import { EvaluationsListResponse } from "../../generated/adapters/azure/azure-policy.zod.g.ts";
 
 const AzureEvaluationTransportSchema =
 	EvaluationsListResponse.shape.value.element;

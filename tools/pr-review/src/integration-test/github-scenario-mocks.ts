@@ -11,8 +11,8 @@ import {
 	getPullsListFilesResponseMock,
 	getPullsListReviewsMockHandler,
 	getPullsListReviewsResponseMock,
-} from "../generated/github/github.g.ts";
-import { PullsCreateReviewBody } from "../generated/github/github.zod.g.ts";
+} from "../generated/adapters/github/github.g.ts";
+import { PullsCreateReviewBody } from "../generated/adapters/github/github.zod.g.ts";
 import {
 	createForbiddenGitHubGraphQlHandler,
 	createForbiddenGitHubZipballHandler,

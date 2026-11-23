@@ -12,7 +12,7 @@ import { isNullOrEmpty } from "../../domain/nullish.ts";
 import {
 	pullsCreateReview,
 	pullsListReviews,
-} from "../../generated/github/github.g.ts";
+} from "../../generated/adapters/github/github.g.ts";
 import { type HostHttpResponse, isJsonResponse } from "../http-transport.ts";
 import {
 	GitHubCreatedReviewCodec,

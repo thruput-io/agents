@@ -13,11 +13,11 @@ import {
 	getPullRequestThreadsListResponseMock,
 	getPullRequestThreadsUpdateMockHandler,
 	getPullRequestThreadsUpdateResponseMock,
-} from "../generated/azure/azure-git.g.ts";
+} from "../generated/adapters/azure/azure-git.g.ts";
 import {
 	getEvaluationsListMockHandler,
 	getEvaluationsListResponseMock,
-} from "../generated/azure/azure-policy.g.ts";
+} from "../generated/adapters/azure/azure-policy.g.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
 
 const AZURE_REVIEWER_ID = "11111111-2222-3333-4444-555555555555";
