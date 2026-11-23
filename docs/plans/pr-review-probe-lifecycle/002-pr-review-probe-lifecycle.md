@@ -299,15 +299,15 @@ quotations.
      assert on.
 108. Which copy of the review tool reviews a pass, when the tool is what is being rebuilt? The installed release,
      which the worker did not build. The human named this catch-22 as the pain.
+109. Where is the state of a scenario stored, a thread the author resolved included? In the `.reviews` files.
+110. Where does a scenario say what its checks are? The agent decides: in `checks.json` in `.reviews`.
+111. May the tests start the tool through its command line? Yes. The agent should not have asked.
+112. What is answered for a pull request that is closed or merged, a draft, or from a fork? The agent decides:
+     closed or merged is refused, and a draft or a fork is reviewed like any other.
 
 ## Open questions
 
-1. Is a thread resolved by the author when the author changed the lines its finding sits on after the reviewed
-   commit, or is that state stored in the fixture?
-2. Where does a scenario say that checks failed or are still running?
-3. Do the tests starting the tool through its command line fit the rule that nothing connects the three parts except
-   HTTP?
-4. What does the tool answer for a pull request that is a draft, closed, merged, or from a fork?
+None.
 
 ## Baseline
 
@@ -505,7 +505,7 @@ rule in each fails on any import from outside it. Those rules are protected path
 Verification: the suite passes for all three hosts, and an import planted from each part into each of the other two
 fails the build, in all six directions.
 
-Use cases, proposed by the agent and not yet agreed. Cases 23 to 30 are what the agent filled in afterwards. Each
+Use cases, proposed by the agent and not yet agreed. Cases 23 to 31 are what the agent filled in afterwards. Each
 scenario is a branch of the fixture, and the state a scenario starts from, such as earlier threads, is read from the
 fixture. The tool writes when it posts, and a mock asserts what it is sent, but no write is persisted, on any host.
 A scenario ends with what the tool posts or answers. So every case has a workdir of its own, depends on no other
@@ -542,6 +542,8 @@ same outcome.
 8. Refused: checks that failed, checks still running, and a merge conflict. The refusal is posted once, and an
    earlier refusal is closed when its cause is gone.
 9. A URL no host recognises, answered as an unknown format. Once; no host takes part.
+31. A pull request that is closed or merged, answered as refused. A draft, and a pull request from a fork, are
+    reviewed like any other. GitHub and Azure DevOps.
 
 **Group C: technical failures.** Each is answered with what failed and how the user recovers, and nothing is posted.
 
@@ -574,11 +576,11 @@ plain git; 18 runs on all three, since each is posted to once.
 21. A probe that never acknowledges, and one that passes its deadline: status names each.
 22. Two reviews at the same time, each in a workdir of its own, do not touch each other.
 
-An earlier review is stored in the repository, in the `.reviews` folder of the scenario's branch, as JSON in the
-shape it was reported in, which names the commit it reviewed. That folder is the tool's own and is never part of
-the [[Surface]], so a head is already reviewed when nothing but it has changed since that commit. What else a
-scenario starts from beyond its commits (author, purpose, checks, and the fault to answer with) is encoded on its
-branch as well, written once when the fixture is built.
+Everything a scenario starts from is stored in the `.reviews` folder of its branch, written by hand with the
+fixture: each earlier review as JSON in the shape it was reported in, which names the commit it reviewed, the state
+of its threads, including those the author resolved, and the checks of the head commit in `checks.json`. That
+folder is the tool's own and is never part of the [[Surface]], so a head is already reviewed when nothing but it
+has changed since that commit.
 
 ### Milestone M4: Adapter interfaces and controller implementation
 
