@@ -86,7 +86,8 @@ enabled, until every count is zero and the pinned tests pass.
   Tested in `tracer-bullets/package-visibility`, which also shows that package declarations do not keep a package away
   from an entry point it did not declare.
 - Effect, fp-ts and neverthrow can each carry the typed failure of prepare. Tested in `tracer-bullets/either-library`.
-- An in-process interface can be generated from an OpenAPI document. Not tested; no documented orval output does it.
+- Orval can generate an in-process interface from an OpenAPI specification. Not tested; no documented orval output
+  is one, so a tracer bullet proves it first.
 - The generator accepts references from OpenAPI documents to the JSON Schema files of the domain. Not tested.
 
 ### Risks
@@ -262,7 +263,7 @@ quotations.
     is immutable.
 85. Does the tool write in a scenario? Yes. It posts its review, and a mock asserts what it is sent. What was
     written is not persisted.
-86. Does a real user of plain git get the stored review? Yes, somehow. How is open question 12.
+86. Does a real user of plain git get the stored review? Yes, somehow.
 87. Is `.reviews` a feature or a fixture? For GitHub and Azure DevOps it is purely a test fixture, read by the mock
     server. For plain git it may or may not become real.
 88. What do the production code, the mock hosts and the integration tests have in common? Nothing. They are
@@ -277,34 +278,34 @@ quotations.
     zero. A workaround is a complete disqualification.
 94. What is fixed when a linter reports? Every linter rule sniffs a smell. What the smell is truly about gets
     fixed, and that is verified by our rules.
+95. Is git over HTTP acceptable for plain git? Yes. The git binary is the interface.
+96. Which tool generates the in-process interfaces? Orval, from an OpenAPI specification.
+97. Who completes the list of use cases? The agent fills in what the human missed.
+98. Does the status command need a design of its own for waiting? No. The question should not have been asked:
+    reading the stored review is not a call over the network.
+99. What does the [[Change]] hold for a probe with disk access? The path to a checkout. It is not served to a client
+    that does not need it.
+100. How is the JSON of the fixture and the mock hosts defined? In a schema.
+101. How does the tool reach a mock host? The addresses of the hosts are not fixed in the tool, which is what makes
+     it testable.
+102. What does immutable mean for the fixture? That no test mutates it; a fixture is not test code. To be sure, one
+     target builds the mocks and another serves them, and building happens before the server is started.
+103. Can the agent's token change the rules of the main branch or approve a pull request? No.
+104. What is answered for an empty [[Surface]]? Refused, for now. Small pull requests get a treatment of their own
+     later.
+105. How does a real user of plain git get the stored review? Out of scope.
+106. What is kept when a post fails? In a mock host there is a log. In the production code, nothing.
 
 ## Open questions
 
-1. How do the commits of this branch join the branch of pull request 48, which has 19 commits of its own after
-   `a146b24` and uncommitted work in a stash?
-2. Which OpenAPI tool generates the in-process interfaces? No documented orval output does; openapi-typescript emits
-   operation types. M4 settles it.
-3. Which use cases make up every way a review needs to support? The agent drafts the list, as the branches of the
-   fixture repository, for the human to check.
-4. How does the status command wait for acknowledgements, probe deadlines and host submission without iterating over
-   reads of the stored review?
-5. Where does the checkout come from for a probe that is granted disk access, now that the host adapter returns only
-   the [[Change]]?
-6. Orval writes the import in a separate mock file without a file extension, which native modules cannot resolve.
-   Until that is solved the mocks stay inside the generated client files. Versions 8.47.0 to 8.49.0 do not solve it,
-   with or without a named tsconfig, as the tracer bullet `orval-mock-folder` records.
-7. How is the built tool pointed at the mock hosts over HTTP, when the addresses of GitHub and Azure DevOps are fixed
-   in it? Today a request interceptor is preloaded into the tool's process, which changes the artifact under test.
-   And a plain git target is taken as a path on disk today, so git over HTTP is a change to the tool.
-8. How is the fixture repository made immutable while it is still built inside this repository?
-9. Which copy of the review tool reviews a pass? The installed copy stops on a range of two commit ids, and the build
+1. Which copy of the review tool reviews a pass? The installed copy stops on a range of two commit ids, and the build
    of the branch is the worker's own.
-10. Can the agent's token change the rules of the main branch or approve a pull request? If it can, the protection of
-    the protected paths rests on the token being narrowed.
-11. What does the tool answer today for an empty [[Surface]]? The agent found no code that recognises one.
-12. How does a real user of plain git get the review the tool posts into `.reviews` of their repository, while the
-    fixture stays unchanged in the tests?
-13. What is kept when posting the outcome fails, and can the post be made again without reviewing again?
+2. Is a thread resolved by the author when the author changed the lines its finding sits on after the reviewed
+   commit, or is that state stored in the fixture?
+3. Where does a scenario say that checks failed or are still running?
+4. Do the tests starting the tool through its command line fit the rule that nothing connects the three parts except
+   HTTP?
+5. What does the tool answer for a pull request that is a draft, closed, merged, or from a fork?
 
 ## Baseline
 
@@ -484,7 +485,12 @@ no import in any direction, no helper, no type, no schema and no generated file.
 The three meet only while running. The tests start the built artifact through its command line. Between the
 artifact and the mock hosts only HTTP is allowed, and that is all: the artifact speaks to a mock host as it would
 to the real host, and plain git is served to it as git over HTTP. The artifact never reads the fixture from disk;
-only the mock hosts do.
+only the mock hosts do. The addresses of GitHub and Azure DevOps are not fixed in the tool, so the unchanged
+artifact is pointed at the mock hosts. A mock host keeps a log of what it is sent; the production code keeps
+nothing when a post fails.
+
+The mock hosts have two targets: one builds them, with the fixture, and one serves them. Building happens before
+the server is started, and no test mutates what was built. The JSON the fixture holds is defined in a schema.
 Each part that needs the shapes of a host derives them by itself from the specification the host publishes. The
 production code generates no mocks, and those M1 left in its generated clients are removed.
 
@@ -495,7 +501,7 @@ rule in each fails on any import from outside it. Those rules are protected path
 Verification: the suite passes for all three hosts, and an import planted from each part into each of the other two
 fails the build, in all six directions.
 
-Use cases, proposed by the agent and not yet agreed. Each scenario is a branch of the fixture, and the state a
+Use cases, proposed by the agent and not yet agreed. Cases 23 to 30 are what the agent filled in afterwards. Each scenario is a branch of the fixture, and the state a
 scenario starts from, such as earlier threads, is read from the fixture. The tool writes when it posts, and a mock
 asserts what it is sent, but no write is persisted, on any host. A scenario ends with what the tool posts or
 answers.
@@ -517,10 +523,16 @@ same outcome.
 4. A second review after new commits: the [[Surface]] narrows to what is new and to the lines of threads the author
    resolved, a thread whose finding is fixed is settled, and one resolved without a fix is reopened.
 
+23. Lists a host hands out in pages: more changed files and more threads than one page of the host holds.
+24. Files that are not lines of text: a binary file, an empty file, and a file with no newline at its end.
+25. A probe that is granted disk access is given the path to a checkout, and no other probe is.
+26. Rule sets from outside our own are fetched over HTTP, from a mock host that serves them.
+
 **Group B: early exits on the content.** Answered by prepare. No probe is started. Runs on all three hosts.
 
-5. Too large: one file over the limit on its lines, and a change over the limit on the total diff.
-6. Nothing to review: an empty [[Surface]].
+5. Too large: one file over the limit on its lines, a change over the limit on the total diff, and a change with
+   more files than the limit.
+6. Nothing to review: an empty [[Surface]], answered as refused.
 7. Already reviewed: the head commit is reviewed and the author resolved no thread, answered without a further
    request to the host.
 8. Refused: checks that failed, checks still running, and a merge conflict. The refusal is posted once, and an
@@ -541,6 +553,12 @@ same outcome.
     files. GitHub and Azure DevOps.
 16. The host failing while the outcome is posted, after every probe has reported. GitHub and Azure DevOps.
 17. A token set in the environment is sent, and none is sent when it is not set. GitHub and Azure DevOps.
+
+27. A token in a form no host accepts.
+28. The host limiting requests (429), and the host not answering in time. GitHub and Azure DevOps.
+29. A report that names a line outside the [[Surface]], and one that names a rule the probe was not given. Once, on
+    plain git.
+30. Prepare run again in a workdir that already holds a review. Once, on plain git.
 
 **Group D: concurrency and timing.** The controllers and the persistence do not differ by host, so these run on
 plain git; 18 runs on all three, since each is posted to once.
