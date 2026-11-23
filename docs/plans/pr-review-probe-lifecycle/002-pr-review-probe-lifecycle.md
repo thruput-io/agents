@@ -244,7 +244,8 @@ quotations.
 75. What counts as delivered? What is pushed. Commits are not reported.
 76. Through which pull request does the work travel while pull request 48 is a draft? One of its own, number 52. How
     the two join is solved at the end.
-77. Does a change made after progress was reported go into a copy numbered 003? No. This plan is updated in place.
+77. Does a change made after progress was reported go into a copy numbered 003? Not here. The human regards this
+    plan as not started, which is the only reason it is updated in place.
 
 ## Open questions
 
