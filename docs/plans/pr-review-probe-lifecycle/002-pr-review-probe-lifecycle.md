@@ -212,6 +212,10 @@ quotations.
     endpoint and back.
 61. How does the agent work through it? It defines the loop and when it halts for review.
 62. May the agent change what the work needs, such as a dependency version? Yes, whatever it needs.
+63. Which things may the work not touch? The agent lists them.
+64. Is the build clean on every pass? No. A baseline is saved, and failing tests and architecture errors are then
+    reduced until they reach zero.
+65. How are sub agents kept from cheating? By not allowing changes to the things on the list.
 
 ## Open questions
 
@@ -224,6 +228,10 @@ quotations.
    reads of the stored review?
 5. Where does the checkout come from for a probe that is granted disk access, now that the host adapter returns only
    the [[Change]]?
+6. The orval command needs its configuration as a default export, which the lint rule against default exports
+   reports. Is that file excepted in the lint configuration, or is orval called from a script?
+7. Orval writes the import in a separate mock file without a file extension, which native modules cannot resolve.
+   Until that is solved the mocks stay inside the generated client files. Does a later orval version solve it?
 
 ## Baseline
 
@@ -255,10 +263,14 @@ Every milestone is worked in passes. A pass is one commit with one purpose, unde
 1. Start from a clean working tree and state the purpose of the pass.
 2. Write the failing test or check first, and see it fail.
 3. Make the smallest change that turns it.
-4. Run the verification command. No check is disabled, muted, excluded or weakened to pass it.
+4. Run every check to its end and record its count in the progress log. The build is not clean while the target is
+   being put in place: the baseline is saved first, no count rises above it without the reason being recorded, and
+   the counts are driven to zero. No check is disabled, muted, excluded or weakened.
 5. Review the diff of the pass with this project's review protocol against the rules and fix what it finds, back to
    4 until the review is clean.
-6. Commit. Nothing is pushed.
+6. Confirm the diff of the pass touches nothing on the list below. A pass that does is rejected, whoever wrote it,
+   so that a sub agent cannot pass by changing what it is checked against.
+7. Commit. Nothing is pushed.
 
 Nothing is introduced that makes goals 4 to 6 harder to deliver later: no dependence on one agent's command-line
 tool, no install step of our own, and no dependence of the tool on the skill being present.
@@ -275,6 +287,20 @@ The agent stops and hands control to the human:
 - after M3 and after M4, for review of what was built.
 
 At a halt the agent reports what changed, the result of every check, and what it needs decided.
+
+### Not to be touched
+
+Unless the human approves it first, in a pass that does nothing else:
+
+- the guardrails: the lint, unused-code and compiler settings, the architecture test and the guardrails test;
+- the pinned integration tests and the fixture repository, once M2 is approved;
+- published ADRs, and frozen plans with their progress logs;
+- the governance documents and their schemas;
+- the downloaded host specifications, which are replaced only by a fresh download;
+- generated code, which is never edited by hand;
+- the build and release pipeline: the build and verify scripts, the workflows, the release and install
+  configuration;
+- pull request 48, its branch, the stash holding its working tree, and main.
 
 ### Goal coverage
 
