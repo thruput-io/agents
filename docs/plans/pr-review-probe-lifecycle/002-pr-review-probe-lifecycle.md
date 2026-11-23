@@ -489,8 +489,9 @@ plain git; 18 runs on all three, since each is posted to once.
 
 An earlier review is stored in the repository, in the `.reviews` folder of the scenario's branch, as JSON in the
 shape it was reported in, which names the commit it reviewed. That folder is the tool's own and is never part of
-the [[Surface]], so a head is already reviewed when nothing but it has changed since that commit. What else a scenario starts from beyond its commits (author, purpose, checks, and the
-fault to answer with) is encoded on its branch as well, written once when the fixture is built.
+the [[Surface]], so a head is already reviewed when nothing but it has changed since that commit. What else a
+scenario starts from beyond its commits (author, purpose, checks, and the fault to answer with) is encoded on its
+branch as well, written once when the fixture is built.
 
 ### Milestone M4: Adapter interfaces and controller implementation
 
