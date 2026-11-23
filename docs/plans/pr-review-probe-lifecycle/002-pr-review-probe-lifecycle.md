@@ -297,17 +297,17 @@ quotations.
 106. What is kept when a post fails? In a mock host there is a log. In the production code, nothing.
 107. What are the assertions about a post made on? The log of the mock host. Without a log there is nothing to
      assert on.
+108. Which copy of the review tool reviews a pass, when the tool is what is being rebuilt? The installed release,
+     which the worker did not build. The human named this catch-22 as the pain.
 
 ## Open questions
 
-1. Which copy of the review tool reviews a pass? The installed copy stops on a range of two commit ids, and the build
-   of the branch is the worker's own.
-2. Is a thread resolved by the author when the author changed the lines its finding sits on after the reviewed
+1. Is a thread resolved by the author when the author changed the lines its finding sits on after the reviewed
    commit, or is that state stored in the fixture?
-3. Where does a scenario say that checks failed or are still running?
-4. Do the tests starting the tool through its command line fit the rule that nothing connects the three parts except
+2. Where does a scenario say that checks failed or are still running?
+3. Do the tests starting the tool through its command line fit the rule that nothing connects the three parts except
    HTTP?
-5. What does the tool answer for a pull request that is a draft, closed, merged, or from a fork?
+4. What does the tool answer for a pull request that is a draft, closed, merged, or from a fork?
 
 ## Baseline
 
@@ -433,7 +433,9 @@ agent it constrains. The harness is a pull request of its own against main, sinc
 5. **A pinned test edited to pass.** The pinned integration tests and the fixture repository join the protected
    paths when M3 is approved.
 6. **A reviewer briefed by the worker.** The review of step 5 is run by the review tool, which writes each probe's
-   instructions itself, in a copy the worker did not build.
+   instructions itself. The copy that reviews is the installed release, never the build of the branch, so the tool
+   being rebuilt does not review itself. A pass is handed to it as two branch names, a marker at the last reviewed
+   push and the working branch, since the installed release stops on a range given as commit ids.
 7. **Works, claimed without evidence.** An entry of the progress log cites the check run of its push, and a claim
    outside a push names the command and its exit status.
 8. **A sub agent changing what it is checked against.** A sub agent is given no permission to edit a protected
