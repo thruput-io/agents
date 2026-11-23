@@ -261,7 +261,7 @@ quotations.
 84. Who writes the stored reviews of the fixture? They are written by hand as part of setting up the fixture, which
     is immutable.
 85. Does the tool write in a scenario? Yes. It posts its review, and a mock asserts what it is sent. What was
-    written is not read back and asserted, and it does not stick.
+    written is not persisted.
 
 ## Open questions
 
@@ -434,8 +434,8 @@ the generated mocks.
 
 Use cases, proposed by the agent and not yet agreed. Each scenario is a branch of the fixture, and the state a
 scenario starts from, such as earlier threads, is read from the fixture. The tool writes when it posts, and a mock
-asserts what it is sent, but no write sticks, on any host, and nothing written is read back. A scenario ends with
-what the tool posts or answers.
+asserts what it is sent, but no write is persisted, on any host. A scenario ends with what the tool posts or
+answers.
 So every case has a workdir of its own, depends on no other case, and all of them run in parallel.
 
 The three hosts are GitHub, Azure DevOps and plain git. Plain git is the single source of truth: the fixture holds
