@@ -220,10 +220,17 @@ quotations.
 67. How is a pass reviewed while the review tool stops on a range of commit ids? By sub agents.
 68. What does the agent do with a decision it has recommended an answer to? It stops stalling and goes on, keeps
     the plans saved, and reports.
+69. Does the green commit of pull request 48 get a pull request of its own? No. Pull request 48 is the pull request
+    this work lands through.
+70. Is a lock file over the size limit a defect of the review tool? No. The refusal is the code doing its job.
+71. Does the Azure policy specification stay, kept for the one operation that lists the policy evaluations of a pull
+    request? It stays for now, and it is removed if that simplifies. It needs no permission beyond reading the pull
+    request, and its API version is a preview.
 
 ## Open questions
 
-1. How is the base commit `a146b24` brought into main, given that pull request 48 stays a draft?
+1. How do the commits of this branch join the branch of pull request 48, which has 19 commits of its own after
+   `a146b24` and uncommitted work in a stash?
 2. Which OpenAPI tool generates the in-process interfaces? No documented orval output does; openapi-typescript emits
    operation types. M3 settles it.
 3. Which use cases make up every way a review needs to support? The agent drafts the list, as the branches of the
