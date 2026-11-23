@@ -69,8 +69,8 @@ The goals are reached by holding the code to the guidance below, each point deci
 - Every boundary is generated from a spec, with interfaces in OpenAPI: the controller and client APIs, the host adapter
   (get the [[Change]] for an opaque URL, post the outcome), the persistence adapter (in memory and on disk), and a
   generated folder for each layer.
-- Behaviour is pinned by black-box integration tests on one immutable fixture repository, with a stateless mock server
-  on orval-generated mocks.
+- Behaviour is pinned by black-box integration tests on one immutable fixture repository, with stateless mock hosts.
+  The production code, the mock hosts and the integration tests are three independent parts with nothing in common.
 
 The integration tests are pinned first. The specs, the architecture test and the guardrails then define the target, at
 which point every tool reports errors against the old code. Iterations move the code, inside out, with every check
@@ -265,6 +265,10 @@ quotations.
 86. Does a real user of plain git get the stored review? Yes, somehow. How is open question 12.
 87. Is `.reviews` a feature or a fixture? For GitHub and Azure DevOps it is purely a test fixture, read by the mock
     server. For plain git it may or may not become real.
+88. What do the production code, the mock hosts and the integration tests have in common? Nothing. They are
+    completely independent, and reuse between them is forbidden. The earlier allowance to reuse is withdrawn.
+89. How is that held? By dependency protection for the integration tests, which are completely separate from the
+    other code.
 
 ## Open questions
 
@@ -426,11 +430,29 @@ run, and an edit of a protected path by a sub agent.
 ### Milestone M3: Integration tests on one immutable repository
 
 A black-box suite drives only the built artifact. One real, immutable git repository, whose branches are the use
-cases, is used as it is by the git adapter and is the source a stateless mock server derives the other hosts'
-responses from, in the shapes orval generates. The list of use cases is agreed with the human first.
+cases, is used as it is by the git adapter and is the source stateless mock hosts answer from. The list of use
+cases is agreed with the human first.
 
-Verification: the suite passes for all three hosts, and an architecture rule holds it to itself, the mock server and
-the generated mocks.
+**Three independent parts.** The production code, the mock hosts and the integration tests have nothing in common:
+no import in any direction, no helper, no type, no schema and no generated file. Reuse between them is forbidden.
+
+- **The production code** is the tool that ships. It knows nothing of the tests, the mock hosts or the fixture.
+- **A mock host** is not a part of the tool with its answers faked. It is a program of its own that plays the other
+  side: it stands in for GitHub or Azure DevOps, answers in that host's own protocol from the fixture, asserts what
+  it is sent, and persists nothing. It knows the host's protocol and the fixture, and nothing of the tool.
+- **The integration tests** drive the built artifact from outside and compare what it answers. They know the tool's
+  commands and answers as a user sees them, and nothing of the tool's code or of the mock hosts' code.
+
+The three meet only while running: the tests start the built artifact through its command line, the artifact
+speaks to a mock host as it would to the real host, and the artifact and the mock hosts each read the fixture.
+Each part that needs the shapes of a host derives them by itself from the specification the host publishes. The
+production code generates no mocks, and those M1 left in its generated clients are removed.
+
+**Dependency protection.** Each of the three is a package of its own, so that an import from one into another does
+not resolve, and an architecture rule in each fails on any import from outside it. Those rules are protected paths.
+
+Verification: the suite passes for all three hosts, and an import planted from each part into each of the other two
+fails the build, in all six directions.
 
 Use cases, proposed by the agent and not yet agreed. Each scenario is a branch of the fixture, and the state a
 scenario starts from, such as earlier threads, is read from the fixture. The tool writes when it posts, and a mock
