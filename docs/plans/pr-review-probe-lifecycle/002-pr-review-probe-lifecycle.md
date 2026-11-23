@@ -262,6 +262,7 @@ quotations.
     is immutable.
 85. Does the tool write in a scenario? Yes. It posts its review, and a mock asserts what it is sent. What was
     written is not persisted.
+86. Does a real user of plain git get the stored review? Yes, somehow. How is open question 13.
 
 ## Open questions
 
@@ -289,8 +290,8 @@ quotations.
     [[Surface]], and does a commit that only adds a review count as the head commit when the tool asks whether the
     head is already reviewed?
 12. What does the tool answer today for an empty [[Surface]]? The agent found no code that recognises one.
-13. Where does plain git write the review it posts, so that the fixture stays unchanged: into its clone in the
-    workdir, or into the repository it was pointed at?
+13. How does a real user of plain git get the review the tool posts into `.reviews` of their repository, while the
+    fixture stays unchanged in the tests?
 14. What is kept when posting the outcome fails, and can the post be made again without reviewing again?
 
 ## Baseline
