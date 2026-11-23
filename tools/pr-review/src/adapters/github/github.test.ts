@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
-import { getPullsGetResponseMock } from "../../../clients/github.g.ts";
 import { SITE } from "../../domain/rulebook.ts";
+import { getPullsGetResponseMock } from "../../generated/github/github.g.ts";
 import {
 	baseCommitOf,
 	changeOf,

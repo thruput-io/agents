@@ -5,6 +5,7 @@ import { addMocksToSchema } from "@graphql-tools/mock";
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { graphql as executeGraphQl } from "graphql";
 import { HttpResponse, http } from "msw";
+import { nonnull } from "../domain/nullish.ts";
 import {
 	getChecksListForRefMockHandler,
 	getChecksListForRefResponseMock,
@@ -14,8 +15,7 @@ import {
 	getPullsGetResponseMock,
 	getPullsListReviewsMockHandler,
 	getReposDownloadZipballArchiveMockHandler,
-} from "../../clients/github.g.ts";
-import { nonnull } from "../domain/nullish.ts";
+} from "../generated/github/github.g.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
 
 const TOTAL_COUNT_KEY = "total_count";

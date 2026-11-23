@@ -1,4 +1,3 @@
-import { itemsList } from "../../../clients/azure-git.g.ts";
 import type {
 	AzureDevOps,
 	HeadCommit,
@@ -6,6 +5,7 @@ import type {
 } from "../../domain/contracts.g.ts";
 import { isNullOrEmpty } from "../../domain/nullish.ts";
 import type { CommitZipArchive } from "../../domain/ports.ts";
+import { itemsList } from "../../generated/azure/azure-git.g.ts";
 import { buildBinaryHostError } from "../http-error.ts";
 import { type HostTransport, isBinaryResponse } from "../http-transport.ts";
 

@@ -1,5 +1,4 @@
 import { env } from "node:process";
-import { pullsGet } from "../../../clients/github.g.ts";
 import type { AccessToken } from "../../domain/access-token.ts";
 import type { GithubPullRequest } from "../../domain/code-under-review.ts";
 import type {
@@ -15,6 +14,7 @@ import type {
 } from "../../domain/host-adapter.ts";
 import type { SnapshotPort } from "../../domain/ports.ts";
 import { refusalRecorder } from "../../domain/review-baseline.ts";
+import { pullsGet } from "../../generated/github/github.g.ts";
 import { buildHostError } from "../http-error.ts";
 import {
 	type HostHttpResponse,

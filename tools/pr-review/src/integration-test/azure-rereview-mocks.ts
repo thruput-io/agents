@@ -1,4 +1,6 @@
 import { HttpResponse, http } from "msw";
+import { nonnull } from "../domain/nullish.ts";
+import { SITE } from "../domain/rulebook.ts";
 import {
 	getPullRequestsGetPullRequestMockHandler,
 	getPullRequestsGetPullRequestResponseMock,
@@ -6,13 +8,11 @@ import {
 	getPullRequestThreadsListMockHandler,
 	getPullRequestThreadsListResponseMock,
 	getPullRequestThreadsUpdateResponseMock,
-} from "../../clients/azure-git.g.ts";
+} from "../generated/azure/azure-git.g.ts";
 import {
 	PullRequestThreadsCreateBody,
 	PullRequestThreadsUpdateBody,
-} from "../../clients/azure-git.zod.g.ts";
-import { nonnull } from "../domain/nullish.ts";
-import { SITE } from "../domain/rulebook.ts";
+} from "../generated/azure/azure-git.zod.g.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
 
 const BASE_CREATED_THREAD_ID = 200;

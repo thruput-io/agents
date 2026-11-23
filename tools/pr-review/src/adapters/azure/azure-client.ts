@@ -1,10 +1,4 @@
 import { z } from "zod";
-import {
-	type GitPullRequestCommentThread,
-	pullRequestReviewersCreatePullRequestReviewer,
-	pullRequestThreadsCreate,
-	pullRequestThreadsUpdate,
-} from "../../../clients/azure-git.g.ts";
 import type {
 	AzureDevOps,
 	HostError,
@@ -12,6 +6,12 @@ import type {
 	Summary,
 	ThreadId,
 } from "../../domain/contracts.g.ts";
+import {
+	type GitPullRequestCommentThread,
+	pullRequestReviewersCreatePullRequestReviewer,
+	pullRequestThreadsCreate,
+	pullRequestThreadsUpdate,
+} from "../../generated/azure/azure-git.g.ts";
 import {
 	type HostHttpResponse,
 	type HostTransport,

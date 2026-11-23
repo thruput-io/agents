@@ -1,14 +1,14 @@
 import { HttpResponse, http } from "msw";
+import { nonnull } from "../domain/nullish.ts";
+import { SITE } from "../domain/rulebook.ts";
 import {
 	getPullsCreateReviewResponseMock,
 	getPullsGetMockHandler,
 	getPullsGetResponseMock,
 	getPullsListReviewsMockHandler,
 	getPullsListReviewsResponseMock,
-} from "../../clients/github.g.ts";
-import { PullsCreateReviewBody } from "../../clients/github.zod.g.ts";
-import { nonnull } from "../domain/nullish.ts";
-import { SITE } from "../domain/rulebook.ts";
+} from "../generated/github/github.g.ts";
+import { PullsCreateReviewBody } from "../generated/github/github.zod.g.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
 
 const MERGEABLE_STATE_KEY = "mergeable_state";

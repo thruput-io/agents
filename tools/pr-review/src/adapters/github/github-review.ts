@@ -1,11 +1,5 @@
 import { z } from "zod";
 import {
-	type PullsCreateReviewBodyCommentsItem,
-	PullsCreateReviewBodyEvent,
-	type PullsCreateReviewBody as PullsCreateReviewBodyType,
-} from "../../../clients/github.g.ts";
-import { PullsCreateReviewBody } from "../../../clients/github.zod.g.ts";
-import {
 	type HeadCommit,
 	HeadCommitSchema,
 	type Outcome,
@@ -15,6 +9,12 @@ import {
 	SummarySchema,
 } from "../../domain/contracts.g.ts";
 import { SITE } from "../../domain/rulebook.ts";
+import {
+	type PullsCreateReviewBodyCommentsItem,
+	PullsCreateReviewBodyEvent,
+	type PullsCreateReviewBody as PullsCreateReviewBodyType,
+} from "../../generated/github/github.g.ts";
+import { PullsCreateReviewBody } from "../../generated/github/github.zod.g.ts";
 import { comment, GitHubReviewCommentCodec } from "./github-review-comment.ts";
 
 const EVENT_OF = {

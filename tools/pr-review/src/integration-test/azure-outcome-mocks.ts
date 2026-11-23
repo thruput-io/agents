@@ -1,13 +1,13 @@
 import { HttpResponse, http } from "msw";
+import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
 import {
 	getPullRequestReviewersCreatePullRequestReviewerResponseMock,
 	getPullRequestThreadsCreateResponseMock,
-} from "../../clients/azure-git.g.ts";
+} from "../generated/azure/azure-git.g.ts";
 import {
 	PullRequestReviewersCreatePullRequestReviewerBody,
 	PullRequestThreadsCreateBody,
-} from "../../clients/azure-git.zod.g.ts";
-import { isNullOrEmpty, nonnull } from "../domain/nullish.ts";
+} from "../generated/azure/azure-git.zod.g.ts";
 import { AZURE_REVIEWER_ID } from "./azure-mocks.ts";
 
 const BASE_CREATED_THREAD_ID = 100;

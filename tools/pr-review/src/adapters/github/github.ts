@@ -1,13 +1,4 @@
 import { z } from "zod";
-import type { CheckRun, PullRequestReview } from "../../../clients/github.g.ts";
-import {
-	ChecksListForRefResponse,
-	PullsCreateReviewResponse,
-	PullsGetResponse,
-	type PullsGetResponse as PullsGetResponseType,
-	PullsListFilesResponse,
-	PullsListReviewsResponse,
-} from "../../../clients/github.zod.g.ts";
 import {
 	type Change,
 	ChangeSchema,
@@ -19,6 +10,18 @@ import {
 import { FileLineCountSchema } from "../../domain/limits.ts";
 import { isNullOrEmpty } from "../../domain/nullish.ts";
 import { ours } from "../../domain/rulebook.ts";
+import type {
+	CheckRun,
+	PullRequestReview,
+} from "../../generated/github/github.g.ts";
+import {
+	ChecksListForRefResponse,
+	PullsCreateReviewResponse,
+	PullsGetResponse,
+	type PullsGetResponse as PullsGetResponseType,
+	PullsListFilesResponse,
+	PullsListReviewsResponse,
+} from "../../generated/github/github.zod.g.ts";
 
 const PASSED = new Set(["success", "skipped", "neutral"]);
 const PRIOR = / probes at (?<commit>[0-9a-f]{40})\b/u;

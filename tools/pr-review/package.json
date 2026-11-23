@@ -3,7 +3,7 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"codegen": "node scripts/generate-contracts.ts && node scripts/generate-clients.ts",
+		"codegen": "node scripts/generate-contracts.ts && orval",
 		"build": "rm -f ../../skills/pr-review/dist/bin/review-tool.mjs ../../skills/pr-review/dist/bin/review-tool-probe.mjs && esbuild src/review-tool.mjs --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=../../skills/pr-review/dist/bin/review-tool.mjs && esbuild src/review-tool-probe.mjs --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=../../skills/pr-review/dist/bin/review-tool-probe.mjs",
 		"knip": "knip",
 		"knip:fix": "knip --fix",
@@ -29,7 +29,7 @@
 		"json-schema-to-zod": "2.8.1",
 		"knip": "6.43.0",
 		"msw": "3.0.3",
-		"orval": "8.46.0",
+		"orval": "8.47.0",
 		"typescript": "7.0.2",
 		"yaml": "2.9.1",
 		"zod": "4.6.7"

@@ -1,8 +1,4 @@
 import { GraphQLClient } from "graphql-request";
-import {
-	checksListForRef,
-	pullsListReviews,
-} from "../../../clients/github.g.ts";
 import type { GithubPullRequest } from "../../domain/code-under-review.ts";
 import type {
 	GitHub,
@@ -17,6 +13,10 @@ import {
 	reviewBaselineFrom,
 } from "../../domain/review-baseline.ts";
 import { buildReviewSnapshot } from "../../domain/review-snapshot-builder.ts";
+import {
+	checksListForRef,
+	pullsListReviews,
+} from "../../generated/github/github.g.ts";
 import {
 	type HostHttpResponse,
 	type HostTransport,

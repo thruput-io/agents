@@ -1,10 +1,5 @@
 import { z } from "zod";
 import {
-	CommentCommentType,
-	CommentThreadStatus,
-} from "../../../clients/azure-git.g.ts";
-import { PullRequestThreadsListResponse } from "../../../clients/azure-git.zod.g.ts";
-import {
 	type HeadCommit,
 	type Outcome,
 	type Thread,
@@ -14,6 +9,11 @@ import {
 } from "../../domain/contracts.g.ts";
 import { isNullOrEmpty } from "../../domain/nullish.ts";
 import { ours as written } from "../../domain/rulebook.ts";
+import {
+	CommentCommentType,
+	CommentThreadStatus,
+} from "../../generated/azure/azure-git.g.ts";
+import { PullRequestThreadsListResponse } from "../../generated/azure/azure-git.zod.g.ts";
 import {
 	decodeAzureThreadContext,
 	encodeAzureThreadContext,

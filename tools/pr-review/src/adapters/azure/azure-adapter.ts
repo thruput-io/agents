@@ -1,10 +1,4 @@
 import { env } from "node:process";
-import {
-	pullRequestReviewersUpdatePullRequestReviewers,
-	pullRequestsGetPullRequest,
-	pullRequestThreadsList,
-} from "../../../clients/azure-git.g.ts";
-import { evaluationsList } from "../../../clients/azure-policy.g.ts";
 import type { AccessToken } from "../../domain/access-token.ts";
 import type {
 	AzureDevOps,
@@ -18,6 +12,12 @@ import type {
 	HostAdapter,
 } from "../../domain/host-adapter.ts";
 import type { SnapshotPort } from "../../domain/ports.ts";
+import {
+	pullRequestReviewersUpdatePullRequestReviewers,
+	pullRequestsGetPullRequest,
+	pullRequestThreadsList,
+} from "../../generated/azure/azure-git.g.ts";
+import { evaluationsList } from "../../generated/azure/azure-policy.g.ts";
 import { buildHostError } from "../http-error.ts";
 import {
 	type HostHttpResponse,

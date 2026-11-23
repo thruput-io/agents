@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { ClientError } from "graphql-request";
+import { nonnull } from "../../domain/nullish.ts";
 import {
 	getChecksListForRefResponseMock,
 	getPullsCreateReviewResponseMock,
 	getPullsGetResponseMock,
 	getPullsListReviewsResponseMock,
-} from "../../../clients/github.g.ts";
-import { nonnull } from "../../domain/nullish.ts";
+} from "../../generated/github/github.g.ts";
 import {
 	GitHubCheckRunsCodec,
 	GitHubCreatedReviewCodec,

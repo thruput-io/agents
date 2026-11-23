@@ -1,4 +1,6 @@
 import { HttpResponse, http } from "msw";
+import { nonnull } from "../domain/nullish.ts";
+import { SITE } from "../domain/rulebook.ts";
 import {
 	getItemsListMockHandler,
 	getPullRequestReviewersCreatePullRequestReviewerResponseMock,
@@ -11,13 +13,11 @@ import {
 	getPullRequestThreadsListResponseMock,
 	getPullRequestThreadsUpdateMockHandler,
 	getPullRequestThreadsUpdateResponseMock,
-} from "../../clients/azure-git.g.ts";
+} from "../generated/azure/azure-git.g.ts";
 import {
 	getEvaluationsListMockHandler,
 	getEvaluationsListResponseMock,
-} from "../../clients/azure-policy.g.ts";
-import { nonnull } from "../domain/nullish.ts";
-import { SITE } from "../domain/rulebook.ts";
+} from "../generated/azure/azure-policy.g.ts";
 import type { ScenarioRepo } from "./scenario-repo.ts";
 
 const AZURE_REVIEWER_ID = "11111111-2222-3333-4444-555555555555";

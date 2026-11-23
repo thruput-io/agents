@@ -1,4 +1,3 @@
-import { pullRequestThreadsList } from "../../../clients/azure-git.g.ts";
 import type {
 	HeadCommit,
 	HostError,
@@ -8,6 +7,7 @@ import type {
 } from "../../domain/contracts.g.ts";
 import { table } from "../../domain/ledger-table.ts";
 import { isNullOrEmpty } from "../../domain/nullish.ts";
+import { pullRequestThreadsList } from "../../generated/azure/azure-git.g.ts";
 import { isJsonResponse } from "../http-transport.ts";
 import {
 	API_VERSION,

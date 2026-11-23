@@ -1,16 +1,5 @@
 import { z } from "zod";
 import {
-	CommentCommentType,
-	CommentThreadStatus,
-	type GitPullRequestCommentThread,
-	type IdentityRefWithVote,
-} from "../../../clients/azure-git.g.ts";
-import {
-	PullRequestReviewersCreatePullRequestReviewerBody,
-	PullRequestThreadsCreateBody,
-	PullRequestThreadsUpdateBody,
-} from "../../../clients/azure-git.zod.g.ts";
-import {
 	type HeadCommit,
 	HeadCommitSchema,
 	type InlineFinding,
@@ -23,6 +12,17 @@ import {
 	ThreadBodySchema,
 } from "../../domain/contracts.g.ts";
 import { SITE } from "../../domain/rulebook.ts";
+import {
+	CommentCommentType,
+	CommentThreadStatus,
+	type GitPullRequestCommentThread,
+	type IdentityRefWithVote,
+} from "../../generated/azure/azure-git.g.ts";
+import {
+	PullRequestReviewersCreatePullRequestReviewerBody,
+	PullRequestThreadsCreateBody,
+	PullRequestThreadsUpdateBody,
+} from "../../generated/azure/azure-git.zod.g.ts";
 import {
 	decodeAzureThreadContext,
 	encodeAzureThreadContext,

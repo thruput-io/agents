@@ -1,10 +1,4 @@
 import type { z } from "zod";
-import {
-	pullsListFiles,
-	pullsListReviews,
-	reposDownloadZipballArchive,
-} from "../../../clients/github.g.ts";
-import type { PullsGetResponse } from "../../../clients/github.zod.g.ts";
 import type {
 	GitHub,
 	HeadCommit,
@@ -23,6 +17,12 @@ import {
 } from "../../domain/limits.ts";
 import { isNullOrEmpty } from "../../domain/nullish.ts";
 import type { CommitZipArchive } from "../../domain/ports.ts";
+import {
+	pullsListFiles,
+	pullsListReviews,
+	reposDownloadZipballArchive,
+} from "../../generated/github/github.g.ts";
+import type { PullsGetResponse } from "../../generated/github/github.zod.g.ts";
 import { buildBinaryHostError } from "../http-error.ts";
 import {
 	type HostHttpResponse,

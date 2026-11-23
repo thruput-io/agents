@@ -1,8 +1,4 @@
 import { GraphQLClient } from "graphql-request";
-import {
-	pullsCreateReview,
-	pullsListReviews,
-} from "../../../clients/github.g.ts";
 import type {
 	GitHub,
 	HeadCommit,
@@ -13,6 +9,10 @@ import type {
 } from "../../domain/contracts.g.ts";
 import { table } from "../../domain/ledger-table.ts";
 import { isNullOrEmpty } from "../../domain/nullish.ts";
+import {
+	pullsCreateReview,
+	pullsListReviews,
+} from "../../generated/github/github.g.ts";
 import { type HostHttpResponse, isJsonResponse } from "../http-transport.ts";
 import {
 	GitHubCreatedReviewCodec,

@@ -1,14 +1,14 @@
 import { HttpResponse, http } from "msw";
+import { nonnull } from "../domain/nullish.ts";
+import { SITE } from "../domain/rulebook.ts";
 import {
 	getPullRequestThreadsListMockHandler,
 	getPullRequestThreadsListResponseMock,
-} from "../../clients/azure-git.g.ts";
+} from "../generated/azure/azure-git.g.ts";
 import {
 	getEvaluationsListMockHandler,
 	getEvaluationsListResponseMock,
-} from "../../clients/azure-policy.g.ts";
-import { nonnull } from "../domain/nullish.ts";
-import { SITE } from "../domain/rulebook.ts";
+} from "../generated/azure/azure-policy.g.ts";
 
 export function createForbiddenHtmlAzureHandler() {
 	return http.get(
