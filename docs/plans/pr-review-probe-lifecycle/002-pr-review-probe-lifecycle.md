@@ -275,6 +275,8 @@ quotations.
 93. Which files are linted, and how? Every source file has a linter, used with its strictest settings: semgrep,
     biome, shellcheck, the JSON Schema tooling and knip. The number of violations only ever decreases, until it is
     zero. A workaround is a complete disqualification.
+94. What is fixed when a linter reports? Every linter rule sniffs a smell. What the smell is truly about gets
+    fixed, and that is verified by our rules.
 
 ## Open questions
 
@@ -436,9 +438,10 @@ agent it constrains. The harness is a pull request of its own against main, sinc
 
 **Every source file is linted.** Each kind of source file has a linter, run with its strictest settings: semgrep,
 biome, shellcheck, the JSON Schema tooling and knip. Their violations are counts of the pass command: each starts
-from its baseline, only ever decreases, and ends at zero. A workaround disqualifies the work completely: a rule
-switched off, a file left out, a suppression, a weaker preset, or code bent to slip past a rule without solving
-what the rule is for.
+from its baseline, only ever decreases, and ends at zero. A linter rule sniffs a smell. What gets fixed is what
+the smell is truly about, and the review against the rules verifies that it was. A workaround disqualifies the
+work completely: a rule switched off, a file left out, a suppression, a weaker preset, or code bent to slip past a
+rule while the smell stays.
 
 Where the linters stand, measured 2026-11-23 over the tracked files:
 
