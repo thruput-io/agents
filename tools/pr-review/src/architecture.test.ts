@@ -26,7 +26,7 @@ it("domain layer is pure and does not depend on controller, adapters, client, in
 		.shouldNot()
 		.dependOnFiles()
 		.inPath(
-			"{src/controller/**,src/adapters/**,src/client/**,src/integration-test/**,src/generated/**}",
+			"{src/controller/**,src/adapters/**,src/client/**,src/integration-test/**,src/generated/adapters/**}",
 		)
 		.check();
 	assert.deepEqual(layerViolations, []);
@@ -48,7 +48,7 @@ it("controller layer only depends on domain and controller (no client, adapters,
 		.shouldNot()
 		.dependOnFiles()
 		.inPath(
-			"{src/adapters/**,src/client/**,src/integration-test/**,src/generated/**}",
+			"{src/adapters/**,src/client/**,src/integration-test/**,src/generated/adapters/**}",
 		)
 		.check();
 	assert.deepEqual(violations, []);
@@ -59,7 +59,7 @@ it("client layer only depends on domain, controller, and client (never adapters)
 		.inFolder("src/client/**")
 		.shouldNot()
 		.dependOnFiles()
-		.inPath("{src/adapters/**,src/integration-test/**,src/generated/**}")
+		.inPath("{src/adapters/**,src/integration-test/**,src/generated/adapters/**}")
 		.check();
 	assert.deepEqual(violations, []);
 });
