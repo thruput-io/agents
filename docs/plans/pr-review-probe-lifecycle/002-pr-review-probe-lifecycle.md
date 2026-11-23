@@ -253,7 +253,13 @@ quotations.
     parallel, since the fixture is immutable.
 80. What does stateless mean? Each scenario is a branch, with the state of its threads and the rest in the fixture.
     Immutable means no write ever sticks, and every scenario ends with a post, which is what is compared.
-81. Does plain git remember reviews? No. It is left as it is.
+81. How does plain git know of an earlier review? The earlier reviews are encoded on the branches of the scenarios
+    that need them, in a committed file or otherwise, and plain git reads them. It writes none.
+82. Do the three hosts differ? No. Plain git is the single source of truth and feeds Azure DevOps and GitHub, so
+    they are all the same.
+83. Where is a review stored? In the repository, in `.reviews`, as JSON in the shape it was reported in.
+84. Who writes the stored reviews of the fixture? They are written by hand as part of setting up the fixture, which
+    is immutable. The tool writes none.
 
 ## Open questions
 
@@ -277,8 +283,9 @@ quotations.
    of the branch is the worker's own.
 10. Can the agent's token change the rules of the main branch or approve a pull request? If it can, the protection of
     the protected paths rests on the token being narrowed.
-11. Where in the fixture does a scenario hold what only a hosting service knows, without it becoming part of the
-    change under review?
+11. A review stored in `.reviews` is committed after the commit it reviewed. Is that folder left out of the
+    [[Surface]], and does a commit that only adds a review count as the head commit when the tool asks whether the
+    head is already reviewed?
 12. What does the tool answer today for an empty [[Surface]]? The agent found no code that recognises one.
 13. Does the mock server reject a post that does not match the generated shape, so that a wrong post fails its
     scenario without anything being stored?
@@ -428,9 +435,10 @@ scenario starts from, such as earlier threads, is read from the fixture and neve
 host. A scenario ends with what the tool posts or answers, and that is what the test compares; nothing is read back.
 So every case has a workdir of its own, depends on no other case, and all of them run in parallel.
 
-The three hosts are GitHub, Azure DevOps and plain git. A case runs on the hosts that can differ in it: on all three
-where the answer comes from the change itself, on GitHub and Azure DevOps where it comes from what only a hosting
-service knows, and once, on plain git, where no host takes part.
+The three hosts are GitHub, Azure DevOps and plain git. Plain git is the single source of truth: the fixture holds
+everything a scenario starts from, earlier reviews included, plain git reads it as it is, and the mock server answers
+for GitHub and Azure DevOps from it. So the three are the same, and every case about the content of a review runs
+on all three. Only the technical failures differ by host, and a case in which no host takes part runs once.
 
 **Group A: the complete happy path.** One review from the first command to the posted outcome, through every command
 of the main agent and of the sub agent. Runs on all three hosts, which yield the same [[Surface]] and are posted the
@@ -441,17 +449,16 @@ same outcome.
 2. A [[Surface]] larger than one page, read page by page, forwards and back.
 3. A finding on a line, a finding on the pull request as a whole, and a probe that finds nothing.
 4. A second review after new commits: the [[Surface]] narrows to what is new and to the lines of threads the author
-   resolved, a thread whose finding is fixed is settled, and one resolved without a fix is reopened. GitHub and
-   Azure DevOps.
+   resolved, a thread whose finding is fixed is settled, and one resolved without a fix is reopened.
 
-**Group B: early exits on the content.** Answered by prepare. No probe is started.
+**Group B: early exits on the content.** Answered by prepare. No probe is started. Runs on all three hosts.
 
-5. Too large: one file over the limit on its lines, and a change over the limit on the total diff. All three hosts.
-6. Nothing to review: an empty [[Surface]]. All three hosts.
+5. Too large: one file over the limit on its lines, and a change over the limit on the total diff.
+6. Nothing to review: an empty [[Surface]].
 7. Already reviewed: the head commit is reviewed and the author resolved no thread, answered without a further
-   request to the host. GitHub and Azure DevOps.
+   request to the host.
 8. Refused: checks that failed, checks still running, and a merge conflict. The refusal is posted once, and an
-   earlier refusal is closed when its cause is gone. GitHub and Azure DevOps.
+   earlier refusal is closed when its cause is gone.
 9. A URL no host recognises, answered as an unknown format. Once; no host takes part.
 
 **Group C: technical failures.** Each is answered with what failed and how the user recovers, and nothing is posted.
@@ -470,7 +477,7 @@ same outcome.
 17. A token set in the environment is sent, and none is sent when it is not set. GitHub and Azure DevOps.
 
 **Group D: concurrency and timing.** The controllers and the persistence do not differ by host, so these run on
-plain git; 18 also runs on GitHub and Azure DevOps, where posting once can be seen.
+plain git; 18 runs on all three, since each is posted to once.
 
 18. Every probe of a review acknowledges and reports at the same moment: each report is kept and the outcome is
     posted once.
@@ -479,9 +486,9 @@ plain git; 18 also runs on GitHub and Azure DevOps, where posting once can be se
 21. A probe that never acknowledges, and one that passes its deadline: status names each.
 22. Two reviews at the same time, each in a workdir of its own, do not touch each other.
 
-Plain git keeps no reviews, so on it every review is a first review, and its post is the outcome it hands back.
-What a hosting service knows about a scenario beyond the branch itself (author, purpose, checks, earlier threads,
-and the fault to answer with) is held in the fixture for that scenario and is not part of the change under review.
+An earlier review is stored in the repository, in the `.reviews` folder of the scenario's branch, as JSON in the
+shape it was reported in. What else a scenario starts from beyond its commits (author, purpose, checks, and the
+fault to answer with) is encoded on its branch as well, written once when the fixture is built.
 
 ### Milestone M4: Adapter interfaces and controller implementation
 
