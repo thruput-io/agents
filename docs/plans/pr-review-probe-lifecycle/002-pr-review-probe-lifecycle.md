@@ -263,6 +263,8 @@ quotations.
 85. Does the tool write in a scenario? Yes. It posts its review, and a mock asserts what it is sent. What was
     written is not persisted.
 86. Does a real user of plain git get the stored review? Yes, somehow. How is open question 12.
+87. Is `.reviews` a feature or a fixture? For GitHub and Azure DevOps it is purely a test fixture, read by the mock
+    server. For plain git it may or may not become real.
 
 ## Open questions
 
