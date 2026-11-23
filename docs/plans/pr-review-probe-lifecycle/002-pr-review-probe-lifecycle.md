@@ -254,12 +254,14 @@ quotations.
 80. What does stateless mean? Each scenario is a branch, with the state of its threads and the rest in the fixture.
     Immutable means no write ever sticks, and every scenario ends with a post, which is what is compared.
 81. How does plain git know of an earlier review? The earlier reviews are encoded on the branches of the scenarios
-    that need them, in a committed file or otherwise, and plain git reads them. It writes none.
+    that need them, in a committed file or otherwise, and plain git reads them.
 82. Do the three hosts differ? No. Plain git is the single source of truth and feeds Azure DevOps and GitHub, so
     they are all the same.
 83. Where is a review stored? In the repository, in `.reviews`, as JSON in the shape it was reported in.
 84. Who writes the stored reviews of the fixture? They are written by hand as part of setting up the fixture, which
-    is immutable. The tool writes none.
+    is immutable.
+85. Does the tool write in a scenario? Yes. It posts its review, and a mock asserts what it is sent. What was
+    written is not read back and asserted, and it does not stick.
 
 ## Open questions
 
@@ -287,8 +289,8 @@ quotations.
     [[Surface]], and does a commit that only adds a review count as the head commit when the tool asks whether the
     head is already reviewed?
 12. What does the tool answer today for an empty [[Surface]]? The agent found no code that recognises one.
-13. Does the mock server reject a post that does not match the generated shape, so that a wrong post fails its
-    scenario without anything being stored?
+13. Where does plain git write the review it posts, so that the fixture stays unchanged: into its clone in the
+    workdir, or into the repository it was pointed at?
 14. What is kept when posting the outcome fails, and can the post be made again without reviewing again?
 
 ## Baseline
@@ -431,8 +433,9 @@ Verification: the suite passes for all three hosts, and an architecture rule hol
 the generated mocks.
 
 Use cases, proposed by the agent and not yet agreed. Each scenario is a branch of the fixture, and the state a
-scenario starts from, such as earlier threads, is read from the fixture and never written: no write sticks, on any
-host. A scenario ends with what the tool posts or answers, and that is what the test compares; nothing is read back.
+scenario starts from, such as earlier threads, is read from the fixture. The tool writes when it posts, and a mock
+asserts what it is sent, but no write sticks, on any host, and nothing written is read back. A scenario ends with
+what the tool posts or answers.
 So every case has a workdir of its own, depends on no other case, and all of them run in parallel.
 
 The three hosts are GitHub, Azure DevOps and plain git. Plain git is the single source of truth: the fixture holds
