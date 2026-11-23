@@ -233,7 +233,8 @@ quotations.
 5. Where does the checkout come from for a probe that is granted disk access, now that the host adapter returns only
    the [[Change]]?
 6. Orval writes the import in a separate mock file without a file extension, which native modules cannot resolve.
-   Until that is solved the mocks stay inside the generated client files. Does a later orval version solve it?
+   Until that is solved the mocks stay inside the generated client files. Versions 8.47.0 to 8.49.0 do not solve it,
+   with or without a named tsconfig, as the tracer bullet `orval-mock-folder` records.
 
 ## Baseline
 
