@@ -3,7 +3,9 @@ import type {
 	Definition,
 	HostError,
 	Instructions,
+	Model,
 	NoReview,
+	NotStarted,
 	Outcome,
 	Probe,
 	Refused,
@@ -26,7 +28,9 @@ import {
 	definitionMark,
 	hostErrorMark,
 	instructionsMark,
+	modelMark,
 	noReviewMark,
+	notStartedMark,
 	outcomeMark,
 	probeMark,
 	refusedMark,
@@ -79,6 +83,11 @@ const outcomeFrom = (): Outcome => mint({ [outcomeMark]: outcomeMark });
 const reviewStatusFrom = (): ReviewStatus =>
 	mint({ [reviewStatusMark]: reviewStatusMark });
 
+const modelFrom = (): Model => mint({ [modelMark]: modelMark });
+
+const notStartedFrom = (): NotStarted =>
+	mint({ [notStartedMark]: notStartedMark });
+
 const noReviewFrom = (): NoReview => mint({ [noReviewMark]: noReviewMark });
 
 const unknownFormatFrom = (): UnknownFormat =>
@@ -98,7 +107,9 @@ export {
 	definitionFrom,
 	hostErrorFrom,
 	instructionsFrom,
+	modelFrom,
 	noReviewFrom,
+	notStartedFrom,
 	outcomeFrom,
 	probeFrom,
 	refusedFrom,

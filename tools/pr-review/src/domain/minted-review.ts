@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import type { Model } from "./domain.ts";
 import {
 	definitionFrom,
 	instructionsFrom,
@@ -19,6 +20,7 @@ import {
 } from "./mark.ts";
 import { mint } from "./mint.ts";
 import type {
+	Agent,
 	Assignment,
 	Briefing,
 	Change,
@@ -56,7 +58,8 @@ function assignmentFrom(): Assignment {
 function pendingLedgerFrom(): PendingLedger {
 	return mint({
 		[pendingLedgerMark]: pendingLedgerMark,
-		session: () => sessionFrom(),
+		spawnedBy: (agent: Agent, model: Model) =>
+			Effect.map(agent.spawn(assignmentFrom(), model), () => sessionFrom()),
 		status: () => reviewStatusFrom(),
 		assignmentOf: () => assignmentFrom(),
 		submittedTo: () => Effect.succeed(pendingLedgerFrom()),
@@ -66,7 +69,6 @@ function pendingLedgerFrom(): PendingLedger {
 function completeLedgerFrom(): CompleteLedger {
 	return mint({
 		[completeLedgerMark]: completeLedgerMark,
-		session: () => sessionFrom(),
 		status: () => reviewStatusFrom(),
 		assignmentOf: () => assignmentFrom(),
 		submittedTo: (host: Host) =>

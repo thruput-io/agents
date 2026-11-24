@@ -5,7 +5,9 @@ import {
 	definitionFrom,
 	hostErrorFrom,
 	instructionsFrom,
+	modelFrom,
 	noReviewFrom,
+	notStartedFrom,
 	outcomeFrom,
 	probeFrom,
 	refusedFrom,
@@ -107,4 +109,12 @@ it("a refused is minted", () => {
 
 it("a host error is minted", () => {
 	assert.equal(isMinted(hostErrorFrom()), true);
+});
+
+it("a model is minted", () => {
+	assert.equal(isMinted(modelFrom()), true);
+});
+
+it("a not started is minted", () => {
+	assert.equal(isMinted(notStartedFrom()), true);
 });

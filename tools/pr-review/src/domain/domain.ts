@@ -3,7 +3,9 @@ import type {
 	definitionMark,
 	hostErrorMark,
 	instructionsMark,
+	modelMark,
 	noReviewMark,
+	notStartedMark,
 	outcomeMark,
 	probeMark,
 	refusedMark,
@@ -82,6 +84,14 @@ interface ReviewStatus {
 	readonly [reviewStatusMark]: typeof reviewStatusMark;
 }
 
+interface Model {
+	readonly [modelMark]: typeof modelMark;
+}
+
+interface NotStarted {
+	readonly [notStartedMark]: typeof notStartedMark;
+}
+
 interface NoReview {
 	readonly [noReviewMark]: typeof noReviewMark;
 }
@@ -111,7 +121,9 @@ export type {
 	Definition,
 	HostError,
 	Instructions,
+	Model,
 	NoReview,
+	NotStarted,
 	Outcome,
 	Probe,
 	Refused,

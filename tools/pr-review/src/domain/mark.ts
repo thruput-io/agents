@@ -23,6 +23,8 @@ const instructionsMark: unique symbol = Symbol("instructions");
 const rulesetMark: unique symbol = Symbol("ruleset");
 const definitionMark: unique symbol = Symbol("definition");
 
+const modelMark: unique symbol = Symbol("model");
+const notStartedMark: unique symbol = Symbol("not started");
 const noReviewMark: unique symbol = Symbol("no review");
 const unknownFormatMark: unique symbol = Symbol("unknown format");
 const alreadyReviewedMark: unique symbol = Symbol("already reviewed");
@@ -40,7 +42,9 @@ export {
 	definitionMark,
 	hostErrorMark,
 	instructionsMark,
+	modelMark,
 	noReviewMark,
+	notStartedMark,
 	outcomeMark,
 	pendingLedgerMark,
 	probeMark,

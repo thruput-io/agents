@@ -3,6 +3,8 @@ import { test as it } from "node:test";
 import { Effect } from "effect";
 import {
 	hostErrorFrom,
+	modelFrom,
+	notStartedFrom,
 	outcomeFrom,
 	probeFrom,
 	reportFrom,
@@ -26,7 +28,7 @@ import {
 	completeLedgerFrom,
 	pendingLedgerFrom,
 } from "./minted-review.ts";
-import type { Host } from "./review.ts";
+import type { Agent, Host } from "./review.ts";
 
 const accepting: Host = {
 	getChange: () => Effect.succeed(changeFrom()),
@@ -37,8 +39,25 @@ it("a change is reviewed in a pending ledger", () => {
 	assert.equal(changeFrom().review()[pendingLedgerMark], pendingLedgerMark);
 });
 
-it("a ledger names its session", () => {
-	assert.equal(pendingLedgerFrom().session()[sessionMark], sessionMark);
+it("a pending ledger spawned by an agent answers its session", () => {
+	const starting: Agent = {
+		spawn: (assignment) => Effect.succeed(assignment),
+		terminate: (assignment) => Effect.succeed(assignment),
+	};
+	const spawned = pendingLedgerFrom().spawnedBy(starting, modelFrom());
+
+	assert.equal(Effect.runSync(spawned)[sessionMark], sessionMark);
+});
+
+it("a pending ledger fails when the agent starts no sub agent", () => {
+	const notStarted = notStartedFrom();
+	const stalling: Agent = {
+		spawn: () => Effect.fail(notStarted),
+		terminate: (assignment) => Effect.succeed(assignment),
+	};
+	const spawned = pendingLedgerFrom().spawnedBy(stalling, modelFrom());
+
+	assert.equal(Effect.runSync(Effect.flip(spawned)), notStarted);
 });
 
 it("a ledger states its status", () => {

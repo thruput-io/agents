@@ -4,7 +4,9 @@ import type {
 	Definition,
 	HostError,
 	Instructions,
+	Model,
 	NoReview,
+	NotStarted,
 	Outcome,
 	Probe,
 	Refused,
@@ -50,7 +52,6 @@ interface Assignment {
 }
 
 interface Reviewing {
-	session: () => Session;
 	status: () => ReviewStatus;
 	assignmentOf: (probe: Probe) => Assignment;
 	submittedTo: (host: Host) => Effect.Effect<Ledger, HostError>;
@@ -58,6 +59,7 @@ interface Reviewing {
 
 interface PendingLedger extends Reviewing {
 	readonly [pendingLedgerMark]: typeof pendingLedgerMark;
+	spawnedBy: (agent: Agent, model: Model) => Effect.Effect<Session, NotStarted>;
 }
 
 interface CompleteLedger extends Reviewing {
@@ -83,6 +85,14 @@ interface Host {
 	post: (url: TargetUrl, outcome: Outcome) => Effect.Effect<Outcome, HostError>;
 }
 
+interface Agent {
+	spawn: (
+		assignment: Assignment,
+		model: Model,
+	) => Effect.Effect<Assignment, NotStarted>;
+	terminate: (assignment: Assignment) => Effect.Effect<Assignment>;
+}
+
 interface ReviewStore {
 	save: (workdir: Workdir, ledger: Ledger) => Effect.Effect<Ledger>;
 	inWorkdir: (workdir: Workdir) => Effect.Effect<Ledger, NoReview>;
@@ -94,6 +104,7 @@ interface ReviewStore {
 }
 
 export type {
+	Agent,
 	Assignment,
 	Briefing,
 	Change,
