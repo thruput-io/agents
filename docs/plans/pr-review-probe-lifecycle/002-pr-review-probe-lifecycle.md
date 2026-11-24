@@ -305,7 +305,8 @@ quotations.
 112. What is answered for a pull request that is closed or merged, a draft, or from a fork? The agent decides:
      closed or merged is refused, and a draft or a fork is reviewed like any other.
 113. Does the agent run the review of a pass in its loop? No: "you no automtica pr review in loop take it away it
-     woill be doing it". This replaces answers 5 and 108 where they put the review in the loop.
+     woill be doing it". The human reviews: "AS i said i am the review steop". This replaces answers 5 and 108
+     where they put the review in the loop.
 
 ## Open questions
 
@@ -350,7 +351,7 @@ Every milestone is worked in passes. A pass is one push with one purpose, under 
    rose or a check did not run. The build is not clean while the target is being put in place: the counts start
    from the baseline and are driven to zero. No check is disabled, muted, excluded or weakened.
 5. Push. The pull request check judges the pass again from a checkout of its own: the checks, the counts and the
-   protected paths.
+   protected paths. The human reviews the push.
 6. Record the pass in the progress log, citing the check run of the push.
 
 The unit tests alone cover at least 90% of the lines and 90% of the branches of the production code. Coverage is
