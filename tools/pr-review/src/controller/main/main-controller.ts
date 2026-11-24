@@ -6,19 +6,19 @@ import type {
 	TargetUrl,
 	Workdir,
 } from "../../domain/domain.ts";
-import type { Host, NotReviewable, Reviews } from "../../domain/review.ts";
+import type { Host, NotReviewable, ReviewStore } from "../../domain/review.ts";
 
 class MainController {
 	readonly #host: Host;
-	readonly #reviews: Reviews;
+	readonly #store: ReviewStore;
 
-	private constructor(host: Host, reviews: Reviews) {
+	private constructor(host: Host, store: ReviewStore) {
 		this.#host = host;
-		this.#reviews = reviews;
+		this.#store = store;
 	}
 
-	static over(host: Host, reviews: Reviews): MainController {
-		return new MainController(host, reviews);
+	static over(host: Host, store: ReviewStore): MainController {
+		return new MainController(host, store);
 	}
 
 	prepare(
@@ -26,13 +26,13 @@ class MainController {
 		workdir: Workdir,
 	): Effect.Effect<Session, NotReviewable> {
 		return this.#host.getChange(url).pipe(
-			Effect.flatMap((change) => this.#reviews.save(workdir, change.review())),
+			Effect.flatMap((change) => this.#store.save(workdir, change.review())),
 			Effect.map((ledger) => ledger.session()),
 		);
 	}
 
 	status(workdir: Workdir): Effect.Effect<ReviewStatus, NoReview> {
-		return this.#reviews
+		return this.#store
 			.inWorkdir(workdir)
 			.pipe(Effect.map((ledger) => ledger.status()));
 	}

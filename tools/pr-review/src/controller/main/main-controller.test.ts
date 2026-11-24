@@ -9,9 +9,9 @@ import {
 	targetUrlFrom,
 	unknownFormatFrom,
 	workdirFrom,
-} from "../../domain/factories.ts";
+} from "../../domain/factory.ts";
 import { changeFrom, pendingLedgerFrom } from "../../domain/minted-review.ts";
-import type { Host, Ledger, Reviews } from "../../domain/review.ts";
+import type { Host, Ledger, ReviewStore } from "../../domain/review.ts";
 import { MainController } from "./main-controller.ts";
 
 const session = sessionFrom();
@@ -27,7 +27,7 @@ const host: Host = {
 	post: () => Effect.succeed(outcomeFrom()),
 };
 
-const reviews: Reviews = {
+const store: ReviewStore = {
 	save: () => Effect.succeed(stored),
 	inWorkdir: () => Effect.succeed(stored),
 	ofSession: () => Effect.succeed(stored),
@@ -35,7 +35,7 @@ const reviews: Reviews = {
 };
 
 it("prepare answers the session of the saved review", () => {
-	const controller = MainController.over(host, reviews);
+	const controller = MainController.over(host, store);
 	const prepared = controller.prepare(targetUrlFrom(), workdirFrom());
 
 	assert.equal(Effect.runSync(prepared), session);
@@ -47,21 +47,24 @@ it("prepare fails with what the host answers", () => {
 		...host,
 		getChange: () => Effect.fail(unknownFormat),
 	};
-	const controller = MainController.over(refusing, reviews);
+	const controller = MainController.over(refusing, store);
 	const prepared = controller.prepare(targetUrlFrom(), workdirFrom());
 
 	assert.equal(Effect.runSync(Effect.flip(prepared)), unknownFormat);
 });
 
 it("status answers the status of the stored review", () => {
-	const controller = MainController.over(host, reviews);
+	const controller = MainController.over(host, store);
 
 	assert.equal(Effect.runSync(controller.status(workdirFrom())), status);
 });
 
 it("status fails when the workdir holds no review", () => {
 	const noReview = noReviewFrom();
-	const empty: Reviews = { ...reviews, inWorkdir: () => Effect.fail(noReview) };
+	const empty: ReviewStore = {
+		...store,
+		inWorkdir: () => Effect.fail(noReview),
+	};
 	const controller = MainController.over(host, empty);
 	const answered = controller.status(workdirFrom());
 

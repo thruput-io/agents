@@ -18,8 +18,8 @@ const reviewStatusMark: unique symbol = Symbol("review status");
 
 const assignmentMark: unique symbol = Symbol("assignment");
 const briefingMark: unique symbol = Symbol("briefing");
-const pagesMark: unique symbol = Symbol("pages");
-const instructionsMark: unique symbol = Symbol("instructions");
+const cursorMark: unique symbol = Symbol("cursor");
+const instructionMark: unique symbol = Symbol("instruction");
 const rulesetMark: unique symbol = Symbol("ruleset");
 const definitionMark: unique symbol = Symbol("definition");
 
@@ -36,12 +36,12 @@ export {
 	briefingMark,
 	changeMark,
 	completeLedgerMark,
+	cursorMark,
 	definitionMark,
 	hostErrorMark,
-	instructionsMark,
+	instructionMark,
 	noReviewMark,
 	outcomeMark,
-	pagesMark,
 	pendingLedgerMark,
 	probeMark,
 	refusedMark,

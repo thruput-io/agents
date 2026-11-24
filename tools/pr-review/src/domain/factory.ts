@@ -2,7 +2,7 @@ import type {
 	AlreadyReviewed,
 	Definition,
 	HostError,
-	Instructions,
+	Instruction,
 	NoReview,
 	Outcome,
 	Probe,
@@ -25,7 +25,7 @@ import {
 	alreadyReviewedMark,
 	definitionMark,
 	hostErrorMark,
-	instructionsMark,
+	instructionMark,
 	noReviewMark,
 	outcomeMark,
 	probeMark,
@@ -43,7 +43,7 @@ import {
 	verdictMark,
 	violationMark,
 	workdirMark,
-} from "./marks.ts";
+} from "./mark.ts";
 import { mint } from "./mint.ts";
 
 const targetUrlFrom = (): TargetUrl => mint({ [targetUrlMark]: targetUrlMark });
@@ -63,8 +63,8 @@ const termFrom = (): Term => mint({ [termMark]: termMark });
 const definitionFrom = (): Definition =>
 	mint({ [definitionMark]: definitionMark });
 
-const instructionsFrom = (): Instructions =>
-	mint({ [instructionsMark]: instructionsMark });
+const instructionFrom = (): Instruction =>
+	mint({ [instructionMark]: instructionMark });
 
 const sessionFrom = (): Session => mint({ [sessionMark]: sessionMark });
 
@@ -97,7 +97,7 @@ export {
 	alreadyReviewedFrom,
 	definitionFrom,
 	hostErrorFrom,
-	instructionsFrom,
+	instructionFrom,
 	noReviewFrom,
 	outcomeFrom,
 	probeFrom,

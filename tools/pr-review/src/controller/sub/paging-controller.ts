@@ -1,28 +1,28 @@
 import { Effect } from "effect";
 import type { NoReview, Probe, Session, Surface } from "../../domain/domain.ts";
-import type { Reviews } from "../../domain/review.ts";
-import { assignmentIn } from "../common/assignments.ts";
+import type { ReviewStore } from "../../domain/review.ts";
+import { assignmentIn } from "../common/assignment.ts";
 
 class PagingController {
-	readonly #reviews: Reviews;
+	readonly #store: ReviewStore;
 
-	private constructor(reviews: Reviews) {
-		this.#reviews = reviews;
+	private constructor(store: ReviewStore) {
+		this.#store = store;
 	}
 
-	static over(reviews: Reviews): PagingController {
-		return new PagingController(reviews);
+	static over(store: ReviewStore): PagingController {
+		return new PagingController(store);
 	}
 
 	next(session: Session, probe: Probe): Effect.Effect<Surface, NoReview> {
-		return assignmentIn(this.#reviews, session, probe).pipe(
-			Effect.map((assignment) => assignment.pages().next()),
+		return assignmentIn(this.#store, session, probe).pipe(
+			Effect.map((assignment) => assignment.cursor().next()),
 		);
 	}
 
 	prev(session: Session, probe: Probe): Effect.Effect<Surface, NoReview> {
-		return assignmentIn(this.#reviews, session, probe).pipe(
-			Effect.map((assignment) => assignment.pages().previous()),
+		return assignmentIn(this.#store, session, probe).pipe(
+			Effect.map((assignment) => assignment.cursor().previous()),
 		);
 	}
 }

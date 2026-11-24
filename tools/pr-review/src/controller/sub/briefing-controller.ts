@@ -1,39 +1,39 @@
 import { Effect } from "effect";
 import type {
 	Definition,
-	Instructions,
+	Instruction,
 	NoReview,
 	Probe,
 	Ruleset,
 	Session,
 	Term,
 } from "../../domain/domain.ts";
-import type { Reviews } from "../../domain/review.ts";
-import { assignmentIn } from "../common/assignments.ts";
+import type { ReviewStore } from "../../domain/review.ts";
+import { assignmentIn } from "../common/assignment.ts";
 
 class BriefingController {
-	readonly #reviews: Reviews;
+	readonly #store: ReviewStore;
 
-	private constructor(reviews: Reviews) {
-		this.#reviews = reviews;
+	private constructor(store: ReviewStore) {
+		this.#store = store;
 	}
 
-	static over(reviews: Reviews): BriefingController {
-		return new BriefingController(reviews);
+	static over(store: ReviewStore): BriefingController {
+		return new BriefingController(store);
 	}
 
 	instructions(
 		session: Session,
 		probe: Probe,
-	): Effect.Effect<Instructions, NoReview> {
-		return assignmentIn(this.#reviews, session, probe).pipe(
-			Effect.map((assignment) => assignment.briefing().instructions()),
+	): Effect.Effect<Instruction, NoReview> {
+		return assignmentIn(this.#store, session, probe).pipe(
+			Effect.map((assignment) => assignment.briefing().instruction()),
 		);
 	}
 
 	rules(session: Session, probe: Probe): Effect.Effect<Ruleset, NoReview> {
-		return assignmentIn(this.#reviews, session, probe).pipe(
-			Effect.map((assignment) => assignment.briefing().rules()),
+		return assignmentIn(this.#store, session, probe).pipe(
+			Effect.map((assignment) => assignment.briefing().ruleset()),
 		);
 	}
 
@@ -42,7 +42,7 @@ class BriefingController {
 		probe: Probe,
 		term: Term,
 	): Effect.Effect<Definition, NoReview> {
-		return assignmentIn(this.#reviews, session, probe).pipe(
+		return assignmentIn(this.#store, session, probe).pipe(
 			Effect.map((assignment) => assignment.briefing().definitionOf(term)),
 		);
 	}

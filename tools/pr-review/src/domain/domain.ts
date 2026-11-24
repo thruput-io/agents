@@ -2,7 +2,7 @@ import type {
 	alreadyReviewedMark,
 	definitionMark,
 	hostErrorMark,
-	instructionsMark,
+	instructionMark,
 	noReviewMark,
 	outcomeMark,
 	probeMark,
@@ -20,7 +20,7 @@ import type {
 	verdictMark,
 	violationMark,
 	workdirMark,
-} from "./marks.ts";
+} from "./mark.ts";
 
 interface TargetUrl {
 	readonly [targetUrlMark]: typeof targetUrlMark;
@@ -54,8 +54,8 @@ interface Definition {
 	readonly [definitionMark]: typeof definitionMark;
 }
 
-interface Instructions {
-	readonly [instructionsMark]: typeof instructionsMark;
+interface Instruction {
+	readonly [instructionMark]: typeof instructionMark;
 }
 
 interface Session {
@@ -110,7 +110,7 @@ export type {
 	AlreadyReviewed,
 	Definition,
 	HostError,
-	Instructions,
+	Instruction,
 	NoReview,
 	Outcome,
 	Probe,

@@ -10,13 +10,13 @@ import {
 	reviewStatusFrom,
 	sessionFrom,
 	termFrom,
-} from "../../domain/factories.ts";
+} from "../../domain/factory.ts";
 import {
 	changeFrom,
 	completeLedgerFrom,
 	pendingLedgerFrom,
 } from "../../domain/minted-review.ts";
-import type { Host, Ledger, Reviews } from "../../domain/review.ts";
+import type { Host, Ledger, ReviewStore } from "../../domain/review.ts";
 import { BriefingController } from "./briefing-controller.ts";
 import { PagingController } from "./paging-controller.ts";
 import { ProgressController } from "./progress-controller.ts";
@@ -24,7 +24,7 @@ import { ProgressController } from "./progress-controller.ts";
 const status = reviewStatusFrom();
 const assignment = pendingLedgerFrom().assignmentOf(probeFrom());
 const briefing = assignment.briefing();
-const pages = assignment.pages();
+const cursor = assignment.cursor();
 const complete: Ledger = { ...completeLedgerFrom(), status: () => status };
 const stored: Ledger = {
 	...pendingLedgerFrom(),
@@ -32,7 +32,7 @@ const stored: Ledger = {
 		...assignment,
 		acknowledged: () => complete,
 		briefing: () => briefing,
-		pages: () => pages,
+		cursor: () => cursor,
 		recorded: () => complete,
 	}),
 };
@@ -42,34 +42,34 @@ const host: Host = {
 	post: () => Effect.succeed(outcomeFrom()),
 };
 
-const reviews: Reviews = {
+const store: ReviewStore = {
 	save: () => Effect.succeed(stored),
 	inWorkdir: () => Effect.succeed(stored),
 	ofSession: () => Effect.succeed(stored),
 	replace: () => Effect.succeed(complete),
 };
 
-it("instructions answers the instructions of the briefing", () => {
-	const answered = BriefingController.over(reviews).instructions(
+it("instructions answers the instruction of the briefing", () => {
+	const answered = BriefingController.over(store).instructions(
 		sessionFrom(),
 		probeFrom(),
 	);
 
-	assert.deepEqual(Effect.runSync(answered), briefing.instructions());
+	assert.deepEqual(Effect.runSync(answered), briefing.instruction());
 });
 
 it("rules answers the ruleset of the briefing", () => {
-	const answered = BriefingController.over(reviews).rules(
+	const answered = BriefingController.over(store).rules(
 		sessionFrom(),
 		probeFrom(),
 	);
 
-	assert.deepEqual(Effect.runSync(answered), briefing.rules());
+	assert.deepEqual(Effect.runSync(answered), briefing.ruleset());
 });
 
 it("define answers the definition of the term", () => {
 	const term = termFrom();
-	const answered = BriefingController.over(reviews).define(
+	const answered = BriefingController.over(store).define(
 		sessionFrom(),
 		probeFrom(),
 		term,
@@ -79,26 +79,29 @@ it("define answers the definition of the term", () => {
 });
 
 it("next answers the next page", () => {
-	const answered = PagingController.over(reviews).next(
+	const answered = PagingController.over(store).next(
 		sessionFrom(),
 		probeFrom(),
 	);
 
-	assert.deepEqual(Effect.runSync(answered), pages.next());
+	assert.deepEqual(Effect.runSync(answered), cursor.next());
 });
 
 it("prev answers the previous page", () => {
-	const answered = PagingController.over(reviews).prev(
+	const answered = PagingController.over(store).prev(
 		sessionFrom(),
 		probeFrom(),
 	);
 
-	assert.deepEqual(Effect.runSync(answered), pages.previous());
+	assert.deepEqual(Effect.runSync(answered), cursor.previous());
 });
 
 it("a command fails for a session that holds no review", () => {
 	const noReview = noReviewFrom();
-	const empty: Reviews = { ...reviews, ofSession: () => Effect.fail(noReview) };
+	const empty: ReviewStore = {
+		...store,
+		ofSession: () => Effect.fail(noReview),
+	};
 	const answered = PagingController.over(empty).next(
 		sessionFrom(),
 		probeFrom(),
@@ -108,7 +111,7 @@ it("a command fails for a session that holds no review", () => {
 });
 
 it("ack answers the status of the acknowledged review", () => {
-	const answered = ProgressController.over(host, reviews).ack(
+	const answered = ProgressController.over(host, store).ack(
 		sessionFrom(),
 		probeFrom(),
 	);
@@ -117,7 +120,7 @@ it("ack answers the status of the acknowledged review", () => {
 });
 
 it("report answers the status of the submitted review", () => {
-	const answered = ProgressController.over(host, reviews).report(
+	const answered = ProgressController.over(host, store).report(
 		sessionFrom(),
 		probeFrom(),
 		reportFrom(),
@@ -129,7 +132,7 @@ it("report answers the status of the submitted review", () => {
 it("report fails with the error of the host", () => {
 	const hostError = hostErrorFrom();
 	const refusing: Host = { ...host, post: () => Effect.fail(hostError) };
-	const answered = ProgressController.over(refusing, reviews).report(
+	const answered = ProgressController.over(refusing, store).report(
 		sessionFrom(),
 		probeFrom(),
 		reportFrom(),

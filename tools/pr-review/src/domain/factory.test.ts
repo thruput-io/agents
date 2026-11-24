@@ -4,7 +4,7 @@ import {
 	alreadyReviewedFrom,
 	definitionFrom,
 	hostErrorFrom,
-	instructionsFrom,
+	instructionFrom,
 	noReviewFrom,
 	outcomeFrom,
 	probeFrom,
@@ -22,7 +22,7 @@ import {
 	verdictFrom,
 	violationFrom,
 	workdirFrom,
-} from "./factories.ts";
+} from "./factory.ts";
 import { isMinted } from "./mint.ts";
 
 it("a target URL is minted", () => {
@@ -57,8 +57,8 @@ it("a definition is minted", () => {
 	assert.equal(isMinted(definitionFrom()), true);
 });
 
-it("instructions are minted", () => {
-	assert.equal(isMinted(instructionsFrom()), true);
+it("an instruction is minted", () => {
+	assert.equal(isMinted(instructionFrom()), true);
 });
 
 it("a session is minted", () => {

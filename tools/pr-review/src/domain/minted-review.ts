@@ -1,44 +1,44 @@
 import { Effect } from "effect";
 import {
 	definitionFrom,
-	instructionsFrom,
+	instructionFrom,
 	outcomeFrom,
 	reviewStatusFrom,
 	rulesetFrom,
 	sessionFrom,
 	surfaceFrom,
 	targetUrlFrom,
-} from "./factories.ts";
+} from "./factory.ts";
 import {
 	assignmentMark,
 	briefingMark,
 	changeMark,
 	completeLedgerMark,
-	pagesMark,
+	cursorMark,
 	pendingLedgerMark,
-} from "./marks.ts";
+} from "./mark.ts";
 import { mint } from "./mint.ts";
 import type {
 	Assignment,
 	Briefing,
 	Change,
 	CompleteLedger,
+	Cursor,
 	Host,
-	Pages,
 	PendingLedger,
 } from "./review.ts";
 
 const briefingFrom = (): Briefing =>
 	mint({
 		[briefingMark]: briefingMark,
-		instructions: () => instructionsFrom(),
-		rules: () => rulesetFrom(),
+		instruction: () => instructionFrom(),
+		ruleset: () => rulesetFrom(),
 		definitionOf: () => definitionFrom(),
 	});
 
-const pagesFrom = (): Pages =>
+const cursorFrom = (): Cursor =>
 	mint({
-		[pagesMark]: pagesMark,
+		[cursorMark]: cursorMark,
 		next: () => surfaceFrom(),
 		previous: () => surfaceFrom(),
 	});
@@ -47,7 +47,7 @@ function assignmentFrom(): Assignment {
 	return mint({
 		[assignmentMark]: assignmentMark,
 		briefing: () => briefingFrom(),
-		pages: () => pagesFrom(),
+		cursor: () => cursorFrom(),
 		acknowledged: () => pendingLedgerFrom(),
 		recorded: () => completeLedgerFrom(),
 	});

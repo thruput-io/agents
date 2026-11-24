@@ -7,26 +7,26 @@ import type {
 	ReviewStatus,
 	Session,
 } from "../../domain/domain.ts";
-import type { Host, Reviews } from "../../domain/review.ts";
-import { assignmentIn } from "../common/assignments.ts";
+import type { Host, ReviewStore } from "../../domain/review.ts";
+import { assignmentIn } from "../common/assignment.ts";
 
 class ProgressController {
 	readonly #host: Host;
-	readonly #reviews: Reviews;
+	readonly #store: ReviewStore;
 
-	private constructor(host: Host, reviews: Reviews) {
+	private constructor(host: Host, store: ReviewStore) {
 		this.#host = host;
-		this.#reviews = reviews;
+		this.#store = store;
 	}
 
-	static over(host: Host, reviews: Reviews): ProgressController {
-		return new ProgressController(host, reviews);
+	static over(host: Host, store: ReviewStore): ProgressController {
+		return new ProgressController(host, store);
 	}
 
 	ack(session: Session, probe: Probe): Effect.Effect<ReviewStatus, NoReview> {
-		return assignmentIn(this.#reviews, session, probe).pipe(
+		return assignmentIn(this.#store, session, probe).pipe(
 			Effect.flatMap((assignment) =>
-				this.#reviews.replace(session, assignment.acknowledged()),
+				this.#store.replace(session, assignment.acknowledged()),
 			),
 			Effect.map((ledger) => ledger.status()),
 		);
@@ -37,11 +37,11 @@ class ProgressController {
 		probe: Probe,
 		report: Report,
 	): Effect.Effect<ReviewStatus, NoReview | HostError> {
-		return assignmentIn(this.#reviews, session, probe).pipe(
+		return assignmentIn(this.#store, session, probe).pipe(
 			Effect.flatMap((assignment) =>
 				assignment.recorded(report).submittedTo(this.#host),
 			),
-			Effect.flatMap((ledger) => this.#reviews.replace(session, ledger)),
+			Effect.flatMap((ledger) => this.#store.replace(session, ledger)),
 			Effect.map((ledger) => ledger.status()),
 		);
 	}

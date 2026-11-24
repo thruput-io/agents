@@ -7,20 +7,20 @@ import {
 	probeFrom,
 	reportFrom,
 	termFrom,
-} from "./factories.ts";
+} from "./factory.ts";
 import {
 	assignmentMark,
 	briefingMark,
 	completeLedgerMark,
+	cursorMark,
 	definitionMark,
-	instructionsMark,
-	pagesMark,
+	instructionMark,
 	pendingLedgerMark,
 	reviewStatusMark,
 	rulesetMark,
 	sessionMark,
 	surfaceMark,
-} from "./marks.ts";
+} from "./mark.ts";
 import {
 	changeFrom,
 	completeLedgerFrom,
@@ -66,16 +66,16 @@ it("an assignment has a briefing", () => {
 	assert.equal(assignment.briefing()[briefingMark], briefingMark);
 });
 
-it("a briefing holds the instructions", () => {
+it("a briefing holds the instruction", () => {
 	const briefing = pendingLedgerFrom().assignmentOf(probeFrom()).briefing();
 
-	assert.equal(briefing.instructions()[instructionsMark], instructionsMark);
+	assert.equal(briefing.instruction()[instructionMark], instructionMark);
 });
 
 it("a briefing holds the ruleset", () => {
 	const briefing = pendingLedgerFrom().assignmentOf(probeFrom()).briefing();
 
-	assert.equal(briefing.rules()[rulesetMark], rulesetMark);
+	assert.equal(briefing.ruleset()[rulesetMark], rulesetMark);
 });
 
 it("a briefing defines a term", () => {
@@ -87,22 +87,22 @@ it("a briefing defines a term", () => {
 	);
 });
 
-it("an assignment has pages", () => {
+it("an assignment has cursor", () => {
 	const assignment = pendingLedgerFrom().assignmentOf(probeFrom());
 
-	assert.equal(assignment.pages()[pagesMark], pagesMark);
+	assert.equal(assignment.cursor()[cursorMark], cursorMark);
 });
 
-it("pages turn to the next page of the surface", () => {
-	const pages = pendingLedgerFrom().assignmentOf(probeFrom()).pages();
+it("cursor turn to the next page of the surface", () => {
+	const cursor = pendingLedgerFrom().assignmentOf(probeFrom()).cursor();
 
-	assert.equal(pages.next()[surfaceMark], surfaceMark);
+	assert.equal(cursor.next()[surfaceMark], surfaceMark);
 });
 
-it("pages turn to the previous page of the surface", () => {
-	const pages = pendingLedgerFrom().assignmentOf(probeFrom()).pages();
+it("cursor turn to the previous page of the surface", () => {
+	const cursor = pendingLedgerFrom().assignmentOf(probeFrom()).cursor();
 
-	assert.equal(pages.previous()[surfaceMark], surfaceMark);
+	assert.equal(cursor.previous()[surfaceMark], surfaceMark);
 });
 
 it("an acknowledged assignment leaves the ledger pending", () => {

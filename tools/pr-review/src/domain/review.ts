@@ -3,7 +3,7 @@ import type {
 	AlreadyReviewed,
 	Definition,
 	HostError,
-	Instructions,
+	Instruction,
 	NoReview,
 	Outcome,
 	Probe,
@@ -24,19 +24,19 @@ import type {
 	briefingMark,
 	changeMark,
 	completeLedgerMark,
-	pagesMark,
+	cursorMark,
 	pendingLedgerMark,
-} from "./marks.ts";
+} from "./mark.ts";
 
 interface Briefing {
 	readonly [briefingMark]: typeof briefingMark;
-	instructions: () => Instructions;
-	rules: () => Ruleset;
+	instruction: () => Instruction;
+	ruleset: () => Ruleset;
 	definitionOf: (term: Term) => Definition;
 }
 
-interface Pages {
-	readonly [pagesMark]: typeof pagesMark;
+interface Cursor {
+	readonly [cursorMark]: typeof cursorMark;
 	next: () => Surface;
 	previous: () => Surface;
 }
@@ -44,7 +44,7 @@ interface Pages {
 interface Assignment {
 	readonly [assignmentMark]: typeof assignmentMark;
 	briefing: () => Briefing;
-	pages: () => Pages;
+	cursor: () => Cursor;
 	acknowledged: () => Ledger;
 	recorded: (report: Report) => Ledger;
 }
@@ -83,7 +83,7 @@ interface Host {
 	post: (url: TargetUrl, outcome: Outcome) => Effect.Effect<Outcome, HostError>;
 }
 
-interface Reviews {
+interface ReviewStore {
 	save: (workdir: Workdir, ledger: Ledger) => Effect.Effect<Ledger>;
 	inWorkdir: (workdir: Workdir) => Effect.Effect<Ledger, NoReview>;
 	ofSession: (session: Session) => Effect.Effect<Ledger, NoReview>;
@@ -98,10 +98,10 @@ export type {
 	Briefing,
 	Change,
 	CompleteLedger,
+	Cursor,
 	Host,
 	Ledger,
 	NotReviewable,
-	Pages,
 	PendingLedger,
-	Reviews,
+	ReviewStore,
 };
