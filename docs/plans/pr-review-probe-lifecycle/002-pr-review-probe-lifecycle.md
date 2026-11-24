@@ -304,6 +304,8 @@ quotations.
 111. May the tests start the tool through its command line? Yes. The agent should not have asked.
 112. What is answered for a pull request that is closed or merged, a draft, or from a fork? The agent decides:
      closed or merged is refused, and a draft or a fork is reviewed like any other.
+113. Does the agent run the review of a pass in its loop? No: "you no automtica pr review in loop take it away it
+     woill be doing it". This replaces answers 5 and 108 where they put the review in the loop.
 
 ## Open questions
 
@@ -347,12 +349,9 @@ Every milestone is worked in passes. A pass is one push with one purpose, under 
 4. Run the pass command of M2. It runs every check to its end, writes the counts, and refuses the pass when a count
    rose or a check did not run. The build is not clean while the target is being put in place: the counts start
    from the baseline and are driven to zero. No check is disabled, muted, excluded or weakened.
-5. Have the pass reviewed against the rules by this project's review protocol, on the range since the last push,
-   and fix what it finds, back to 4 until the review is clean. A range refused as too large is split. A pass that
-   changes only a lock file is reviewed by the human.
-6. Push. The pull request check judges the pass again from a checkout of its own: the checks, the counts and the
+5. Push. The pull request check judges the pass again from a checkout of its own: the checks, the counts and the
    protected paths.
-7. Record the pass in the progress log, citing the check run of the push.
+6. Record the pass in the progress log, citing the check run of the push.
 
 The unit tests alone cover at least 90% of the lines and 90% of the branches of the production code. Coverage is
 one of the counts of step 4: it starts from the baseline and may not fall, and at 90% the pass command fails below
@@ -369,7 +368,6 @@ The agent stops and hands control to the human:
 - at once, on seeing a weakness, a weakened guardrail or a departure from the guidance: it is the first thing in
   the agent's message, and the work goes on only after the human confirms;
 - before a change to anything on the list below, and before anything is posted outside the pull request;
-- when the review of a pass is still not clean after three rounds;
 - after M2, for approval of the harness;
 - after M3, for approval, before any existing code is moved;
 - after M4 and after M5, for review of what was built.
@@ -432,13 +430,9 @@ agent it constrains. The harness is a pull request of its own against main, sinc
    requires the review of a code owner and the pull request check.
 5. **A pinned test edited to pass.** The pinned integration tests and the fixture repository join the protected
    paths when M3 is approved.
-6. **A reviewer briefed by the worker.** The review of step 5 is run by the review tool, which writes each probe's
-   instructions itself. The copy that reviews is the installed release, never the build of the branch, so the tool
-   being rebuilt does not review itself. A pass is handed to it as two branch names, a marker at the last reviewed
-   push and the working branch, since the installed release stops on a range given as commit ids.
-7. **Works, claimed without evidence.** An entry of the progress log cites the check run of its push, and a claim
+6. **Works, claimed without evidence.** An entry of the progress log cites the check run of its push, and a claim
    outside a push names the command and its exit status.
-8. **A sub agent changing what it is checked against.** A sub agent is given no permission to edit a protected
+7. **A sub agent changing what it is checked against.** A sub agent is given no permission to edit a protected
    path, and its work is judged by the same pull request check.
 
 **Every source file is linted.** Each kind of source file has a linter, run with its strictest settings: semgrep,
