@@ -318,6 +318,8 @@ quotations.
      points", and of those with the guardrails: "STARTING WITH GUARDRAILS".
 117. What is the plan about? "I WANT THE FINDINGS INCORPROATED in the PLAN wht whol PLAN is ABOUT bringing stuff in
      accordenve to aour rules".
+118. When does a pull request go to main? "We will not make any new prs to main until whole plan is executed
+     intermedaite prs are there for me to review and control progress".
 
 ## Open questions
 
@@ -492,7 +494,7 @@ Done. The progress log holds its passes.
 Each failure the progress log records gets a mechanism that works without the cooperation of the
 agent it constrains. No component is built for this and no build tool is added: the mechanisms are steps of the
 build command the repository already has, and of its pull request check. They change the pipeline, so they are a
-pull request of their own against main.
+pull request of their own.
 
 1. **A commit on a failing check.** The build command the repository already has is the pass command. It stops at
    the first check that fails to run, and exits with a failure when a count rose. A hook kept in the repository
