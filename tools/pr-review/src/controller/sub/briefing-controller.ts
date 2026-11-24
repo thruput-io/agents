@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import type {
 	Definition,
-	Instruction,
+	Instructions,
 	NoReview,
 	Probe,
 	Ruleset,
@@ -25,15 +25,15 @@ class BriefingController {
 	instructions(
 		session: Session,
 		probe: Probe,
-	): Effect.Effect<Instruction, NoReview> {
+	): Effect.Effect<Instructions, NoReview> {
 		return assignmentIn(this.#store, session, probe).pipe(
-			Effect.map((assignment) => assignment.briefing().instruction()),
+			Effect.map((assignment) => assignment.briefing().instructions()),
 		);
 	}
 
 	rules(session: Session, probe: Probe): Effect.Effect<Ruleset, NoReview> {
 		return assignmentIn(this.#store, session, probe).pipe(
-			Effect.map((assignment) => assignment.briefing().ruleset()),
+			Effect.map((assignment) => assignment.briefing().rules()),
 		);
 	}
 

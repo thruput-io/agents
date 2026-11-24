@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import {
 	definitionFrom,
-	instructionFrom,
+	instructionsFrom,
 	outcomeFrom,
 	reviewStatusFrom,
 	rulesetFrom,
@@ -31,8 +31,8 @@ import type {
 const briefingFrom = (): Briefing =>
 	mint({
 		[briefingMark]: briefingMark,
-		instruction: () => instructionFrom(),
-		ruleset: () => rulesetFrom(),
+		instructions: () => instructionsFrom(),
+		rules: () => rulesetFrom(),
 		definitionOf: () => definitionFrom(),
 	});
 

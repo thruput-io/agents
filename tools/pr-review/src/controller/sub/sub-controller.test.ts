@@ -49,13 +49,13 @@ const store: ReviewStore = {
 	replace: () => Effect.succeed(complete),
 };
 
-it("instructions answers the instruction of the briefing", () => {
+it("instructions answers the instructions of the briefing", () => {
 	const answered = BriefingController.over(store).instructions(
 		sessionFrom(),
 		probeFrom(),
 	);
 
-	assert.deepEqual(Effect.runSync(answered), briefing.instruction());
+	assert.deepEqual(Effect.runSync(answered), briefing.instructions());
 });
 
 it("rules answers the ruleset of the briefing", () => {
@@ -64,7 +64,7 @@ it("rules answers the ruleset of the briefing", () => {
 		probeFrom(),
 	);
 
-	assert.deepEqual(Effect.runSync(answered), briefing.ruleset());
+	assert.deepEqual(Effect.runSync(answered), briefing.rules());
 });
 
 it("define answers the definition of the term", () => {

@@ -4,7 +4,7 @@ import {
 	alreadyReviewedFrom,
 	definitionFrom,
 	hostErrorFrom,
-	instructionFrom,
+	instructionsFrom,
 	noReviewFrom,
 	outcomeFrom,
 	probeFrom,
@@ -57,8 +57,8 @@ it("a definition is minted", () => {
 	assert.equal(isMinted(definitionFrom()), true);
 });
 
-it("an instruction is minted", () => {
-	assert.equal(isMinted(instructionFrom()), true);
+it("instructions are minted", () => {
+	assert.equal(isMinted(instructionsFrom()), true);
 });
 
 it("a session is minted", () => {

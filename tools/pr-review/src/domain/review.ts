@@ -3,7 +3,7 @@ import type {
 	AlreadyReviewed,
 	Definition,
 	HostError,
-	Instruction,
+	Instructions,
 	NoReview,
 	Outcome,
 	Probe,
@@ -30,8 +30,8 @@ import type {
 
 interface Briefing {
 	readonly [briefingMark]: typeof briefingMark;
-	instruction: () => Instruction;
-	ruleset: () => Ruleset;
+	instructions: () => Instructions;
+	rules: () => Ruleset;
 	definitionOf: (term: Term) => Definition;
 }
 

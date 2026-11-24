@@ -14,7 +14,7 @@ import {
 	completeLedgerMark,
 	cursorMark,
 	definitionMark,
-	instructionMark,
+	instructionsMark,
 	pendingLedgerMark,
 	reviewStatusMark,
 	rulesetMark,
@@ -66,16 +66,16 @@ it("an assignment has a briefing", () => {
 	assert.equal(assignment.briefing()[briefingMark], briefingMark);
 });
 
-it("a briefing holds the instruction", () => {
+it("a briefing holds the instructions", () => {
 	const briefing = pendingLedgerFrom().assignmentOf(probeFrom()).briefing();
 
-	assert.equal(briefing.instruction()[instructionMark], instructionMark);
+	assert.equal(briefing.instructions()[instructionsMark], instructionsMark);
 });
 
 it("a briefing holds the ruleset", () => {
 	const briefing = pendingLedgerFrom().assignmentOf(probeFrom()).briefing();
 
-	assert.equal(briefing.ruleset()[rulesetMark], rulesetMark);
+	assert.equal(briefing.rules()[rulesetMark], rulesetMark);
 });
 
 it("a briefing defines a term", () => {

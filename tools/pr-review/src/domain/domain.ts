@@ -2,7 +2,7 @@ import type {
 	alreadyReviewedMark,
 	definitionMark,
 	hostErrorMark,
-	instructionMark,
+	instructionsMark,
 	noReviewMark,
 	outcomeMark,
 	probeMark,
@@ -54,8 +54,8 @@ interface Definition {
 	readonly [definitionMark]: typeof definitionMark;
 }
 
-interface Instruction {
-	readonly [instructionMark]: typeof instructionMark;
+interface Instructions {
+	readonly [instructionsMark]: typeof instructionsMark;
 }
 
 interface Session {
@@ -110,7 +110,7 @@ export type {
 	AlreadyReviewed,
 	Definition,
 	HostError,
-	Instruction,
+	Instructions,
 	NoReview,
 	Outcome,
 	Probe,
