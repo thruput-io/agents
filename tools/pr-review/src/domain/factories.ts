@@ -1,15 +1,16 @@
 import type {
 	AlreadyReviewed,
-	Change,
-	CompleteLedger,
+	Definition,
 	HostError,
+	Instructions,
+	NoReview,
 	Outcome,
-	PendingLedger,
 	Probe,
 	Refused,
 	Report,
 	ReviewStatus,
 	Rule,
+	Ruleset,
 	Session,
 	Surface,
 	TargetUrl,
@@ -22,16 +23,17 @@ import type {
 } from "./domain.ts";
 import {
 	alreadyReviewedMark,
-	changeMark,
-	completeLedgerMark,
+	definitionMark,
 	hostErrorMark,
+	instructionsMark,
+	noReviewMark,
 	outcomeMark,
-	pendingLedgerMark,
 	probeMark,
 	refusedMark,
 	reportMark,
 	reviewStatusMark,
 	ruleMark,
+	rulesetMark,
 	sessionMark,
 	surfaceMark,
 	targetUrlMark,
@@ -48,15 +50,21 @@ const targetUrlFrom = (): TargetUrl => mint({ [targetUrlMark]: targetUrlMark });
 
 const workdirFrom = (): Workdir => mint({ [workdirMark]: workdirMark });
 
-const changeFrom = (): Change => mint({ [changeMark]: changeMark });
-
 const surfaceFrom = (): Surface => mint({ [surfaceMark]: surfaceMark });
 
 const probeFrom = (): Probe => mint({ [probeMark]: probeMark });
 
 const ruleFrom = (): Rule => mint({ [ruleMark]: ruleMark });
 
+const rulesetFrom = (): Ruleset => mint({ [rulesetMark]: rulesetMark });
+
 const termFrom = (): Term => mint({ [termMark]: termMark });
+
+const definitionFrom = (): Definition =>
+	mint({ [definitionMark]: definitionMark });
+
+const instructionsFrom = (): Instructions =>
+	mint({ [instructionsMark]: instructionsMark });
 
 const sessionFrom = (): Session => mint({ [sessionMark]: sessionMark });
 
@@ -66,16 +74,12 @@ const verdictFrom = (): Verdict => mint({ [verdictMark]: verdictMark });
 
 const violationFrom = (): Violation => mint({ [violationMark]: violationMark });
 
-const pendingLedgerFrom = (): PendingLedger =>
-	mint({ [pendingLedgerMark]: pendingLedgerMark });
-
-const completeLedgerFrom = (): CompleteLedger =>
-	mint({ [completeLedgerMark]: completeLedgerMark });
-
 const outcomeFrom = (): Outcome => mint({ [outcomeMark]: outcomeMark });
 
 const reviewStatusFrom = (): ReviewStatus =>
 	mint({ [reviewStatusMark]: reviewStatusMark });
+
+const noReviewFrom = (): NoReview => mint({ [noReviewMark]: noReviewMark });
 
 const unknownFormatFrom = (): UnknownFormat =>
 	mint({ [unknownFormatMark]: unknownFormatMark });
@@ -91,16 +95,17 @@ const hostErrorFrom = (): HostError => mint({ [hostErrorMark]: hostErrorMark });
 
 export {
 	alreadyReviewedFrom,
-	changeFrom,
-	completeLedgerFrom,
+	definitionFrom,
 	hostErrorFrom,
+	instructionsFrom,
+	noReviewFrom,
 	outcomeFrom,
-	pendingLedgerFrom,
 	probeFrom,
 	refusedFrom,
 	reportFrom,
 	reviewStatusFrom,
 	ruleFrom,
+	rulesetFrom,
 	sessionFrom,
 	surfaceFrom,
 	targetUrlFrom,

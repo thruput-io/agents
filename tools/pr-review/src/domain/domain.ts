@@ -1,15 +1,16 @@
 import type {
 	alreadyReviewedMark,
-	changeMark,
-	completeLedgerMark,
+	definitionMark,
 	hostErrorMark,
+	instructionsMark,
+	noReviewMark,
 	outcomeMark,
-	pendingLedgerMark,
 	probeMark,
 	refusedMark,
 	reportMark,
 	reviewStatusMark,
 	ruleMark,
+	rulesetMark,
 	sessionMark,
 	surfaceMark,
 	targetUrlMark,
@@ -29,10 +30,6 @@ interface Workdir {
 	readonly [workdirMark]: typeof workdirMark;
 }
 
-interface Change {
-	readonly [changeMark]: typeof changeMark;
-}
-
 interface Surface {
 	readonly [surfaceMark]: typeof surfaceMark;
 }
@@ -45,8 +42,20 @@ interface Rule {
 	readonly [ruleMark]: typeof ruleMark;
 }
 
+interface Ruleset {
+	readonly [rulesetMark]: typeof rulesetMark;
+}
+
 interface Term {
 	readonly [termMark]: typeof termMark;
+}
+
+interface Definition {
+	readonly [definitionMark]: typeof definitionMark;
+}
+
+interface Instructions {
+	readonly [instructionsMark]: typeof instructionsMark;
 }
 
 interface Session {
@@ -65,20 +74,16 @@ interface Violation {
 	readonly [violationMark]: typeof violationMark;
 }
 
-interface PendingLedger {
-	readonly [pendingLedgerMark]: typeof pendingLedgerMark;
-}
-
-interface CompleteLedger {
-	readonly [completeLedgerMark]: typeof completeLedgerMark;
-}
-
 interface Outcome {
 	readonly [outcomeMark]: typeof outcomeMark;
 }
 
 interface ReviewStatus {
 	readonly [reviewStatusMark]: typeof reviewStatusMark;
+}
+
+interface NoReview {
+	readonly [noReviewMark]: typeof noReviewMark;
 }
 
 interface UnknownFormat {
@@ -103,16 +108,17 @@ interface HostError {
 
 export type {
 	AlreadyReviewed,
-	Change,
-	CompleteLedger,
+	Definition,
 	HostError,
+	Instructions,
+	NoReview,
 	Outcome,
-	PendingLedger,
 	Probe,
 	Refused,
 	Report,
 	ReviewStatus,
 	Rule,
+	Ruleset,
 	Session,
 	Surface,
 	TargetUrl,

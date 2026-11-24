@@ -16,6 +16,14 @@ const completeLedgerMark: unique symbol = Symbol("complete ledger");
 const outcomeMark: unique symbol = Symbol("outcome");
 const reviewStatusMark: unique symbol = Symbol("review status");
 
+const assignmentMark: unique symbol = Symbol("assignment");
+const briefingMark: unique symbol = Symbol("briefing");
+const pagesMark: unique symbol = Symbol("pages");
+const instructionsMark: unique symbol = Symbol("instructions");
+const rulesetMark: unique symbol = Symbol("ruleset");
+const definitionMark: unique symbol = Symbol("definition");
+
+const noReviewMark: unique symbol = Symbol("no review");
 const unknownFormatMark: unique symbol = Symbol("unknown format");
 const alreadyReviewedMark: unique symbol = Symbol("already reviewed");
 const tooLargeMark: unique symbol = Symbol("too large");
@@ -24,16 +32,23 @@ const hostErrorMark: unique symbol = Symbol("host error");
 
 export {
 	alreadyReviewedMark,
+	assignmentMark,
+	briefingMark,
 	changeMark,
 	completeLedgerMark,
+	definitionMark,
 	hostErrorMark,
+	instructionsMark,
+	noReviewMark,
 	outcomeMark,
+	pagesMark,
 	pendingLedgerMark,
 	probeMark,
 	refusedMark,
 	reportMark,
 	reviewStatusMark,
 	ruleMark,
+	rulesetMark,
 	sessionMark,
 	surfaceMark,
 	targetUrlMark,

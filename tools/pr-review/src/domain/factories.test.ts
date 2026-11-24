@@ -2,16 +2,17 @@ import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import {
 	alreadyReviewedFrom,
-	changeFrom,
-	completeLedgerFrom,
+	definitionFrom,
 	hostErrorFrom,
+	instructionsFrom,
+	noReviewFrom,
 	outcomeFrom,
-	pendingLedgerFrom,
 	probeFrom,
 	refusedFrom,
 	reportFrom,
 	reviewStatusFrom,
 	ruleFrom,
+	rulesetFrom,
 	sessionFrom,
 	surfaceFrom,
 	targetUrlFrom,
@@ -32,10 +33,6 @@ it("a workdir is minted", () => {
 	assert.equal(isMinted(workdirFrom()), true);
 });
 
-it("a change is minted", () => {
-	assert.equal(isMinted(changeFrom()), true);
-});
-
 it("a surface is minted", () => {
 	assert.equal(isMinted(surfaceFrom()), true);
 });
@@ -48,8 +45,20 @@ it("a rule is minted", () => {
 	assert.equal(isMinted(ruleFrom()), true);
 });
 
+it("a ruleset is minted", () => {
+	assert.equal(isMinted(rulesetFrom()), true);
+});
+
 it("a term is minted", () => {
 	assert.equal(isMinted(termFrom()), true);
+});
+
+it("a definition is minted", () => {
+	assert.equal(isMinted(definitionFrom()), true);
+});
+
+it("instructions are minted", () => {
+	assert.equal(isMinted(instructionsFrom()), true);
 });
 
 it("a session is minted", () => {
@@ -68,20 +77,16 @@ it("a violation is minted", () => {
 	assert.equal(isMinted(violationFrom()), true);
 });
 
-it("a pending ledger is minted", () => {
-	assert.equal(isMinted(pendingLedgerFrom()), true);
-});
-
-it("a complete ledger is minted", () => {
-	assert.equal(isMinted(completeLedgerFrom()), true);
-});
-
 it("an outcome is minted", () => {
 	assert.equal(isMinted(outcomeFrom()), true);
 });
 
 it("a review status is minted", () => {
 	assert.equal(isMinted(reviewStatusFrom()), true);
+});
+
+it("a no review is minted", () => {
+	assert.equal(isMinted(noReviewFrom()), true);
 });
 
 it("an unknown format is minted", () => {
