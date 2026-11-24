@@ -6,7 +6,7 @@
 		"knip": "knip && knip --strict",
 		"lint": "biome check --error-on-warnings",
 		"typecheck": "tsc --noEmit",
-		"test": "node --test 'src/**/*.test.ts'",
+		"test": "node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-branches=90 --test-coverage-exclude='src/**/*.test.ts' 'src/**/*.test.ts'",
 		"verify": "npm run knip && npm run lint && npm run typecheck && npm test"
 	},
 	"devDependencies": {
