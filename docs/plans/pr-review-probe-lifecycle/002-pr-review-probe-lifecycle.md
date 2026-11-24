@@ -18,20 +18,20 @@ agent was trusted to follow. The checks of M2 hold without the agent's cooperati
 
 ### Goals
 
-The cheapest passing interpretations and exclusions are the agent's proposals, not yet accepted.
+The cheapest passing interpretations and exclusions are the [[AI agent]]'s proposals, not yet accepted.
 
 1. The skill, with its tools, reviews a [[Change]] against all [[Rule]]s.
-   - Cheapest passing interpretation: review against the rules that fit in one prompt.
-   - Exclusion: the [[Ledger]] holds a row with a [[Verdict]] for every rule, and a review with a missing row is not
-     posted.
-2. The skill eliminates agent bias.
-   - Cheapest passing interpretation: instruct the agent to be objective.
-   - Exclusion: no agent chooses which rules apply, what the [[Surface]] is, or what the outcome is; the tool decides
-     those in code, and each probe is boxed to its own rules and permissions.
-3. The skill wastes no tokens on agents working out what to do.
-   - Cheapest passing interpretation: hand every agent one complete manual to read.
-   - Exclusion: an agent is handed its next command and only the shapes that command uses.
-4. The skill is agent agnostic and supports the opencode, claude, copilot and agy command-line tools.
+   - Cheapest passing interpretation: review against the [[Rule]]s that fit in one prompt.
+   - Exclusion: the [[Ledger]] holds a row with a [[Verdict]] for every [[Rule]], and a review with a missing row is
+     not posted.
+2. The skill eliminates [[AI agent]] bias.
+   - Cheapest passing interpretation: instruct the [[AI agent]] to be objective.
+   - Exclusion: no [[AI agent]] chooses which [[Rule]]s apply, what the [[Surface]] is, or what the outcome is; the
+     tool decides those in code, and each probe is boxed to its own [[Rule]]s and permissions.
+3. The skill wastes no tokens on [[AI agent]]s working out what to do.
+   - Cheapest passing interpretation: hand every [[AI agent]] one complete manual to read.
+   - Exclusion: an [[AI agent]] is handed its next command and only the shapes that command uses.
+4. The skill is [[AI agent]] agnostic and supports the opencode, claude, copilot and agy command-line tools.
    - Cheapest passing interpretation: support one of them and document workarounds for the rest.
    - Exclusion: the same skill runs unchanged in all four, and nothing in it depends on one of them.
 5. The skill is distributable through industry-standard mechanisms.
