@@ -14,7 +14,7 @@ this version does not say otherwise.
 
 The progress log of this plan records that the agent working it broke the loop it had written: it committed on a
 failing check, changed guardrails before they were approved, and reported weaknesses late. The loop was prose the
-agent was trusted to follow. The harness of M2 holds without the agent's cooperation.
+agent was trusted to follow. The checks of M2 hold without the agent's cooperation.
 
 ### Goals
 
@@ -307,6 +307,8 @@ quotations.
 113. Does the agent run the review of a pass in its loop? No: "you no automtica pr review in loop take it away it
      woill be doing it". The human reviews: "AS i said i am the review steop". This replaces answers 5 and 108
      where they put the review in the loop.
+114. Is a harness a component of its own, with a build tool of its own? No: "review-harness is not a comnpet we
+     are building" and "whoa sked you for a new makefil?". The build command the repository has stays.
 
 ## Open questions
 
@@ -336,7 +338,7 @@ For reference, the head of pull request 48, measured 2026-11-23 with its working
 
 ## Execution Plan
 
-Draft. The order of the milestones after the harness is the human's. What follows the fifth is planned once the
+Draft. The order of the milestones after M2 is the human's. What follows the fifth is planned once the
 fifth is done.
 
 ### The loop
@@ -347,8 +349,8 @@ Every milestone is worked in passes. A pass is one push with one purpose, under 
    touched, then state the purpose of the pass and the goal it serves. Work that serves no goal is dropped.
 2. Write the failing test or check first, and see it fail.
 3. Make the smallest change that turns it.
-4. Run the pass command of M2. It runs every check to its end, writes the counts, and refuses the pass when a count
-   rose or a check did not run. The build is not clean while the target is being put in place: the counts start
+4. Run the pass command of M2. It stops at the first check that fails to run, writes the counts, and refuses the
+   pass when a count rose. The build is not clean while the target is being put in place: the counts start
    from the baseline and are driven to zero. No check is disabled, muted, excluded or weakened.
 5. Push. The pull request check judges the pass again from a checkout of its own: the checks, the counts and the
    protected paths. The human reviews the push.
@@ -369,7 +371,7 @@ The agent stops and hands control to the human:
 - at once, on seeing a weakness, a weakened guardrail or a departure from the guidance: it is the first thing in
   the agent's message, and the work goes on only after the human confirms;
 - before a change to anything on the list below, and before anything is posted outside the pull request;
-- after M2, for approval of the harness;
+- after M2, for approval of its checks;
 - after M3, for approval, before any existing code is moved;
 - after M4 and after M5, for review of what was built.
 
@@ -381,7 +383,7 @@ what it needs decided.
 Unless the human approves it first, in a pull request that does nothing else:
 
 - the guardrails: the lint, unused-code and compiler settings, the architecture test and the guardrails test;
-- the harness of M2: the pass command, the list of protected paths and the pull request check;
+- the checks of M2: the pass command, the list of protected paths and the pull request check;
 - the pinned integration tests and the fixture repository, once M3 is approved;
 - published ADRs, and frozen plans with their progress logs;
 - the governance documents and their schemas;
@@ -416,13 +418,16 @@ verification command passes.
 
 Done. The progress log holds its passes.
 
-### Milestone M2: A harness that enforces the loop
+### Milestone M2: Checks that hold without the agent
 
 Each failure the progress log records gets a mechanism that works without the cooperation of the
-agent it constrains. The harness is a pull request of its own against main, since it changes the pipeline.
+agent it constrains. No component is built for this and no build tool is added: the mechanisms are steps of the
+build command the repository already has, and of its pull request check. They change the pipeline, so they are a
+pull request of their own against main.
 
-1. **A commit on a failing check.** One pass command runs every check to its end and exits with a failure when a
-   check fails to run or a count rose. A hook kept in the repository runs it before a push.
+1. **A commit on a failing check.** The build command the repository already has is the pass command. It stops at
+   the first check that fails to run, and exits with a failure when a count rose. A hook kept in the repository
+   runs it before a push.
 2. **Counts typed by hand.** The pass command writes the counts to a file beside the progress log. The pull request
    check runs the same command and fails when its counts differ from the file, or rose since the push before.
 3. **A guardrail changed inside feature work.** A code owners file is the one list of protected paths. The pull
@@ -439,7 +444,7 @@ agent it constrains. The harness is a pull request of its own against main, sinc
 **Every source file is linted.** Each kind of source file has a linter, run with its strictest settings: semgrep,
 biome, shellcheck, the JSON Schema tooling and knip. Their violations are counts of the pass command: each starts
 from its baseline, only ever decreases, and ends at zero. A linter rule sniffs a smell. What gets fixed is what
-the smell is truly about, and the review against the rules verifies that it was. A workaround disqualifies the
+the smell is truly about, and the human's review verifies that it was. A workaround disqualifies the
 work completely: a rule switched off, a file left out, a suppression, a weaker preset, or code bent to slip past a
 rule while the smell stays.
 
