@@ -309,6 +309,11 @@ quotations.
      where they put the review in the loop.
 114. Is a harness a component of its own, with a build tool of its own? No: "review-harness is not a comnpet we
      are building" and "whoa sked you for a new makefil?". The build command the repository has stays.
+115. Which findings of the review of pull request 52 are resolved? All: "of course all qualityy measures from review
+     shuold be resolved", and "you cannot allow new errors". They are listed under
+     [Review findings to resolve](#review-findings-to-resolve).
+116. Where does the work start? With the review findings: "The plan should be inocroporated starting with quality
+     points".
 
 ## Open questions
 
@@ -338,8 +343,201 @@ For reference, the head of pull request 48, measured 2026-11-23 with its working
 
 ## Execution Plan
 
-Draft. The order of the milestones after M2 is the human's. What follows the fifth is planned once the
-fifth is done.
+Draft. The review findings come first. The order of the milestones after M2 is the human's. What follows the fifth
+is planned once the fifth is done.
+
+### Review findings to resolve
+
+The review of pull request 52 at commit 472422f found 65 [[Violation]]s: 2 on the pull request as a whole and 63 on
+lines. Every one is resolved and none is waived, and no new one is allowed. Each is quoted as the review states it.
+They are worked first, before M2.
+
+**On the pull request as a whole, closed by how pull request 52 is split (2)**
+
+- Bundling Plan 001 (PR #48), four standalone tracer-bullet npm packages, a draft Plan 002, and unconnected skeleton
+  code into one pull request breaks [Do One Thing](https://thruput.se/agents/#do-one-thing)
+- Changing 10,286 lines (+6,622 / -3,664) across 245 files in a single pull request breaks [Make it work, make it right,
+  make it fast](https://thruput.se/agents/#make-it-work-make-it-right-make-it-fast)
+
+**Guardrails, linting and the pass procedure (12)**
+
+- `docs/plans/pr-review-probe-lifecycle/002-pr-review-probe-lifecycle.md:341`: Writing down a manual 7-step pass
+  verification procedure and repeating it by hand across five passes instead of scripting it breaks [Infrastructure as
+  Code](https://thruput.se/agents/#infrastructure-as-code)
+- `docs/plans/pr-review-probe-lifecycle/progress/002-attempt-1-2026-11-23.md:105`: Weakening guardrails in biome.json
+  and leaving architecture.test.ts pointing at deleted paths before reporting on detection and receiving human
+  confirmation breaks [The Toolchain Is the Guardrail](https://thruput.se/agents/#the-toolchain-is-the-guardrail)
+- `docs/plans/pr-review-probe-lifecycle/tracer-bullets/opaque-by-interface/src/controller.ts:7`: Writing explanatory
+  prose in comments in opaque-by-interface/src/controller.ts breaks [No
+  Comments](https://thruput.se/agents/#no-comments)
+- `docs/plans/pr-review-probe-lifecycle/tracer-bullets/opaque-by-interface/src/controller.ts:7`: Using @ts-expect-error
+  compiler suppression pragmas in controller.ts breaks [The Toolchain Is the
+  Guardrail](https://thruput.se/agents/#the-toolchain-is-the-guardrail)
+- `docs/plans/pr-review-probe-lifecycle/tracer-bullets/opaque-by-interface/src/internal.ts:25`: Checking domain object
+  construction at runtime with a WeakSet in assertMinted instead of enforcing it through the type system breaks [Push
+  tests down the pyramid](https://thruput.se/agents/#push-tests-down-the-pyramid)
+- `docs/plans/pr-review-probe-lifecycle/tracer-bullets/orval-mock-folder/src/mock-imports.test.ts:23`: Committing
+  failing tests in tracer-bullets/orval-mock-folder and tracer-bullets/package-visibility that are skipped by the
+  repository build breaks [Test-Driven Development](https://thruput.se/agents/#test-driven-development)
+- `docs/plans/pr-review-probe-lifecycle/tracer-bullets/package-visibility/packages/client/src/visibility.test.ts:34`:
+  Writing a unit test that spawns knip to check for unlisted dependencies instead of running static code analysis in the
+  build breaks [Push tests down the pyramid](https://thruput.se/agents/#push-tests-down-the-pyramid)
+- `docs/plans/pr-review-probe-lifecycle/tracer-bullets/package-visibility/packages/controller/src/forbidden.ts:1`:
+  Writing explanatory prose in comments in package-visibility/packages/controller/src/forbidden.ts breaks [No
+  Comments](https://thruput.se/agents/#no-comments)
+- `docs/plans/pr-review-probe-lifecycle/tracer-bullets/package-visibility/packages/controller/src/forbidden.ts:1`: Using
+  @ts-expect-error compiler suppression pragmas in forbidden.ts breaks [The Toolchain Is the
+  Guardrail](https://thruput.se/agents/#the-toolchain-is-the-guardrail)
+- `scripts/verify.sh:16`: Leaving the 26 TypeScript files under docs/plans/pr-review-probe-lifecycle/tracer-bullets/
+  unlinted by Biome and unchecked by knip in scripts/verify.sh breaks [The Toolchain Is the
+  Guardrail](https://thruput.se/agents/#the-toolchain-is-the-guardrail)
+- `tools/pr-review/biome.json:36`: Modifying project-wide Biome lint rules in biome.json inside a feature pull request
+  breaks [The Toolchain Is the Guardrail](https://thruput.se/agents/#the-toolchain-is-the-guardrail)
+- `tools/pr-review/src/architecture.test.ts:29`: Modifying project-wide architecture guardrail rules in
+  architecture.test.ts inside a feature pull request breaks [The Toolchain Is the
+  Guardrail](https://thruput.se/agents/#the-toolchain-is-the-guardrail)
+
+**Integration tests (4)**
+
+- `tools/pr-review/src/integration-test/scenario.ts:5`: Importing internal domain types and schemas in integration test
+  files instead of testing the built artifact purely as a black box breaks [No gray
+  tests](https://thruput.se/agents/#no-gray-tests)
+- `tools/pr-review/src/integration-test/scenario.ts:52`: Adding conditional if branching in test helper
+  driverFromRulesResponse in scenario.ts breaks [Fail fast](https://thruput.se/agents/#fail-fast)
+- `tools/pr-review/src/review-tool-paging.test.ts:161`: Using a for loop in test code in review-tool-paging.test.ts
+  breaks [Fail fast](https://thruput.se/agents/#fail-fast)
+- `tools/pr-review/src/review-tool-paging.test.ts:161`: Spawning child processes against a temporary filesystem in
+  review-tool-paging.test.ts to test paging logic that a unit test catches in-process breaks [Push tests down the
+  pyramid](https://thruput.se/agents/#push-tests-down-the-pyramid)
+
+**Production code and unit tests of the tool (42)**
+
+- `tools/pr-review/src/adapters/azure/azure.ts:85`: Throwing an exception via Schema.parse in headCommitOf, changeOf,
+  artifactIdOf, and targetCommitOf instead of returning creation failure in the signature breaks [Parse, don't
+  validate](https://thruput.se/agents/#parse-dont-validate)
+- `tools/pr-review/src/adapters/fs/snapshot-directory.ts:135`: Probing git branch -r --list first and falling back to a
+  second git rev-parse strategy in SnapshotDirectory.resolveRef breaks [Fail fast](https://thruput.se/agents/#fail-fast)
+- `tools/pr-review/src/adapters/fs/snapshot-directory.ts:135`: Using git branch -r --list to pre-detect ref state
+  instead of letting the target command report its error breaks [Fail fast](https://thruput.se/agents/#fail-fast)
+- `tools/pr-review/src/adapters/github/github.ts:73`: Supplying dummy sha and placeholder URLs in
+  GitHubPullFilesCodec.encode breaks [Fail fast](https://thruput.se/agents/#fail-fast)
+- `tools/pr-review/src/adapters/github/github.ts:110`: Throwing an exception via Schema.parse in headCommitOf, changeOf,
+  and baseCommitOf instead of returning creation failure in the signature breaks [Parse, don't
+  validate](https://thruput.se/agents/#parse-dont-validate)
+- `tools/pr-review/src/controller/controller-paging.test.ts:183`: Using conditional if-return branches inside test cases
+  in controller-paging.test.ts breaks [Fail fast](https://thruput.se/agents/#fail-fast)
+- `tools/pr-review/src/controller/controller-session.test.ts:113`: Testing the composition of MainAgentController,
+  SubAgentController, and MainAgentLedger together in a unit test breaks [No gray
+  tests](https://thruput.se/agents/#no-gray-tests)
+- `tools/pr-review/src/controller/controller-session.ts:131`: Passing rawToken as string | null across
+  controller-session signatures instead of an encapsulated domain type breaks [No Primitive
+  Obsession](https://thruput.se/agents/#no-primitive-obsession)
+- `tools/pr-review/src/controller/controller.test.ts:60`: Asserting only rulesRes.success === true in controller.test.ts
+  without asserting the returned ruleset value breaks [Never trust a test you haven't seen
+  fail](https://thruput.se/agents/#never-trust-a-test-you-havent-seen-fail)
+- `tools/pr-review/src/controller/controller.ts:1`: Growing tools/pr-review/src/controller/controller.ts to 203 lines
+  breaks [Separation of Concerns](https://thruput.se/agents/#separation-of-concerns)
+- `tools/pr-review/src/controller/controller.ts:45`: Performing elapsed-time subtraction and deadline comparisons on raw
+  numbers in MainAgentController instead of via domain methods breaks [Make illegal states
+  unrepresentable](https://thruput.se/agents/#make-illegal-states-unrepresentable)
+- `tools/pr-review/src/controller/controller.ts:45`: Querying MainAgentLedger state (pending, unacknowledged,
+  nextDeadlineMs, submittedOutcome, submittedLocation) in MainAgentController to decide control flow breaks [Replace
+  conditional with polymorphism](https://thruput.se/agents/#replace-conditional-with-polymorphism)
+- `tools/pr-review/src/controller/controller.ts:45`: Polling filesystem reads in a 250ms recursive loop across
+  pollAckStep, waitForDeadlinePhase, and pollHostSubmissionStep breaks [Iterations over calls over the network is bad
+  design](https://thruput.se/agents/#iterations-over-calls-over-the-network-is-bad-design)
+- `tools/pr-review/src/controller/controller.ts:162`: Unwrapping the encapsulated AccessToken into a raw string via
+  token.toString() inside the controller layer breaks [No Primitive
+  Obsession](https://thruput.se/agents/#no-primitive-obsession)
+- `tools/pr-review/src/controller/main/main-controller.ts:1`: Leaving unused production code in main-controller.ts,
+  either.ts, review.ts, and review-ports.ts that no entrypoint invokes breaks [You aren't gonna need
+  it](https://thruput.se/agents/#you-arent-gonna-need-it)
+- `tools/pr-review/src/controller/main/main-controller.ts:23`: Adding an unconnected MainController skeleton and domain
+  interfaces for an unapproved draft plan before delivering a working slice breaks [Make it work, make it right, make it
+  fast](https://thruput.se/agents/#make-it-work-make-it-right-make-it-fast)
+- `tools/pr-review/src/controller/main/main-controller.ts:23`: Introducing a second main-agent controller class with a
+  competing factory and result convention alongside MainAgentController breaks [Convention over
+  Invention](https://thruput.se/agents/#convention-over-invention)
+- `tools/pr-review/src/controller/main/main-controller.ts:36`: Constructing MainController via MainController.over
+  without establishing any invariant breaks [Parse, don't validate](https://thruput.se/agents/#parse-dont-validate)
+- `tools/pr-review/src/controller/sub-agent-controller.ts:145`: Passing raw number page and optional primitives across
+  client, controller, and domain boundaries breaks [No Primitive
+  Obsession](https://thruput.se/agents/#no-primitive-obsession)
+- `tools/pr-review/src/controller/sub-agent-controller.ts:145`: Using optional parameters url?: RulesetUrl and page?:
+  number on SubAgentController.rulesResponse and ProbeBehavior.rulesResponse breaks [Avoid
+  optionality](https://thruput.se/agents/#avoid-optionality)
+- `tools/pr-review/src/controller/sub-agent-controller.ts:201`: Branching on report status, existing submission, and
+  typeof location inside SubAgentController.submitReport breaks [Replace conditional with
+  polymorphism](https://thruput.se/agents/#replace-conditional-with-polymorphism)
+- `tools/pr-review/src/controller/sub-agent-probe.ts:40`: Combining ruleset retrieval and external rulebook paging into
+  a single rulesResponse(url?, page?) method instead of explicitly named methods breaks [Avoid
+  optionality](https://thruput.se/agents/#avoid-optionality)
+- `tools/pr-review/src/controller/sub-agent-probe.ts:135`: Checking for undefined url and defaulting page with ?? 1 at
+  runtime in rulesResponse breaks [Make illegal states
+  unrepresentable](https://thruput.se/agents/#make-illegal-states-unrepresentable)
+- `tools/pr-review/src/domain/either.ts:1`: Hand-writing a custom Either<Failure, Success> interface instead of using
+  Effect as decided in ADR 0011 breaks [Choose boring technology](https://thruput.se/agents/#choose-boring-technology)
+- `tools/pr-review/src/domain/host.ts:1`: Importing node:path and parsing host transport coordinates inside the domain
+  module src/domain/host.ts breaks [Separation of Concerns](https://thruput.se/agents/#separation-of-concerns)
+- `tools/pr-review/src/domain/instructions-prose.test.ts:54`: Asserting typeof and substring .includes() generalizations
+  in instructions-prose.test.ts instead of asserting the actual value breaks [Never trust a test you haven't seen
+  fail](https://thruput.se/agents/#never-trust-a-test-you-havent-seen-fail)
+- `tools/pr-review/src/domain/instructions.ts:1`: Growing tools/pr-review/src/domain/instructions.ts to 209 lines breaks
+  [Separation of Concerns](https://thruput.se/agents/#separation-of-concerns)
+- `tools/pr-review/src/domain/instructions.ts:15`: Representing probe states as a pure string union ('rules' | 'reuse' |
+  'dead-code' | 'context') and branching on it across domain and controller modules breaks [Make illegal states
+  unrepresentable](https://thruput.se/agents/#make-illegal-states-unrepresentable)
+- `tools/pr-review/src/domain/instructions.ts:83`: Branching on probe kind and optional checkout inside domain module
+  instructions.ts breaks [Replace conditional with
+  polymorphism](https://thruput.se/agents/#replace-conditional-with-polymorphism)
+- `tools/pr-review/src/domain/limits.ts:13`: Defining FileLineCountSchema by hand in TypeScript instead of deriving it
+  from a JSON Schema contract breaks [Contract First](https://thruput.se/agents/#contract-first)
+- `tools/pr-review/src/domain/main-agent-ledger.ts:82`: Exposing raw string and number primitives on MainAgentLedger
+  methods (deadlineMs, nextDeadlineMs, submittedLocation) breaks [Make illegal states
+  unrepresentable](https://thruput.se/agents/#make-illegal-states-unrepresentable)
+- `tools/pr-review/src/domain/main-agent-ledger.ts:123`: Using nullable return types and runtime null checks in
+  submittedOutcome, submittedLocation, and nextDeadlineMs breaks [Make illegal states
+  unrepresentable](https://thruput.se/agents/#make-illegal-states-unrepresentable)
+- `tools/pr-review/src/domain/ports.ts:35`: Expanding LedgerStore interface to 13 public methods instead of decomposing
+  into focused interfaces breaks [Separation of Concerns](https://thruput.se/agents/#separation-of-concerns)
+- `tools/pr-review/src/domain/ports.ts:86`: Exposing raw number primitives in ClockPort.now and ClockPort.sleep domain
+  port signatures breaks [No Primitive Obsession](https://thruput.se/agents/#no-primitive-obsession)
+- `tools/pr-review/src/domain/probe-document.ts:37`: Modeling rulebook ProbeDocument variants as a product type with an
+  optional checkout field instead of a closed sum type breaks [Make illegal states
+  unrepresentable](https://thruput.se/agents/#make-illegal-states-unrepresentable)
+- `tools/pr-review/src/domain/probe-document.ts:59`: Returning a fallback DEFAULT_CHECKOUT path
+  ('/opt/pr-review/snapshot') when checkout is undefined breaks [Fail fast](https://thruput.se/agents/#fail-fast)
+- `tools/pr-review/src/domain/probe-document.ts:66`: Inspecting the raw numeric deadlineMs value to reverse-engineer the
+  probe kind in kindFromDeadline breaks [No Primitive Obsession](https://thruput.se/agents/#no-primitive-obsession)
+- `tools/pr-review/src/domain/probe-document.ts:66`: Using an if check with a catch-all fallback return in
+  kindFromDeadline and fromAuditDocument instead of exhaustive pattern matching breaks [Make illegal states
+  unrepresentable](https://thruput.se/agents/#make-illegal-states-unrepresentable)
+- `tools/pr-review/src/domain/probe-document.ts:104`: Distinguishing domain probe types by checking property presence
+  ('rulesets' in document, 'checkout' in document) and timeout numbers breaks [Make illegal states
+  unrepresentable](https://thruput.se/agents/#make-illegal-states-unrepresentable)
+- `tools/pr-review/src/domain/review-ports.ts:1`: Defining a second parallel representation of host, review, catalog,
+  and clock ports alongside src/domain/ports.ts and src/domain/host-adapter.ts breaks [Don't Repeat
+  Yourself](https://thruput.se/agents/#dont-repeat-yourself)
+- `tools/pr-review/src/domain/review.ts:1`: Defining a second parallel representation of TargetUrl, Workdir, Prepared,
+  ReviewStatus, Change, Refused, TooLarge, AlreadyReviewed, and HostError alongside contracts.g.ts breaks [Don't Repeat
+  Yourself](https://thruput.se/agents/#dont-repeat-yourself)
+- `tools/pr-review/src/domain/review.ts:1`: Defining boundary and domain shapes by hand in src/domain/review.ts and
+  src/domain/review-ports.ts without a schema contract breaks [Contract
+  First](https://thruput.se/agents/#contract-first)
+
+**Documents, schema, symlink and install script (5)**
+
+- `docs/adrs/0011-results-and-failures-travel-in-effect.md:17`: Referencing a temporary plan tracer-bullet execution log
+  and specific function implementation inside ADR 0011 breaks [Less is more](https://thruput.se/agents/#less-is-more)
+- `docs/plans/pr-review-probe-lifecycle/research/instruction-design/README.md:56`: Repeating inline schema text and
+  documenting obsolete 5-item InstructionsProse and role task fields that disagree with agent-instructions.schema.json
+  breaks [Less is more](https://thruput.se/agents/#less-is-more)
+- `install.sh:8`: Adding conditional if branching in install.sh breaks [Fail fast](https://thruput.se/agents/#fail-fast)
+- `schemas/review/agent-instructions.schema.json:210`: Placing a 1,711-character single-line string literal inside
+  agent-instructions.schema.json breaks [Less is more](https://thruput.se/agents/#less-is-more)
+- `tools/pr-review/schemas:1`: Adding an internal repository symlink tools/pr-review/schemas -> ../../schemas in the
+  same change that adds ADR 0010 Decision 3 prohibiting internal repository symlinks breaks [Less is
+  more](https://thruput.se/agents/#less-is-more)
 
 ### The loop
 
