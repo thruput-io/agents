@@ -9,6 +9,9 @@ and of the sub agent reference each other, and hold persisted records and timing
 [[Change]] carries host coordinates, so transport detail reaches the domain. The boundaries between layers are
 hand-written, and the architecture test now defines a layout the specs do not describe.
 
+This plan brings the review tool into accordance with our rules. The review of pull request 52 found 65
+[[Violation]]s, and each is part of the work of the milestone that resolves it.
+
 Version 001 of this plan and [ADR 0010](../../adrs/0010-pr-review-probe-tool-and-submission-lifecycle.md) stand where
 this version does not say otherwise.
 
@@ -310,10 +313,11 @@ quotations.
 114. Is a harness a component of its own, with a build tool of its own? No: "review-harness is not a comnpet we
      are building" and "whoa sked you for a new makefil?". The build command the repository has stays.
 115. Which findings of the review of pull request 52 are resolved? All: "of course all qualityy measures from review
-     shuold be resolved", and "you cannot allow new errors". They are listed under
-     [Review findings to resolve](#review-findings-to-resolve).
+     shuold be resolved", and "you cannot allow new errors". Each is quoted in the part of the plan that resolves it.
 116. Where does the work start? With the review findings: "The plan should be inocroporated starting with quality
-     points".
+     points", and of those with the guardrails: "STARTING WITH GUARDRAILS".
+117. What is the plan about? "I WANT THE FINDINGS INCORPROATED in the PLAN wht whol PLAN is ABOUT bringing stuff in
+     accordenve to aour rules".
 
 ## Open questions
 
@@ -343,23 +347,100 @@ For reference, the head of pull request 48, measured 2026-11-23 with its working
 
 ## Execution Plan
 
-Draft. The review findings come first. The order of the milestones after M2 is the human's. What follows the fifth
-is planned once the fifth is done.
+Draft. The 65 [[Violation]]s of the review of pull request 52 are quoted in the part of this plan that resolves
+them: 2 in the loop, 17 in M2, 4 in M3 and 42 in M4. Each milestone starts with them. No new one is allowed. The
+work starts with the guardrails, which is M2. The order of the milestones after M2 is the human's. What follows
+the fifth is planned once the fifth is done.
 
-### Review findings to resolve
+### The loop
 
-The review of pull request 52 at commit 472422f found 65 [[Violation]]s: 2 on the pull request as a whole and 63 on
-lines. Every one is resolved and none is waived, and no new one is allowed. Each is quoted as the review states it.
-They are worked first, before M2.
+Every milestone is worked in passes. A pass is one push with one purpose, under 400 hand-written lines:
 
-**On the pull request as a whole, closed by how pull request 52 is split (2)**
+1. Start from a clean working tree. Reread the goals, the guidance in the summary and the list of things not to be
+   touched, then state the purpose of the pass and the goal it serves. Work that serves no goal is dropped.
+2. Write the failing test or check first, and see it fail.
+3. Make the smallest change that turns it.
+4. Run the pass command of M2. It stops at the first check that fails to run, writes the counts, and refuses the
+   pass when a count rose. The build is not clean while the target is being put in place: the counts start
+   from the baseline and are driven to zero. No check is disabled, muted, excluded or weakened.
+5. Push. The pull request check judges the pass again from a checkout of its own: the checks, the counts and the
+   protected paths. The human reviews the push.
+6. Record the pass in the progress log, citing the check run of the push.
+
+The unit tests alone cover at least 90% of the lines and 90% of the branches of the production code. Coverage is
+one of the counts of step 4: it starts from the baseline and may not fall, and at 90% the pass command fails below
+it. The integration tests add nothing to it, since they run the built artifact.
+
+Nothing is introduced that makes goals 4 to 6 harder to deliver later: no dependence on one agent's command-line
+tool, no install step of our own, and no dependence of the tool on the skill being present.
+
+Pull request 52 broke the size and the single purpose of a pass, as its review states. It is split into pull
+requests of one purpose each, under 400 lines.
 
 - Bundling Plan 001 (PR #48), four standalone tracer-bullet npm packages, a draft Plan 002, and unconnected skeleton
   code into one pull request breaks [Do One Thing](https://thruput.se/agents/#do-one-thing)
 - Changing 10,286 lines (+6,622 / -3,664) across 245 files in a single pull request breaks [Make it work, make it right,
   make it fast](https://thruput.se/agents/#make-it-work-make-it-right-make-it-fast)
 
-**Guardrails, linting and the pass procedure (12)**
+### Halts
+
+The agent stops and hands control to the human:
+
+- at once, on an unexpected error, warning or ambiguous result from a tool;
+- at once, on seeing a weakness, a weakened guardrail or a departure from the guidance: it is the first thing in
+  the agent's message, and the work goes on only after the human confirms;
+- before a change to anything on the list below, and before anything is posted outside the pull request;
+- after M2, for approval of its checks;
+- after M3, for approval, before any existing code is moved;
+- after M4 and after M5, for review of what was built.
+
+At a halt the agent reports what changed, the check run of every push, how the work stands against each goal, and
+what it needs decided.
+
+### Not to be touched
+
+Unless the human approves it first, in a pull request that does nothing else:
+
+- the guardrails: the lint, unused-code and compiler settings, the architecture test and the guardrails test;
+- the checks of M2: the pass command, the list of protected paths and the pull request check;
+- the pinned integration tests and the fixture repository, once M3 is approved;
+- published ADRs, and frozen plans with their progress logs;
+- the governance documents and their schemas;
+- the downloaded host specifications, which are replaced only by a fresh download;
+- generated code, which is never edited by hand;
+- the build and release pipeline: the build and verify scripts, the workflows, the release and install
+  configuration;
+- pull request 48, its branch, the stash holding its working tree, and main.
+
+### Goal coverage
+
+| Goal | Milestones               |
+|------|--------------------------|
+| 1    | M2, M3, M4, M5           |
+| 2    | M4                       |
+| 3    | M4, M5                   |
+| 4    | later plan; guarded here |
+| 5    | later plan; guarded here |
+| 6    | later plan; guarded here |
+| 7    | M1 to M5                 |
+
+### Running all tests
+
+`./build.sh` at the repository root (existing).
+
+### Milestone M1: Code generation works
+
+A declarative orval configuration generates only the host operations in use, with their schemas and their mocks.
+
+Verification: the configuration holds no branching, the generated clients hold only the declared operations, and the
+verification command passes.
+
+Done. The progress log holds its passes.
+
+### Milestone M2: Checks that hold without the agent
+
+**Brought into accordance with the rules (17).** The review of pull request 52 at commit 472422f found these
+[[Violation]]s, quoted as it states them. M2 resolves each, and none is waived.
 
 - `docs/plans/pr-review-probe-lifecycle/002-pr-review-probe-lifecycle.md:341`: Writing down a manual 7-step pass
   verification procedure and repeating it by hand across five passes instead of scripting it breaks [Infrastructure as
@@ -396,8 +477,72 @@ They are worked first, before M2.
 - `tools/pr-review/src/architecture.test.ts:29`: Modifying project-wide architecture guardrail rules in
   architecture.test.ts inside a feature pull request breaks [The Toolchain Is the
   Guardrail](https://thruput.se/agents/#the-toolchain-is-the-guardrail)
+- `docs/adrs/0011-results-and-failures-travel-in-effect.md:17`: Referencing a temporary plan tracer-bullet execution log
+  and specific function implementation inside ADR 0011 breaks [Less is more](https://thruput.se/agents/#less-is-more)
+- `docs/plans/pr-review-probe-lifecycle/research/instruction-design/README.md:56`: Repeating inline schema text and
+  documenting obsolete 5-item InstructionsProse and role task fields that disagree with agent-instructions.schema.json
+  breaks [Less is more](https://thruput.se/agents/#less-is-more)
+- `install.sh:8`: Adding conditional if branching in install.sh breaks [Fail fast](https://thruput.se/agents/#fail-fast)
+- `schemas/review/agent-instructions.schema.json:210`: Placing a 1,711-character single-line string literal inside
+  agent-instructions.schema.json breaks [Less is more](https://thruput.se/agents/#less-is-more)
+- `tools/pr-review/schemas:1`: Adding an internal repository symlink tools/pr-review/schemas -> ../../schemas in the
+  same change that adds ADR 0010 Decision 3 prohibiting internal repository symlinks breaks [Less is
+  more](https://thruput.se/agents/#less-is-more)
 
-**Integration tests (4)**
+Each failure the progress log records gets a mechanism that works without the cooperation of the
+agent it constrains. No component is built for this and no build tool is added: the mechanisms are steps of the
+build command the repository already has, and of its pull request check. They change the pipeline, so they are a
+pull request of their own against main.
+
+1. **A commit on a failing check.** The build command the repository already has is the pass command. It stops at
+   the first check that fails to run, and exits with a failure when a count rose. A hook kept in the repository
+   runs it before a push.
+2. **Counts typed by hand.** The pass command writes the counts to a file beside the progress log. The pull request
+   check runs the same command and fails when its counts differ from the file, or rose since the push before.
+3. **A guardrail changed inside feature work.** A code owners file is the one list of protected paths. The pull
+   request check fails a pull request that changes a protected path together with any other path.
+4. **A guardrail changed before it was approved.** The human owns the protected paths in that file, and main
+   requires the review of a code owner and the pull request check.
+5. **A pinned test edited to pass.** The pinned integration tests and the fixture repository join the protected
+   paths when M3 is approved.
+6. **Works, claimed without evidence.** An entry of the progress log cites the check run of its push, and a claim
+   outside a push names the command and its exit status.
+7. **A sub agent changing what it is checked against.** A sub agent is given no permission to edit a protected
+   path, and its work is judged by the same pull request check.
+
+**Every source file is linted.** Each kind of source file has a linter, run with its strictest settings: semgrep,
+biome, shellcheck, the JSON Schema tooling and knip. Their violations are counts of the pass command: each starts
+from its baseline, only ever decreases, and ends at zero. A linter rule sniffs a smell. What gets fixed is what
+the smell is truly about, and the human's review verifies that it was. A workaround disqualifies the
+work completely: a rule switched off, a file left out, a suppression, a weaker preset, or code bent to slip past a
+rule while the smell stays.
+
+Where the linters stand, measured 2026-11-23 over the tracked files:
+
+| Files                                   | Count | Linted today by                                            |
+|-----------------------------------------|-------|------------------------------------------------------------|
+| TypeScript and JavaScript of the tool   | 146   | biome with every rule, knip, the compiler at its strictest |
+| TypeScript of the tracer bullets        | 26    | nothing                                                    |
+| JSON schemas                            | 51    | the JSON Schema tooling; biome inside the tool             |
+| Markdown                                | 43    | nothing                                                    |
+| YAML: rules, workflows                  | 15    | validated against schemas where one exists; not linted     |
+| HTML and CSS of the site                | 12    | the HTML checker, on the built site                        |
+| Shell scripts                           | 7     | shellcheck, with its default checks, not all of them       |
+| Dockerfiles and other files             | 11    | nothing                                                    |
+
+Semgrep is installed on the machine and is run by nothing; the repository holds no rules for it.
+
+Reporting at the moment of detection has no mechanism. It is a halt, and the human judges it at every halt against
+the progress log.
+
+Verification: each mechanism is seen to fail once on a planted violation, with the check run recorded: a raised
+count, a check that did not run, a protected path changed beside another path, a counts file that differs from the
+run, and an edit of a protected path by a sub agent.
+
+### Milestone M3: Integration tests on one immutable repository
+
+**Brought into accordance with the rules (4).** The review of pull request 52 at commit 472422f found these
+[[Violation]]s, quoted as it states them. M3 resolves each, and none is waived.
 
 - `tools/pr-review/src/integration-test/scenario.ts:5`: Importing internal domain types and schemas in integration test
   files instead of testing the built artifact purely as a black box breaks [No gray
@@ -410,7 +555,120 @@ They are worked first, before M2.
   review-tool-paging.test.ts to test paging logic that a unit test catches in-process breaks [Push tests down the
   pyramid](https://thruput.se/agents/#push-tests-down-the-pyramid)
 
-**Production code and unit tests of the tool (42)**
+A black-box suite drives only the built artifact. One real, immutable git repository, whose branches are the use
+cases, is used as it is by the git adapter and is the source stateless mock hosts answer from. The list of use
+cases is agreed with the human first.
+
+**Three independent parts.** The production code, the mock hosts and the integration tests have nothing in common:
+no import in any direction, no helper, no type, no schema and no generated file. Reuse between them is forbidden.
+
+- **The production code** is the tool that ships. It knows nothing of the tests, the mock hosts or the fixture.
+- **A mock host** is not a part of the tool with its answers faked. It is a program of its own that plays the other
+  side: it stands in for GitHub or Azure DevOps, answers in that host's own protocol from the fixture, asserts what
+  it is sent, and persists nothing. It knows the host's protocol and the fixture, and nothing of the tool.
+- **The integration tests** drive the built artifact from outside and compare what it answers. They know the tool's
+  commands and answers as a user sees them, and nothing of the tool's code or of the mock hosts' code.
+
+The three meet only while running. The tests start the built artifact through its command line. Between the
+artifact and the mock hosts only HTTP is allowed, and that is all: the artifact speaks to a mock host as it would
+to the real host, and plain git is served to it as git over HTTP. The artifact never reads the fixture from disk;
+only the mock hosts do. The addresses of GitHub and Azure DevOps are not fixed in the tool, so the unchanged
+artifact is pointed at the mock hosts. A mock host keeps a log of what it is sent, and the assertions are made on
+that log: without it there is nothing to assert on. The production code keeps nothing when a post fails.
+
+The mock hosts have two targets: one builds them, with the fixture, and one serves them. Building happens before
+the server is started, and no test mutates what was built. The JSON the fixture holds is defined in a schema.
+Each part that needs the shapes of a host derives them by itself from the specification the host publishes. The
+production code generates no mocks, and those M1 left in its generated clients are removed.
+
+**Dependency protection.** Each of the three has a folder of its own, and nothing connects the folders except HTTP.
+Each folder is a package of its own, so that an import from one into another does not resolve, and an architecture
+rule in each fails on any import from outside it. Those rules are protected paths.
+
+Verification: the suite passes for all three hosts, and an import planted from each part into each of the other two
+fails the build, in all six directions.
+
+Use cases, proposed by the agent and not yet agreed. Cases 23 to 31 are what the agent filled in afterwards. Each
+scenario is a branch of the fixture, and the state a scenario starts from, such as earlier threads, is read from the
+fixture. The tool writes when it posts, and a mock asserts what it is sent, but no write is persisted, on any host.
+A scenario ends with what the tool posts or answers. So every case has a workdir of its own, depends on no other
+case, and all of them run in parallel.
+
+The three hosts are GitHub, Azure DevOps and plain git. Plain git is the single source of truth: the fixture holds
+everything a scenario starts from, earlier reviews included, plain git reads it as it is, and the mock server answers
+for GitHub and Azure DevOps from it. So the three are the same, and every case about the content of a review runs
+on all three. Only the technical failures differ by host, and a case in which no host takes part runs once.
+
+**Group A: the complete happy path.** One review from the first command to the posted outcome, through every command
+of the main agent and of the sub agent. Runs on all three hosts, which yield the same [[Surface]] and are posted the
+same outcome.
+
+1. A first review: lines added and removed over several files and commits, a file whose mode changes, a deleted
+   file and a renamed file, on a base branch that has moved on since the branch was cut.
+2. A [[Surface]] larger than one page, read page by page, forwards and back.
+3. A finding on a line, a finding on the pull request as a whole, and a probe that finds nothing.
+4. A second review after new commits: the [[Surface]] narrows to what is new and to the lines of threads the author
+   resolved, a thread whose finding is fixed is settled, and one resolved without a fix is reopened.
+
+23. Lists a host hands out in pages: more changed files and more threads than one page of the host holds.
+24. Files that are not lines of text: a binary file, an empty file, and a file with no newline at its end.
+25. A probe that is granted disk access is given the path to a checkout, and no other probe is.
+26. Rule sets from outside our own are fetched over HTTP, from a mock host that serves them.
+
+**Group B: early exits on the content.** Answered by prepare. No probe is started. Runs on all three hosts.
+
+5. Too large: one file over the limit on its lines, a change over the limit on the total diff, and a change with
+   more files than the limit.
+6. Nothing to review: an empty [[Surface]], answered as refused.
+7. Already reviewed: the head commit is reviewed and the author resolved no thread, answered without a further
+   request to the host.
+8. Refused: checks that failed, checks still running, and a merge conflict. The refusal is posted once, and an
+   earlier refusal is closed when its cause is gone.
+9. A URL no host recognises, answered as an unknown format. Once; no host takes part.
+31. A pull request that is closed or merged, answered as refused. A draft, and a pull request from a fork, are
+    reviewed like any other. GitHub and Azure DevOps.
+
+**Group C: technical failures.** Each is answered with what failed and how the user recovers, and nothing is posted.
+
+10. The workspace: a workdir that cannot be written to, and one reached through a symbolic link. Once, on plain git.
+11. A command for a review the workdir does not hold: status before prepare, and a probe command with an unknown
+    session or an unknown probe. Once, on plain git.
+12. Input no command accepts: a report that is not valid, and a term the glossary does not hold. Once, on plain git.
+13. A repository path that is no repository, and a branch that does not exist. Plain git.
+14. Not allowed: no credentials (401), no permission to read (403, and the sign-in page Azure DevOps answers with
+    203), no permission to write, and a pull request that cannot be written to (400 on Azure DevOps, 422 on
+    GitHub). GitHub and Azure DevOps, each in its own shapes.
+15. The host failing: a server error (500), a pull request that does not exist (404), and a failed download of the
+    files. GitHub and Azure DevOps.
+16. The host failing while the outcome is posted, after every probe has reported. GitHub and Azure DevOps.
+17. A token set in the environment is sent, and none is sent when it is not set. GitHub and Azure DevOps.
+
+27. A token in a form no host accepts.
+28. The host limiting requests (429), and the host not answering in time. GitHub and Azure DevOps.
+29. A report that names a line outside the [[Surface]], and one that names a rule the probe was not given. Once, on
+    plain git.
+30. Prepare run again in a workdir that already holds a review. Once, on plain git.
+
+**Group D: concurrency and timing.** The controllers and the persistence do not differ by host, so these run on
+plain git; 18 runs on all three, since each is posted to once.
+
+18. Every probe of a review acknowledges and reports at the same moment: each report is kept and the outcome is
+    posted once.
+19. Status read while reports are written never shows a half-written review.
+20. Two reports for one probe, as when a silent probe was started again: the probe counts once.
+21. A probe that never acknowledges, and one that passes its deadline: status names each.
+22. Two reviews at the same time, each in a workdir of its own, do not touch each other.
+
+Everything a scenario starts from is stored in the `.reviews` folder of its branch, written by hand with the
+fixture: each earlier review as JSON in the shape it was reported in, which names the commit it reviewed, the state
+of its threads, including those the author resolved, and the checks of the head commit in `checks.json`. That
+folder is the tool's own and is never part of the [[Surface]], so a head is already reviewed when nothing but it
+has changed since that commit.
+
+### Milestone M4: Adapter interfaces and controller implementation
+
+**Brought into accordance with the rules (42).** The review of pull request 52 at commit 472422f found these
+[[Violation]]s, quoted as it states them. M4 resolves each, and none is waived.
 
 - `tools/pr-review/src/adapters/azure/azure.ts:85`: Throwing an exception via Schema.parse in headCommitOf, changeOf,
   artifactIdOf, and targetCommitOf instead of returning creation failure in the signature breaks [Parse, don't
@@ -525,267 +783,11 @@ They are worked first, before M2.
   src/domain/review-ports.ts without a schema contract breaks [Contract
   First](https://thruput.se/agents/#contract-first)
 
-**Documents, schema, symlink and install script (5)**
-
-- `docs/adrs/0011-results-and-failures-travel-in-effect.md:17`: Referencing a temporary plan tracer-bullet execution log
-  and specific function implementation inside ADR 0011 breaks [Less is more](https://thruput.se/agents/#less-is-more)
-- `docs/plans/pr-review-probe-lifecycle/research/instruction-design/README.md:56`: Repeating inline schema text and
-  documenting obsolete 5-item InstructionsProse and role task fields that disagree with agent-instructions.schema.json
-  breaks [Less is more](https://thruput.se/agents/#less-is-more)
-- `install.sh:8`: Adding conditional if branching in install.sh breaks [Fail fast](https://thruput.se/agents/#fail-fast)
-- `schemas/review/agent-instructions.schema.json:210`: Placing a 1,711-character single-line string literal inside
-  agent-instructions.schema.json breaks [Less is more](https://thruput.se/agents/#less-is-more)
-- `tools/pr-review/schemas:1`: Adding an internal repository symlink tools/pr-review/schemas -> ../../schemas in the
-  same change that adds ADR 0010 Decision 3 prohibiting internal repository symlinks breaks [Less is
-  more](https://thruput.se/agents/#less-is-more)
-
-### The loop
-
-Every milestone is worked in passes. A pass is one push with one purpose, under 400 hand-written lines:
-
-1. Start from a clean working tree. Reread the goals, the guidance in the summary and the list of things not to be
-   touched, then state the purpose of the pass and the goal it serves. Work that serves no goal is dropped.
-2. Write the failing test or check first, and see it fail.
-3. Make the smallest change that turns it.
-4. Run the pass command of M2. It stops at the first check that fails to run, writes the counts, and refuses the
-   pass when a count rose. The build is not clean while the target is being put in place: the counts start
-   from the baseline and are driven to zero. No check is disabled, muted, excluded or weakened.
-5. Push. The pull request check judges the pass again from a checkout of its own: the checks, the counts and the
-   protected paths. The human reviews the push.
-6. Record the pass in the progress log, citing the check run of the push.
-
-The unit tests alone cover at least 90% of the lines and 90% of the branches of the production code. Coverage is
-one of the counts of step 4: it starts from the baseline and may not fall, and at 90% the pass command fails below
-it. The integration tests add nothing to it, since they run the built artifact.
-
-Nothing is introduced that makes goals 4 to 6 harder to deliver later: no dependence on one agent's command-line
-tool, no install step of our own, and no dependence of the tool on the skill being present.
-
-### Halts
-
-The agent stops and hands control to the human:
-
-- at once, on an unexpected error, warning or ambiguous result from a tool;
-- at once, on seeing a weakness, a weakened guardrail or a departure from the guidance: it is the first thing in
-  the agent's message, and the work goes on only after the human confirms;
-- before a change to anything on the list below, and before anything is posted outside the pull request;
-- after M2, for approval of its checks;
-- after M3, for approval, before any existing code is moved;
-- after M4 and after M5, for review of what was built.
-
-At a halt the agent reports what changed, the check run of every push, how the work stands against each goal, and
-what it needs decided.
-
-### Not to be touched
-
-Unless the human approves it first, in a pull request that does nothing else:
-
-- the guardrails: the lint, unused-code and compiler settings, the architecture test and the guardrails test;
-- the checks of M2: the pass command, the list of protected paths and the pull request check;
-- the pinned integration tests and the fixture repository, once M3 is approved;
-- published ADRs, and frozen plans with their progress logs;
-- the governance documents and their schemas;
-- the downloaded host specifications, which are replaced only by a fresh download;
-- generated code, which is never edited by hand;
-- the build and release pipeline: the build and verify scripts, the workflows, the release and install
-  configuration;
-- pull request 48, its branch, the stash holding its working tree, and main.
-
-### Goal coverage
-
-| Goal | Milestones               |
-|------|--------------------------|
-| 1    | M2, M3, M4, M5           |
-| 2    | M4                       |
-| 3    | M4, M5                   |
-| 4    | later plan; guarded here |
-| 5    | later plan; guarded here |
-| 6    | later plan; guarded here |
-| 7    | M1 to M5                 |
-
-### Running all tests
-
-`./build.sh` at the repository root (existing).
-
-### Milestone M1: Code generation works
-
-A declarative orval configuration generates only the host operations in use, with their schemas and their mocks.
-
-Verification: the configuration holds no branching, the generated clients hold only the declared operations, and the
-verification command passes.
-
-Done. The progress log holds its passes.
-
-### Milestone M2: Checks that hold without the agent
-
-Each failure the progress log records gets a mechanism that works without the cooperation of the
-agent it constrains. No component is built for this and no build tool is added: the mechanisms are steps of the
-build command the repository already has, and of its pull request check. They change the pipeline, so they are a
-pull request of their own against main.
-
-1. **A commit on a failing check.** The build command the repository already has is the pass command. It stops at
-   the first check that fails to run, and exits with a failure when a count rose. A hook kept in the repository
-   runs it before a push.
-2. **Counts typed by hand.** The pass command writes the counts to a file beside the progress log. The pull request
-   check runs the same command and fails when its counts differ from the file, or rose since the push before.
-3. **A guardrail changed inside feature work.** A code owners file is the one list of protected paths. The pull
-   request check fails a pull request that changes a protected path together with any other path.
-4. **A guardrail changed before it was approved.** The human owns the protected paths in that file, and main
-   requires the review of a code owner and the pull request check.
-5. **A pinned test edited to pass.** The pinned integration tests and the fixture repository join the protected
-   paths when M3 is approved.
-6. **Works, claimed without evidence.** An entry of the progress log cites the check run of its push, and a claim
-   outside a push names the command and its exit status.
-7. **A sub agent changing what it is checked against.** A sub agent is given no permission to edit a protected
-   path, and its work is judged by the same pull request check.
-
-**Every source file is linted.** Each kind of source file has a linter, run with its strictest settings: semgrep,
-biome, shellcheck, the JSON Schema tooling and knip. Their violations are counts of the pass command: each starts
-from its baseline, only ever decreases, and ends at zero. A linter rule sniffs a smell. What gets fixed is what
-the smell is truly about, and the human's review verifies that it was. A workaround disqualifies the
-work completely: a rule switched off, a file left out, a suppression, a weaker preset, or code bent to slip past a
-rule while the smell stays.
-
-Where the linters stand, measured 2026-11-23 over the tracked files:
-
-| Files                                   | Count | Linted today by                                            |
-|-----------------------------------------|-------|------------------------------------------------------------|
-| TypeScript and JavaScript of the tool   | 146   | biome with every rule, knip, the compiler at its strictest |
-| TypeScript of the tracer bullets        | 26    | nothing                                                    |
-| JSON schemas                            | 51    | the JSON Schema tooling; biome inside the tool             |
-| Markdown                                | 43    | nothing                                                    |
-| YAML: rules, workflows                  | 15    | validated against schemas where one exists; not linted     |
-| HTML and CSS of the site                | 12    | the HTML checker, on the built site                        |
-| Shell scripts                           | 7     | shellcheck, with its default checks, not all of them       |
-| Dockerfiles and other files             | 11    | nothing                                                    |
-
-Semgrep is installed on the machine and is run by nothing; the repository holds no rules for it.
-
-Reporting at the moment of detection has no mechanism. It is a halt, and the human judges it at every halt against
-the progress log.
-
-Verification: each mechanism is seen to fail once on a planted violation, with the check run recorded: a raised
-count, a check that did not run, a protected path changed beside another path, a counts file that differs from the
-run, and an edit of a protected path by a sub agent.
-
-### Milestone M3: Integration tests on one immutable repository
-
-A black-box suite drives only the built artifact. One real, immutable git repository, whose branches are the use
-cases, is used as it is by the git adapter and is the source stateless mock hosts answer from. The list of use
-cases is agreed with the human first.
-
-**Three independent parts.** The production code, the mock hosts and the integration tests have nothing in common:
-no import in any direction, no helper, no type, no schema and no generated file. Reuse between them is forbidden.
-
-- **The production code** is the tool that ships. It knows nothing of the tests, the mock hosts or the fixture.
-- **A mock host** is not a part of the tool with its answers faked. It is a program of its own that plays the other
-  side: it stands in for GitHub or Azure DevOps, answers in that host's own protocol from the fixture, asserts what
-  it is sent, and persists nothing. It knows the host's protocol and the fixture, and nothing of the tool.
-- **The integration tests** drive the built artifact from outside and compare what it answers. They know the tool's
-  commands and answers as a user sees them, and nothing of the tool's code or of the mock hosts' code.
-
-The three meet only while running. The tests start the built artifact through its command line. Between the
-artifact and the mock hosts only HTTP is allowed, and that is all: the artifact speaks to a mock host as it would
-to the real host, and plain git is served to it as git over HTTP. The artifact never reads the fixture from disk;
-only the mock hosts do. The addresses of GitHub and Azure DevOps are not fixed in the tool, so the unchanged
-artifact is pointed at the mock hosts. A mock host keeps a log of what it is sent, and the assertions are made on
-that log: without it there is nothing to assert on. The production code keeps nothing when a post fails.
-
-The mock hosts have two targets: one builds them, with the fixture, and one serves them. Building happens before
-the server is started, and no test mutates what was built. The JSON the fixture holds is defined in a schema.
-Each part that needs the shapes of a host derives them by itself from the specification the host publishes. The
-production code generates no mocks, and those M1 left in its generated clients are removed.
-
-**Dependency protection.** Each of the three has a folder of its own, and nothing connects the folders except HTTP.
-Each folder is a package of its own, so that an import from one into another does not resolve, and an architecture
-rule in each fails on any import from outside it. Those rules are protected paths.
-
-Verification: the suite passes for all three hosts, and an import planted from each part into each of the other two
-fails the build, in all six directions.
-
-Use cases, proposed by the agent and not yet agreed. Cases 23 to 31 are what the agent filled in afterwards. Each
-scenario is a branch of the fixture, and the state a scenario starts from, such as earlier threads, is read from the
-fixture. The tool writes when it posts, and a mock asserts what it is sent, but no write is persisted, on any host.
-A scenario ends with what the tool posts or answers. So every case has a workdir of its own, depends on no other
-case, and all of them run in parallel.
-
-The three hosts are GitHub, Azure DevOps and plain git. Plain git is the single source of truth: the fixture holds
-everything a scenario starts from, earlier reviews included, plain git reads it as it is, and the mock server answers
-for GitHub and Azure DevOps from it. So the three are the same, and every case about the content of a review runs
-on all three. Only the technical failures differ by host, and a case in which no host takes part runs once.
-
-**Group A: the complete happy path.** One review from the first command to the posted outcome, through every command
-of the main agent and of the sub agent. Runs on all three hosts, which yield the same [[Surface]] and are posted the
-same outcome.
-
-1. A first review: lines added and removed over several files and commits, a file whose mode changes, a deleted
-   file and a renamed file, on a base branch that has moved on since the branch was cut.
-2. A [[Surface]] larger than one page, read page by page, forwards and back.
-3. A finding on a line, a finding on the pull request as a whole, and a probe that finds nothing.
-4. A second review after new commits: the [[Surface]] narrows to what is new and to the lines of threads the author
-   resolved, a thread whose finding is fixed is settled, and one resolved without a fix is reopened.
-
-23. Lists a host hands out in pages: more changed files and more threads than one page of the host holds.
-24. Files that are not lines of text: a binary file, an empty file, and a file with no newline at its end.
-25. A probe that is granted disk access is given the path to a checkout, and no other probe is.
-26. Rule sets from outside our own are fetched over HTTP, from a mock host that serves them.
-
-**Group B: early exits on the content.** Answered by prepare. No probe is started. Runs on all three hosts.
-
-5. Too large: one file over the limit on its lines, a change over the limit on the total diff, and a change with
-   more files than the limit.
-6. Nothing to review: an empty [[Surface]], answered as refused.
-7. Already reviewed: the head commit is reviewed and the author resolved no thread, answered without a further
-   request to the host.
-8. Refused: checks that failed, checks still running, and a merge conflict. The refusal is posted once, and an
-   earlier refusal is closed when its cause is gone.
-9. A URL no host recognises, answered as an unknown format. Once; no host takes part.
-31. A pull request that is closed or merged, answered as refused. A draft, and a pull request from a fork, are
-    reviewed like any other. GitHub and Azure DevOps.
-
-**Group C: technical failures.** Each is answered with what failed and how the user recovers, and nothing is posted.
-
-10. The workspace: a workdir that cannot be written to, and one reached through a symbolic link. Once, on plain git.
-11. A command for a review the workdir does not hold: status before prepare, and a probe command with an unknown
-    session or an unknown probe. Once, on plain git.
-12. Input no command accepts: a report that is not valid, and a term the glossary does not hold. Once, on plain git.
-13. A repository path that is no repository, and a branch that does not exist. Plain git.
-14. Not allowed: no credentials (401), no permission to read (403, and the sign-in page Azure DevOps answers with
-    203), no permission to write, and a pull request that cannot be written to (400 on Azure DevOps, 422 on
-    GitHub). GitHub and Azure DevOps, each in its own shapes.
-15. The host failing: a server error (500), a pull request that does not exist (404), and a failed download of the
-    files. GitHub and Azure DevOps.
-16. The host failing while the outcome is posted, after every probe has reported. GitHub and Azure DevOps.
-17. A token set in the environment is sent, and none is sent when it is not set. GitHub and Azure DevOps.
-
-27. A token in a form no host accepts.
-28. The host limiting requests (429), and the host not answering in time. GitHub and Azure DevOps.
-29. A report that names a line outside the [[Surface]], and one that names a rule the probe was not given. Once, on
-    plain git.
-30. Prepare run again in a workdir that already holds a review. Once, on plain git.
-
-**Group D: concurrency and timing.** The controllers and the persistence do not differ by host, so these run on
-plain git; 18 runs on all three, since each is posted to once.
-
-18. Every probe of a review acknowledges and reports at the same moment: each report is kept and the outcome is
-    posted once.
-19. Status read while reports are written never shows a half-written review.
-20. Two reports for one probe, as when a silent probe was started again: the probe counts once.
-21. A probe that never acknowledges, and one that passes its deadline: status names each.
-22. Two reviews at the same time, each in a workdir of its own, do not touch each other.
-
-Everything a scenario starts from is stored in the `.reviews` folder of its branch, written by hand with the
-fixture: each earlier review as JSON in the shape it was reported in, which names the commit it reviewed, the state
-of its threads, including those the author resolved, and the checks of the head commit in `checks.json`. That
-folder is the tool's own and is never part of the [[Surface]], so a head is already reviewed when nothing but it
-has changed since that commit.
-
-### Milestone M4: Adapter interfaces and controller implementation
-
 The host and persistence adapter interfaces, and the controllers written against them and against the domain
 interfaces.
 
-Verification: the controller tests pass with every dependency replaced by a stand-in.
+Verification: the controller tests pass with every dependency replaced by a stand-in, and none of the 42
+[[Violation]]s above remains.
 
 ### Milestone M5: The simplest round trip
 
