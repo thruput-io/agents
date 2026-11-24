@@ -53,7 +53,7 @@ interface Reviewing {
 	session: () => Session;
 	status: () => ReviewStatus;
 	assignmentOf: (probe: Probe) => Assignment;
-	submittedTo: (hosts: Hosts) => Effect.Effect<Ledger, HostError>;
+	submittedTo: (host: Host) => Effect.Effect<Ledger, HostError>;
 }
 
 interface PendingLedger extends Reviewing {
@@ -78,7 +78,7 @@ type NotReviewable =
 	| Refused
 	| HostError;
 
-interface Hosts {
+interface Host {
 	getChange: (url: TargetUrl) => Effect.Effect<Change, NotReviewable>;
 	post: (url: TargetUrl, outcome: Outcome) => Effect.Effect<Outcome, HostError>;
 }
@@ -98,7 +98,7 @@ export type {
 	Briefing,
 	Change,
 	CompleteLedger,
-	Hosts,
+	Host,
 	Ledger,
 	NotReviewable,
 	Pages,

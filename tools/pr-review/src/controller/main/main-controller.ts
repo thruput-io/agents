@@ -6,26 +6,26 @@ import type {
 	TargetUrl,
 	Workdir,
 } from "../../domain/domain.ts";
-import type { Hosts, NotReviewable, Reviews } from "../../domain/review.ts";
+import type { Host, NotReviewable, Reviews } from "../../domain/review.ts";
 
 class MainController {
-	readonly #hosts: Hosts;
+	readonly #host: Host;
 	readonly #reviews: Reviews;
 
-	private constructor(hosts: Hosts, reviews: Reviews) {
-		this.#hosts = hosts;
+	private constructor(host: Host, reviews: Reviews) {
+		this.#host = host;
 		this.#reviews = reviews;
 	}
 
-	static over(hosts: Hosts, reviews: Reviews): MainController {
-		return new MainController(hosts, reviews);
+	static over(host: Host, reviews: Reviews): MainController {
+		return new MainController(host, reviews);
 	}
 
 	prepare(
 		url: TargetUrl,
 		workdir: Workdir,
 	): Effect.Effect<Session, NotReviewable> {
-		return this.#hosts.getChange(url).pipe(
+		return this.#host.getChange(url).pipe(
 			Effect.flatMap((change) => this.#reviews.save(workdir, change.review())),
 			Effect.map((ledger) => ledger.session()),
 		);

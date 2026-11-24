@@ -26,9 +26,9 @@ import {
 	completeLedgerFrom,
 	pendingLedgerFrom,
 } from "./minted-review.ts";
-import type { Hosts } from "./review.ts";
+import type { Host } from "./review.ts";
 
-const accepting: Hosts = {
+const accepting: Host = {
 	getChange: () => Effect.succeed(changeFrom()),
 	post: () => Effect.succeed(outcomeFrom()),
 };
@@ -118,7 +118,7 @@ it("a recorded report completes the ledger", () => {
 });
 
 it("a pending ledger is submitted to no host", () => {
-	const refusing: Hosts = {
+	const refusing: Host = {
 		getChange: () => Effect.succeed(changeFrom()),
 		post: () => Effect.fail(hostErrorFrom()),
 	};
@@ -135,7 +135,7 @@ it("a complete ledger is posted and stays complete", () => {
 
 it("a complete ledger fails with the error of the host", () => {
 	const hostError = hostErrorFrom();
-	const refusing: Hosts = {
+	const refusing: Host = {
 		getChange: () => Effect.succeed(changeFrom()),
 		post: () => Effect.fail(hostError),
 	};

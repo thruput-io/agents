@@ -16,7 +16,7 @@ import {
 	completeLedgerFrom,
 	pendingLedgerFrom,
 } from "../../domain/minted-review.ts";
-import type { Hosts, Ledger, Reviews } from "../../domain/review.ts";
+import type { Host, Ledger, Reviews } from "../../domain/review.ts";
 import { BriefingController } from "./briefing-controller.ts";
 import { PagingController } from "./paging-controller.ts";
 import { ProgressController } from "./progress-controller.ts";
@@ -37,7 +37,7 @@ const stored: Ledger = {
 	}),
 };
 
-const hosts: Hosts = {
+const host: Host = {
 	getChange: () => Effect.succeed(changeFrom()),
 	post: () => Effect.succeed(outcomeFrom()),
 };
@@ -108,7 +108,7 @@ it("a command fails for a session that holds no review", () => {
 });
 
 it("ack answers the status of the acknowledged review", () => {
-	const answered = ProgressController.over(hosts, reviews).ack(
+	const answered = ProgressController.over(host, reviews).ack(
 		sessionFrom(),
 		probeFrom(),
 	);
@@ -117,7 +117,7 @@ it("ack answers the status of the acknowledged review", () => {
 });
 
 it("report answers the status of the submitted review", () => {
-	const answered = ProgressController.over(hosts, reviews).report(
+	const answered = ProgressController.over(host, reviews).report(
 		sessionFrom(),
 		probeFrom(),
 		reportFrom(),
@@ -128,7 +128,7 @@ it("report answers the status of the submitted review", () => {
 
 it("report fails with the error of the host", () => {
 	const hostError = hostErrorFrom();
-	const refusing: Hosts = { ...hosts, post: () => Effect.fail(hostError) };
+	const refusing: Host = { ...host, post: () => Effect.fail(hostError) };
 	const answered = ProgressController.over(refusing, reviews).report(
 		sessionFrom(),
 		probeFrom(),

@@ -23,7 +23,7 @@ import type {
 	Briefing,
 	Change,
 	CompleteLedger,
-	Hosts,
+	Host,
 	Pages,
 	PendingLedger,
 } from "./review.ts";
@@ -69,8 +69,8 @@ function completeLedgerFrom(): CompleteLedger {
 		session: () => sessionFrom(),
 		status: () => reviewStatusFrom(),
 		assignmentOf: () => assignmentFrom(),
-		submittedTo: (hosts: Hosts) =>
-			Effect.map(hosts.post(targetUrlFrom(), outcomeFrom()), () =>
+		submittedTo: (host: Host) =>
+			Effect.map(host.post(targetUrlFrom(), outcomeFrom()), () =>
 				completeLedgerFrom(),
 			),
 	});

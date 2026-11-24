@@ -7,20 +7,20 @@ import type {
 	ReviewStatus,
 	Session,
 } from "../../domain/domain.ts";
-import type { Hosts, Reviews } from "../../domain/review.ts";
+import type { Host, Reviews } from "../../domain/review.ts";
 import { assignmentIn } from "../common/assignments.ts";
 
 class ProgressController {
-	readonly #hosts: Hosts;
+	readonly #host: Host;
 	readonly #reviews: Reviews;
 
-	private constructor(hosts: Hosts, reviews: Reviews) {
-		this.#hosts = hosts;
+	private constructor(host: Host, reviews: Reviews) {
+		this.#host = host;
 		this.#reviews = reviews;
 	}
 
-	static over(hosts: Hosts, reviews: Reviews): ProgressController {
-		return new ProgressController(hosts, reviews);
+	static over(host: Host, reviews: Reviews): ProgressController {
+		return new ProgressController(host, reviews);
 	}
 
 	ack(session: Session, probe: Probe): Effect.Effect<ReviewStatus, NoReview> {
@@ -39,7 +39,7 @@ class ProgressController {
 	): Effect.Effect<ReviewStatus, NoReview | HostError> {
 		return assignmentIn(this.#reviews, session, probe).pipe(
 			Effect.flatMap((assignment) =>
-				assignment.recorded(report).submittedTo(this.#hosts),
+				assignment.recorded(report).submittedTo(this.#host),
 			),
 			Effect.flatMap((ledger) => this.#reviews.replace(session, ledger)),
 			Effect.map((ledger) => ledger.status()),
