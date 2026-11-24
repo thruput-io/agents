@@ -38,7 +38,7 @@ The cheapest passing interpretations and exclusions are the [[AI agent]]'s propo
    - Cheapest passing interpretation: a bespoke install script that copies files into place.
    - Exclusion: it installs through a standard plugin or package mechanism with no step of our own.
 6. The tool can be externalized and used by humans.
-   - Cheapest passing interpretation: a person can run it only by imitating an agent's session.
+   - Cheapest passing interpretation: a person can run it only by imitating an [[AI agent]]'s session.
    - Exclusion: the tool is a package of its own with a command line a person can drive from its help alone.
 7. The code is maintainable and readable.
    - Cheapest passing interpretation: the linters pass because failing checks were switched off.
