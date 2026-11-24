@@ -297,7 +297,9 @@ quotations.
 104. What is answered for an empty [[Surface]]? Refused, for now. Small pull requests get a treatment of their own
      later.
 105. How does a real user of plain git get the stored review? Out of scope.
-106. What is kept when a post fails? In a mock host there is a log. In the production code, nothing.
+106. Asked while it was made clear what an immutable mock is: what changes on the host when a post fails?
+     Nothing. No state of the host changes; a mock host only has a log of what it was sent. This answer is about
+     the state of the host, not about what the tool records of the failure in its own store.
 107. What are the assertions about a post made on? The log of the mock host. Without a log there is nothing to
      assert on.
 108. Which copy of the review tool reviews a pass, when the tool is what is being rebuilt? The installed release,
@@ -576,7 +578,7 @@ artifact and the mock hosts only HTTP is allowed, and that is all: the artifact 
 to the real host, and plain git is served to it as git over HTTP. The artifact never reads the fixture from disk;
 only the mock hosts do. The addresses of GitHub and Azure DevOps are not fixed in the tool, so the unchanged
 artifact is pointed at the mock hosts. A mock host keeps a log of what it is sent, and the assertions are made on
-that log: without it there is nothing to assert on. The production code keeps nothing when a post fails.
+that log: without it there is nothing to assert on. A post that fails changes nothing on the host.
 
 The mock hosts have two targets: one builds them, with the fixture, and one serves them. Building happens before
 the server is started, and no test mutates what was built. The JSON the fixture holds is defined in a schema.
