@@ -440,7 +440,8 @@ definitions:
     A system a person operates through its interface with little effort. Challenges [[Testability]].
 - id: Industry Standard
   specification: |
-    A [[Community pattern]] adopted for its popularity rather than for the need at hand. Challenges [[Structural simplicity]].
+    A technical standard or set of guidelines established by consensus and adopted across the software development
+    industry, unless another industry is explicitly stated.
 - id: Measured Coverage
   specification: |
     [[Code coverage]] treated as a target: a measure of execution, not of checking. Challenges [[True Test Coverage]].
