@@ -2,35 +2,31 @@ import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
 import {
-	modelFrom,
 	noReviewFrom,
 	notStartedFrom,
 	outcomeFrom,
+	probesFrom,
 	reviewStatusFrom,
-	sessionFrom,
 	targetUrlFrom,
 	unknownFormatFrom,
 	workdirFrom,
 } from "../../domain/factory.ts";
-import { changeFrom, pendingLedgerFrom } from "../../domain/minted-review.ts";
+import { changeFrom, pendingReviewFrom } from "../../domain/minted-review.ts";
 import type {
 	Agent,
 	Change,
 	Host,
-	Ledger,
-	PendingLedger,
+	PendingReview,
 	ReviewStore,
 } from "../../domain/review.ts";
 import { MainController } from "./main-controller.ts";
 
-const session = sessionFrom();
 const status = reviewStatusFrom();
-const spawned: PendingLedger = {
-	...pendingLedgerFrom(),
-	spawnedBy: () => Effect.succeed(session),
+const stored: PendingReview = { ...pendingReviewFrom(), status: () => status };
+const reviewed: Change = {
+	...changeFrom(),
+	review: () => ({ ...stored, spawnedBy: () => Effect.succeed(stored) }),
 };
-const reviewed: Change = { ...changeFrom(), review: () => spawned };
-const stored: Ledger = { ...pendingLedgerFrom(), status: () => status };
 
 const host: Host = {
 	getChange: () => Effect.succeed(reviewed),
@@ -40,8 +36,8 @@ const host: Host = {
 const store: ReviewStore = {
 	save: () => Effect.succeed(stored),
 	inWorkdir: () => Effect.succeed(stored),
-	ofSession: () => Effect.succeed(stored),
-	replace: () => Effect.succeed(stored),
+	ofProbe: () => Effect.fail(noReviewFrom()),
+	append: () => Effect.succeed(stored),
 };
 
 const agent: Agent = {
@@ -49,15 +45,15 @@ const agent: Agent = {
 	terminate: (assignment) => Effect.succeed(assignment),
 };
 
-it("prepare answers the session the sub agents were spawned with", () => {
+it("prepare answers the status of the review its sub agents were spawned for", () => {
 	const controller = MainController.over(host, store, agent);
 	const prepared = controller.prepare(
 		targetUrlFrom(),
 		workdirFrom(),
-		modelFrom(),
+		probesFrom(),
 	);
 
-	assert.equal(Effect.runSync(prepared), session);
+	assert.equal(Effect.runSync(prepared), status);
 });
 
 it("prepare fails with what the host answers", () => {
@@ -70,7 +66,7 @@ it("prepare fails with what the host answers", () => {
 	const prepared = controller.prepare(
 		targetUrlFrom(),
 		workdirFrom(),
-		modelFrom(),
+		probesFrom(),
 	);
 
 	assert.equal(Effect.runSync(Effect.flip(prepared)), unknownFormat);
@@ -78,20 +74,19 @@ it("prepare fails with what the host answers", () => {
 
 it("prepare fails when a sub agent is not started", () => {
 	const notStarted = notStartedFrom();
-	const unspawned: PendingLedger = {
-		...pendingLedgerFrom(),
-		spawnedBy: () => Effect.fail(notStarted),
+	const unspawned: Change = {
+		...changeFrom(),
+		review: () => ({ ...stored, spawnedBy: () => Effect.fail(notStarted) }),
 	};
 	const stalling: Host = {
 		...host,
-		getChange: () =>
-			Effect.succeed({ ...changeFrom(), review: () => unspawned }),
+		getChange: () => Effect.succeed(unspawned),
 	};
 	const controller = MainController.over(stalling, store, agent);
 	const prepared = controller.prepare(
 		targetUrlFrom(),
 		workdirFrom(),
-		modelFrom(),
+		probesFrom(),
 	);
 
 	assert.equal(Effect.runSync(Effect.flip(prepared)), notStarted);
@@ -110,7 +105,9 @@ it("status fails when the workdir holds no review", () => {
 		inWorkdir: () => Effect.fail(noReview),
 	};
 	const controller = MainController.over(host, empty, agent);
-	const answered = controller.status(workdirFrom());
 
-	assert.equal(Effect.runSync(Effect.flip(answered)), noReview);
+	assert.equal(
+		Effect.runSync(Effect.flip(controller.status(workdirFrom()))),
+		noReview,
+	);
 });

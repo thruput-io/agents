@@ -1,49 +1,66 @@
 import { Effect } from "effect";
 import type {
-	HostError,
+	Acknowledgement,
 	NoReview,
 	Probe,
-	Report,
-	ReviewStatus,
-	Session,
+	Progress,
+	Verdict,
 } from "../../domain/domain.ts";
-import type { Host, ReviewStore } from "../../domain/review.ts";
-import { assignmentIn } from "../common/assignment.ts";
+import type {
+	Agent,
+	Host,
+	Instructions,
+	ReviewStore,
+} from "../../domain/review.ts";
 
 class ProgressController {
 	readonly #host: Host;
 	readonly #store: ReviewStore;
+	readonly #agent: Agent;
 
-	private constructor(host: Host, store: ReviewStore) {
+	private constructor(host: Host, store: ReviewStore, agent: Agent) {
 		this.#host = host;
 		this.#store = store;
+		this.#agent = agent;
 	}
 
-	static over(host: Host, store: ReviewStore): ProgressController {
-		return new ProgressController(host, store);
+	static over(
+		host: Host,
+		store: ReviewStore,
+		agent: Agent,
+	): ProgressController {
+		return new ProgressController(host, store, agent);
 	}
 
-	ack(session: Session, probe: Probe): Effect.Effect<ReviewStatus, NoReview> {
-		return assignmentIn(this.#store, session, probe).pipe(
-			Effect.flatMap((assignment) =>
-				this.#store.replace(session, assignment.acknowledged()),
-			),
-			Effect.map((ledger) => ledger.status()),
-		);
-	}
-
-	report(
-		session: Session,
+	ack(
 		probe: Probe,
-		report: Report,
-	): Effect.Effect<ReviewStatus, NoReview | HostError> {
-		return assignmentIn(this.#store, session, probe).pipe(
-			Effect.flatMap((assignment) =>
-				assignment.recorded(report).submittedTo(this.#host),
-			),
-			Effect.flatMap((ledger) => this.#store.replace(session, ledger)),
-			Effect.map((ledger) => ledger.status()),
+		acknowledgement: Acknowledgement,
+	): Effect.Effect<Progress, NoReview | Instructions> {
+		return this.#store.ofProbe(probe).pipe(
+			Effect.flatMap((assignment) => assignment.accepted(acknowledgement)),
+			Effect.flatMap((accepted) => this.#store.append(probe, accepted)),
+			Effect.flatMap(() => this.#progressOf(probe)),
 		);
+	}
+
+	report(probe: Probe, verdict: Verdict): Effect.Effect<Progress, NoReview> {
+		return this.#store.append(probe, verdict).pipe(
+			Effect.flatMap((review) =>
+				review
+					.submittedTo(this.#host)
+					.pipe(
+						Effect.catch((hostError) => this.#store.append(probe, hostError)),
+					),
+			),
+			Effect.flatMap((review) => review.dismissedBy(this.#agent)),
+			Effect.flatMap(() => this.#progressOf(probe)),
+		);
+	}
+
+	#progressOf(probe: Probe): Effect.Effect<Progress, NoReview> {
+		return this.#store
+			.ofProbe(probe)
+			.pipe(Effect.map((assignment) => assignment.progress()));
 	}
 }
 

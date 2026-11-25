@@ -2,163 +2,172 @@ import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
 import {
+	acknowledgementFrom,
 	hostErrorFrom,
-	modelFrom,
 	notStartedFrom,
 	outcomeFrom,
-	probeFrom,
-	reportFrom,
+	probesFrom,
 	termFrom,
 } from "./factory.ts";
 import {
-	assignmentMark,
+	acknowledgementRequestMark,
 	briefingMark,
-	completeLedgerMark,
+	completeReviewMark,
+	contextMark,
 	cursorMark,
 	definitionMark,
 	instructionsMark,
-	pendingLedgerMark,
+	pendingReviewMark,
+	progressMark,
 	reviewStatusMark,
 	rulesetMark,
-	sessionMark,
 	surfaceMark,
+	usageMark,
+	workflowMark,
 } from "./mark.ts";
 import {
+	assignmentFrom,
 	changeFrom,
-	completeLedgerFrom,
-	pendingLedgerFrom,
+	completeReviewFrom,
+	pendingReviewFrom,
 } from "./minted-review.ts";
 import type { Agent, Host } from "./review.ts";
 
-const accepting: Host = {
+const host: Host = {
 	getChange: () => Effect.succeed(changeFrom()),
 	post: () => Effect.succeed(outcomeFrom()),
 };
 
-it("a change is reviewed in a pending ledger", () => {
-	assert.equal(changeFrom().review()[pendingLedgerMark], pendingLedgerMark);
+const agent: Agent = {
+	spawn: (assignment) => Effect.succeed(assignment),
+	terminate: (assignment) => Effect.succeed(assignment),
+};
+
+it("a change is reviewed with probes in a pending review", () => {
+	const review = changeFrom().review(probesFrom());
+
+	assert.equal(review[pendingReviewMark], pendingReviewMark);
 });
 
-it("a pending ledger spawned by an agent answers its session", () => {
-	const starting: Agent = {
-		spawn: (assignment) => Effect.succeed(assignment),
-		terminate: (assignment) => Effect.succeed(assignment),
-	};
-	const spawned = pendingLedgerFrom().spawnedBy(starting, modelFrom());
-
-	assert.equal(Effect.runSync(spawned)[sessionMark], sessionMark);
-});
-
-it("a pending ledger fails when the agent starts no sub agent", () => {
-	const notStarted = notStartedFrom();
-	const stalling: Agent = {
-		spawn: () => Effect.fail(notStarted),
-		terminate: (assignment) => Effect.succeed(assignment),
-	};
-	const spawned = pendingLedgerFrom().spawnedBy(stalling, modelFrom());
-
-	assert.equal(Effect.runSync(Effect.flip(spawned)), notStarted);
-});
-
-it("a ledger states its status", () => {
+it("a review states its status", () => {
 	assert.equal(
-		completeLedgerFrom().status()[reviewStatusMark],
+		completeReviewFrom().status()[reviewStatusMark],
 		reviewStatusMark,
 	);
 });
 
-it("a ledger hands a probe its assignment", () => {
-	const assignment = pendingLedgerFrom().assignmentOf(probeFrom());
+it("a pending review spawned by an agent stays pending", () => {
+	const spawned = Effect.runSync(pendingReviewFrom().spawnedBy(agent));
 
-	assert.equal(assignment[assignmentMark], assignmentMark);
+	assert.equal(spawned[pendingReviewMark], pendingReviewMark);
 });
 
-it("a complete ledger hands a probe its assignment", () => {
-	const assignment = completeLedgerFrom().assignmentOf(probeFrom());
+it("a pending review fails when the agent starts no sub agent", () => {
+	const notStarted = notStartedFrom();
+	const stalling: Agent = { ...agent, spawn: () => Effect.fail(notStarted) };
+	const spawned = pendingReviewFrom().spawnedBy(stalling);
 
-	assert.equal(assignment[assignmentMark], assignmentMark);
+	assert.equal(Effect.runSync(Effect.flip(spawned)), notStarted);
+});
+
+it("a pending review is submitted to no host", () => {
+	const refusing: Host = { ...host, post: () => Effect.fail(hostErrorFrom()) };
+	const review = Effect.runSync(pendingReviewFrom().submittedTo(refusing));
+
+	assert.equal(pendingReviewMark in review, true);
+});
+
+it("a complete review is posted and stays complete", () => {
+	const review = Effect.runSync(completeReviewFrom().submittedTo(host));
+
+	assert.equal(completeReviewMark in review, true);
+});
+
+it("a complete review fails with the error of the host", () => {
+	const hostError = hostErrorFrom();
+	const refusing: Host = { ...host, post: () => Effect.fail(hostError) };
+	const submitted = completeReviewFrom().submittedTo(refusing);
+
+	assert.equal(Effect.runSync(Effect.flip(submitted)), hostError);
+});
+
+it("a pending review dismissed by an agent stays pending", () => {
+	const review = Effect.runSync(pendingReviewFrom().dismissedBy(agent));
+
+	assert.equal(pendingReviewMark in review, true);
+});
+
+it("a complete review dismissed by an agent stays complete", () => {
+	const review = Effect.runSync(completeReviewFrom().dismissedBy(agent));
+
+	assert.equal(completeReviewMark in review, true);
 });
 
 it("an assignment has a briefing", () => {
-	const assignment = pendingLedgerFrom().assignmentOf(probeFrom());
+	assert.equal(assignmentFrom().briefing()[briefingMark], briefingMark);
+});
 
-	assert.equal(assignment.briefing()[briefingMark], briefingMark);
+it("an assignment has a cursor", () => {
+	assert.equal(assignmentFrom().cursor()[cursorMark], cursorMark);
+});
+
+it("an assignment states its progress", () => {
+	assert.equal(assignmentFrom().progress()[progressMark], progressMark);
+});
+
+it("an assignment accepts an acknowledgement", () => {
+	const acknowledgement = acknowledgementFrom();
+	const accepted = assignmentFrom().accepted(acknowledgement);
+
+	assert.equal(Effect.runSync(accepted), acknowledgement);
 });
 
 it("a briefing holds the instructions", () => {
-	const briefing = pendingLedgerFrom().assignmentOf(probeFrom()).briefing();
+	const instructions = assignmentFrom().briefing().instructions();
 
-	assert.equal(briefing.instructions()[instructionsMark], instructionsMark);
+	assert.equal(instructions[instructionsMark], instructionsMark);
 });
 
 it("a briefing holds the ruleset", () => {
-	const briefing = pendingLedgerFrom().assignmentOf(probeFrom()).briefing();
+	const briefing = assignmentFrom().briefing();
 
 	assert.equal(briefing.rules()[rulesetMark], rulesetMark);
 });
 
 it("a briefing defines a term", () => {
-	const briefing = pendingLedgerFrom().assignmentOf(probeFrom()).briefing();
+	const definition = assignmentFrom().briefing().definitionOf(termFrom());
 
-	assert.equal(
-		briefing.definitionOf(termFrom())[definitionMark],
-		definitionMark,
-	);
+	assert.equal(definition[definitionMark], definitionMark);
 });
 
-it("an assignment has cursor", () => {
-	const assignment = pendingLedgerFrom().assignmentOf(probeFrom());
+it("instructions hold a workflow", () => {
+	const instructions = assignmentFrom().briefing().instructions();
 
-	assert.equal(assignment.cursor()[cursorMark], cursorMark);
+	assert.equal(instructions.workflow()[workflowMark], workflowMark);
 });
 
-it("cursor turn to the next page of the surface", () => {
-	const cursor = pendingLedgerFrom().assignmentOf(probeFrom()).cursor();
+it("instructions hold a context", () => {
+	const instructions = assignmentFrom().briefing().instructions();
 
-	assert.equal(cursor.next()[surfaceMark], surfaceMark);
+	assert.equal(instructions.context()[contextMark], contextMark);
 });
 
-it("cursor turn to the previous page of the surface", () => {
-	const cursor = pendingLedgerFrom().assignmentOf(probeFrom()).cursor();
+it("instructions hold a usage", () => {
+	const instructions = assignmentFrom().briefing().instructions();
 
-	assert.equal(cursor.previous()[surfaceMark], surfaceMark);
+	assert.equal(instructions.usage()[usageMark], usageMark);
 });
 
-it("an acknowledged assignment leaves the ledger pending", () => {
-	const ledger = pendingLedgerFrom().assignmentOf(probeFrom()).acknowledged();
+it("instructions end with an acknowledgement request", () => {
+	const request = assignmentFrom().briefing().instructions().request();
 
-	assert.equal(pendingLedgerMark in ledger, true);
+	assert.equal(request[acknowledgementRequestMark], acknowledgementRequestMark);
 });
 
-it("a recorded report completes the ledger", () => {
-	const assignment = pendingLedgerFrom().assignmentOf(probeFrom());
-
-	assert.equal(completeLedgerMark in assignment.recorded(reportFrom()), true);
+it("a cursor turns to the next page of the surface", () => {
+	assert.equal(assignmentFrom().cursor().next()[surfaceMark], surfaceMark);
 });
 
-it("a pending ledger is submitted to no host", () => {
-	const refusing: Host = {
-		getChange: () => Effect.succeed(changeFrom()),
-		post: () => Effect.fail(hostErrorFrom()),
-	};
-	const ledger = Effect.runSync(pendingLedgerFrom().submittedTo(refusing));
-
-	assert.equal(pendingLedgerMark in ledger, true);
-});
-
-it("a complete ledger is posted and stays complete", () => {
-	const ledger = Effect.runSync(completeLedgerFrom().submittedTo(accepting));
-
-	assert.equal(completeLedgerMark in ledger, true);
-});
-
-it("a complete ledger fails with the error of the host", () => {
-	const hostError = hostErrorFrom();
-	const refusing: Host = {
-		getChange: () => Effect.succeed(changeFrom()),
-		post: () => Effect.fail(hostError),
-	};
-	const submitted = completeLedgerFrom().submittedTo(refusing);
-
-	assert.equal(Effect.runSync(Effect.flip(submitted)), hostError);
+it("a cursor turns to the previous page of the surface", () => {
+	assert.equal(assignmentFrom().cursor().previous()[surfaceMark], surfaceMark);
 });

@@ -1,52 +1,58 @@
 import type {
+	Acknowledgement,
+	AcknowledgementRequest,
 	AlreadyReviewed,
+	Context,
 	Definition,
 	HostError,
-	Instructions,
-	Model,
 	NoReview,
 	NotStarted,
 	Outcome,
 	Probe,
+	Probes,
+	Progress,
 	Refused,
-	Report,
 	ReviewStatus,
 	Rule,
 	Ruleset,
-	Session,
 	Surface,
 	TargetUrl,
 	Term,
 	TooLarge,
 	UnknownFormat,
+	Usage,
 	Verdict,
 	Violation,
 	Workdir,
+	Workflow,
 } from "./domain.ts";
 import {
+	acknowledgementMark,
+	acknowledgementRequestMark,
 	alreadyReviewedMark,
+	contextMark,
 	definitionMark,
 	hostErrorMark,
-	instructionsMark,
-	modelMark,
 	noReviewMark,
 	notStartedMark,
 	outcomeMark,
 	probeMark,
+	probesMark,
+	progressMark,
 	refusedMark,
-	reportMark,
 	reviewStatusMark,
 	ruleMark,
 	rulesetMark,
-	sessionMark,
 	surfaceMark,
 	targetUrlMark,
 	termMark,
 	tooLargeMark,
 	unknownFormatMark,
+	usageMark,
 	verdictMark,
 	violationMark,
 	workdirMark,
+	workflowMark,
 } from "./mark.ts";
 import { mint } from "./mint.ts";
 
@@ -58,6 +64,8 @@ const surfaceFrom = (): Surface => mint({ [surfaceMark]: surfaceMark });
 
 const probeFrom = (): Probe => mint({ [probeMark]: probeMark });
 
+const probesFrom = (): Probes => mint({ [probesMark]: probesMark });
+
 const ruleFrom = (): Rule => mint({ [ruleMark]: ruleMark });
 
 const rulesetFrom = (): Ruleset => mint({ [rulesetMark]: rulesetMark });
@@ -67,12 +75,17 @@ const termFrom = (): Term => mint({ [termMark]: termMark });
 const definitionFrom = (): Definition =>
 	mint({ [definitionMark]: definitionMark });
 
-const instructionsFrom = (): Instructions =>
-	mint({ [instructionsMark]: instructionsMark });
+const workflowFrom = (): Workflow => mint({ [workflowMark]: workflowMark });
 
-const sessionFrom = (): Session => mint({ [sessionMark]: sessionMark });
+const contextFrom = (): Context => mint({ [contextMark]: contextMark });
 
-const reportFrom = (): Report => mint({ [reportMark]: reportMark });
+const usageFrom = (): Usage => mint({ [usageMark]: usageMark });
+
+const acknowledgementRequestFrom = (): AcknowledgementRequest =>
+	mint({ [acknowledgementRequestMark]: acknowledgementRequestMark });
+
+const acknowledgementFrom = (): Acknowledgement =>
+	mint({ [acknowledgementMark]: acknowledgementMark });
 
 const verdictFrom = (): Verdict => mint({ [verdictMark]: verdictMark });
 
@@ -83,7 +96,7 @@ const outcomeFrom = (): Outcome => mint({ [outcomeMark]: outcomeMark });
 const reviewStatusFrom = (): ReviewStatus =>
 	mint({ [reviewStatusMark]: reviewStatusMark });
 
-const modelFrom = (): Model => mint({ [modelMark]: modelMark });
+const progressFrom = (): Progress => mint({ [progressMark]: progressMark });
 
 const notStartedFrom = (): NotStarted =>
 	mint({ [notStartedMark]: notStartedMark });
@@ -103,27 +116,30 @@ const refusedFrom = (): Refused => mint({ [refusedMark]: refusedMark });
 const hostErrorFrom = (): HostError => mint({ [hostErrorMark]: hostErrorMark });
 
 export {
+	acknowledgementFrom,
+	acknowledgementRequestFrom,
 	alreadyReviewedFrom,
+	contextFrom,
 	definitionFrom,
 	hostErrorFrom,
-	instructionsFrom,
-	modelFrom,
 	noReviewFrom,
 	notStartedFrom,
 	outcomeFrom,
 	probeFrom,
+	probesFrom,
+	progressFrom,
 	refusedFrom,
-	reportFrom,
 	reviewStatusFrom,
 	ruleFrom,
 	rulesetFrom,
-	sessionFrom,
 	surfaceFrom,
 	targetUrlFrom,
 	termFrom,
 	tooLargeFrom,
 	unknownFormatFrom,
+	usageFrom,
 	verdictFrom,
 	violationFrom,
 	workdirFrom,
+	workflowFrom,
 };

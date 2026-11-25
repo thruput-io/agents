@@ -1,15 +1,12 @@
 import { Effect } from "effect";
 import type {
 	Definition,
-	Instructions,
 	NoReview,
 	Probe,
 	Ruleset,
-	Session,
 	Term,
 } from "../../domain/domain.ts";
-import type { ReviewStore } from "../../domain/review.ts";
-import { assignmentIn } from "../common/assignment.ts";
+import type { Instructions, ReviewStore } from "../../domain/review.ts";
 
 class BriefingController {
 	readonly #store: ReviewStore;
@@ -22,29 +19,24 @@ class BriefingController {
 		return new BriefingController(store);
 	}
 
-	instructions(
-		session: Session,
-		probe: Probe,
-	): Effect.Effect<Instructions, NoReview> {
-		return assignmentIn(this.#store, session, probe).pipe(
-			Effect.map((assignment) => assignment.briefing().instructions()),
-		);
+	instructions(probe: Probe): Effect.Effect<Instructions, NoReview> {
+		return this.#store
+			.ofProbe(probe)
+			.pipe(Effect.map((assignment) => assignment.briefing().instructions()));
 	}
 
-	rules(session: Session, probe: Probe): Effect.Effect<Ruleset, NoReview> {
-		return assignmentIn(this.#store, session, probe).pipe(
-			Effect.map((assignment) => assignment.briefing().rules()),
-		);
+	rules(probe: Probe): Effect.Effect<Ruleset, NoReview> {
+		return this.#store
+			.ofProbe(probe)
+			.pipe(Effect.map((assignment) => assignment.briefing().rules()));
 	}
 
-	define(
-		session: Session,
-		probe: Probe,
-		term: Term,
-	): Effect.Effect<Definition, NoReview> {
-		return assignmentIn(this.#store, session, probe).pipe(
-			Effect.map((assignment) => assignment.briefing().definitionOf(term)),
-		);
+	define(probe: Probe, term: Term): Effect.Effect<Definition, NoReview> {
+		return this.#store
+			.ofProbe(probe)
+			.pipe(
+				Effect.map((assignment) => assignment.briefing().definitionOf(term)),
+			);
 	}
 }
 

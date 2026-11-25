@@ -1,27 +1,30 @@
 import type {
+	acknowledgementMark,
+	acknowledgementRequestMark,
 	alreadyReviewedMark,
+	contextMark,
 	definitionMark,
 	hostErrorMark,
-	instructionsMark,
-	modelMark,
 	noReviewMark,
 	notStartedMark,
 	outcomeMark,
 	probeMark,
+	probesMark,
+	progressMark,
 	refusedMark,
-	reportMark,
 	reviewStatusMark,
 	ruleMark,
 	rulesetMark,
-	sessionMark,
 	surfaceMark,
 	targetUrlMark,
 	termMark,
 	tooLargeMark,
 	unknownFormatMark,
+	usageMark,
 	verdictMark,
 	violationMark,
 	workdirMark,
+	workflowMark,
 } from "./mark.ts";
 
 interface TargetUrl {
@@ -40,6 +43,10 @@ interface Probe {
 	readonly [probeMark]: typeof probeMark;
 }
 
+interface Probes {
+	readonly [probesMark]: typeof probesMark;
+}
+
 interface Rule {
 	readonly [ruleMark]: typeof ruleMark;
 }
@@ -56,16 +63,24 @@ interface Definition {
 	readonly [definitionMark]: typeof definitionMark;
 }
 
-interface Instructions {
-	readonly [instructionsMark]: typeof instructionsMark;
+interface Workflow {
+	readonly [workflowMark]: typeof workflowMark;
 }
 
-interface Session {
-	readonly [sessionMark]: typeof sessionMark;
+interface Context {
+	readonly [contextMark]: typeof contextMark;
 }
 
-interface Report {
-	readonly [reportMark]: typeof reportMark;
+interface Usage {
+	readonly [usageMark]: typeof usageMark;
+}
+
+interface AcknowledgementRequest {
+	readonly [acknowledgementRequestMark]: typeof acknowledgementRequestMark;
+}
+
+interface Acknowledgement {
+	readonly [acknowledgementMark]: typeof acknowledgementMark;
 }
 
 interface Verdict {
@@ -84,8 +99,8 @@ interface ReviewStatus {
 	readonly [reviewStatusMark]: typeof reviewStatusMark;
 }
 
-interface Model {
-	readonly [modelMark]: typeof modelMark;
+interface Progress {
+	readonly [progressMark]: typeof progressMark;
 }
 
 interface NotStarted {
@@ -117,27 +132,30 @@ interface HostError {
 }
 
 export type {
+	Acknowledgement,
+	AcknowledgementRequest,
 	AlreadyReviewed,
+	Context,
 	Definition,
 	HostError,
-	Instructions,
-	Model,
 	NoReview,
 	NotStarted,
 	Outcome,
 	Probe,
+	Probes,
+	Progress,
 	Refused,
-	Report,
 	ReviewStatus,
 	Rule,
 	Ruleset,
-	Session,
 	Surface,
 	TargetUrl,
 	Term,
 	TooLarge,
 	UnknownFormat,
+	Usage,
 	Verdict,
 	Violation,
 	Workdir,
+	Workflow,
 };

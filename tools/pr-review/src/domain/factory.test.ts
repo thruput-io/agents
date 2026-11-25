@@ -1,29 +1,32 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import {
+	acknowledgementFrom,
+	acknowledgementRequestFrom,
 	alreadyReviewedFrom,
+	contextFrom,
 	definitionFrom,
 	hostErrorFrom,
-	instructionsFrom,
-	modelFrom,
 	noReviewFrom,
 	notStartedFrom,
 	outcomeFrom,
 	probeFrom,
+	probesFrom,
+	progressFrom,
 	refusedFrom,
-	reportFrom,
 	reviewStatusFrom,
 	ruleFrom,
 	rulesetFrom,
-	sessionFrom,
 	surfaceFrom,
 	targetUrlFrom,
 	termFrom,
 	tooLargeFrom,
 	unknownFormatFrom,
+	usageFrom,
 	verdictFrom,
 	violationFrom,
 	workdirFrom,
+	workflowFrom,
 } from "./factory.ts";
 import { isMinted } from "./mint.ts";
 
@@ -43,6 +46,10 @@ it("a probe is minted", () => {
 	assert.equal(isMinted(probeFrom()), true);
 });
 
+it("probes are minted", () => {
+	assert.equal(isMinted(probesFrom()), true);
+});
+
 it("a rule is minted", () => {
 	assert.equal(isMinted(ruleFrom()), true);
 });
@@ -59,16 +66,24 @@ it("a definition is minted", () => {
 	assert.equal(isMinted(definitionFrom()), true);
 });
 
-it("instructions are minted", () => {
-	assert.equal(isMinted(instructionsFrom()), true);
+it("a workflow is minted", () => {
+	assert.equal(isMinted(workflowFrom()), true);
 });
 
-it("a session is minted", () => {
-	assert.equal(isMinted(sessionFrom()), true);
+it("a context is minted", () => {
+	assert.equal(isMinted(contextFrom()), true);
 });
 
-it("a report is minted", () => {
-	assert.equal(isMinted(reportFrom()), true);
+it("a usage is minted", () => {
+	assert.equal(isMinted(usageFrom()), true);
+});
+
+it("an acknowledgement request is minted", () => {
+	assert.equal(isMinted(acknowledgementRequestFrom()), true);
+});
+
+it("an acknowledgement is minted", () => {
+	assert.equal(isMinted(acknowledgementFrom()), true);
 });
 
 it("a verdict is minted", () => {
@@ -85,6 +100,14 @@ it("an outcome is minted", () => {
 
 it("a review status is minted", () => {
 	assert.equal(isMinted(reviewStatusFrom()), true);
+});
+
+it("a progress is minted", () => {
+	assert.equal(isMinted(progressFrom()), true);
+});
+
+it("a not started is minted", () => {
+	assert.equal(isMinted(notStartedFrom()), true);
 });
 
 it("a no review is minted", () => {
@@ -109,12 +132,4 @@ it("a refused is minted", () => {
 
 it("a host error is minted", () => {
 	assert.equal(isMinted(hostErrorFrom()), true);
-});
-
-it("a model is minted", () => {
-	assert.equal(isMinted(modelFrom()), true);
-});
-
-it("a not started is minted", () => {
-	assert.equal(isMinted(notStartedFrom()), true);
 });

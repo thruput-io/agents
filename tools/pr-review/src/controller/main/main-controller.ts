@@ -1,10 +1,9 @@
 import { Effect } from "effect";
 import type {
-	Model,
 	NoReview,
 	NotStarted,
+	Probes,
 	ReviewStatus,
-	Session,
 	TargetUrl,
 	Workdir,
 } from "../../domain/domain.ts";
@@ -33,22 +32,23 @@ class MainController {
 	prepare(
 		url: TargetUrl,
 		workdir: Workdir,
-		model: Model,
-	): Effect.Effect<Session, NotReviewable | NotStarted> {
+		probes: Probes,
+	): Effect.Effect<ReviewStatus, NotReviewable | NotStarted> {
 		return this.#host.getChange(url).pipe(
-			Effect.map((change) => change.review()),
-			Effect.flatMap((ledger) =>
+			Effect.map((change) => change.review(probes)),
+			Effect.flatMap((review) =>
 				this.#store
-					.save(workdir, ledger)
-					.pipe(Effect.flatMap(() => ledger.spawnedBy(this.#agent, model))),
+					.save(workdir, review)
+					.pipe(Effect.flatMap(() => review.spawnedBy(this.#agent))),
 			),
+			Effect.map((review) => review.status()),
 		);
 	}
 
 	status(workdir: Workdir): Effect.Effect<ReviewStatus, NoReview> {
 		return this.#store
 			.inWorkdir(workdir)
-			.pipe(Effect.map((ledger) => ledger.status()));
+			.pipe(Effect.map((review) => review.status()));
 	}
 }
 

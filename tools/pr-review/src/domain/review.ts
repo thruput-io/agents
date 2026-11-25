@@ -1,34 +1,47 @@
 import type { Effect } from "effect";
 import type {
+	Acknowledgement,
+	AcknowledgementRequest,
 	AlreadyReviewed,
+	Context,
 	Definition,
 	HostError,
-	Instructions,
-	Model,
 	NoReview,
 	NotStarted,
 	Outcome,
 	Probe,
+	Probes,
+	Progress,
 	Refused,
-	Report,
 	ReviewStatus,
 	Ruleset,
-	Session,
 	Surface,
 	TargetUrl,
 	Term,
 	TooLarge,
 	UnknownFormat,
+	Usage,
+	Verdict,
 	Workdir,
+	Workflow,
 } from "./domain.ts";
 import type {
 	assignmentMark,
 	briefingMark,
 	changeMark,
-	completeLedgerMark,
+	completeReviewMark,
 	cursorMark,
-	pendingLedgerMark,
+	instructionsMark,
+	pendingReviewMark,
 } from "./mark.ts";
+
+interface Instructions {
+	readonly [instructionsMark]: typeof instructionsMark;
+	workflow: () => Workflow;
+	context: () => Context;
+	usage: () => Usage;
+	request: () => AcknowledgementRequest;
+}
 
 interface Briefing {
 	readonly [briefingMark]: typeof briefingMark;
@@ -47,30 +60,32 @@ interface Assignment {
 	readonly [assignmentMark]: typeof assignmentMark;
 	briefing: () => Briefing;
 	cursor: () => Cursor;
-	acknowledged: () => Ledger;
-	recorded: (report: Report) => Ledger;
+	accepted: (
+		acknowledgement: Acknowledgement,
+	) => Effect.Effect<Acknowledgement, Instructions>;
+	progress: () => Progress;
 }
 
 interface Reviewing {
 	status: () => ReviewStatus;
-	assignmentOf: (probe: Probe) => Assignment;
-	submittedTo: (host: Host) => Effect.Effect<Ledger, HostError>;
+	submittedTo: (host: Host) => Effect.Effect<Review, HostError>;
+	dismissedBy: (agent: Agent) => Effect.Effect<Review>;
 }
 
-interface PendingLedger extends Reviewing {
-	readonly [pendingLedgerMark]: typeof pendingLedgerMark;
-	spawnedBy: (agent: Agent, model: Model) => Effect.Effect<Session, NotStarted>;
+interface PendingReview extends Reviewing {
+	readonly [pendingReviewMark]: typeof pendingReviewMark;
+	spawnedBy: (agent: Agent) => Effect.Effect<PendingReview, NotStarted>;
 }
 
-interface CompleteLedger extends Reviewing {
-	readonly [completeLedgerMark]: typeof completeLedgerMark;
+interface CompleteReview extends Reviewing {
+	readonly [completeReviewMark]: typeof completeReviewMark;
 }
 
-type Ledger = PendingLedger | CompleteLedger;
+type Review = PendingReview | CompleteReview;
 
 interface Change {
 	readonly [changeMark]: typeof changeMark;
-	review: () => PendingLedger;
+	review: (probes: Probes) => PendingReview;
 }
 
 type NotReviewable =
@@ -80,27 +95,23 @@ type NotReviewable =
 	| Refused
 	| HostError;
 
+type Entry = Acknowledgement | Verdict | HostError;
+
 interface Host {
 	getChange: (url: TargetUrl) => Effect.Effect<Change, NotReviewable>;
 	post: (url: TargetUrl, outcome: Outcome) => Effect.Effect<Outcome, HostError>;
 }
 
-interface Agent {
-	spawn: (
-		assignment: Assignment,
-		model: Model,
-	) => Effect.Effect<Assignment, NotStarted>;
-	terminate: (assignment: Assignment) => Effect.Effect<Assignment>;
+interface ReviewStore {
+	save: (workdir: Workdir, review: Review) => Effect.Effect<Review>;
+	inWorkdir: (workdir: Workdir) => Effect.Effect<Review, NoReview>;
+	ofProbe: (probe: Probe) => Effect.Effect<Assignment, NoReview>;
+	append: (probe: Probe, entry: Entry) => Effect.Effect<Review, NoReview>;
 }
 
-interface ReviewStore {
-	save: (workdir: Workdir, ledger: Ledger) => Effect.Effect<Ledger>;
-	inWorkdir: (workdir: Workdir) => Effect.Effect<Ledger, NoReview>;
-	ofSession: (session: Session) => Effect.Effect<Ledger, NoReview>;
-	replace: (
-		session: Session,
-		ledger: Ledger,
-	) => Effect.Effect<Ledger, NoReview>;
+interface Agent {
+	spawn: (assignment: Assignment) => Effect.Effect<Assignment, NotStarted>;
+	terminate: (assignment: Assignment) => Effect.Effect<Assignment>;
 }
 
 export type {
@@ -108,11 +119,12 @@ export type {
 	Assignment,
 	Briefing,
 	Change,
-	CompleteLedger,
+	CompleteReview,
 	Cursor,
+	Entry,
 	Host,
-	Ledger,
+	Instructions,
 	NotReviewable,
-	PendingLedger,
+	PendingReview,
 	ReviewStore,
 };

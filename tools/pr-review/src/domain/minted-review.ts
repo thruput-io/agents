@@ -1,22 +1,26 @@
 import { Effect } from "effect";
-import type { Model } from "./domain.ts";
+import type { Acknowledgement } from "./domain.ts";
 import {
+	acknowledgementRequestFrom,
+	contextFrom,
 	definitionFrom,
-	instructionsFrom,
 	outcomeFrom,
+	progressFrom,
 	reviewStatusFrom,
 	rulesetFrom,
-	sessionFrom,
 	surfaceFrom,
 	targetUrlFrom,
+	usageFrom,
+	workflowFrom,
 } from "./factory.ts";
 import {
 	assignmentMark,
 	briefingMark,
 	changeMark,
-	completeLedgerMark,
+	completeReviewMark,
 	cursorMark,
-	pendingLedgerMark,
+	instructionsMark,
+	pendingReviewMark,
 } from "./mark.ts";
 import { mint } from "./mint.ts";
 import type {
@@ -24,11 +28,21 @@ import type {
 	Assignment,
 	Briefing,
 	Change,
-	CompleteLedger,
+	CompleteReview,
 	Cursor,
 	Host,
-	PendingLedger,
+	Instructions,
+	PendingReview,
 } from "./review.ts";
+
+const instructionsFrom = (): Instructions =>
+	mint({
+		[instructionsMark]: instructionsMark,
+		workflow: () => workflowFrom(),
+		context: () => contextFrom(),
+		usage: () => usageFrom(),
+		request: () => acknowledgementRequestFrom(),
+	});
 
 const briefingFrom = (): Briefing =>
 	mint({
@@ -45,43 +59,44 @@ const cursorFrom = (): Cursor =>
 		previous: () => surfaceFrom(),
 	});
 
-function assignmentFrom(): Assignment {
-	return mint({
+const assignmentFrom = (): Assignment =>
+	mint({
 		[assignmentMark]: assignmentMark,
 		briefing: () => briefingFrom(),
 		cursor: () => cursorFrom(),
-		acknowledged: () => pendingLedgerFrom(),
-		recorded: () => completeLedgerFrom(),
+		accepted: (acknowledgement: Acknowledgement) =>
+			Effect.succeed(acknowledgement),
+		progress: () => progressFrom(),
+	});
+
+function pendingReviewFrom(): PendingReview {
+	return mint({
+		[pendingReviewMark]: pendingReviewMark,
+		status: () => reviewStatusFrom(),
+		submittedTo: () => Effect.succeed(pendingReviewFrom()),
+		dismissedBy: () => Effect.succeed(pendingReviewFrom()),
+		spawnedBy: (agent: Agent) =>
+			Effect.map(agent.spawn(assignmentFrom()), () => pendingReviewFrom()),
 	});
 }
 
-function pendingLedgerFrom(): PendingLedger {
+function completeReviewFrom(): CompleteReview {
 	return mint({
-		[pendingLedgerMark]: pendingLedgerMark,
-		spawnedBy: (agent: Agent, model: Model) =>
-			Effect.map(agent.spawn(assignmentFrom(), model), () => sessionFrom()),
+		[completeReviewMark]: completeReviewMark,
 		status: () => reviewStatusFrom(),
-		assignmentOf: () => assignmentFrom(),
-		submittedTo: () => Effect.succeed(pendingLedgerFrom()),
-	});
-}
-
-function completeLedgerFrom(): CompleteLedger {
-	return mint({
-		[completeLedgerMark]: completeLedgerMark,
-		status: () => reviewStatusFrom(),
-		assignmentOf: () => assignmentFrom(),
 		submittedTo: (host: Host) =>
 			Effect.map(host.post(targetUrlFrom(), outcomeFrom()), () =>
-				completeLedgerFrom(),
+				completeReviewFrom(),
 			),
+		dismissedBy: (agent: Agent) =>
+			Effect.map(agent.terminate(assignmentFrom()), () => completeReviewFrom()),
 	});
 }
 
 const changeFrom = (): Change =>
 	mint({
 		[changeMark]: changeMark,
-		review: () => pendingLedgerFrom(),
+		review: () => pendingReviewFrom(),
 	});
 
-export { changeFrom, completeLedgerFrom, pendingLedgerFrom };
+export { assignmentFrom, changeFrom, completeReviewFrom, pendingReviewFrom };
