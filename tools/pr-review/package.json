@@ -8,7 +8,7 @@
 		"knip": "knip && knip --strict",
 		"lint": "biome check --error-on-warnings",
 		"typecheck": "tsc --noEmit",
-		"test": "node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-branches=90 --test-coverage-exclude='src/**/*.test.ts' 'src/**/*.test.ts'",
+		"test": "c8 --all --src src --include 'src/**/*.ts' --exclude 'src/**/*.test.ts' --exclude 'src/generated/**' --exclude 'src/mock-server/**' --check-coverage --lines 90 --branches 90 --reporter text node --test 'src/**/*.test.ts'",
 		"verify": "npm run generate && npm run build && npm run knip && npm run lint && npm run typecheck && npm test"
 	},
 	"devDependencies": {
@@ -17,6 +17,7 @@
 		"@tsconfig/strictest": "2.0.8",
 		"@types/node": "24.19.2",
 		"archunit": "2.5.5",
+		"c8": "12.0.0",
 		"esbuild": "0.28.2",
 		"json-schema-to-zod": "2.8.1",
 		"knip": "6.43.0",
