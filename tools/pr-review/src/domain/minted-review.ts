@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { Acknowledgement } from "./domain.ts";
+import type { Acknowledgement, TargetUrl } from "./domain.ts";
 import {
 	acknowledgementRequestFrom,
 	contextFrom,
@@ -9,7 +9,6 @@ import {
 	reviewStatusFrom,
 	rulesetFrom,
 	surfaceFrom,
-	targetUrlFrom,
 	usageFrom,
 	workflowFrom,
 } from "./factory.ts";
@@ -80,16 +79,16 @@ function pendingReviewFrom(): PendingReview {
 	});
 }
 
-function completeReviewFrom(): CompleteReview {
+function completeReviewFrom(url: TargetUrl): CompleteReview {
 	return mint({
 		[completeReviewMark]: completeReviewMark,
 		status: () => reviewStatusFrom(),
 		submittedTo: (host: Host) =>
-			Effect.map(host.post(targetUrlFrom(), outcomeFrom()), () =>
-				completeReviewFrom(),
-			),
+			Effect.map(host.post(url, outcomeFrom()), () => completeReviewFrom(url)),
 		dismissedBy: (agent: Agent) =>
-			Effect.map(agent.terminate(assignmentFrom()), () => completeReviewFrom()),
+			Effect.map(agent.terminate(assignmentFrom()), () =>
+				completeReviewFrom(url),
+			),
 	});
 }
 

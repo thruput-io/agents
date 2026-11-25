@@ -3,11 +3,13 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
+		"generate": "node scripts/generate.ts",
+		"build": "esbuild src/client/main/review-tool.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=dist/bin/review-tool.mjs",
 		"knip": "knip && knip --strict",
 		"lint": "biome check --error-on-warnings",
 		"typecheck": "tsc --noEmit",
 		"test": "node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-branches=90 --test-coverage-exclude='src/**/*.test.ts' 'src/**/*.test.ts'",
-		"verify": "npm run knip && npm run lint && npm run typecheck && npm test"
+		"verify": "npm run generate && npm run build && npm run knip && npm run lint && npm run typecheck && npm test"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.6.4",
@@ -15,10 +17,16 @@
 		"@tsconfig/strictest": "2.0.8",
 		"@types/node": "24.19.2",
 		"archunit": "2.5.5",
+		"esbuild": "0.28.2",
+		"json-schema-to-zod": "2.8.1",
 		"knip": "6.43.0",
 		"typescript": "7.0.2"
 	},
 	"dependencies": {
-		"effect": "4.1.5"
+		"effect": "4.1.5",
+		"zod": "4.6.7"
+	},
+	"allowScripts": {
+		"esbuild": true
 	}
 }

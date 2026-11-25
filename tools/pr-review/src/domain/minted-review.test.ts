@@ -7,6 +7,7 @@ import {
 	notStartedFrom,
 	outcomeFrom,
 	probesFrom,
+	targetUrlFrom,
 	termFrom,
 } from "./factory.ts";
 import {
@@ -33,6 +34,8 @@ import {
 } from "./minted-review.ts";
 import type { Agent, Host } from "./review.ts";
 
+const url = targetUrlFrom("https://host.test/change");
+
 const host: Host = {
 	getChange: () => Effect.succeed(changeFrom()),
 	post: () => Effect.succeed(outcomeFrom()),
@@ -51,7 +54,7 @@ it("a change is reviewed with probes in a pending review", () => {
 
 it("a review states its status", () => {
 	assert.equal(
-		completeReviewFrom().status()[reviewStatusMark],
+		completeReviewFrom(url).status()[reviewStatusMark],
 		reviewStatusMark,
 	);
 });
@@ -78,7 +81,7 @@ it("a pending review is submitted to no host", () => {
 });
 
 it("a complete review is posted and stays complete", () => {
-	const review = Effect.runSync(completeReviewFrom().submittedTo(host));
+	const review = Effect.runSync(completeReviewFrom(url).submittedTo(host));
 
 	assert.equal(completeReviewMark in review, true);
 });
@@ -86,7 +89,7 @@ it("a complete review is posted and stays complete", () => {
 it("a complete review fails with the error of the host", () => {
 	const hostError = hostErrorFrom();
 	const refusing: Host = { ...host, post: () => Effect.fail(hostError) };
-	const submitted = completeReviewFrom().submittedTo(refusing);
+	const submitted = completeReviewFrom(url).submittedTo(refusing);
 
 	assert.equal(Effect.runSync(Effect.flip(submitted)), hostError);
 });
@@ -98,7 +101,7 @@ it("a pending review dismissed by an agent stays pending", () => {
 });
 
 it("a complete review dismissed by an agent stays complete", () => {
-	const review = Effect.runSync(completeReviewFrom().dismissedBy(agent));
+	const review = Effect.runSync(completeReviewFrom(url).dismissedBy(agent));
 
 	assert.equal(completeReviewMark in review, true);
 });

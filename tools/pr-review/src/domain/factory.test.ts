@@ -31,11 +31,11 @@ import {
 import { isMinted } from "./mint.ts";
 
 it("a target URL is minted", () => {
-	assert.equal(isMinted(targetUrlFrom()), true);
+	assert.equal(isMinted(targetUrlFrom("https://host.test/change")), true);
 });
 
 it("a workdir is minted", () => {
-	assert.equal(isMinted(workdirFrom()), true);
+	assert.equal(isMinted(workdirFrom("/work")), true);
 });
 
 it("a surface is minted", () => {

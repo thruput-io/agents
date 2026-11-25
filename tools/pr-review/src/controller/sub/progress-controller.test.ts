@@ -7,6 +7,7 @@ import {
 	outcomeFrom,
 	probeFrom,
 	progressFrom,
+	targetUrlFrom,
 	verdictFrom,
 } from "../../domain/factory.ts";
 import {
@@ -23,6 +24,8 @@ import type {
 } from "../../domain/review.ts";
 import { ProgressController } from "./progress-controller.ts";
 
+const url = targetUrlFrom("https://host.test/change");
+
 const progress = progressFrom();
 const assignment: Assignment = {
 	...assignmentFrom(),
@@ -36,14 +39,14 @@ const host: Host = {
 };
 
 const store: ReviewStore = {
-	save: () => Effect.succeed(completeReviewFrom()),
-	inWorkdir: () => Effect.succeed(completeReviewFrom()),
+	save: () => Effect.succeed(completeReviewFrom(url)),
+	inWorkdir: () => Effect.succeed(completeReviewFrom(url)),
 	ofProbe: () => Effect.succeed(assignment),
 	append: (_probe, entry) =>
 		Effect.sync(() => {
 			appended.push(entry);
 
-			return completeReviewFrom();
+			return completeReviewFrom(url);
 		}),
 };
 

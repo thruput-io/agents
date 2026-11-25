@@ -56,9 +56,11 @@ import {
 } from "./mark.ts";
 import { mint } from "./mint.ts";
 
-const targetUrlFrom = (): TargetUrl => mint({ [targetUrlMark]: targetUrlMark });
+const targetUrlFrom = (text: string): TargetUrl =>
+	mint({ text, [targetUrlMark]: targetUrlMark });
 
-const workdirFrom = (): Workdir => mint({ [workdirMark]: workdirMark });
+const workdirFrom = (text: string): Workdir =>
+	mint({ text, [workdirMark]: workdirMark });
 
 const surfaceFrom = (): Surface => mint({ [surfaceMark]: surfaceMark });
 

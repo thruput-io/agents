@@ -21,8 +21,14 @@ import type {
 } from "../../domain/review.ts";
 import { MainController } from "./main-controller.ts";
 
+const url = targetUrlFrom("https://host.test/change");
+const workdir = workdirFrom("/work");
+
 const status = reviewStatusFrom();
-const stored: PendingReview = { ...pendingReviewFrom(), status: () => status };
+const stored: PendingReview = {
+	...pendingReviewFrom(),
+	status: () => status,
+};
 const reviewed: Change = {
 	...changeFrom(),
 	review: () => ({ ...stored, spawnedBy: () => Effect.succeed(stored) }),
@@ -47,11 +53,7 @@ const agent: Agent = {
 
 it("prepare answers the status of the review its sub agents were spawned for", () => {
 	const controller = MainController.over(host, store, agent);
-	const prepared = controller.prepare(
-		targetUrlFrom(),
-		workdirFrom(),
-		probesFrom(),
-	);
+	const prepared = controller.prepare(url, workdir, probesFrom());
 
 	assert.equal(Effect.runSync(prepared), status);
 });
@@ -63,11 +65,7 @@ it("prepare fails with what the host answers", () => {
 		getChange: () => Effect.fail(unknownFormat),
 	};
 	const controller = MainController.over(refusing, store, agent);
-	const prepared = controller.prepare(
-		targetUrlFrom(),
-		workdirFrom(),
-		probesFrom(),
-	);
+	const prepared = controller.prepare(url, workdir, probesFrom());
 
 	assert.equal(Effect.runSync(Effect.flip(prepared)), unknownFormat);
 });
@@ -83,11 +81,7 @@ it("prepare fails when a sub agent is not started", () => {
 		getChange: () => Effect.succeed(unspawned),
 	};
 	const controller = MainController.over(stalling, store, agent);
-	const prepared = controller.prepare(
-		targetUrlFrom(),
-		workdirFrom(),
-		probesFrom(),
-	);
+	const prepared = controller.prepare(url, workdir, probesFrom());
 
 	assert.equal(Effect.runSync(Effect.flip(prepared)), notStarted);
 });
@@ -95,7 +89,7 @@ it("prepare fails when a sub agent is not started", () => {
 it("status answers the status of the stored review", () => {
 	const controller = MainController.over(host, store, agent);
 
-	assert.equal(Effect.runSync(controller.status(workdirFrom())), status);
+	assert.equal(Effect.runSync(controller.status(workdir)), status);
 });
 
 it("status fails when the workdir holds no review", () => {
@@ -107,7 +101,7 @@ it("status fails when the workdir holds no review", () => {
 	const controller = MainController.over(host, empty, agent);
 
 	assert.equal(
-		Effect.runSync(Effect.flip(controller.status(workdirFrom()))),
+		Effect.runSync(Effect.flip(controller.status(workdir))),
 		noReview,
 	);
 });

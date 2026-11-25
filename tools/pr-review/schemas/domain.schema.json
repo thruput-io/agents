@@ -1,0 +1,21 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "Domain",
+	"description": "The data of the domain values of the review tool, the source their zod schemas are generated from",
+	"$defs": {
+		"TargetUrl": {
+			"description": "The address of the change to review",
+			"type": "string",
+			"minLength": 1
+		},
+		"Workdir": {
+			"description": "The directory a review is kept in",
+			"type": "string",
+			"minLength": 1
+		},
+		"ReviewStatus": {
+			"description": "How a review stands",
+			"type": "object"
+		}
+	}
+}
