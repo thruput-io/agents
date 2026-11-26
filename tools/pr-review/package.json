@@ -4,7 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"generate": "node scripts/generate.ts",
-		"build": "esbuild src/client/main/review-tool.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=dist/bin/review-tool.mjs && esbuild src/client/sub/review-tool-probe.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=dist/bin/review-tool-probe.mjs",
+		"build": "esbuild src/client/main/review-tool.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=../../skills/pr-review/dist/bin/review-tool.mjs && esbuild src/client/sub/review-tool-probe.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=../../skills/pr-review/dist/bin/review-tool-probe.mjs",
 		"unused:anywhere": "knip",
 		"unused:production": "knip --strict",
 		"lint": "biome check --error-on-warnings",

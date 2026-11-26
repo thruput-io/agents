@@ -13,8 +13,8 @@ git -C "$PROJECT_ROOT" ls-files -z '*.sh' | xargs -0 -I{} shellcheck "$PROJECT_R
 "${jsonschema[@]}" validate "$PROJECT_ROOT/schemas/governance/principles.schema.json" "$PROJECT_ROOT/skills/pr-review/rules/Principles.yaml" --resolve "$PROJECT_ROOT/schemas"
 "${jsonschema[@]}" validate "$PROJECT_ROOT/schemas/governance/definitions.schema.json" "$PROJECT_ROOT/skills/pr-review/rules/Definitions.yaml" --resolve "$PROJECT_ROOT/schemas"
 
-npm --prefix "$PROJECT_ROOT/skills/pr-review" ci --no-audit --no-fund
-npm --prefix "$PROJECT_ROOT/skills/pr-review" run verify
+npm --prefix "$PROJECT_ROOT/tools/pr-review" ci --no-audit --no-fund
+npm --prefix "$PROJECT_ROOT/tools/pr-review" run verify
 npx --yes @agentplugins/cli@0.6.1 audit "$PROJECT_ROOT"
 
 "$PROJECT_ROOT/skills/pr-review/dist/bin/review-tool.mjs" -h
