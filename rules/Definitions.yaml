@@ -108,7 +108,7 @@ definitions:
     A choice left open in a value or parameter, such as whether it is present at all.
 - id: Setter
   specification: |
-    An operation that assigns a new value to a field of an existing [[Instance]], bypassing its [[Validating path of creation]].
+    An operation that assigns a new value to a field of an existing [[Instance]].
 - id: Immutable
   specification: |
     Unable to change state after creation; any update produces a new [[Instance]] through the [[Validating path of creation]].
@@ -176,7 +176,7 @@ definitions:
   - Manual test
 - id: Type system
   specification: |
-    Preventing a defect at compile time by choosing a [[Type]] in which an [[Illegal state]] cannot be constructed.
+    The set of rules in a language that assigns a [[Type]] to every construct and verifies how they compose.
 - id: Static code analysis
   specification: |
     Catching a defect by analysing the code before it runs, with a linter or another static tool.
@@ -342,7 +342,7 @@ definitions:
     The property that [[External dependency]] versions stay current and easily updated.
 - id: Comment intent
   specification: |
-    A reason prose is written as a comment in code. Every comment intent is replaced by a durable, verifiable mechanism, leaving only [[Machine-read comment]]s exempt.
+    A reason prose is written as a comment in source code.
   closedEnumerationOf:
   - Clarification
   - Procrastination
@@ -351,19 +351,19 @@ definitions:
   - Apology or confession
 - id: Clarification
   specification: |
-    Explaining intent in code, replaced by intent-revealing names, focused [[Function]]s, or [[Test]]s.
+    Explaining the intent or behavior of code.
 - id: Procrastination
   specification: |
-    Deferring work via a marker, replaced by a [[Failing test]], smaller [[Change]]s, or an explicit plan document.
+    Deferring unfinished work in code, such as with a TODO marker.
 - id: Architectural decision
   specification: |
-    Recording a design choice, replaced by an [[Architectural Direction]] record under `docs/adrs/`.
+    A design choice that shapes the structure or direction of the system.
 - id: Usage guidance
   specification: |
-    Explaining how to use code, replaced by user documentation or a README.
+    Instructions explaining how to invoke, configure, or operate a [[Component]] or system.
 - id: Apology or confession
   specification: |
-    Apologizing for or confessing weak code, replaced by fixing the underlying design flaw or pinning the limitation with a [[Failing test]].
+    Acknowledging or excusing a known defect, limitation, or design flaw in code.
 - id: User
   specification: |
     Alias for [[Users]].
@@ -402,13 +402,13 @@ definitions:
     Alias for [[Developer]].
 - id: Practitioner
   specification: |
-    A human [[Developer]] applying a tool, method, or [[Coding standard]] whose competence the tool multiplies.
+    A human [[Developer]] applying a tool, method, or [[Coding standard]], whose competence or incompetence the tool multiplies.
 - id: Signal
   specification: |
     A log line, metric, or alert that shows a behaviour working in production.
 - id: Runtime check
   specification: |
-    A check executed while the program runs for a condition that the [[Type system]] or [[Static code analysis]] can reject beforehand.
+    A check on a value or condition executed while the program runs.
 - id: Foreign shape
   specification: |
     The form in which [[Code We Cannot Control]] represents a value.
@@ -417,7 +417,7 @@ definitions:
     The existing code a [[Change]] sits among, whose conventions govern choices undecided by a [[Demonstrable standard]].
 - id: Competing good
   specification: |
-    A good commonly offered in exchange for a [[Software quality axis]], which loses to the axis when the two collide.
+    A desirable property that is often traded against a [[Software quality axis]].
   closedEnumerationOf:
   - Feature Rich
   - Performance
@@ -427,23 +427,23 @@ definitions:
   - Measured Coverage
 - id: Feature Rich
   specification: |
-    Carrying many capabilities in one system or [[External dependency]], which challenges [[Correctness]] and [[Currency of Tools and Libraries]].
+    Providing an extensive set of capabilities or options within a single system or [[External dependency]].
 - id: Performance
   specification: |
-    A system that is perceived as fast by [[Users]]. Challenges [[Maintainability]].
+    The responsiveness, throughput, and resource efficiency of a system under a given workload.
 - id: Well documented
   specification: |
-    Human-readable artifacts that quickly explain the system to [[Developer]]s. Challenges [[Readability]], [[Automation]], and [[Guardrails Against Doing the Wrong Thing]].
+    Accompanied by human-readable prose that explains how the system is built, configured, or operated.
 - id: User Friendly
   specification: |
-    An [[Interface]] a person operates with minimal effort, which challenges [[Testability]].
+    Designed for effortless human interaction, typically through a graphical user [[Interface]].
 - id: Industry Standard
   specification: |
     A technical standard or set of guidelines established by consensus and adopted across the software development
     industry, unless another industry is explicitly stated.
 - id: Measured Coverage
   specification: |
-    [[Code coverage]] treated as a target: a measure of execution, not of checking. Challenges [[True Test Coverage]].
+    The quantified percentage of [[Code coverage]] reported by a tool during [[Test]] execution.
 - id: Change
   specification: |
     A set of edits to the code base proposed or merged as one unit, such as a commit or a [[Pull request]].
@@ -464,7 +464,7 @@ definitions:
     One concrete value constructed from a [[Type]].
 - id: Factory
   specification: |
-    A named [[Function]] that creates [[Instance]]s of a [[Type]] and returns invalid input as a value in its [[Signature]] rather than throwing an [[Exception]].
+    A named [[Function]] or method that creates and returns [[Instance]]s of a [[Type]].
 - id: Invariant
   specification: |
     A condition that holds true for every [[Instance]] of a [[Type]] from creation onward.
@@ -491,7 +491,7 @@ definitions:
     A [[Type]] with a fixed, named set of values.
 - id: Pure enum
   specification: |
-    An [[Enum]] that carries only labels or scalar values without [[Domain method]]s of its own, forcing callers to use [[Branching]] on its cases.
+    An [[Enum]] that carries only labels or scalar values without [[Domain method]]s of its own.
 - id: Inheritance
   specification: |
     Defining specialized subtypes that fulfill a shared base [[Type]] or [[Interface]] so each subtype supplies its own behavior.
@@ -515,7 +515,7 @@ definitions:
     An operation defined on a [[Domain object]] that expresses a business action in domain terms.
 - id: Raw collection
   specification: |
-    A plain list, set, or map exposed directly so callers can mutate it without going through its owning [[Domain object]].
+    A plain list, set, or map not wrapped in an [[Encapsulated type]].
 - id: Primitive
   specification: |
     A built-in scalar, literal, or general-purpose value [[Type]] (such as integers, strings, booleans, `Money`, or `Date`) that carries no domain-specific [[Invariant]]s.
@@ -628,7 +628,7 @@ definitions:
     A conditional switch that enables or disables a [[Feature]] at runtime without deploying a new [[Change]].
 - id: Builder
   specification: |
-    A construct that assembles a valid, [[Immutable]] [[Domain object]] step by step instead of taking [[Optional parameter]]s or [[Branching logic]].
+    A construct that assembles an [[Instance]] step by step before producing the final object.
 - id: In-memory operation
   specification: |
     Computation that executes entirely within process memory without [[Calls over the network]].

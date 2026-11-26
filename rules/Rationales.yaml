@@ -42,7 +42,7 @@ rationales:
 - id: Intent lives where it is checked
   parent: Single Source of Truth
   body: |
-    A comment is prose no tool checks, and it drifts from the code it describes. Knowledge placed where drift is caught stays true: a name appears at every call site, a [[Failing test]] turns unfinished work into a red build, an [[Architectural Direction]] record keeps the why of a design with its context. Michael Nygard's [Documenting Architecture Decisions](https://www.cognitect.com/blog/2011/11/15/documenting-architecture-decisions) shows the cost of losing that why: teams blindly accept a decision or blindly reverse it.
+    A comment is prose no tool checks, and it drifts from the code it describes. Every [[Comment intent]] belongs where drift is caught: [[Clarification]] in intent-revealing names, focused [[Function]]s, or [[Test]]s; [[Procrastination]] in a [[Failing test]], smaller [[Change]]s, or an explicit plan; [[Architectural decision]] in an [[Architectural Direction]] record under `docs/adrs/` (Michael Nygard, [Documenting Architecture Decisions](https://www.cognitect.com/blog/2011/11/15/documenting-architecture-decisions)); [[Usage guidance]] in user documentation or a README; and [[Apology or confession]] by fixing the design flaw or pinning the limitation with a [[Failing test]].
   solutions:
   - marker: SHOULD
     body: |
@@ -208,7 +208,7 @@ rationales:
 - id: What wins when values collide
   parent: Quality Uncompromised
   body: |
-    Each [[Software quality axis]] is challenged by a [[Competing good]], and when they collide the axis wins: [[Performance]] and [[Feature Rich]] are requirements within [[Correctness]] where specified, never credit traded against [[Maintainability]], [[Readability]], [[Testability]], [[Structural simplicity]], [[True Test Coverage]], or [[Guardrails Against Doing the Wrong Thing]].
+    Each [[Software quality axis]] is challenged by a [[Competing good]], and when they collide the axis wins: [[Correctness]] and [[Currency of Tools and Libraries]] over [[Feature Rich]]; [[Maintainability]] and [[Readability]] over [[Performance]]; [[Readability]], [[Automation]], and [[Guardrails Against Doing the Wrong Thing]] over [[Well documented]]; [[Testability]] and reproducible [[Automation]] over [[User Friendly]] graphical interfaces that resist automated testing and scripting; [[Structural simplicity]] over [[Industry Standard]]; and [[True Test Coverage]] over [[Measured Coverage]].
   solutions:
   - marker: SHOULD
     body: |
