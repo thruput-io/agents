@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import process from "node:process";
 import { Effect } from "effect";
 import { gitHost } from "../../adapters/git/git-host.ts";
 import { memoryStore } from "../../adapters/persistence/memory/memory-store.ts";

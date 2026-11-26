@@ -1,6 +1,7 @@
 import { createReadStream } from "node:fs";
 import { createServer } from "node:http";
 import { join } from "node:path";
+import process from "node:process";
 import { z } from "zod";
 
 const NOT_FOUND = 404;
