@@ -158,7 +158,7 @@ rules:
   group: Types
   parent: Parse, don't validate
   body: |
-    Return the invalid-input case from a [[Factory]] in its type [[Signature]] rather than throw an [[Exception]].
+    Return an [[Illegal state]] from a [[Factory]] in its type [[Signature]] rather than throw an [[Exception]].
 - id: Sum types
   marker: MUST
   group: Types
@@ -172,7 +172,7 @@ rules:
   body: |
     Model every legal domain state as a closed enumeration of [[Encapsulated type]]s with belonging [[Domain method]]s and possible transitions.
   smells:
-  - A boolean, free-form string, or [[Pure enum]] representing a domain state.
+  - A [[Primitive]] or [[Pure enum]] representing a domain state.
   - "[[Branching]] outside of a [[Perimeter]] fold."
 - id: Compile-time optionality
   marker: MUST
@@ -215,7 +215,7 @@ rules:
   group: Domain Model
   parent: Immutable by default
   body: |
-    Expose a [[Setter]] or any operation that changes a [[Domain object]] in place. A change returns a new [[Instance]] that passes the [[Validating path of creation]] again.
+    Expose a [[Setter]] or any operation that breaks [[Immutable]] on a [[Domain object]]. A change returns a new [[Instance]] that passes the [[Validating path of creation]] again.
   smells:
   - An exposed [[Setter]] or [[Raw collection]] on an [[Aggregate]].
 - id: Strong typing
@@ -229,7 +229,7 @@ rules:
   group: Domain Model
   parent: Make illegal states unrepresentable
   body: |
-    Access a [[Domain object]] only through methods that accept and return [[Domain object]]s, the [[Validating factory]] at the [[Perimeter]] excepted.
+    Access a [[Domain object]] only through methods that accept and return [[Domain object]]s, the [[Factory]] at the [[Perimeter]] excepted.
   smells:
   - A [[Primitive]] in the [[Interface]] of a [[Component]] outside of a [[Perimeter]].
 - id: Domain operations
@@ -243,7 +243,7 @@ rules:
   group: Domain Model
   parent: Replace conditional with polymorphism
   body: |
-    Use a [[Factory]] with [[Inheritance]], a [[Feature]], a [[Strategy]], or a [[Builder]] instead of a boolean or [[Pure enum]].
+    Use a [[Factory]] with [[Inheritance]], a [[Feature]], a [[Strategy]], or a [[Builder]] instead of a [[Primitive]] or [[Pure enum]].
   smells:
   - "[[Branching]] outside of a [[Perimeter]] fold."
 - id: Tell, don't ask
@@ -276,7 +276,7 @@ rules:
     Decompose code into small, single-purpose [[Component]]s.
   smells:
   - A [[Component]] longer than 200 lines.
-  - A [[Function]] or [[Public method]] with more than 3 parameters.
+  - A [[Function]] or [[Public method]] with more than 3 [[Parameter type]]s.
   - An [[Interface]] with more than 4 [[Public method]]s, not counting [[Overload]]s or convenience methods.
 - id: No primitive leakage
   marker: MUST
@@ -295,13 +295,13 @@ rules:
   group: Conventions
   parent: No Comments
   body: |
-    Comment any version-controlled artifact. Only a [[Machine-read comment]] is exempt.
+    Comment any [[Representation]]. Only a [[Machine-read comment]] is exempt.
 - id: No silent catch
   marker: MUST NOT
   group: Failure Handling
   parent: Fail fast
   body: |
-    Use [[Try/catch block]]s that do not [[Rethrow]] (silencing failures).
+    Use [[Try/catch block]]s that do not [[Rethrow]].
 - id: No default on failure
   marker: MUST NOT
   group: Failure Handling
@@ -319,7 +319,7 @@ rules:
   group: Failure Handling
   parent: Fail fast
   body: |
-    Discard or ignore a failed [[Exit status]], error return value, or faulted operation so that a failure passes as success.
+    Discard or ignore a failed [[Return value]] or faulted operation so that a failure passes as success.
 - id: No discarded diagnostics
   marker: MUST NOT
   group: Failure Handling
@@ -343,13 +343,13 @@ rules:
   group: Failure Handling
   parent: Fail fast
   body: |
-    Write test, build, or configuration code that contains [[Branching logic]] or fallback [[Default value]]s, such as, but not limited to, `if` [[Statement]]s, `switch`/`case` expressions, or defaulted values.
+    Write [[Verification code]], build, or configuration code that contains [[Branching logic]] or fallback [[Default value]]s.
 - id: No muted tests
   marker: MUST NOT
   group: Tests
   parent: Test-Driven Development
   body: |
-    Leave a [[Muted test]] or skip [[Test]]s.
+    Leave a [[Muted test]].
 - id: Assert values
   marker: MUST
   group: Tests
@@ -389,7 +389,7 @@ rules:
   group: Tests
   parent: No gray tests
   body: |
-    Include more than one [[Subject under test]] in a [[Unit test]], [[Narrow integration test]], or [[Integration test]], or test the composition of objects within a [[Unit test]] or a [[Narrow integration test]].
+    Include more than one [[Subject under test]] in a [[Unit test]], [[Narrow integration test]], or [[Integration test]], or test the composition of [[Component]]s within a [[Unit test]] or a [[Narrow integration test]].
 - id: No test case coupling
   marker: MUST NOT
   group: Tests
@@ -401,7 +401,7 @@ rules:
   group: Tests
   parent: No gray tests
   body: |
-    Test the shipped [[Runtime artifact]] through its public [[API]]s using [[Black-box testing]].
+    Test the shipped [[Runtime artifact]] using [[Black-box testing]].
 - id: Test setup leaves production code alone
   marker: MUST NOT
   group: Toolchain & Environment
@@ -427,13 +427,13 @@ rules:
   group: Test Pyramid
   parent: Push tests down the pyramid
   body: |
-    Write a [[Runtime check]] or a test for what the [[Type system]] can reject.
+    Write a [[Runtime check]] or a [[Test]] for what the [[Type system]] can reject.
 - id: No test a linter makes
   marker: MUST NOT
   group: Test Pyramid
   parent: Push tests down the pyramid
   body: |
-    Write a test for what [[Static code analysis]] can reject.
+    Write a [[Test]] for what [[Static code analysis]] can reject.
 - id: No narrow integration test for a unit
   marker: MUST NOT
   group: Test Pyramid
@@ -475,13 +475,13 @@ rules:
   group: Toolchain & Environment
   parent: The Toolchain Is the Guardrail
   body: |
-    [[Developers]] can base weeks of effort on the basis that tests and linting rules are operational. A non-operational [[Guardrails Against Doing the Wrong Thing]] may ruin such efforts and cause direct financial damage as well as legal. Report any spotted weakening of [[Guardrails Against Doing the Wrong Thing]] **on detection**—not later, never finishing a task before or delaying in any other way—and make sure via explicit confirmation from the human, as every [[Developer]]'s human or non-human responsibility.
+    [[Developers]] can base weeks of effort on the basis that [[Test]]s and [[Lint rule]]s are operational. A non-operational [[Guardrails Against Doing the Wrong Thing]] may ruin such efforts and cause direct financial damage as well as legal. Report any spotted weakening of [[Guardrails Against Doing the Wrong Thing]] **on detection**—not later, never finishing a task before or delaying in any other way—and make sure via explicit confirmation from the human, as every [[Developer]]'s responsibility.
 - id: No optionality
   marker: MUST NOT
   group: Contracts
   parent: Avoid optionality
   body: |
-    Use optional variables or [[Optional parameter]]s unless [[Code We Cannot Control]] forces them.
+    Use [[Optionality]] in variables or [[Optional parameter]]s unless [[Code We Cannot Control]] forces them.
 - id: Prefer APIs without optionality
   marker: MUST
   group: Contracts
@@ -526,7 +526,7 @@ rules:
   group: Conventions
   parent: Adoption is articulation
   body: |
-    Instruct an [[AI agent]] to follow a [[Coding standard]] that has no entry in these documents; add the entry and cite it.
+    Instruct an [[AI agent]] to follow a [[Coding standard]] that is not [[Defined]]; add the [[Id]] and cite it.
 - id: One-command setup
   marker: MUST
   group: Toolchain & Environment
@@ -538,7 +538,7 @@ rules:
   group: Toolchain & Environment
   parent: Infrastructure as Code
   body: |
-    Set up a test or production [[Environment]] with a manual step.
+    Set up a [[Test]] or production [[Environment]] with a manual step.
 - id: Twice is automated
   marker: MUST
   group: Toolchain & Environment

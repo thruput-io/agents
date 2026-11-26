@@ -540,9 +540,14 @@ definitions:
 - id: Fallback strategy
   specification: |
     A second way of doing the same work, tried when the first one fails.
+- id: Return value
+  specification: |
+    The outcome returned by a function, command, or process, including an error return or faulted task.
+  openEnumerationOf:
+  - Exit status
 - id: Exit status
   specification: |
-    The outcome returned by a process, command, or operation indicating whether it succeeded or failed, such as a process exit code, an error return value, or a faulted task.
+    The [[Return value]] of a process or command indicating whether it succeeded or failed, such as a process exit code.
 - id: Error output
   specification: |
     The separate output stream a program writes its error messages and diagnostics to.
@@ -563,7 +568,8 @@ definitions:
     One scenario within a test suite: a setup, an action, and the expected outcome.
 - id: Muted test
   specification: |
-    A test that is present but switched off, so it no longer runs or no longer fails the build.
+    A test that is present but switched off, not run by CI/CD [[Pull request]] checks, or whose failure does not block a
+    [[Pull request]].
 - id: Code coverage
   specification: |
     The share of the code that is executed while the tests run.
