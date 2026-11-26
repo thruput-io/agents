@@ -12,6 +12,8 @@ import type { NotAssigned } from "../../generated/domain/not-assigned.g.ts";
 import type { Probe } from "../../generated/domain/probe.g.ts";
 import type { Rule } from "../../generated/domain/rule.g.ts";
 
+const LATEST = -1;
+
 type Standing = Effect.Effect<readonly Rule[], NoReview | Instructions>;
 
 class ProgressController {
@@ -75,7 +77,7 @@ class ProgressController {
 					this.store.append(probe, assigned),
 			),
 			Effect.flatMap(
-				(review: Review): Effect.Effect<Review, NoReview> =>
+				(review: Review): Effect.Effect<readonly Review[], NoReview> =>
 					this.concluded(probe, review),
 			),
 			Effect.flatMap((): Standing => this.standing(probe)),
@@ -85,20 +87,23 @@ class ProgressController {
 	private concluded(
 		probe: Probe,
 		review: Review,
-	): Effect.Effect<Review, NoReview> {
+	): Effect.Effect<readonly Review[], NoReview> {
 		return review.posting(this.host).pipe(
 			Effect.flatMap(
-				(posts: readonly Post[]): Effect.Effect<Review, NoReview> =>
-					Effect.reduce(
+				(posts: readonly Post[]): Effect.Effect<readonly Review[], NoReview> =>
+					Effect.forEach(
 						posts,
-						(): Review => review,
-						(_latest: Review, post: Post): Effect.Effect<Review, NoReview> =>
+						(post: Post): Effect.Effect<Review, NoReview> =>
 							this.store.append(probe, post),
 					),
 			),
 			Effect.flatMap(
-				(latest: Review): Effect.Effect<Review> =>
-					latest.dismissedBy(this.agent),
+				(appended: readonly Review[]): Effect.Effect<readonly Review[]> =>
+					Effect.forEach(
+						[review, ...appended].slice(LATEST),
+						(latest: Review): Effect.Effect<Review> =>
+							latest.dismissedBy(this.agent),
+					),
 			),
 		);
 	}

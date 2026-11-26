@@ -1,0 +1,13 @@
+rules:
+  - id: no-serialization-in-domain
+    languages: [typescript]
+    severity: ERROR
+    message: "A domain or controller class does not serialize itself. Encode at the perimeter."
+    paths:
+      include:
+        - "**/src/domain/**"
+        - "**/src/controller/**"
+    pattern-either:
+      - pattern: "class $C { ... toJSON(...) { ... } ... }"
+      - pattern: "JSON.stringify(...)"
+      - pattern: "JSON.parse(...)"

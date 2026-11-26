@@ -1,0 +1,14 @@
+rules:
+  - id: no-ignored-parameter
+    languages: [typescript]
+    severity: ERROR
+    message: "Production code does not take an input it ignores. Use what is given or do not ask for it."
+    paths:
+      include:
+        - "**/src/**"
+      exclude:
+        - "**/*.test.ts"
+        - "**/*.test-support.ts"
+        - "**/*.narrow-test.ts"
+        - "**/src/generated/**"
+    pattern-regex: '[(,]\s*_[A-Za-z][A-Za-z0-9]*\s*[:,)]'

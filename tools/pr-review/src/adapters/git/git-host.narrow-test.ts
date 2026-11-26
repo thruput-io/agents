@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import process from "node:process";
 import { test as it } from "node:test";
 import { Effect } from "effect";
 import { Change } from "../../domain/change.ts";
@@ -8,7 +7,7 @@ import { TargetUrl } from "../../generated/domain/target-url.g.ts";
 import { gitBinary } from "./git-binary.ts";
 import { gitHostOver } from "./git-host.ts";
 
-const { MOCK_HOST: mockHost }: NodeJS.ProcessEnv = process.env;
+const mockHost = "http://localhost:8617";
 
 it("get change answers a change for a repository the host serves", async () => {
 	const url: TargetUrl = TargetUrl.codec.decode(`${mockHost}/first-review.git`);

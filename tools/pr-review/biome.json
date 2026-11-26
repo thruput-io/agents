@@ -49,16 +49,6 @@
 					}
 				}
 			}
-		},
-		{
-			"includes": ["src/**/*.narrow-test.ts"],
-			"linter": {
-				"rules": {
-					"style": {
-						"noProcessEnv": "off"
-					}
-				}
-			}
 		}
 	]
 }

@@ -12,4 +12,4 @@ server=$!
 trap 'kill "$server"' EXIT
 read -r <&3
 
-MOCK_HOST="http://localhost:$port" node --test "$tool/src/**/*.narrow-test.ts"
+node --test "$tool/src/**/*.narrow-test.ts"

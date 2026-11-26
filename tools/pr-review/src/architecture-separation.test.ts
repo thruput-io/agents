@@ -12,6 +12,11 @@ const MOCK_HOST = "{src/mock-server/**,src/generated/mock-server/**}";
 const INTEGRATION_TESTS =
 	"{src/integration-test/**,src/generated/integration-test/**}";
 
+const GENERATED_FILE = /\.g\.ts$/u;
+const NARROW_TEST = /\.narrow-test\.ts$/u;
+const TEST_SUPPORT = /\.test-support\.ts$/u;
+const TEST = /\.(?:test|test-support|narrow-test)\.ts$/u;
+
 const ENTRY_POINTS =
 	"{src/client/main/review-tool.ts,src/client/sub/review-tool-probe.ts}";
 
@@ -81,4 +86,41 @@ it("the integration tests depend only on themselves and their generated mirror",
 
 it("no other folder depends on the integration tests or their generated mirror", async () => {
 	assert.deepEqual(await othersNeverDependOn(INTEGRATION_TESTS), []);
+});
+
+it("generated files exist only in the generated folder", async () => {
+	const violations = await projectFiles(TSCONFIG_PATH)
+		.inPath(GENERATED_FILE, { except: { inPath: "src/generated/**" } })
+		.should()
+		.adhereTo(
+			(): boolean => false,
+			"A generated file belongs in the generated folder",
+		)
+		.check({ allowEmptyTests: true });
+
+	assert.deepEqual(violations, []);
+});
+
+it("narrow tests exist only beside adapters", async () => {
+	const violations = await projectFiles(TSCONFIG_PATH)
+		.inPath(NARROW_TEST, { except: { inPath: "src/adapters/**" } })
+		.should()
+		.adhereTo(
+			(): boolean => false,
+			"A narrow test tests an adapter and sits beside it",
+		)
+		.check({ allowEmptyTests: true });
+
+	assert.deepEqual(violations, []);
+});
+
+it("only tests depend on test support", async () => {
+	const violations = await projectFiles(TSCONFIG_PATH)
+		.inPath("src/**", { except: { inPath: TEST } })
+		.shouldNot()
+		.dependOnFiles()
+		.inPath(TEST_SUPPORT)
+		.check({ allowEmptyTests: true });
+
+	assert.deepEqual(violations, []);
 });

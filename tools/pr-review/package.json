@@ -8,7 +8,7 @@
 		"unused:anywhere": "knip",
 		"unused:production": "knip --strict",
 		"lint": "biome check --error-on-warnings",
-		"semgrep": "semgrep scan --error --metrics=off --config p/default --config https://thruput.se/semgrep/all.yaml .",
+		"semgrep": "semgrep scan --error --metrics=off --config p/default --config https://thruput.se/semgrep/all.yaml --config ../../semgrep/pr-review .",
 		"typecheck": "tsc --noEmit",
 		"test": "c8 --all --src src --include 'src/**/*.ts' --exclude 'src/**/*.test.ts' --exclude 'src/**/*.narrow-test.ts' --exclude 'src/**/*.test-support.ts' --exclude 'src/generated/**' --exclude 'src/mock-server/**' --check-coverage --lines 90 --branches 90 --reporter text node --test 'src/**/*.test.ts'",
 		"test:narrow": "PROJECT_ROOT=\"$PWD/../..\" scripts/narrow.sh",

@@ -1,0 +1,22 @@
+rules:
+  - id: parse-only-at-the-perimeter
+    languages: [typescript]
+    severity: ERROR
+    message: "Only the perimeter parses. Hand this layer a value that is already created."
+    paths:
+      include:
+        - "**/src/domain/**"
+        - "**/src/controller/**"
+        - "**/src/client/**"
+        - "**/src/adapters/**"
+      exclude:
+        - "**/*.test.ts"
+        - "**/*.test-support.ts"
+        - "**/*.narrow-test.ts"
+        - "**/src/generated/**"
+    pattern-either:
+      - pattern: "$X.codec.decode(...)"
+      - pattern: "$X.codec.parse(...)"
+      - pattern: "$X.codec.safeDecode(...)"
+      - pattern: "$X.parse(...)"
+      - pattern: "$X.safeParse(...)"
