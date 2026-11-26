@@ -298,7 +298,7 @@ rules:
   group: Failure Handling
   parent: Fail fast
   body: |
-    Use [[Try/catch block]]s that neither [[Rethrow]] nor fold the [[Exception]] into a failure [[Return value]] at the [[Perimeter]].
+    Use [[Try/catch block]]s that neither [[Rethrow]], fold the [[Exception]] into a failure [[Return value]] at the [[Perimeter]], nor trigger monitoring [[Function]]s.
 - id: No default on failure
   marker: MUST NOT
   group: Failure Handling
