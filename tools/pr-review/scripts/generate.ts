@@ -11,6 +11,8 @@ interface DomainDocument {
 	readonly $defs: Readonly<Record<string, ValueSchema>>;
 }
 
+const WORD_START = /(?<lower>[a-z])(?<upper>[A-Z])/gu;
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const generated = resolve(root, "src/generated");
 const target = resolve(generated, "domain");
@@ -21,50 +23,57 @@ mkdirSync(target, { recursive: true });
 const document: DomainDocument = JSON.parse(
 	readFileSync(resolve(root, "schemas/domain.schema.json"), "utf8"),
 );
-const values = Object.entries(document.$defs).map(([name, schema]) => ({
-	name,
-	schema,
-	mark: `${name.charAt(0).toLowerCase()}${name.slice(1)}Mark`,
-	factory: `${name.charAt(0).toLowerCase()}${name.slice(1)}From`,
-}));
 
-const factoryOf = {
-	string: (name: string, mark: string): string =>
-		`(text: string): ${name} => mint({ text, [${mark}]: ${mark} })`,
-	object: (name: string, mark: string): string =>
-		`(): ${name} => mint({ [${mark}]: ${mark} })`,
+const moduleOf = {
+	string: (name: string, schema: ValueSchema): string =>
+		[
+			'import { Effect } from "effect";',
+			'import { z } from "zod";',
+			'import { NotValid } from "./not-valid.g.ts";',
+			"",
+			`const schema = ${jsonSchemaToZod(schema, { zodVersion: 4 })};`,
+			"",
+			`export class ${name} {`,
+			"\treadonly #data: string;",
+			"\tprivate constructor(data: string) {",
+			"\t\tthis.#data = data;",
+			"\t\tObject.freeze(this);",
+			"\t}",
+			`\tstatic from(input: string): Effect.Effect<${name}, NotValid> {`,
+			"\t\tconst parsed = schema.safeParse(input);",
+			`\t\treturn parsed.success ? Effect.succeed(new ${name}(parsed.data)) : Effect.fail(NotValid.create());`,
+			"\t}",
+			`\tstatic dataOf(value: ${name}): string {`,
+			"\t\treturn value.#data;",
+			"\t}",
+			"}",
+			"",
+		].join("\n"),
+	object: (name: string): string =>
+		[
+			`export class ${name} {`,
+			"\treadonly #data: Readonly<Record<string, never>>;",
+			"\tprivate constructor() {",
+			"\t\tthis.#data = {};",
+			"\t\tObject.freeze(this);",
+			"\t}",
+			`\tstatic create(): ${name} {`,
+			`\t\treturn new ${name}();`,
+			"\t}",
+			`\tstatic dataOf(value: ${name}): Readonly<Record<string, never>> {`,
+			"\t\treturn value.#data;",
+			"\t}",
+			"}",
+			"",
+		].join("\n"),
 };
 
-const marks = values.map(({ mark }) => mark).join(", ");
-const names = values.map(({ name }) => name).join(", ");
-
-const schemas = values.map(
-	({ name, schema }) =>
-		`export const ${name}Schema = ${jsonSchemaToZod(schema, { zodVersion: 4 })};`,
-);
-const markLines = values.map(
-	({ name, mark }) =>
-		`export const ${mark}: unique symbol = Symbol("${name}");`,
-);
-const interfaces = values.map(
-	({ name, mark }) =>
-		`export interface ${name} { readonly [${mark}]: typeof ${mark}; }`,
-);
-const factories = values.map(
-	({ name, schema, mark, factory }) =>
-		`export const ${factory} = ${factoryOf[schema.type](name, mark)};`,
-);
-
-writeFileSync(
-	resolve(target, "schema.g.ts"),
-	`import { z } from "zod";\n\n${schemas.join("\n")}\n`,
-);
-writeFileSync(resolve(target, "mark.g.ts"), `${markLines.join("\n")}\n`);
-writeFileSync(
-	resolve(target, "value.g.ts"),
-	`import type { ${marks} } from "./mark.g.ts";\n\n${interfaces.join("\n")}\n`,
-);
-writeFileSync(
-	resolve(target, "factory.g.ts"),
-	`import { mint } from "../../domain/mint.ts";\nimport { ${marks} } from "./mark.g.ts";\nimport type { ${names} } from "./value.g.ts";\n\n${factories.join("\n")}\n`,
+Object.entries(document.$defs).map(([name, schema]) =>
+	writeFileSync(
+		resolve(
+			target,
+			`${name.replace(WORD_START, "$<lower>-$<upper>").toLowerCase()}.g.ts`,
+		),
+		moduleOf[schema.type](name, schema),
+	),
 );

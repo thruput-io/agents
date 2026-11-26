@@ -1,18 +1,13 @@
 import { Effect } from "effect";
-import type {
-	Agent,
-	Host,
-	NotReviewable,
-	ReviewStore,
-} from "../../domain/review.ts";
-import type {
-	NoReview,
-	NotStarted,
-	Probes,
-	ReviewStatus,
-	TargetUrl,
-	Workdir,
-} from "../../generated/domain/value.g.ts";
+import type { Agent } from "../../domain/agent.ts";
+import type { Host, NotReviewable } from "../../domain/host.ts";
+import type { ReviewStore } from "../../domain/review.ts";
+import type { NoReview } from "../../generated/domain/no-review.g.ts";
+import type { NotStarted } from "../../generated/domain/not-started.g.ts";
+import type { Probes } from "../../generated/domain/probes.g.ts";
+import type { ReviewStatus } from "../../generated/domain/review-status.g.ts";
+import type { TargetUrl } from "../../generated/domain/target-url.g.ts";
+import type { Workdir } from "../../generated/domain/workdir.g.ts";
 
 class MainController {
 	readonly #host: Host;

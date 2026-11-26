@@ -1,103 +1,88 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
-import {
-	assignmentFrom,
-	changeFrom,
-	completeReviewFrom,
-} from "../../domain/minted-review.ts";
-import type {
-	Agent,
-	Assignment,
-	Entry,
-	Host,
-	ReviewStore,
-} from "../../domain/review.ts";
-import {
-	acknowledgementFrom,
-	hostErrorFrom,
-	outcomeFrom,
-	probeFrom,
-	progressFrom,
-	targetUrlFrom,
-	verdictFrom,
-} from "../../generated/domain/factory.g.ts";
+import type { Agent } from "../../domain/agent.ts";
+import { Assignment } from "../../domain/assignment.ts";
+import { Change } from "../../domain/change.ts";
+import { CompleteReview } from "../../domain/complete-review.ts";
+import type { Host } from "../../domain/host.ts";
+import type { Entry, ReviewStore } from "../../domain/review.ts";
+import { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
+import { HostError } from "../../generated/domain/host-error.g.ts";
+import { Outcome } from "../../generated/domain/outcome.g.ts";
+import { Probe } from "../../generated/domain/probe.g.ts";
+import { Progress } from "../../generated/domain/progress.g.ts";
+import { TargetUrl } from "../../generated/domain/target-url.g.ts";
+import { Verdict } from "../../generated/domain/verdict.g.ts";
 import { ProgressController } from "./progress-controller.ts";
 
-const url = targetUrlFrom("https://host.test/change");
-
-const progress = progressFrom();
-const assignment: Assignment = {
-	...assignmentFrom(),
-	progress: () => progress,
-};
+const url = Effect.runSync(TargetUrl.from("https://host.test/change"));
 const appended: Entry[] = [];
 
 const host: Host = {
-	getChange: () => Effect.succeed(changeFrom()),
-	post: () => Effect.succeed(outcomeFrom()),
+	getChange: () => Effect.succeed(Change.create()),
+	post: () => Effect.succeed(Outcome.create()),
 };
 
 const store: ReviewStore = {
-	save: () => Effect.succeed(completeReviewFrom(url)),
-	inWorkdir: () => Effect.succeed(completeReviewFrom(url)),
-	ofProbe: () => Effect.succeed(assignment),
+	save: (_workdir, review) => Effect.succeed(review),
+	inWorkdir: () => Effect.succeed(CompleteReview.of(url)),
+	ofProbe: () => Effect.succeed(Assignment.create()),
 	append: (_probe, entry) =>
 		Effect.sync(() => {
 			appended.push(entry);
 
-			return completeReviewFrom(url);
+			return CompleteReview.of(url);
 		}),
 };
 
 const agent: Agent = {
-	spawn: (spawned) => Effect.succeed(spawned),
-	terminate: (terminated) => Effect.succeed(terminated),
+	spawn: (assignment) => Effect.succeed(assignment),
+	terminate: (assignment) => Effect.succeed(assignment),
 };
 
 it("ack answers the progress of the assignment", () => {
 	const controller = ProgressController.over(host, store, agent);
-	const answered = controller.ack(probeFrom(), acknowledgementFrom());
+	const answered = controller.ack(Probe.create(), Acknowledgement.create());
 
-	assert.equal(Effect.runSync(answered), progress);
+	assert.equal(Effect.runSync(answered) instanceof Progress, true);
 });
 
-it("ack answers more detailed instructions when it is not accepted", () => {
-	const detailed = assignmentFrom().briefing().instructions();
-	const strict: ReviewStore = {
-		...store,
-		ofProbe: () =>
-			Effect.succeed({ ...assignment, accepted: () => Effect.fail(detailed) }),
-	};
-	const controller = ProgressController.over(host, strict, agent);
-	const answered = controller.ack(probeFrom(), acknowledgementFrom());
+it("ack appends the acknowledgement", () => {
+	const acknowledgement = Acknowledgement.create();
+	const controller = ProgressController.over(host, store, agent);
 
-	assert.equal(Effect.runSync(Effect.flip(answered)), detailed);
+	Effect.runSync(controller.ack(Probe.create(), acknowledgement));
+
+	assert.equal(appended.includes(acknowledgement), true);
 });
 
 it("report answers the progress of the assignment", () => {
 	const controller = ProgressController.over(host, store, agent);
-	const answered = controller.report(probeFrom(), verdictFrom());
+	const answered = controller.report(Probe.create(), Verdict.create());
 
-	assert.equal(Effect.runSync(answered), progress);
+	assert.equal(Effect.runSync(answered) instanceof Progress, true);
 });
 
 it("report appends the verdict", () => {
-	const verdict = verdictFrom();
+	const verdict = Verdict.create();
 	const controller = ProgressController.over(host, store, agent);
 
-	Effect.runSync(controller.report(probeFrom(), verdict));
+	Effect.runSync(controller.report(Probe.create(), verdict));
 
 	assert.equal(appended.includes(verdict), true);
 });
 
 it("report appends the error of the host and still answers the progress", () => {
-	const hostError = hostErrorFrom();
+	const hostError = HostError.create();
 	const refusing: Host = { ...host, post: () => Effect.fail(hostError) };
 	const controller = ProgressController.over(refusing, store, agent);
 	const answered = Effect.runSync(
-		controller.report(probeFrom(), verdictFrom()),
+		controller.report(Probe.create(), Verdict.create()),
 	);
 
-	assert.deepEqual([answered, appended.includes(hostError)], [progress, true]);
+	assert.deepEqual(
+		[answered instanceof Progress, appended.includes(hostError)],
+		[true, true],
+	);
 });

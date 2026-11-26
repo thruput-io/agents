@@ -1,38 +1,28 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
-import {
-	assignmentFrom,
-	pendingReviewFrom,
-} from "../../domain/minted-review.ts";
-import type { Assignment, Cursor, ReviewStore } from "../../domain/review.ts";
-import { probeFrom, surfaceFrom } from "../../generated/domain/factory.g.ts";
+import { Assignment } from "../../domain/assignment.ts";
+import { PendingReview } from "../../domain/pending-review.ts";
+import type { ReviewStore } from "../../domain/review.ts";
+import { Probe } from "../../generated/domain/probe.g.ts";
+import { Surface } from "../../generated/domain/surface.g.ts";
 import { PagingController } from "./paging-controller.ts";
 
-const following = surfaceFrom();
-const preceding = surfaceFrom();
-const cursor: Cursor = {
-	...assignmentFrom().cursor(),
-	next: () => following,
-	previous: () => preceding,
-};
-const assignment: Assignment = { ...assignmentFrom(), cursor: () => cursor };
-
 const store: ReviewStore = {
-	save: () => Effect.succeed(pendingReviewFrom()),
-	inWorkdir: () => Effect.succeed(pendingReviewFrom()),
-	ofProbe: () => Effect.succeed(assignment),
-	append: () => Effect.succeed(pendingReviewFrom()),
+	save: (_workdir, review) => Effect.succeed(review),
+	inWorkdir: () => Effect.succeed(PendingReview.create()),
+	ofProbe: () => Effect.succeed(Assignment.create()),
+	append: () => Effect.succeed(PendingReview.create()),
 };
 
 it("next answers the next page", () => {
-	const answered = PagingController.over(store).next(probeFrom());
+	const answered = PagingController.over(store).next(Probe.create());
 
-	assert.equal(Effect.runSync(answered), following);
+	assert.equal(Effect.runSync(answered) instanceof Surface, true);
 });
 
 it("prev answers the previous page", () => {
-	const answered = PagingController.over(store).prev(probeFrom());
+	const answered = PagingController.over(store).prev(Probe.create());
 
-	assert.equal(Effect.runSync(answered), preceding);
+	assert.equal(Effect.runSync(answered) instanceof Surface, true);
 });

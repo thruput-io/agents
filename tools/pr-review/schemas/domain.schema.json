@@ -1,7 +1,7 @@
 {
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"title": "Domain",
-	"description": "The domain values of the review tool, the source their schemas, marks, interfaces and factories are generated from",
+	"description": "The domain values of the review tool, the source their classes are generated from",
 	"$defs": {
 		"TargetUrl": {
 			"description": "The address of the change to review",
@@ -107,6 +107,10 @@
 		},
 		"HostError": {
 			"description": "The host failed",
+			"type": "object"
+		},
+		"NotValid": {
+			"description": "What was given does not make a valid value",
 			"type": "object"
 		}
 	}

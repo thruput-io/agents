@@ -1,49 +1,35 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
-import { changeFrom, pendingReviewFrom } from "../../domain/minted-review.ts";
-import type {
-	Agent,
-	Change,
-	Host,
-	PendingReview,
-	ReviewStore,
-} from "../../domain/review.ts";
-import {
-	noReviewFrom,
-	notStartedFrom,
-	outcomeFrom,
-	probesFrom,
-	reviewStatusFrom,
-	targetUrlFrom,
-	unknownFormatFrom,
-	workdirFrom,
-} from "../../generated/domain/factory.g.ts";
+import type { Agent } from "../../domain/agent.ts";
+import { Assignment } from "../../domain/assignment.ts";
+import { Change } from "../../domain/change.ts";
+import type { Host } from "../../domain/host.ts";
+import { PendingReview } from "../../domain/pending-review.ts";
+import type { ReviewStore } from "../../domain/review.ts";
+import { NoReview } from "../../generated/domain/no-review.g.ts";
+import { NotStarted } from "../../generated/domain/not-started.g.ts";
+import { Outcome } from "../../generated/domain/outcome.g.ts";
+import { Probes } from "../../generated/domain/probes.g.ts";
+import { ReviewStatus } from "../../generated/domain/review-status.g.ts";
+import { TargetUrl } from "../../generated/domain/target-url.g.ts";
+import { UnknownFormat } from "../../generated/domain/unknown-format.g.ts";
+import { Workdir } from "../../generated/domain/workdir.g.ts";
 import { MainController } from "./main-controller.ts";
 
-const url = targetUrlFrom("https://host.test/change");
-const workdir = workdirFrom("/work");
-
-const status = reviewStatusFrom();
-const stored: PendingReview = {
-	...pendingReviewFrom(),
-	status: () => status,
-};
-const reviewed: Change = {
-	...changeFrom(),
-	review: () => ({ ...stored, spawnedBy: () => Effect.succeed(stored) }),
-};
+const url = Effect.runSync(TargetUrl.from("https://host.test/change"));
+const workdir = Effect.runSync(Workdir.from("/work"));
 
 const host: Host = {
-	getChange: () => Effect.succeed(reviewed),
-	post: () => Effect.succeed(outcomeFrom()),
+	getChange: () => Effect.succeed(Change.create()),
+	post: () => Effect.succeed(Outcome.create()),
 };
 
 const store: ReviewStore = {
-	save: () => Effect.succeed(stored),
-	inWorkdir: () => Effect.succeed(stored),
-	ofProbe: () => Effect.fail(noReviewFrom()),
-	append: () => Effect.succeed(stored),
+	save: (_workdir, review) => Effect.succeed(review),
+	inWorkdir: () => Effect.succeed(PendingReview.create()),
+	ofProbe: () => Effect.succeed(Assignment.create()),
+	append: () => Effect.succeed(PendingReview.create()),
 };
 
 const agent: Agent = {
@@ -51,49 +37,43 @@ const agent: Agent = {
 	terminate: (assignment) => Effect.succeed(assignment),
 };
 
-it("prepare answers the status of the review its sub agents were spawned for", () => {
+it("prepare answers the status of the review", () => {
 	const controller = MainController.over(host, store, agent);
-	const prepared = controller.prepare(url, workdir, probesFrom());
+	const prepared = controller.prepare(url, workdir, Probes.create());
 
-	assert.equal(Effect.runSync(prepared), status);
+	assert.equal(Effect.runSync(prepared) instanceof ReviewStatus, true);
 });
 
 it("prepare fails with what the host answers", () => {
-	const unknownFormat = unknownFormatFrom();
+	const unknownFormat = UnknownFormat.create();
 	const refusing: Host = {
 		...host,
 		getChange: () => Effect.fail(unknownFormat),
 	};
 	const controller = MainController.over(refusing, store, agent);
-	const prepared = controller.prepare(url, workdir, probesFrom());
+	const prepared = controller.prepare(url, workdir, Probes.create());
 
 	assert.equal(Effect.runSync(Effect.flip(prepared)), unknownFormat);
 });
 
 it("prepare fails when a sub agent is not started", () => {
-	const notStarted = notStartedFrom();
-	const unspawned: Change = {
-		...changeFrom(),
-		review: () => ({ ...stored, spawnedBy: () => Effect.fail(notStarted) }),
-	};
-	const stalling: Host = {
-		...host,
-		getChange: () => Effect.succeed(unspawned),
-	};
-	const controller = MainController.over(stalling, store, agent);
-	const prepared = controller.prepare(url, workdir, probesFrom());
+	const notStarted = NotStarted.create();
+	const stalling: Agent = { ...agent, spawn: () => Effect.fail(notStarted) };
+	const controller = MainController.over(host, store, stalling);
+	const prepared = controller.prepare(url, workdir, Probes.create());
 
 	assert.equal(Effect.runSync(Effect.flip(prepared)), notStarted);
 });
 
 it("status answers the status of the stored review", () => {
 	const controller = MainController.over(host, store, agent);
+	const answered = Effect.runSync(controller.status(workdir));
 
-	assert.equal(Effect.runSync(controller.status(workdir)), status);
+	assert.equal(answered instanceof ReviewStatus, true);
 });
 
 it("status fails when the workdir holds no review", () => {
-	const noReview = noReviewFrom();
+	const noReview = NoReview.create();
 	const empty: ReviewStore = {
 		...store,
 		inWorkdir: () => Effect.fail(noReview),

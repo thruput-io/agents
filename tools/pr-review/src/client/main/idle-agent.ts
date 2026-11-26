@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { Agent } from "../../domain/review.ts";
+import type { Agent } from "../../domain/agent.ts";
 
 const idleAgent: Agent = {
 	spawn: (assignment) => Effect.succeed(assignment),

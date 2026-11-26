@@ -1,10 +1,8 @@
 import { Effect } from "effect";
 import type { ReviewStore } from "../../domain/review.ts";
-import type {
-	NoReview,
-	Probe,
-	Surface,
-} from "../../generated/domain/value.g.ts";
+import type { NoReview } from "../../generated/domain/no-review.g.ts";
+import type { Probe } from "../../generated/domain/probe.g.ts";
+import type { Surface } from "../../generated/domain/surface.g.ts";
 
 class PagingController {
 	readonly #store: ReviewStore;
