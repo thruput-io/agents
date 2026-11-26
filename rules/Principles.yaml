@@ -2,19 +2,19 @@ principles:
 - id: You aren't gonna need it
   parent: Validated user need over speculative scope
   body: |
-    Always implement things when you actually need them, never when you just foresee that you need them ([Ron Jeffries](https://ronjeffries.com/xprog/articles/practices/pracnotneed/)).
+    Always implement things when you actually need them, never when you just foresee that you need them.
 - id: Do One Thing
   parent: Validated user need over speculative scope
   body: |
-    Make each [[Change]] a minimal, self-contained change that addresses its one stated [[Purpose]] and nothing outside it ([Google Engineering Practices, Small CLs](https://google.github.io/eng-practices/review/developer/small-cls.html)).
+    Make each [[Change]] a minimal, self-contained change that addresses its one stated [[Purpose]] and nothing outside it.
 - id: Principle of Least Astonishment
   parent: Validated user need over speculative scope
   body: |
-    A system behaves in the way [[Users]] expect it to behave, without hidden side effects or surprising outcomes ([Saltzer and Kaashoek](https://en.wikipedia.org/wiki/Principle_of_least_astonishment)).
+    A system behaves in the way [[Users]] expect it to behave, without hidden side effects or surprising outcomes.
 - id: The best code is no code
   parent: Code is a liability, not an asset
   body: |
-    Satisfy every need at the highest rung of the [[Development Stack]] that serves, descending to a lower rung only when the one above cannot ([Jeff Atwood, The Best Code is No Code At All](https://blog.codinghorror.com/the-best-code-is-no-code-at-all/)).
+    Satisfy every need at the highest rung of the [[Development Stack]] that serves, descending to a lower rung only when the one above cannot.
 - id: Convention over Invention
   parent: Clarity over cleverness
   body: |
@@ -64,17 +64,17 @@ principles:
   body: |
     A bug is pinned by a [[Failing test]] before it is fixed, and the fix is done when that test passes.
 - id: No gray tests
-  parent: The Practical Test Pyramid
+  parent: Tests prove behavior, not execution
   body: |
-    Every [[Test]] is either a [[Black-box testing]] check of the shipped [[Runtime artifact]] or an isolated test of a single [[Subject under test]].
+    A test is either a black-box test of the shipped artifact or a test of one subject in isolation; nothing in between.
 - id: Never trust a test you haven't seen fail
   parent: Tests prove behavior, not execution
   body: |
     A test counts only once it has failed for the behaviour it checks; a test that cannot fail checks nothing.
 - id: F.I.R.S.T.
-  parent: The Practical Test Pyramid
+  parent: Tests prove behavior, not execution
   body: |
-    Every [[Test case]] is Fast, Independent, Repeatable, Self-validating, and Timely.
+    Tests are Fast, Independent, Repeatable, Self-validating, and Timely.
 - id: Verification ends the chain
   parent: Tests prove behavior, not execution
   body: |
@@ -114,7 +114,7 @@ principles:
 - id: Don't Repeat Yourself
   parent: Duplication drifts
   body: |
-    Every piece of knowledge must have a single, unambiguous, authoritative representation within a system ([The Pragmatic Programmer, Tip 15](https://pragprog.com/tips/)).
+    Every piece of knowledge must have a single, unambiguous, authoritative representation within a system.
 - id: Replace conditional with polymorphism
   parent: Polymorphism over conditionals
   body: |
@@ -126,11 +126,11 @@ principles:
 - id: Less is more
   parent: Clarity over cleverness
   body: |
-    Perfection is achieved, not when there is nothing more to add, but when there is nothing left to take away ([Antoine de Saint-Exupéry](https://en.wikiquote.org/wiki/Antoine_de_Saint-Exup%C3%A9ry)). Keep only what serves the intent and remove everything else.
+    Perfection is achieved, not when there is nothing more to add, but when there is nothing left to take away. Keep only what serves the intent and remove everything else.
 - id: Make it work, make it right, make it fast
   parent: Premature optimization and Jackson's rules
   body: |
-    Deliver working behavior in small slices first, structure code for [[Readability]] second, and optimize only bottlenecks proved by [[Evidence]] last ([Kent Beck](https://wiki.c2.com/?MakeItWorkMakeItRightMakeItFast)).
+    Deliver working behavior in small slices first, structure code for [[Readability]] second, and optimize only bottlenecks proved by [[Evidence]] last.
 - id: Iterations over calls over the network is bad design
   parent: Amdahl's Law and the I/O-bound reality
   body: |

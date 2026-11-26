@@ -185,7 +185,7 @@ definitions:
     A [[Test]] that exercises one [[Subject under test]] in-process, without an [[External dependency]].
 - id: Narrow integration test
   specification: |
-    A [[Test]] that exercises one [[Subject under test]] against a real [[Instance]] of the [[External dependency]] it communicates with, such as a database container ([Martin Fowler, IntegrationTest](https://martinfowler.com/bliki/IntegrationTest.html)).
+    A [[Test]] that exercises one [[Subject under test]] against a real [[Instance]] of the [[External dependency]] it communicates with, such as a database container.
 - id: Integration test
   specification: |
     A [[Test]] that exercises one [[Subject under test]]—the shipped [[Runtime artifact]]—using [[Black-box testing]] against containerized [[External dependency]] instances.

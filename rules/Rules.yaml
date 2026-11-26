@@ -134,7 +134,7 @@ rules:
   group: Conventions
   parent: No Comments
   body: |
-    Write every [[Architectural Direction]] record to conform to [adr.schema.json](https://thruput.se/agents/schemas/repository/adr.schema.json) and [[On point prose]].
+    Write every [[Architectural Direction]] record to conform to `adr.schema.json` and [[On point prose]].
   smells:
   - An [[Architectural Direction]] record placed outside `docs/adrs/` or carrying disallowed sections such as Status, Considered Options, Reasoning, How It Works, Acceptance Criteria, or Consequences.
   - An [[Architectural Direction]] record describing current codebase state, [[File]] inventory, or a step-by-step implementation walkthrough.
