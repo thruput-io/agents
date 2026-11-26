@@ -6,5 +6,6 @@ cd "$PROJECT_ROOT"
 rm -rf build
 mkdir build
 export PROJECT_ROOT
+git config core.hooksPath .githooks
 "$PROJECT_ROOT/scripts/verify.sh"
 "$PROJECT_ROOT/scripts/build_site.sh"

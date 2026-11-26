@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+shasum --algorithm 256 --check --strict --quiet guardrails.sha256
+git diff --quiet "@{upstream}" -- guardrails.sha256
