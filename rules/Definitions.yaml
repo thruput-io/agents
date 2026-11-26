@@ -111,7 +111,7 @@ definitions:
     An operation that assigns a new value to a field of an existing [[Instance]].
 - id: Immutable
   specification: |
-    Unable to change state after creation; any update produces a new [[Instance]] through the [[Validating path of creation]].
+    Unable to change after creation.
 - id: Code We Cannot Control
   specification: |
     Code outside the current codebase whose [[Foreign shape]] we cannot change.

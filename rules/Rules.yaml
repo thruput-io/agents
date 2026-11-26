@@ -212,7 +212,7 @@ rules:
   group: Domain Model
   parent: Immutable by default
   body: |
-    Expose a [[Setter]] or any operation that breaks [[Immutable]] on a [[Domain object]]; every update returns a new [[Instance]] through the [[Validating path of creation]].
+    Expose a [[Setter]] or any operation that breaks [[Immutable]] on a [[Domain object]].
   smells:
   - An exposed [[Setter]] or [[Raw collection]] on an [[Aggregate]].
 - id: Strong typing
