@@ -9,6 +9,7 @@ import type { NoReview } from "../../generated/domain/no-review.g.ts";
 import type { NotStarted } from "../../generated/domain/not-started.g.ts";
 import type { TargetUrl } from "../../generated/domain/target-url.g.ts";
 import type { Workdir } from "../../generated/domain/workdir.g.ts";
+import type { WorkdirFailed } from "../../generated/domain/workdir-failed.g.ts";
 
 class MainController {
 	private readonly host: Host;
@@ -29,10 +30,10 @@ class MainController {
 		url: TargetUrl,
 		workdir: Workdir,
 		probes: Probes,
-	): Effect.Effect<ReviewStatus, NotReviewable | NotStarted> {
+	): Effect.Effect<ReviewStatus, NotReviewable | NotStarted | WorkdirFailed> {
 		return this.host.getChange(url, workdir).pipe(
 			Effect.flatMap(
-				(change: Change): Effect.Effect<Review> =>
+				(change: Change): Effect.Effect<Review, WorkdirFailed> =>
 					this.store.save(workdir, change.review(probes)),
 			),
 			Effect.flatMap(

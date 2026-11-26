@@ -50,6 +50,10 @@
 		"NotAcknowledged": {
 			"description": "The instructions are not acknowledged yet",
 			"type": "object"
+		},
+		"WorkdirFailed": {
+			"description": "The workdir could not be read or written",
+			"type": "object"
 		}
 	}
 }

@@ -22,6 +22,7 @@ import { Rule } from "../generated/domain/rule.g.ts";
 import { TooLarge } from "../generated/domain/too-large.g.ts";
 import { UnknownFormat } from "../generated/domain/unknown-format.g.ts";
 import { Usage } from "../generated/domain/usage.g.ts";
+import { WorkdirFailed } from "../generated/domain/workdir-failed.g.ts";
 import { Workflow } from "../generated/domain/workflow.g.ts";
 import type { failureAnswer as failureShape } from "../generated/perimeters/answers.g.ts";
 
@@ -45,7 +46,8 @@ type Failure =
 	| NotDefined
 	| NotAssigned
 	| NoPage
-	| NotAcknowledged;
+	| NotAcknowledged
+	| WorkdirFailed;
 
 interface Kind<Value> {
 	readonly prototype: Value;
@@ -105,6 +107,7 @@ const failureAnswer: (failure: Failure) => Answer = Match.type<Failure>().pipe(
 		a(NotAcknowledged),
 		(): Refusal => ({ failure: "not-acknowledged" }),
 	),
+	Match.when(a(WorkdirFailed), (): Refusal => ({ failure: "workdir-failed" })),
 	Match.exhaustive,
 );
 

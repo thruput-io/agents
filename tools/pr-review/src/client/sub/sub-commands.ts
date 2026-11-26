@@ -5,10 +5,9 @@ import { ProgressController } from "../../controller/sub/progress-controller.ts"
 import type { Agent } from "../../domain/agent.ts";
 import type { Host } from "../../domain/host.ts";
 import type { Instructions } from "../../domain/instructions.ts";
-import type { ReviewStore } from "../../domain/review-store.ts";
+import type { NotRecorded, ReviewStore } from "../../domain/review-store.ts";
 import { help } from "../../generated/client/sub/help.g.ts";
 import type { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
-import type { NoReview } from "../../generated/domain/no-review.g.ts";
 import type { Probe } from "../../generated/domain/probe.g.ts";
 import type { Rule } from "../../generated/domain/rule.g.ts";
 import {
@@ -39,7 +38,7 @@ interface SubControllers {
 }
 
 type Answered = Effect.Effect<Answer, Answer>;
-type Standing = Effect.Effect<readonly Rule[], NoReview | Instructions>;
+type Standing = Effect.Effect<readonly Rule[], NotRecorded | Instructions>;
 
 const subCommands = ({
 	briefing,

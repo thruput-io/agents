@@ -5,10 +5,9 @@ import type { Host } from "../../domain/host.ts";
 import type { Instructions } from "../../domain/instructions.ts";
 import type { Post } from "../../domain/post.ts";
 import type { Review } from "../../domain/review.ts";
-import type { ReviewStore } from "../../domain/review-store.ts";
+import type { NotRecorded, ReviewStore } from "../../domain/review-store.ts";
 import type { Verdict } from "../../domain/verdict.ts";
 import type { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
-import type { NoReview } from "../../generated/domain/no-review.g.ts";
 import type { NotAcknowledged } from "../../generated/domain/not-acknowledged.g.ts";
 import type { NotAssigned } from "../../generated/domain/not-assigned.g.ts";
 import type { Probe } from "../../generated/domain/probe.g.ts";
@@ -16,7 +15,7 @@ import type { Rule } from "../../generated/domain/rule.g.ts";
 
 const LATEST = -1;
 
-type Standing = Effect.Effect<readonly Rule[], NoReview | Instructions>;
+type Standing = Effect.Effect<readonly Rule[], NotRecorded | Instructions>;
 
 class ProgressController {
 	private readonly host: Host;
@@ -61,7 +60,7 @@ class ProgressController {
 		verdict: Verdict,
 	): Effect.Effect<
 		readonly Rule[],
-		NoReview | NotAcknowledged | NotAssigned | Instructions
+		NotRecorded | NotAcknowledged | NotAssigned | Instructions
 	> {
 		return this.store.ofProbe(probe).pipe(
 			Effect.flatMap(
@@ -75,11 +74,11 @@ class ProgressController {
 					verdict.among(rules),
 			),
 			Effect.flatMap(
-				(assigned: Verdict): Effect.Effect<Review, NoReview> =>
+				(assigned: Verdict): Effect.Effect<Review, NotRecorded> =>
 					this.store.append(probe, assigned),
 			),
 			Effect.flatMap(
-				(review: Review): Effect.Effect<readonly Review[], NoReview> =>
+				(review: Review): Effect.Effect<readonly Review[], NotRecorded> =>
 					this.concluded(probe, review),
 			),
 			Effect.flatMap((): Standing => this.standing(probe)),
@@ -89,13 +88,15 @@ class ProgressController {
 	private concluded(
 		probe: Probe,
 		review: Review,
-	): Effect.Effect<readonly Review[], NoReview> {
+	): Effect.Effect<readonly Review[], NotRecorded> {
 		return review.posting(this.host).pipe(
 			Effect.flatMap(
-				(posts: readonly Post[]): Effect.Effect<readonly Review[], NoReview> =>
+				(
+					posts: readonly Post[],
+				): Effect.Effect<readonly Review[], NotRecorded> =>
 					Effect.forEach(
 						posts,
-						(post: Post): Effect.Effect<Review, NoReview> =>
+						(post: Post): Effect.Effect<Review, NotRecorded> =>
 							this.store.append(probe, post),
 					),
 			),

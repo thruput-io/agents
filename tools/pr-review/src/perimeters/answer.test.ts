@@ -19,6 +19,7 @@ import { Posted } from "../generated/domain/posted.g.ts";
 import { Refused } from "../generated/domain/refused.g.ts";
 import { TooLarge } from "../generated/domain/too-large.g.ts";
 import { UnknownFormat } from "../generated/domain/unknown-format.g.ts";
+import { WorkdirFailed } from "../generated/domain/workdir-failed.g.ts";
 import {
 	definitionAnswer,
 	failureAnswer,
@@ -101,6 +102,7 @@ it("every failure is answered by its name", () => {
 			failureAnswer(NotAssigned.create()),
 			failureAnswer(NoPage.create()),
 			failureAnswer(NotAcknowledged.create()),
+			failureAnswer(WorkdirFailed.create()),
 		],
 		[
 			{ failure: "not-valid" },
@@ -115,6 +117,7 @@ it("every failure is answered by its name", () => {
 			{ failure: "not-assigned" },
 			{ failure: "no-page" },
 			{ failure: "not-acknowledged" },
+			{ failure: "workdir-failed" },
 		],
 	);
 });

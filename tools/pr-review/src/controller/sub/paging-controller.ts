@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import type { Assignment, Entry } from "../../domain/assignment.ts";
 import type { Review } from "../../domain/review.ts";
-import type { ReviewStore } from "../../domain/review-store.ts";
+import type { NotRecorded, ReviewStore } from "../../domain/review-store.ts";
 import { Back } from "../../generated/domain/back.g.ts";
 import { Forward } from "../../generated/domain/forward.g.ts";
 import type { NoPage } from "../../generated/domain/no-page.g.ts";
@@ -10,7 +10,7 @@ import type { NotAcknowledged } from "../../generated/domain/not-acknowledged.g.
 import type { Page } from "../../generated/domain/page.g.ts";
 import type { Probe } from "../../generated/domain/probe.g.ts";
 
-type Turned = Effect.Effect<Page, NoReview | NoPage | NotAcknowledged>;
+type Turned = Effect.Effect<Page, NotRecorded | NoPage | NotAcknowledged>;
 
 class PagingController {
 	private readonly store: ReviewStore;

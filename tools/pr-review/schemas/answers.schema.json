@@ -18,7 +18,8 @@
 				"not-defined",
 				"not-assigned",
 				"no-page",
-				"not-acknowledged"
+				"not-acknowledged",
+				"workdir-failed"
 			]
 		}
 	},
