@@ -1,40 +1,39 @@
 import { Effect } from "effect";
 import type { NotStarted } from "../generated/domain/not-started.g.ts";
-import { ReviewStatus } from "../generated/domain/review-status.g.ts";
+import type { ReviewStatus } from "../generated/domain/review-status.g.ts";
 import type { Agent } from "./agent.ts";
-import { Assignment } from "./assignment.ts";
+import type { Assignments } from "./assignments.ts";
 
 class PendingReview {
-	readonly #kind = "pending-review";
+	private readonly state: ReviewStatus;
+	private readonly assignments: Assignments;
 
-	private constructor() {
+	private constructor(state: ReviewStatus, assignments: Assignments) {
+		this.state = state;
+		this.assignments = assignments;
 		Object.freeze(this);
 	}
 
-	static create(): PendingReview {
-		return new PendingReview();
-	}
-
-	toJSON(): { readonly kind: string } {
-		return { kind: this.#kind };
+	static of(state: ReviewStatus, assignments: Assignments): PendingReview {
+		return new PendingReview(state, assignments);
 	}
 
 	status(): ReviewStatus {
-		return ReviewStatus.create();
+		return this.state;
 	}
 
 	submittedTo(): Effect.Effect<PendingReview> {
-		return Effect.succeed(PendingReview.create());
+		return Effect.succeed(this);
 	}
 
 	dismissedBy(): Effect.Effect<PendingReview> {
-		return Effect.succeed(PendingReview.create());
+		return Effect.succeed(this);
 	}
 
 	spawnedBy(agent: Agent): Effect.Effect<PendingReview, NotStarted> {
-		return Effect.map(agent.spawn(Assignment.create()), () =>
-			PendingReview.create(),
-		);
+		return this.assignments
+			.spawnedBy(agent)
+			.pipe(Effect.map((): PendingReview => this));
 	}
 }
 

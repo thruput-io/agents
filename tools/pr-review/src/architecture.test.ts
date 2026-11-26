@@ -9,7 +9,7 @@ import {
 } from "./architecture.ts";
 
 const LAYOUT =
-	"{src/client/main/**,src/client/sub/**,src/client/common/**,src/controller/main/**,src/controller/sub/**,src/controller/common/**,src/domain/**,src/perimeters/**,src/adapters/github/**,src/adapters/azure/**,src/adapters/git/**,src/adapters/persistence/memory/**,src/adapters/persistence/disk/**,src/generated/domain/**,src/generated/perimeters/**,src/generated/adapters/**,src/integration-test/**,src/mock-server/**,src/architecture.ts,src/architecture.test.ts,src/architecture-separation.test.ts}";
+	"{src/client/main/**,src/client/sub/**,src/client/common/**,src/controller/main/**,src/controller/sub/**,src/controller/common/**,src/domain/**,src/perimeters/**,src/adapters/github/**,src/adapters/azure/**,src/adapters/git/**,src/adapters/persistence/memory/**,src/adapters/persistence/disk/**,src/adapters/not-yet-implemented/**,src/generated/domain/**,src/generated/perimeters/**,src/generated/adapters/**,src/integration-test/**,src/mock-server/**,src/architecture.ts,src/architecture.test.ts,src/architecture-separation.test.ts}";
 
 const UNKNOWN_TYPE =
 	/(?:[:<,|&(=]|=>|\bas|\bextends|\bkeyof)\s*unknown\b(?!-)/u;
@@ -120,7 +120,17 @@ it("the disk store depends only on itself and the perimeters", async () => {
 	assert.deepEqual(
 		await dependsOnlyOn(
 			"src/adapters/persistence/disk/**",
-			`{src/adapters/persistence/disk/**,${PERIMETERS}}`,
+			`{src/adapters/persistence/disk/**,src/adapters/not-yet-implemented/**,${PERIMETERS}}`,
+		),
+		[],
+	);
+});
+
+it("the not yet implemented adapters depend only on themselves and the domain", async () => {
+	assert.deepEqual(
+		await dependsOnlyOn(
+			"src/adapters/not-yet-implemented/**",
+			`{src/adapters/not-yet-implemented/**,${DOMAIN}}`,
 		),
 		[],
 	);

@@ -1,15 +1,16 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Probes } from "../generated/domain/probes.g.ts";
+import { ReviewStatus } from "../generated/domain/review-status.g.ts";
+import { Assignments } from "./assignments.ts";
 import { Change } from "./change.ts";
 import { PendingReview } from "./pending-review.ts";
 
-it("a change is reviewed with probes in a pending review", () => {
-	const review = Change.create().review(Probes.create());
+it("a change is reviewed in the pending review it holds", () => {
+	const pending: PendingReview = PendingReview.of(
+		ReviewStatus.create(),
+		Assignments.of([]),
+	);
 
-	assert.equal(review instanceof PendingReview, true);
-});
-
-it("a change serializes as its kind", () => {
-	assert.deepEqual(Change.create().toJSON(), { kind: "change" });
+	assert.equal(Change.of(pending).review(Probes.create()), pending);
 });

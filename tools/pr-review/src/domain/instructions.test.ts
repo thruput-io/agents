@@ -6,24 +6,25 @@ import { Usage } from "../generated/domain/usage.g.ts";
 import { Workflow } from "../generated/domain/workflow.g.ts";
 import { Instructions } from "./instructions.ts";
 
-it("instructions hold a workflow", () => {
-	assert.equal(Instructions.create().workflow() instanceof Workflow, true);
+const parts = {
+	workflow: Workflow.create(),
+	context: Context.create(),
+	usage: Usage.create(),
+	request: AcknowledgementRequest.create(),
+} as const;
+
+it("instructions answer the workflow they hold", () => {
+	assert.equal(Instructions.of(parts).workflow(), parts.workflow);
 });
 
-it("instructions hold a context", () => {
-	assert.equal(Instructions.create().context() instanceof Context, true);
+it("instructions answer the context they hold", () => {
+	assert.equal(Instructions.of(parts).context(), parts.context);
 });
 
-it("instructions hold a usage", () => {
-	assert.equal(Instructions.create().usage() instanceof Usage, true);
+it("instructions answer the usage they hold", () => {
+	assert.equal(Instructions.of(parts).usage(), parts.usage);
 });
 
-it("instructions end with an acknowledgement request", () => {
-	const request = Instructions.create().request();
-
-	assert.equal(request instanceof AcknowledgementRequest, true);
-});
-
-it("instructions serialize as their kind", () => {
-	assert.deepEqual(Instructions.create().toJSON(), { kind: "instructions" });
+it("instructions answer the acknowledgement request they hold", () => {
+	assert.equal(Instructions.of(parts).request(), parts.request);
 });

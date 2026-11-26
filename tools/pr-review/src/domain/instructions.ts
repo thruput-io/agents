@@ -1,37 +1,41 @@
-import { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
-import { Context } from "../generated/domain/context.g.ts";
-import { Usage } from "../generated/domain/usage.g.ts";
-import { Workflow } from "../generated/domain/workflow.g.ts";
+import type { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
+import type { Context } from "../generated/domain/context.g.ts";
+import type { Usage } from "../generated/domain/usage.g.ts";
+import type { Workflow } from "../generated/domain/workflow.g.ts";
+
+interface InstructionsParts {
+	readonly workflow: Workflow;
+	readonly context: Context;
+	readonly usage: Usage;
+	readonly request: AcknowledgementRequest;
+}
 
 class Instructions {
-	readonly #kind = "instructions";
+	private readonly parts: InstructionsParts;
 
-	private constructor() {
+	private constructor(parts: InstructionsParts) {
+		this.parts = parts;
 		Object.freeze(this);
 	}
 
-	static create(): Instructions {
-		return new Instructions();
-	}
-
-	toJSON(): { readonly kind: string } {
-		return { kind: this.#kind };
+	static of(parts: InstructionsParts): Instructions {
+		return new Instructions(parts);
 	}
 
 	workflow(): Workflow {
-		return Workflow.create();
+		return this.parts.workflow;
 	}
 
 	context(): Context {
-		return Context.create();
+		return this.parts.context;
 	}
 
 	usage(): Usage {
-		return Usage.create();
+		return this.parts.usage;
 	}
 
 	request(): AcknowledgementRequest {
-		return AcknowledgementRequest.create();
+		return this.parts.request;
 	}
 }
 

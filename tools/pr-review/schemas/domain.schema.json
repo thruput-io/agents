@@ -59,7 +59,8 @@
 		},
 		"Acknowledgement": {
 			"description": "What a sub agent sent back",
-			"type": "object"
+			"type": "string",
+			"minLength": 1
 		},
 		"Verdict": {
 			"description": "The result of judging a change against one rule",

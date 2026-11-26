@@ -7,44 +7,69 @@ import { ReviewStatus } from "../generated/domain/review-status.g.ts";
 import { TargetUrl } from "../generated/domain/target-url.g.ts";
 import type { Agent } from "./agent.ts";
 import type { Assignment } from "./assignment.ts";
-import { Change } from "./change.ts";
+import { Assignments } from "./assignments.ts";
+import type { Change } from "./change.ts";
 import { CompleteReview } from "./complete-review.ts";
-import type { Host } from "./host.ts";
+import type { Host, NotReviewable } from "./host.ts";
 
-const url = Effect.runSync(TargetUrl.from("https://host.test/change"));
+const url: TargetUrl = Effect.runSync(
+	TargetUrl.from("https://host.test/change"),
+);
+const outcome: Outcome = Outcome.create();
+const status: ReviewStatus = ReviewStatus.create();
+const review: CompleteReview = CompleteReview.of({
+	url,
+	outcome,
+	state: status,
+	assignments: Assignments.of([]),
+});
+const posted: [TargetUrl, Outcome][] = [];
 
 const host: Host = {
-	getChange: () => Effect.succeed(Change.create()),
-	post: () => Effect.succeed(Outcome.create()),
+	getChange: (): Effect.Effect<Change, NotReviewable> =>
+		Effect.fail(HostError.create()),
+	post: (to: TargetUrl, what: Outcome): Effect.Effect<Outcome, HostError> =>
+		Effect.sync((): Outcome => {
+			posted.push([to, what]);
+
+			return what;
+		}),
 };
 
 const agent: Agent = {
-	spawn: (assignment: Assignment): Effect.Effect<Assignment> =>
-		Effect.succeed(assignment),
-	terminate: (assignment: Assignment): Effect.Effect<Assignment> =>
-		Effect.succeed(assignment),
+	spawn: (given: Assignment): Effect.Effect<Assignment> =>
+		Effect.succeed(given),
+	terminate: (given: Assignment): Effect.Effect<Assignment> =>
+		Effect.succeed(given),
 };
 
-it("a complete review states its status", () => {
-	assert.equal(CompleteReview.of(url).status() instanceof ReviewStatus, true);
+it("a complete review answers the status it holds", () => {
+	assert.equal(review.status(), status);
 });
 
-it("a complete review is posted and stays complete", () => {
-	const submitted = Effect.runSync(CompleteReview.of(url).submittedTo(host));
+it("a complete review posts its outcome to its target URL", () => {
+	Effect.runSync(review.submittedTo(host));
 
-	assert.equal(submitted instanceof CompleteReview, true);
+	assert.deepEqual(posted, [[url, outcome]]);
+});
+
+it("a posted complete review answers itself", () => {
+	assert.equal(Effect.runSync(review.submittedTo(host)), review);
 });
 
 it("a complete review fails with the error of the host", () => {
-	const hostError = HostError.create();
-	const refusing: Host = { ...host, post: () => Effect.fail(hostError) };
-	const submitted = CompleteReview.of(url).submittedTo(refusing);
+	const hostError: HostError = HostError.create();
+	const refusing: Host = {
+		...host,
+		post: (): Effect.Effect<Outcome, HostError> => Effect.fail(hostError),
+	};
 
-	assert.equal(Effect.runSync(Effect.flip(submitted)), hostError);
+	assert.equal(
+		Effect.runSync(Effect.flip(review.submittedTo(refusing))),
+		hostError,
+	);
 });
 
-it("a complete review dismissed by an agent stays complete", () => {
-	const dismissed = Effect.runSync(CompleteReview.of(url).dismissedBy(agent));
-
-	assert.equal(dismissed instanceof CompleteReview, true);
+it("a complete review dismissed by an agent answers itself", () => {
+	assert.equal(Effect.runSync(review.dismissedBy(agent)), review);
 });

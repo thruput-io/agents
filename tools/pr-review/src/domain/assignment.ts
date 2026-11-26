@@ -1,41 +1,52 @@
 import { Effect } from "effect";
 import type { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { Progress } from "../generated/domain/progress.g.ts";
-import { Briefing } from "./briefing.ts";
-import { Cursor } from "./cursor.ts";
+import type { Progress } from "../generated/domain/progress.g.ts";
+import type { Briefing } from "./briefing.ts";
+import type { Cursor } from "./cursor.ts";
 import type { Instructions } from "./instructions.ts";
 
-class Assignment {
-	readonly #kind = "assignment";
+interface AssignmentParts {
+	readonly briefing: Briefing;
+	readonly cursor: Cursor;
+	readonly progress: Progress;
+	readonly expected: Acknowledgement;
+	readonly detailed: Instructions;
+}
 
-	private constructor() {
+class Assignment {
+	private readonly parts: AssignmentParts;
+
+	private constructor(parts: AssignmentParts) {
+		this.parts = parts;
 		Object.freeze(this);
 	}
 
-	static create(): Assignment {
-		return new Assignment();
-	}
-
-	toJSON(): { readonly kind: string } {
-		return { kind: this.#kind };
+	static of(parts: AssignmentParts): Assignment {
+		return new Assignment(parts);
 	}
 
 	briefing(): Briefing {
-		return Briefing.create();
+		return this.parts.briefing;
 	}
 
 	cursor(): Cursor {
-		return Cursor.create();
-	}
-
-	accepted(
-		acknowledgement: Acknowledgement,
-	): Effect.Effect<Acknowledgement, Instructions> {
-		return Effect.succeed(acknowledgement);
+		return this.parts.cursor;
 	}
 
 	progress(): Progress {
-		return Progress.create();
+		return this.parts.progress;
+	}
+
+	accepted(
+		sent: Acknowledgement,
+	): Effect.Effect<Acknowledgement, Instructions> {
+		return Effect.succeed(sent).pipe(
+			Effect.filterOrFail(
+				(acknowledgement: Acknowledgement): boolean =>
+					this.parts.expected.isSameAs(acknowledgement),
+				(): Instructions => this.parts.detailed,
+			),
+		);
 	}
 }
 

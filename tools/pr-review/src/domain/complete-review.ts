@@ -1,38 +1,45 @@
 import { Effect } from "effect";
 import type { HostError } from "../generated/domain/host-error.g.ts";
-import { Outcome } from "../generated/domain/outcome.g.ts";
-import { ReviewStatus } from "../generated/domain/review-status.g.ts";
+import type { Outcome } from "../generated/domain/outcome.g.ts";
+import type { ReviewStatus } from "../generated/domain/review-status.g.ts";
 import type { TargetUrl } from "../generated/domain/target-url.g.ts";
 import type { Agent } from "./agent.ts";
-import { Assignment } from "./assignment.ts";
+import type { Assignments } from "./assignments.ts";
 import type { Host } from "./host.ts";
 
-class CompleteReview {
-	readonly #url: TargetUrl;
+interface CompleteReviewParts {
+	readonly url: TargetUrl;
+	readonly outcome: Outcome;
+	readonly state: ReviewStatus;
+	readonly assignments: Assignments;
+}
 
-	private constructor(url: TargetUrl) {
-		this.#url = url;
+class CompleteReview {
+	private readonly parts: CompleteReviewParts;
+
+	private constructor(parts: CompleteReviewParts) {
+		this.parts = parts;
 		Object.freeze(this);
 	}
 
-	static of(url: TargetUrl): CompleteReview {
-		return new CompleteReview(url);
+	static of(parts: CompleteReviewParts): CompleteReview {
+		return new CompleteReview(parts);
 	}
 
 	status(): ReviewStatus {
-		return ReviewStatus.create();
+		return this.parts.state;
 	}
 
 	submittedTo(host: Host): Effect.Effect<CompleteReview, HostError> {
-		return Effect.map(host.post(this.#url, Outcome.create()), () =>
-			CompleteReview.of(this.#url),
-		);
+		return host
+			.post(this.parts.url, this.parts.outcome)
+			.pipe(Effect.map((): CompleteReview => this));
 	}
 
 	dismissedBy(agent: Agent): Effect.Effect<CompleteReview> {
-		return Effect.map(agent.terminate(Assignment.create()), () =>
-			CompleteReview.of(this.#url),
-		);
+		return this.parts.assignments
+			.dismissedBy(agent)
+			.pipe(Effect.map((): CompleteReview => this));
 	}
 }
 
