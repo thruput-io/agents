@@ -9,26 +9,38 @@ const TSCONFIG_PATH = resolve(
 	"../tsconfig.json",
 );
 
-const ALLOWED_SRC_FILES =
-	"{src/client/main/**,src/client/sub/**,src/client/common/**,src/controller/main/**,src/controller/sub/**,src/controller/common/**,src/adapters/github/**,src/adapters/azure/**,src/adapters/git/**,src/generated/github/**,src/generated/azure/**,src/generated/mocks/**,src/domain/**,src/integration-test/**,src/mock-server/**,src/architecture.test.ts,src/guardrails.test.ts}";
+const LAYOUT =
+	"{src/client/main/**,src/client/sub/**,src/client/common/**,src/controller/main/**,src/controller/sub/**,src/controller/common/**,src/domain/**,src/perimeters/**,src/adapters/github/**,src/adapters/azure/**,src/adapters/git/**,src/adapters/persistence/memory/**,src/adapters/persistence/disk/**,src/generated/domain/**,src/generated/perimeters/**,src/generated/adapters/**,src/integration-test/**,src/mock-server/**,src/architecture.test.ts}";
 
-const onlyDependsOn = (sourceGlob: string, allowedGlob: string) =>
+const ENTRY_POINTS =
+	"{src/client/main/review-tool.ts,src/client/sub/review-tool-probe.ts}";
+
+const DOMAIN = "src/domain/**,src/generated/domain/**";
+const PERIMETERS = `src/perimeters/**,src/generated/perimeters/**,${DOMAIN}`;
+
+const dependsOnlyOn = (sourceGlob: string, allowedGlob: string) =>
 	projectFiles(TSCONFIG_PATH)
 		.inPath(sourceGlob)
 		.shouldNot()
 		.dependOnFiles()
 		.inPath("**", { except: { inPath: allowedGlob } })
-		.check();
+		.check({ allowEmptyTests: true });
 
-it("every file in src/** lives in an allowed layer folder", async () => {
+const neverDependsOn = (sourceGlob: string, forbiddenGlob: string) =>
+	projectFiles(TSCONFIG_PATH)
+		.inPath(sourceGlob)
+		.shouldNot()
+		.dependOnFiles()
+		.inPath(forbiddenGlob)
+		.check({ allowEmptyTests: true });
+
+it("every file in src lives in a folder of the layout", async () => {
 	const violations = await projectFiles(TSCONFIG_PATH)
-		.inPath("src/**", { except: { inPath: ALLOWED_SRC_FILES } })
+		.inPath("src/**", { except: { inPath: LAYOUT } })
 		.should()
-		.adhereTo(
-			() => false,
-			"All files in src/ must reside in src/client/{main,sub,common}, src/controller/{main,sub,common}, src/adapters/{github,azure,git}, src/domain, or src/integration-test",
-		)
-		.check();
+		.adhereTo(() => false, "The file is outside the folders of the layout")
+		.check({ allowEmptyTests: true });
+
 	assert.deepEqual(violations, []);
 });
 
@@ -38,76 +50,173 @@ it("src has no circular dependencies", async () => {
 		.should()
 		.haveNoCycles()
 		.check();
+
 	assert.deepEqual(violations, []);
 });
 
-it("domain layer only depends on domain", async () => {
-	assert.deepEqual(await onlyDependsOn("src/domain/**", "src/domain/**"), []);
+it("the domain depends only on the domain and its generated mirror", async () => {
+	assert.deepEqual(await dependsOnlyOn("src/domain/**", `{${DOMAIN}}`), []);
 });
 
-it("each adapter subfolder only depends on itself, domain, and its generated client", async () => {
+it("the generated domain depends only on itself", async () => {
 	assert.deepEqual(
-		await onlyDependsOn(
+		await dependsOnlyOn("src/generated/domain/**", "src/generated/domain/**"),
+		[],
+	);
+});
+
+it("the controller depends only on the controller and the domain", async () => {
+	assert.deepEqual(
+		await dependsOnlyOn("src/controller/**", `{src/controller/**,${DOMAIN}}`),
+		[],
+	);
+});
+
+it("the perimeters depend only on the perimeters and the domain", async () => {
+	assert.deepEqual(
+		await dependsOnlyOn("src/perimeters/**", `{${PERIMETERS}}`),
+		[],
+	);
+});
+
+it("the github adapter depends only on itself, its generated client and the perimeters", async () => {
+	assert.deepEqual(
+		await dependsOnlyOn(
 			"src/adapters/github/**",
-			"{src/adapters/github/**,src/domain/**,src/generated/github/**}",
+			`{src/adapters/github/**,src/generated/adapters/github/**,${PERIMETERS}}`,
 		),
 		[],
 	);
+});
+
+it("the azure adapter depends only on itself, its generated client and the perimeters", async () => {
 	assert.deepEqual(
-		await onlyDependsOn(
+		await dependsOnlyOn(
 			"src/adapters/azure/**",
-			"{src/adapters/azure/**,src/domain/**,src/generated/azure/**}",
+			`{src/adapters/azure/**,src/generated/adapters/azure/**,${PERIMETERS}}`,
 		),
 		[],
 	);
+});
+
+it("the git adapter depends only on itself and the perimeters", async () => {
 	assert.deepEqual(
-		await onlyDependsOn(
+		await dependsOnlyOn(
 			"src/adapters/git/**",
-			"{src/adapters/git/**,src/domain/**}",
+			`{src/adapters/git/**,${PERIMETERS}}`,
 		),
 		[],
 	);
 });
 
-it("controller layer only depends on controller and domain", async () => {
+it("the memory store depends only on itself and the perimeters", async () => {
 	assert.deepEqual(
-		await onlyDependsOn("src/controller/**", "{src/controller/**,src/domain/**}"),
+		await dependsOnlyOn(
+			"src/adapters/persistence/memory/**",
+			`{src/adapters/persistence/memory/**,${PERIMETERS}}`,
+		),
 		[],
 	);
 });
 
-it("!common can depend on common (within same folder)", async () => {
-	for (const layer of ["src/controller", "src/client"] as const) {
-		for (const sub of ["main", "sub"] as const) {
-			assert.deepEqual(
-				await projectFiles(TSCONFIG_PATH)
-					.inPath(`${layer}/${sub}/**`)
-					.shouldNot()
-					.dependOnFiles()
-					.inPath(`${layer}/**`, {
-						except: { inPath: `{${layer}/${sub}/**,${layer}/common/**}` },
-					})
-					.check(),
-				[],
-			);
-		}
-	}
+it("the disk store depends only on itself and the perimeters", async () => {
+	assert.deepEqual(
+		await dependsOnlyOn(
+			"src/adapters/persistence/disk/**",
+			`{src/adapters/persistence/disk/**,${PERIMETERS}}`,
+		),
+		[],
+	);
 });
 
-it("!common x in client can rely on x and common in controller", async () => {
-	for (const x of ["main", "sub"] as const) {
-		assert.deepEqual(
-			await projectFiles(TSCONFIG_PATH)
-				.inPath(`src/client/${x}/**`)
-				.shouldNot()
-				.dependOnFiles()
-				.inPath("src/controller/**", {
-					except: {
-						inPath: `{src/controller/${x}/**,src/controller/common/**}`,
-					},
-				})
-				.check(),
-			[],
-		);
-	}
+it("only the entry points depend on adapters", async () => {
+	const violations = await projectFiles(TSCONFIG_PATH)
+		.inPath("src/client/**", { except: { inPath: ENTRY_POINTS } })
+		.shouldNot()
+		.dependOnFiles()
+		.inPath("src/adapters/**")
+		.check({ allowEmptyTests: true });
+
+	assert.deepEqual(violations, []);
+});
+
+it("nothing depends on an entry point", async () => {
+	const violations = await projectFiles(TSCONFIG_PATH)
+		.inPath("src/**", { except: { inPath: ENTRY_POINTS } })
+		.shouldNot()
+		.dependOnFiles()
+		.inPath(ENTRY_POINTS)
+		.check({ allowEmptyTests: true });
+
+	assert.deepEqual(violations, []);
+});
+
+it("the main controller never depends on the sub controller", async () => {
+	assert.deepEqual(
+		await neverDependsOn("src/controller/main/**", "src/controller/sub/**"),
+		[],
+	);
+});
+
+it("the sub controller never depends on the main controller", async () => {
+	assert.deepEqual(
+		await neverDependsOn("src/controller/sub/**", "src/controller/main/**"),
+		[],
+	);
+});
+
+it("the main client never depends on the sub client or the sub controller", async () => {
+	assert.deepEqual(
+		await neverDependsOn(
+			"src/client/main/**",
+			"{src/client/sub/**,src/controller/sub/**}",
+		),
+		[],
+	);
+});
+
+it("the sub client never depends on the main client or the main controller", async () => {
+	assert.deepEqual(
+		await neverDependsOn(
+			"src/client/sub/**",
+			"{src/client/main/**,src/controller/main/**}",
+		),
+		[],
+	);
+});
+
+it("the mock host depends on no other folder", async () => {
+	assert.deepEqual(
+		await dependsOnlyOn("src/mock-server/**", "src/mock-server/**"),
+		[],
+	);
+});
+
+it("no other folder depends on the mock host", async () => {
+	const violations = await projectFiles(TSCONFIG_PATH)
+		.inPath("src/**", { except: { inPath: "src/mock-server/**" } })
+		.shouldNot()
+		.dependOnFiles()
+		.inPath("src/mock-server/**")
+		.check({ allowEmptyTests: true });
+
+	assert.deepEqual(violations, []);
+});
+
+it("the integration tests depend on no other folder", async () => {
+	assert.deepEqual(
+		await dependsOnlyOn("src/integration-test/**", "src/integration-test/**"),
+		[],
+	);
+});
+
+it("no other folder depends on the integration tests", async () => {
+	const violations = await projectFiles(TSCONFIG_PATH)
+		.inPath("src/**", { except: { inPath: "src/integration-test/**" } })
+		.shouldNot()
+		.dependOnFiles()
+		.inPath("src/integration-test/**")
+		.check({ allowEmptyTests: true });
+
+	assert.deepEqual(violations, []);
 });
