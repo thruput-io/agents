@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import process from "node:process";
 import { Effect } from "effect";
-import { gitHost } from "../../adapters/git/git-host.ts";
+import { gitBinary } from "../../adapters/git/git-binary.ts";
+import { gitHostOver } from "../../adapters/git/git-host.ts";
 import {
 	notYetImplementedAgent,
 	notYetImplementedHost,
@@ -13,7 +14,7 @@ import { type Printed, run } from "../common/runner.ts";
 import { mainCommands } from "./main-commands.ts";
 
 const controller: MainController = MainController.over(
-	{ ...notYetImplementedHost, ...gitHost },
+	{ ...notYetImplementedHost, ...gitHostOver(gitBinary) },
 	{ ...notYetImplementedStore, ...memoryStore() },
 	notYetImplementedAgent,
 );
@@ -21,5 +22,4 @@ const printed: Printed = await Effect.runPromise(
 	run(mainCommands(controller), process.argv.slice(2)),
 );
 
-process.stdout.write(printed.line);
-process.exitCode = printed.exitCode;
+process.stdout.write(printed.line, (): never => process.exit(printed.exitCode));

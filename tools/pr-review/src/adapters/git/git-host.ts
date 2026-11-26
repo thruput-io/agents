@@ -1,5 +1,3 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { Effect } from "effect";
 import type { Change } from "../../domain/change.ts";
 import type { Host } from "../../domain/host.ts";
@@ -11,14 +9,16 @@ import {
 	unreachableRemote,
 } from "../../perimeters/git.ts";
 
-const git = promisify(execFile);
+type Git = (gitArguments: readonly string[]) => Promise<string>;
 
-const gitHost: Pick<Host, "getChange"> = {
+const gitHostOver = (git: Git): Pick<Host, "getChange"> => ({
 	getChange: (url: TargetUrl): Effect.Effect<Change, HostError> =>
 		Effect.tryPromise({
-			try: () => git("git", ["ls-remote", "--exit-code", remoteOf(url)]),
+			try: (): Promise<string> =>
+				git(["ls-remote", "--exit-code", remoteOf(url)]),
 			catch: (): HostError => unreachableRemote(),
 		}).pipe(Effect.map((): Change => changeOfRemote())),
-};
+});
 
-export { gitHost };
+export type { Git };
+export { gitHostOver };
