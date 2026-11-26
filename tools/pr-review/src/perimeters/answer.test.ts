@@ -70,8 +70,8 @@ it("a definition is answered as an object without properties", () => {
 	assert.deepEqual(definitionAnswer(Definition.codec.decode({})), {});
 });
 
-it("a page is answered as an object without properties", () => {
-	assert.deepEqual(pageAnswer(Page.codec.decode({})), {});
+it("a page is answered as its text", () => {
+	assert.equal(pageAnswer(Page.codec.decode("a page")), "a page");
 });
 
 it("instructions are answered by their four parts", () => {

@@ -23,7 +23,7 @@ const ruleSample = (id: string): Rule => Rule.codec.decode(id);
 
 const probeSample = (name: string): Probe => Probe.codec.decode(name);
 
-const pageSample = (): Page => Page.codec.decode({});
+const pageSample = (): Page => Page.codec.decode("a page");
 
 const urlSample = (): TargetUrl =>
 	TargetUrl.codec.decode("https://host.test/change");

@@ -62,9 +62,9 @@ it("an acknowledged sub agent reads its rules, pages and definitions", () => {
 		[
 			'{"remaining":["Stated purpose","Delete unused"]}\n',
 			'{"rules":["Stated purpose","Delete unused"]}\n',
-			"{}\n",
+			'"a page"\n',
 			'{"failure":"no-page"}\n',
-			"{}\n",
+			'"a page"\n',
 			"{}\n",
 			'{"failure":"not-defined"}\n',
 		],

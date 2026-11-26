@@ -29,7 +29,7 @@ class MainController {
 		workdir: Workdir,
 		probes: Probes,
 	): Effect.Effect<ReviewStatus, NotReviewable | NotStarted> {
-		return this.host.getChange(url).pipe(
+		return this.host.getChange(url, workdir).pipe(
 			Effect.flatMap(
 				(change: Change): Effect.Effect<Review> =>
 					this.store.save(workdir, change.review(probes)),
