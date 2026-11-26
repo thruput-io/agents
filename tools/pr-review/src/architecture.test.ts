@@ -18,6 +18,9 @@ const ENTRY_POINTS =
 const DOMAIN = "src/domain/**,src/generated/domain/**";
 const PERIMETERS = `src/perimeters/**,src/generated/perimeters/**,${DOMAIN}`;
 
+const UNKNOWN_TYPE =
+	/(?:[:<,|&(=]|=>|\bas|\bextends|\bkeyof)\s*unknown\b(?!-)/u;
+
 const dependsOnlyOn = (sourceGlob: string, allowedGlob: string) =>
 	projectFiles(TSCONFIG_PATH)
 		.inPath(sourceGlob)
@@ -216,6 +219,19 @@ it("no other folder depends on the integration tests", async () => {
 		.shouldNot()
 		.dependOnFiles()
 		.inPath("src/integration-test/**")
+		.check({ allowEmptyTests: true });
+
+	assert.deepEqual(violations, []);
+});
+
+it("no file uses the type unknown", async () => {
+	const violations = await projectFiles(TSCONFIG_PATH)
+		.inPath("{src/**,scripts/**}")
+		.should()
+		.adhereTo(
+			(file) => !UNKNOWN_TYPE.test(file.content),
+			"The type unknown is not allowed: use a contract or a domain type",
+		)
 		.check({ allowEmptyTests: true });
 
 	assert.deepEqual(violations, []);

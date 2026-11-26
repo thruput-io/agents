@@ -13,16 +13,6 @@
 			"correctness": {
 				"noNodejsModules": "off",
 				"useQwikValidLexicalScope": "off"
-			},
-			"style": {
-				"noRestrictedTypes": {
-					"level": "error",
-					"options": {
-						"types": {
-							"unknown": "Use a specific contract or domain type instead of unknown."
-						}
-					}
-				}
 			}
 		}
 	},
