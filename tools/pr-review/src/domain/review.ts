@@ -1,20 +1,30 @@
 import { Effect, Match } from "effect";
+import { z } from "zod";
 import { HostError } from "../generated/domain/host-error.g.ts";
 import { NoReview } from "../generated/domain/no-review.g.ts";
 import { NotDue } from "../generated/domain/not-due.g.ts";
 import type { NotStarted } from "../generated/domain/not-started.g.ts";
 import { Posted } from "../generated/domain/posted.g.ts";
-import type { Probe } from "../generated/domain/probe.g.ts";
+import { Probe } from "../generated/domain/probe.g.ts";
 import type { Rule } from "../generated/domain/rule.g.ts";
-import type { TargetUrl } from "../generated/domain/target-url.g.ts";
-import type { Workdir } from "../generated/domain/workdir.g.ts";
+import { TargetUrl } from "../generated/domain/target-url.g.ts";
 import type { Agent } from "./agent.ts";
-import type { Assignment, Entry } from "./assignment.ts";
+import { Assignment, type Entry } from "./assignment.ts";
+import { type Post, PostShape } from "./post.ts";
 import type { Poster } from "./posting.ts";
 
-type Post = Posted | HostError;
 type Recorded = Entry | Post;
-type Assigned = readonly [Probe, Assignment];
+
+const ReviewShape = z.object({
+	url: TargetUrl.codec,
+	assigned: z
+		.array(z.tuple([Probe.codec, Assignment.codec]).readonly())
+		.readonly(),
+	posts: z.array(PostShape).readonly(),
+});
+
+type ReviewParts = z.output<typeof ReviewShape>;
+type Assigned = ReviewParts["assigned"][number];
 
 interface ReviewStatus {
 	readonly remaining: readonly Rule[];
@@ -41,6 +51,20 @@ class Review {
 		this.posts = posts;
 		Object.freeze(this);
 	}
+
+	static readonly codec = z.codec(
+		ReviewShape,
+		z.custom<Review>((value): boolean => value instanceof Review),
+		{
+			decode: ({ url, assigned, posts }: ReviewParts): Review =>
+				new Review(url, assigned, posts),
+			encode: ({ url, assigned, posts }: Review): ReviewParts => ({
+				url,
+				assigned,
+				posts,
+			}),
+		},
+	);
 
 	static of(url: TargetUrl, assigned: readonly Assigned[]): Review {
 		return new Review(url, assigned, []);
@@ -145,12 +169,5 @@ class Review {
 	}
 }
 
-interface ReviewStore {
-	save: (workdir: Workdir, review: Review) => Effect.Effect<Review>;
-	inWorkdir: (workdir: Workdir) => Effect.Effect<Review, NoReview>;
-	ofProbe: (probe: Probe) => Effect.Effect<Assignment, NoReview>;
-	append: (probe: Probe, recorded: Recorded) => Effect.Effect<Review, NoReview>;
-}
-
-export type { Post, Recorded, ReviewStatus, ReviewStore };
+export type { Recorded, ReviewStatus };
 export { Review };

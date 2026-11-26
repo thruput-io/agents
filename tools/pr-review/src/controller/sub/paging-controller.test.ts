@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
-import type { ReviewStore } from "../../domain/review.ts";
+import type { ReviewStore } from "../../domain/review-store.ts";
 import { NoPage } from "../../generated/domain/no-page.g.ts";
 import { NotAcknowledged } from "../../generated/domain/not-acknowledged.g.ts";
 import { Page } from "../../generated/domain/page.g.ts";

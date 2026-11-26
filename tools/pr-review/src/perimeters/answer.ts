@@ -1,7 +1,8 @@
 import { Match } from "effect";
 import type { z } from "zod";
 import { Instructions } from "../domain/instructions.ts";
-import type { Post, ReviewStatus } from "../domain/review.ts";
+import type { Post } from "../domain/post.ts";
+import type { ReviewStatus } from "../domain/review.ts";
 import { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
 import { AlreadyReviewed } from "../generated/domain/already-reviewed.g.ts";
 import { Context } from "../generated/domain/context.g.ts";

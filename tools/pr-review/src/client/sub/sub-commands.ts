@@ -5,7 +5,7 @@ import { ProgressController } from "../../controller/sub/progress-controller.ts"
 import type { Agent } from "../../domain/agent.ts";
 import type { Host } from "../../domain/host.ts";
 import type { Instructions } from "../../domain/instructions.ts";
-import type { ReviewStore } from "../../domain/review.ts";
+import type { ReviewStore } from "../../domain/review-store.ts";
 import { help } from "../../generated/client/sub/help.g.ts";
 import type { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
 import type { NoReview } from "../../generated/domain/no-review.g.ts";

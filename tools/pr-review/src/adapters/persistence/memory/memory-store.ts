@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import type { Assignment } from "../../../domain/assignment.ts";
-import type { Recorded, Review, ReviewStore } from "../../../domain/review.ts";
+import type { Recorded, Review } from "../../../domain/review.ts";
+import type { ReviewStore } from "../../../domain/review-store.ts";
 import type { NoReview } from "../../../generated/domain/no-review.g.ts";
 import type { Probe } from "../../../generated/domain/probe.g.ts";
 import type { Workdir } from "../../../generated/domain/workdir.g.ts";

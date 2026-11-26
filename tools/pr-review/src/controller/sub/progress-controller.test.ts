@@ -6,7 +6,7 @@ import type { Assignment } from "../../domain/assignment.ts";
 import type { Host } from "../../domain/host.ts";
 import { Instructions } from "../../domain/instructions.ts";
 import type { Poster } from "../../domain/posting.ts";
-import type { ReviewStore } from "../../domain/review.ts";
+import type { ReviewStore } from "../../domain/review-store.ts";
 import { ruleSample } from "../../domain/sample.test-support.ts";
 import { Verdict } from "../../domain/verdict.ts";
 import { HostError } from "../../generated/domain/host-error.g.ts";

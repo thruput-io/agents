@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import { MainController } from "../../controller/main/main-controller.ts";
 import type { Agent } from "../../domain/agent.ts";
 import type { Host } from "../../domain/host.ts";
-import type { ReviewStore } from "../../domain/review.ts";
+import type { ReviewStore } from "../../domain/review-store.ts";
 import { help } from "../../generated/client/main/help.g.ts";
 import type { Workdir } from "../../generated/domain/workdir.g.ts";
 import {

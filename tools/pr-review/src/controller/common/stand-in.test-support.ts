@@ -4,7 +4,8 @@ import type { Assignment } from "../../domain/assignment.ts";
 import { Change } from "../../domain/change.ts";
 import type { Host, NotReviewable } from "../../domain/host.ts";
 import type { Poster } from "../../domain/posting.ts";
-import type { Recorded, Review, ReviewStore } from "../../domain/review.ts";
+import type { Recorded, Review } from "../../domain/review.ts";
+import type { ReviewStore } from "../../domain/review-store.ts";
 import {
 	pageSample,
 	probeSample,

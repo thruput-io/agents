@@ -1,14 +1,15 @@
 import { Effect, Match } from "effect";
+import { z } from "zod";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
 import { Back } from "../generated/domain/back.g.ts";
 import { Forward } from "../generated/domain/forward.g.ts";
 import { NoPage } from "../generated/domain/no-page.g.ts";
 import { NotAcknowledged } from "../generated/domain/not-acknowledged.g.ts";
-import type { Page } from "../generated/domain/page.g.ts";
+import { Page } from "../generated/domain/page.g.ts";
 import type { Rule } from "../generated/domain/rule.g.ts";
 import { Briefing } from "./briefing.ts";
 import type { Instructions } from "./instructions.ts";
-import type { Task } from "./task.ts";
+import { type Task, TaskShape } from "./task.ts";
 import { Verdict } from "./verdict.ts";
 
 type Entry = Acknowledgement | Verdict | Forward | Back;
@@ -18,11 +19,20 @@ interface Ledger {
 	readonly verdicts: readonly Verdict[];
 }
 
-interface Happened {
-	readonly acknowledgements: readonly Acknowledgement[];
-	readonly verdicts: readonly Verdict[];
-	readonly position: number;
-}
+const HappenedShape = z.object({
+	acknowledgements: z.array(Acknowledgement.codec).readonly(),
+	verdicts: z.array(Verdict.codec).readonly(),
+	position: z.int(),
+});
+
+const AssignmentShape = z.object({
+	task: TaskShape,
+	pages: z.array(Page.codec).readonly(),
+	happened: HappenedShape,
+});
+
+type Happened = z.output<typeof HappenedShape>;
+type AssignmentParts = z.output<typeof AssignmentShape>;
 
 const BEFORE_FIRST = -1;
 
@@ -43,6 +53,20 @@ class Assignment {
 		this.happened = happened;
 		Object.freeze(this);
 	}
+
+	static readonly codec = z.codec(
+		AssignmentShape,
+		z.custom<Assignment>((value): boolean => value instanceof Assignment),
+		{
+			decode: ({ task, pages, happened }: AssignmentParts): Assignment =>
+				new Assignment(task, pages, happened),
+			encode: ({ task, pages, happened }: Assignment): AssignmentParts => ({
+				task,
+				pages,
+				happened,
+			}),
+		},
+	);
 
 	static of(task: Task, pages: readonly Page[]): Assignment {
 		return new Assignment(task, pages, {

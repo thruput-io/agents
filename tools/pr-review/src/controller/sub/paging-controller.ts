@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import type { Assignment, Entry } from "../../domain/assignment.ts";
-import type { Review, ReviewStore } from "../../domain/review.ts";
+import type { Review } from "../../domain/review.ts";
+import type { ReviewStore } from "../../domain/review-store.ts";
 import { Back } from "../../generated/domain/back.g.ts";
 import { Forward } from "../../generated/domain/forward.g.ts";
 import type { NoPage } from "../../generated/domain/no-page.g.ts";
