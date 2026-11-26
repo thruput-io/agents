@@ -153,16 +153,16 @@ definitions:
     Meeting the need with code already in this codebase, refactored into a reusable [[Component]] where it is not one yet.
 - id: Platform or framework
   specification: |
-    Meeting the need with what the platform or [[Framework]] in use already provides.
+    The runtime platform or [[Framework]] in use.
 - id: External dependency
   specification: |
-    Meeting the need by adding an existing external [[Component]] as a dependency.
+    An existing external [[Component]] added to the project as a dependency.
 - id: External tool or service
   specification: |
-    Meeting the need by integrating an existing external tool or calling an existing service.
+    An external tool or remote service integrated with or called by the system.
 - id: New code
   specification: |
-    Meeting the need by writing new code.
+    Source code written in the current codebase.
 - id: Test Pyramid
   specification: |
     The places a defect can be caught, from the base, earliest and cheapest, to the top, latest and costliest.
@@ -179,22 +179,22 @@ definitions:
     The set of rules in a language that assigns a [[Type]] to every construct and verifies how they compose.
 - id: Static code analysis
   specification: |
-    Catching a defect by analysing the code before it runs, with a linter or another static tool.
+    Analysing source code before it runs, with a linter or another static tool.
 - id: Unit test
   specification: |
-    Catching a defect by exercising one [[Subject under test]] in-process, without an [[External dependency]].
+    A [[Test]] that exercises one [[Subject under test]] in-process, without an [[External dependency]].
 - id: Narrow integration test
   specification: |
-    Exercising one [[Subject under test]] against a real instance of the [[External dependency]] it communicates with, such as a database container ([Martin Fowler, IntegrationTest](https://martinfowler.com/bliki/IntegrationTest.html)).
+    A [[Test]] that exercises one [[Subject under test]] against a real [[Instance]] of the [[External dependency]] it communicates with, such as a database container ([Martin Fowler, IntegrationTest](https://martinfowler.com/bliki/IntegrationTest.html)).
 - id: Integration test
   specification: |
-    Exercising one [[Subject under test]]—the shipped [[Runtime artifact]]—using [[Black-box testing]] against containerized [[External dependency]] instances.
+    A [[Test]] that exercises one [[Subject under test]]—the shipped [[Runtime artifact]]—using [[Black-box testing]] against containerized [[External dependency]] instances.
 - id: End-to-end test
   specification: |
-    Catching a defect by exercising deployed services across a running staging [[Environment]].
+    A [[Test]] that exercises fully deployed services across a running staging [[Environment]].
 - id: Manual test
   specification: |
-    Catching a defect by a person exercising the running system.
+    A [[Test]] performed by a person exercising the running system.
 - id: Evidence
   specification: |
     A verifiable reference that grounds a [[Change]] or assumption; a practice recalled from experience is not [[Evidence]].
