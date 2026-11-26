@@ -1,9 +1,7 @@
 import { Surface } from "../generated/domain/surface.g.ts";
 
-type NoData = Readonly<Record<string, never>>;
-
 class Cursor {
-	readonly #data: NoData = {};
+	readonly #kind = "cursor";
 
 	private constructor() {
 		Object.freeze(this);
@@ -13,8 +11,8 @@ class Cursor {
 		return new Cursor();
 	}
 
-	static dataOf(value: Cursor): NoData {
-		return value.#data;
+	toJSON(): { readonly kind: string } {
+		return { kind: this.#kind };
 	}
 
 	next(): Surface {

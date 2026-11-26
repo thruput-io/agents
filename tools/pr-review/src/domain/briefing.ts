@@ -3,10 +3,8 @@ import { Ruleset } from "../generated/domain/ruleset.g.ts";
 import type { Term } from "../generated/domain/term.g.ts";
 import { Instructions } from "./instructions.ts";
 
-type NoData = Readonly<Record<string, never>>;
-
 class Briefing {
-	readonly #data: NoData = {};
+	readonly #kind = "briefing";
 
 	private constructor() {
 		Object.freeze(this);
@@ -16,8 +14,8 @@ class Briefing {
 		return new Briefing();
 	}
 
-	static dataOf(value: Briefing): NoData {
-		return value.#data;
+	toJSON(): { readonly kind: string } {
+		return { kind: this.#kind };
 	}
 
 	instructions(): Instructions {

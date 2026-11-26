@@ -10,6 +10,6 @@ it("a change is reviewed with probes in a pending review", () => {
 	assert.equal(review instanceof PendingReview, true);
 });
 
-it("a change carries no data yet", () => {
-	assert.deepEqual(Change.dataOf(Change.create()), {});
+it("a change serializes as its kind", () => {
+	assert.deepEqual(Change.create().toJSON(), { kind: "change" });
 });

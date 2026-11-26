@@ -24,6 +24,6 @@ it("instructions end with an acknowledgement request", () => {
 	assert.equal(request instanceof AcknowledgementRequest, true);
 });
 
-it("instructions carry no data yet", () => {
-	assert.deepEqual(Instructions.dataOf(Instructions.create()), {});
+it("instructions serialize as their kind", () => {
+	assert.deepEqual(Instructions.create().toJSON(), { kind: "instructions" });
 });

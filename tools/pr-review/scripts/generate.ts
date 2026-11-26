@@ -13,6 +13,9 @@ interface DomainDocument {
 
 const WORD_START = /(?<lower>[a-z])(?<upper>[A-Z])/gu;
 
+const kebabOf = (name: string): string =>
+	name.replace(WORD_START, "$<lower>-$<upper>").toLowerCase();
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const generated = resolve(root, "src/generated");
 const target = resolve(generated, "domain");
@@ -43,8 +46,8 @@ const moduleOf = {
 			"\t\tconst parsed = schema.safeParse(input);",
 			`\t\treturn parsed.success ? Effect.succeed(new ${name}(parsed.data)) : Effect.fail(NotValid.create());`,
 			"\t}",
-			`\tstatic dataOf(value: ${name}): string {`,
-			"\t\treturn value.#data;",
+			"\ttoJSON(): string {",
+			"\t\treturn this.#data;",
 			"\t}",
 			"}",
 			"",
@@ -52,16 +55,15 @@ const moduleOf = {
 	object: (name: string): string =>
 		[
 			`export class ${name} {`,
-			"\treadonly #data: Readonly<Record<string, never>>;",
+			`\treadonly #kind = "${kebabOf(name)}";`,
 			"\tprivate constructor() {",
-			"\t\tthis.#data = {};",
 			"\t\tObject.freeze(this);",
 			"\t}",
 			`\tstatic create(): ${name} {`,
 			`\t\treturn new ${name}();`,
 			"\t}",
-			`\tstatic dataOf(value: ${name}): Readonly<Record<string, never>> {`,
-			"\t\treturn value.#data;",
+			"\ttoJSON(): { readonly kind: string } {",
+			"\t\treturn { kind: this.#kind };",
 			"\t}",
 			"}",
 			"",
@@ -70,10 +72,7 @@ const moduleOf = {
 
 Object.entries(document.$defs).map(([name, schema]) =>
 	writeFileSync(
-		resolve(
-			target,
-			`${name.replace(WORD_START, "$<lower>-$<upper>").toLowerCase()}.g.ts`,
-		),
+		resolve(target, `${kebabOf(name)}.g.ts`),
 		moduleOf[schema.type](name, schema),
 	),
 );

@@ -4,10 +4,8 @@ import { ReviewStatus } from "../generated/domain/review-status.g.ts";
 import type { Agent } from "./agent.ts";
 import { Assignment } from "./assignment.ts";
 
-type NoData = Readonly<Record<string, never>>;
-
 class PendingReview {
-	readonly #data: NoData = {};
+	readonly #kind = "pending-review";
 
 	private constructor() {
 		Object.freeze(this);
@@ -17,8 +15,8 @@ class PendingReview {
 		return new PendingReview();
 	}
 
-	static dataOf(value: PendingReview): NoData {
-		return value.#data;
+	toJSON(): { readonly kind: string } {
+		return { kind: this.#kind };
 	}
 
 	status(): ReviewStatus {

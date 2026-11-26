@@ -20,6 +20,6 @@ it("a briefing defines a term", () => {
 	assert.equal(definition instanceof Definition, true);
 });
 
-it("a briefing carries no data yet", () => {
-	assert.deepEqual(Briefing.dataOf(Briefing.create()), {});
+it("a briefing serializes as its kind", () => {
+	assert.deepEqual(Briefing.create().toJSON(), { kind: "briefing" });
 });

@@ -5,10 +5,8 @@ import { Briefing } from "./briefing.ts";
 import { Cursor } from "./cursor.ts";
 import type { Instructions } from "./instructions.ts";
 
-type NoData = Readonly<Record<string, never>>;
-
 class Assignment {
-	readonly #data: NoData = {};
+	readonly #kind = "assignment";
 
 	private constructor() {
 		Object.freeze(this);
@@ -18,8 +16,8 @@ class Assignment {
 		return new Assignment();
 	}
 
-	static dataOf(value: Assignment): NoData {
-		return value.#data;
+	toJSON(): { readonly kind: string } {
+		return { kind: this.#kind };
 	}
 
 	briefing(): Briefing {

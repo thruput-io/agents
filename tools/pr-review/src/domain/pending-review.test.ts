@@ -41,6 +41,6 @@ it("a pending review dismisses no sub agent", () => {
 	assert.equal(dismissed instanceof PendingReview, true);
 });
 
-it("a pending review carries no data yet", () => {
-	assert.deepEqual(PendingReview.dataOf(PendingReview.create()), {});
+it("a pending review serializes as its kind", () => {
+	assert.deepEqual(PendingReview.create().toJSON(), { kind: "pending-review" });
 });

@@ -1,10 +1,8 @@
 import type { Probes } from "../generated/domain/probes.g.ts";
 import { PendingReview } from "./pending-review.ts";
 
-type NoData = Readonly<Record<string, never>>;
-
 class Change {
-	readonly #data: NoData = {};
+	readonly #kind = "change";
 
 	private constructor() {
 		Object.freeze(this);
@@ -14,8 +12,8 @@ class Change {
 		return new Change();
 	}
 
-	static dataOf(value: Change): NoData {
-		return value.#data;
+	toJSON(): { readonly kind: string } {
+		return { kind: this.#kind };
 	}
 
 	review(_probes: Probes): PendingReview {

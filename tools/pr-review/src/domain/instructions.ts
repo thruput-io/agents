@@ -3,10 +3,8 @@ import { Context } from "../generated/domain/context.g.ts";
 import { Usage } from "../generated/domain/usage.g.ts";
 import { Workflow } from "../generated/domain/workflow.g.ts";
 
-type NoData = Readonly<Record<string, never>>;
-
 class Instructions {
-	readonly #data: NoData = {};
+	readonly #kind = "instructions";
 
 	private constructor() {
 		Object.freeze(this);
@@ -16,8 +14,8 @@ class Instructions {
 		return new Instructions();
 	}
 
-	static dataOf(value: Instructions): NoData {
-		return value.#data;
+	toJSON(): { readonly kind: string } {
+		return { kind: this.#kind };
 	}
 
 	workflow(): Workflow {

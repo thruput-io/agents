@@ -11,6 +11,6 @@ it("a cursor turns to the previous page of the surface", () => {
 	assert.equal(Cursor.create().previous() instanceof Surface, true);
 });
 
-it("a cursor carries no data yet", () => {
-	assert.deepEqual(Cursor.dataOf(Cursor.create()), {});
+it("a cursor serializes as its kind", () => {
+	assert.deepEqual(Cursor.create().toJSON(), { kind: "cursor" });
 });

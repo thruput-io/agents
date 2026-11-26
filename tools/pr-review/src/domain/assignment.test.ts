@@ -26,6 +26,6 @@ it("an assignment accepts an acknowledgement", () => {
 	assert.equal(Effect.runSync(accepted), acknowledgement);
 });
 
-it("an assignment carries no data yet", () => {
-	assert.deepEqual(Assignment.dataOf(Assignment.create()), {});
+it("an assignment serializes as its kind", () => {
+	assert.deepEqual(Assignment.create().toJSON(), { kind: "assignment" });
 });

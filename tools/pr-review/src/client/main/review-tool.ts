@@ -4,18 +4,14 @@ import { Effect } from "effect";
 import { gitHost } from "../../adapters/git/git-host.ts";
 import { memoryStore } from "../../adapters/persistence/memory/memory-store.ts";
 import { MainController } from "../../controller/main/main-controller.ts";
-import {
-	prepareCommandOf,
-	statusLineOf,
-} from "../../perimeters/command-line.ts";
+import { run } from "../common/runner.ts";
 import { idleAgent } from "./idle-agent.ts";
+import { mainCommands } from "./main-commands.ts";
 
 const controller = MainController.over(gitHost, memoryStore, idleAgent);
-const answered = prepareCommandOf(process.argv.slice(2)).pipe(
-	Effect.flatMap(({ url, workdir, probes }) =>
-		controller.prepare(url, workdir, probes),
-	),
-	Effect.map(statusLineOf),
+const { line, exitCode } = await Effect.runPromise(
+	run(mainCommands(controller), process.argv.slice(2)),
 );
 
-process.stdout.write(await Effect.runPromise(answered));
+process.stdout.write(line);
+process.exitCode = exitCode;
