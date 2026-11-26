@@ -13,7 +13,7 @@ import {
 	commandLineOf,
 	defineCommandOf,
 	prepareCommandOf,
-	probeCommandOf,
+	rulesCommandOf,
 	statusCommandOf,
 } from "./command-line.ts";
 
@@ -70,13 +70,13 @@ it("an empty command line is not valid", () => {
 });
 
 it("the argument of a probe command gives the probe", () => {
-	const probe = Effect.runSync(probeCommandOf(["probe-1"]));
+	const probe = Effect.runSync(rulesCommandOf(["probe-1"]));
 
 	assert.equal(Probe.dataOf(probe), "probe-1");
 });
 
 it("a probe command without its probe is not valid", () => {
-	const refused = Effect.runSync(Effect.flip(probeCommandOf([])));
+	const refused = Effect.runSync(Effect.flip(rulesCommandOf([])));
 
 	assert.equal(refused instanceof NotValid, true);
 });

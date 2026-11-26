@@ -7,6 +7,18 @@ import { Probes } from "../generated/domain/probes.g.ts";
 import { TargetUrl } from "../generated/domain/target-url.g.ts";
 import { Term } from "../generated/domain/term.g.ts";
 import { Workdir } from "../generated/domain/workdir.g.ts";
+import {
+	prepareArguments,
+	statusArguments,
+} from "../generated/perimeters/main-arguments.g.ts";
+import {
+	ackArguments,
+	defineArguments,
+	instructionsArguments,
+	nextArguments,
+	prevArguments,
+	rulesArguments,
+} from "../generated/perimeters/sub-arguments.g.ts";
 
 interface CommandLine {
 	readonly name: string;
@@ -20,8 +32,6 @@ interface PrepareCommand {
 }
 
 const CommandLineShape = z.tuple([z.string()]).rest(z.string());
-const PrepareArguments = z.tuple([z.string(), z.string()]);
-const StatusArguments = z.tuple([z.string()]);
 
 const parsedBy = <Shape>(
 	shape: z.ZodType<Shape>,
@@ -47,7 +57,7 @@ const commandLineOf = (
 const prepareCommandOf = (
 	commandArguments: readonly string[],
 ): Effect.Effect<PrepareCommand, NotValid> =>
-	parsedBy(PrepareArguments, commandArguments).pipe(
+	parsedBy(prepareArguments, commandArguments).pipe(
 		Effect.flatMap(
 			([url, workdir]: [string, string]): Effect.Effect<
 				PrepareCommand,
@@ -64,7 +74,7 @@ const prepareCommandOf = (
 const statusCommandOf = (
 	commandArguments: readonly string[],
 ): Effect.Effect<Workdir, NotValid> =>
-	parsedBy(StatusArguments, commandArguments).pipe(
+	parsedBy(statusArguments, commandArguments).pipe(
 		Effect.flatMap(
 			([workdir]: [string]): Effect.Effect<Workdir, NotValid> =>
 				Workdir.from(workdir),
@@ -81,22 +91,25 @@ interface AckCommand {
 	readonly acknowledgement: Acknowledgement;
 }
 
-const ProbeArguments = z.tuple([z.string()]);
-const TwoArguments = z.tuple([z.string(), z.string()]);
+const probeCommandBy =
+	(shape: z.ZodType<[string]>) =>
+	(commandArguments: readonly string[]): Effect.Effect<Probe, NotValid> =>
+		parsedBy(shape, commandArguments).pipe(
+			Effect.flatMap(
+				([probe]: [string]): Effect.Effect<Probe, NotValid> =>
+					Probe.from(probe),
+			),
+		);
 
-const probeCommandOf = (
-	commandArguments: readonly string[],
-): Effect.Effect<Probe, NotValid> =>
-	parsedBy(ProbeArguments, commandArguments).pipe(
-		Effect.flatMap(
-			([probe]: [string]): Effect.Effect<Probe, NotValid> => Probe.from(probe),
-		),
-	);
+const instructionsCommandOf = probeCommandBy(instructionsArguments);
+const rulesCommandOf = probeCommandBy(rulesArguments);
+const nextCommandOf = probeCommandBy(nextArguments);
+const prevCommandOf = probeCommandBy(prevArguments);
 
 const defineCommandOf = (
 	commandArguments: readonly string[],
 ): Effect.Effect<DefineCommand, NotValid> =>
-	parsedBy(TwoArguments, commandArguments).pipe(
+	parsedBy(defineArguments, commandArguments).pipe(
 		Effect.flatMap(
 			([probe, term]: [string, string]): Effect.Effect<
 				DefineCommand,
@@ -108,7 +121,7 @@ const defineCommandOf = (
 const ackCommandOf = (
 	commandArguments: readonly string[],
 ): Effect.Effect<AckCommand, NotValid> =>
-	parsedBy(TwoArguments, commandArguments).pipe(
+	parsedBy(ackArguments, commandArguments).pipe(
 		Effect.flatMap(
 			([probe, acknowledgement]: [string, string]): Effect.Effect<
 				AckCommand,
@@ -126,7 +139,10 @@ export {
 	ackCommandOf,
 	commandLineOf,
 	defineCommandOf,
+	instructionsCommandOf,
+	nextCommandOf,
 	prepareCommandOf,
-	probeCommandOf,
+	prevCommandOf,
+	rulesCommandOf,
 	statusCommandOf,
 };

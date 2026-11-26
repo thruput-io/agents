@@ -1,0 +1,22 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "answers",
+	"description": "What a command answers when it fails.",
+	"type": "object",
+	"properties": {
+		"failure": {
+			"description": "Why the command failed",
+			"enum": [
+				"not-valid",
+				"unknown-format",
+				"already-reviewed",
+				"too-large",
+				"refused",
+				"host-error",
+				"not-started",
+				"no-review"
+			]
+		}
+	},
+	"required": ["failure"]
+}

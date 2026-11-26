@@ -20,7 +20,10 @@ import {
 import {
 	ackCommandOf,
 	defineCommandOf,
-	probeCommandOf,
+	instructionsCommandOf,
+	nextCommandOf,
+	prevCommandOf,
+	rulesCommandOf,
 } from "../../perimeters/command-line.ts";
 import type { Commands } from "../common/runner.ts";
 
@@ -38,13 +41,13 @@ const subCommands = ({
 	progress,
 }: SubControllers): Commands => ({
 	instructions: (commandArguments: readonly string[]): Answered =>
-		probeCommandOf(commandArguments).pipe(
+		instructionsCommandOf(commandArguments).pipe(
 			Effect.flatMap((probe: Probe) => briefing.instructions(probe)),
 			Effect.map(instructionsAnswer),
 			Effect.mapError(failureAnswer),
 		),
 	rules: (commandArguments: readonly string[]): Answered =>
-		probeCommandOf(commandArguments).pipe(
+		rulesCommandOf(commandArguments).pipe(
 			Effect.flatMap((probe: Probe) => briefing.rules(probe)),
 			Effect.map(rulesAnswer),
 			Effect.mapError(failureAnswer),
@@ -56,13 +59,13 @@ const subCommands = ({
 			Effect.mapError(failureAnswer),
 		),
 	next: (commandArguments: readonly string[]): Answered =>
-		probeCommandOf(commandArguments).pipe(
+		nextCommandOf(commandArguments).pipe(
 			Effect.flatMap((probe: Probe) => paging.next(probe)),
 			Effect.map(surfaceAnswer),
 			Effect.mapError(failureAnswer),
 		),
 	prev: (commandArguments: readonly string[]): Answered =>
-		probeCommandOf(commandArguments).pipe(
+		prevCommandOf(commandArguments).pipe(
 			Effect.flatMap((probe: Probe) => paging.prev(probe)),
 			Effect.map(surfaceAnswer),
 			Effect.mapError(failureAnswer),

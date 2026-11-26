@@ -1,4 +1,5 @@
 import { Match } from "effect";
+import type { z } from "zod";
 import { Instructions } from "../domain/instructions.ts";
 import { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
 import { AlreadyReviewed } from "../generated/domain/already-reviewed.g.ts";
@@ -17,8 +18,11 @@ import { TooLarge } from "../generated/domain/too-large.g.ts";
 import { UnknownFormat } from "../generated/domain/unknown-format.g.ts";
 import { Usage } from "../generated/domain/usage.g.ts";
 import { Workflow } from "../generated/domain/workflow.g.ts";
+import type { failureAnswer as failureShape } from "../generated/perimeters/answers.g.ts";
 
 type Answer = string | { readonly [key: string]: Answer };
+
+type Refusal = z.infer<typeof failureShape>;
 
 type Failure =
 	| NotValid
@@ -61,17 +65,17 @@ const instructionsAnswer = (instructions: Instructions): Answer => ({
 });
 
 const failureAnswer: (failure: Failure) => Answer = Match.type<Failure>().pipe(
-	Match.when(a(NotValid), (): Answer => ({ failure: "not-valid" })),
-	Match.when(a(UnknownFormat), (): Answer => ({ failure: "unknown-format" })),
+	Match.when(a(NotValid), (): Refusal => ({ failure: "not-valid" })),
+	Match.when(a(UnknownFormat), (): Refusal => ({ failure: "unknown-format" })),
 	Match.when(
 		a(AlreadyReviewed),
-		(): Answer => ({ failure: "already-reviewed" }),
+		(): Refusal => ({ failure: "already-reviewed" }),
 	),
-	Match.when(a(TooLarge), (): Answer => ({ failure: "too-large" })),
-	Match.when(a(Refused), (): Answer => ({ failure: "refused" })),
-	Match.when(a(HostError), (): Answer => ({ failure: "host-error" })),
-	Match.when(a(NotStarted), (): Answer => ({ failure: "not-started" })),
-	Match.when(a(NoReview), (): Answer => ({ failure: "no-review" })),
+	Match.when(a(TooLarge), (): Refusal => ({ failure: "too-large" })),
+	Match.when(a(Refused), (): Refusal => ({ failure: "refused" })),
+	Match.when(a(HostError), (): Refusal => ({ failure: "host-error" })),
+	Match.when(a(NotStarted), (): Refusal => ({ failure: "not-started" })),
+	Match.when(a(NoReview), (): Refusal => ({ failure: "no-review" })),
 	Match.exhaustive,
 );
 

@@ -2,30 +2,95 @@
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"title": "review-tool-probe",
 	"description": "The commands of a sub agent. Each answers one line of JSON and exits with 0 for an answer and 1 for a failure.",
-	"oneOf": [
-		{
-			"title": "instructions",
-			"description": "instructions <probe>: answers the instructions of the probe."
+	"type": "object",
+	"properties": {
+		"instructions": {
+			"description": "instructions <probe>: answers the instructions of the probe.",
+			"type": "array",
+			"items": [
+				{
+					"description": "What the sub agent was handed for its part of the review",
+					"type": "string",
+					"minLength": 1
+				}
+			],
+			"minItems": 1,
+			"maxItems": 1
 		},
-		{
-			"title": "ack",
-			"description": "ack <probe> <acknowledgement>: acknowledges the instructions and answers the progress, or answers more detailed instructions when the acknowledgement is not the one asked for."
+		"ack": {
+			"description": "ack <probe> <acknowledgement>: acknowledges the instructions and answers the progress, or answers more detailed instructions when the acknowledgement is not the one asked for.",
+			"type": "array",
+			"items": [
+				{
+					"description": "What the sub agent was handed for its part of the review",
+					"type": "string",
+					"minLength": 1
+				},
+				{
+					"description": "The phrase the instructions ask for",
+					"type": "string",
+					"minLength": 1
+				}
+			],
+			"minItems": 2,
+			"maxItems": 2
 		},
-		{
-			"title": "rules",
-			"description": "rules <probe>: answers the rules of the probe."
+		"rules": {
+			"description": "rules <probe>: answers the rules of the probe.",
+			"type": "array",
+			"items": [
+				{
+					"description": "What the sub agent was handed for its part of the review",
+					"type": "string",
+					"minLength": 1
+				}
+			],
+			"minItems": 1,
+			"maxItems": 1
 		},
-		{
-			"title": "define",
-			"description": "define <probe> <term>: answers the definition of the term."
+		"define": {
+			"description": "define <probe> <term>: answers the definition of the term.",
+			"type": "array",
+			"items": [
+				{
+					"description": "What the sub agent was handed for its part of the review",
+					"type": "string",
+					"minLength": 1
+				},
+				{
+					"description": "A word of the glossary",
+					"type": "string",
+					"minLength": 1
+				}
+			],
+			"minItems": 2,
+			"maxItems": 2
 		},
-		{
-			"title": "next",
-			"description": "next <probe>: answers the next page of the surface."
+		"next": {
+			"description": "next <probe>: answers the next page of the surface.",
+			"type": "array",
+			"items": [
+				{
+					"description": "What the sub agent was handed for its part of the review",
+					"type": "string",
+					"minLength": 1
+				}
+			],
+			"minItems": 1,
+			"maxItems": 1
 		},
-		{
-			"title": "prev",
-			"description": "prev <probe>: answers the previous page of the surface."
+		"prev": {
+			"description": "prev <probe>: answers the previous page of the surface.",
+			"type": "array",
+			"items": [
+				{
+					"description": "What the sub agent was handed for its part of the review",
+					"type": "string",
+					"minLength": 1
+				}
+			],
+			"minItems": 1,
+			"maxItems": 1
 		}
-	]
+	}
 }
