@@ -75,7 +75,7 @@ definitions:
     Alias for [[Component]].
 - id: Function
   specification: |
-    A callable unit of code that accepts zero or more [[Parameter type]]s and returns a [[Return value]].
+    A callable unit of code that takes zero or more parameters and returns a [[Return value]].
 - id: Interface
   specification: |
     The boundary through which code outside a [[Component]] invokes it.

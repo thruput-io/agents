@@ -273,7 +273,7 @@ rules:
     Decompose code into small, single-purpose [[Component]]s.
   smells:
   - A [[Component]] longer than 200 lines.
-  - A [[Function]] or [[Public method]] with more than 3 [[Parameter type]]s.
+  - A [[Function]] or [[Public method]] with more than 3 parameters, not counting parameters dictated by a [[Framework]].
   - An [[Interface]] with more than 4 [[Public method]]s, not counting [[Overload]]s or convenience methods.
 - id: No primitive leakage
   marker: MUST
