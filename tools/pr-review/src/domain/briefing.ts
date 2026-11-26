@@ -1,42 +1,54 @@
+import { Effect } from "effect";
 import type { Definition } from "../generated/domain/definition.g.ts";
-import type { Ruleset } from "../generated/domain/ruleset.g.ts";
-import type { Term } from "../generated/domain/term.g.ts";
+import type { NoPage } from "../generated/domain/no-page.g.ts";
+import type { NotAcknowledged } from "../generated/domain/not-acknowledged.g.ts";
+import { NotDefined } from "../generated/domain/not-defined.g.ts";
+import type { Page } from "../generated/domain/page.g.ts";
+import type { Rule } from "../generated/domain/rule.g.ts";
 import type { Instructions } from "./instructions.ts";
+import type { Defined } from "./task.ts";
+import type { Term } from "./term.ts";
+
+interface BriefingParts {
+	readonly instructions: Instructions;
+	readonly rules: Effect.Effect<readonly Rule[], NotAcknowledged>;
+	readonly page: Effect.Effect<Page, NoPage | NotAcknowledged>;
+	readonly glossary: readonly Defined[];
+}
 
 class Briefing {
-	private readonly held: Instructions;
-	private readonly ruleset: Ruleset;
-	private readonly definition: Definition;
+	private readonly parts: BriefingParts;
 
-	private constructor(
-		instructions: Instructions,
-		ruleset: Ruleset,
-		definition: Definition,
-	) {
-		this.held = instructions;
-		this.ruleset = ruleset;
-		this.definition = definition;
+	private constructor(parts: BriefingParts) {
+		this.parts = parts;
 		Object.freeze(this);
 	}
 
-	static of(
-		instructions: Instructions,
-		ruleset: Ruleset,
-		definition: Definition,
-	): Briefing {
-		return new Briefing(instructions, ruleset, definition);
+	static of(parts: BriefingParts): Briefing {
+		return new Briefing(parts);
 	}
 
 	instructions(): Instructions {
-		return this.held;
+		return this.parts.instructions;
 	}
 
-	rules(): Ruleset {
-		return this.ruleset;
+	rules(): Effect.Effect<readonly Rule[], NotAcknowledged> {
+		return this.parts.rules;
 	}
 
-	definitionOf(_term: Term): Definition {
-		return this.definition;
+	page(): Effect.Effect<Page, NoPage | NotAcknowledged> {
+		return this.parts.page;
+	}
+
+	definitionOf(term: Term): Effect.Effect<Definition, NotDefined> {
+		return Effect.fromNullishOr(
+			this.parts.glossary.find(([defined]: Defined): boolean =>
+				defined.isSameAs(term),
+			),
+		).pipe(
+			Effect.map(([, definition]: Defined): Definition => definition),
+			Effect.mapError((): NotDefined => NotDefined.create()),
+		);
 	}
 }
 

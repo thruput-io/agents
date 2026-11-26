@@ -2,192 +2,181 @@ import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
 import type { Agent } from "../../domain/agent.ts";
-import { Assignment } from "../../domain/assignment.ts";
-import { Assignments } from "../../domain/assignments.ts";
-import { Briefing } from "../../domain/briefing.ts";
-import type { Change } from "../../domain/change.ts";
-import { CompleteReview } from "../../domain/complete-review.ts";
-import { Cursor } from "../../domain/cursor.ts";
-import type { Host, NotReviewable } from "../../domain/host.ts";
+import type { Assignment } from "../../domain/assignment.ts";
+import type { Host } from "../../domain/host.ts";
 import { Instructions } from "../../domain/instructions.ts";
-import type { Review, ReviewStore } from "../../domain/review.ts";
-import { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
-import { AcknowledgementRequest } from "../../generated/domain/acknowledgement-request.g.ts";
-import { Context } from "../../generated/domain/context.g.ts";
-import { Definition } from "../../generated/domain/definition.g.ts";
+import type { Poster } from "../../domain/posting.ts";
+import type { ReviewStore } from "../../domain/review.ts";
+import { ruleSample } from "../../domain/sample.test-support.ts";
+import { Verdict } from "../../domain/verdict.ts";
 import { HostError } from "../../generated/domain/host-error.g.ts";
-import type { NoReview } from "../../generated/domain/no-review.g.ts";
-import { Outcome } from "../../generated/domain/outcome.g.ts";
-import { Probe } from "../../generated/domain/probe.g.ts";
-import { Progress } from "../../generated/domain/progress.g.ts";
-import { ReviewStatus } from "../../generated/domain/review-status.g.ts";
-import { Ruleset } from "../../generated/domain/ruleset.g.ts";
-import { Surface } from "../../generated/domain/surface.g.ts";
-import { TargetUrl } from "../../generated/domain/target-url.g.ts";
-import { Usage } from "../../generated/domain/usage.g.ts";
-import { Verdict } from "../../generated/domain/verdict.g.ts";
-import type { Workdir } from "../../generated/domain/workdir.g.ts";
-import { Workflow } from "../../generated/domain/workflow.g.ts";
+import { NotAcknowledged } from "../../generated/domain/not-acknowledged.g.ts";
+import { NotAssigned } from "../../generated/domain/not-assigned.g.ts";
+import type { TargetUrl } from "../../generated/domain/target-url.g.ts";
+import { Workdir } from "../../generated/domain/workdir.g.ts";
+import {
+	agent,
+	host,
+	probe,
+	purpose,
+	sent,
+	storeWithReview,
+	unused,
+} from "../common/stand-in.test-support.ts";
 import { ProgressController } from "./progress-controller.ts";
 
-const probe: Probe = Probe.codec.decode("probe-1");
+type Outcome = Parameters<Poster["post"]>[1];
 
-const request: AcknowledgementRequest = AcknowledgementRequest.codec.decode({});
-const brief: Instructions = Instructions.of({
-	workflow: Workflow.codec.decode({}),
-	context: Context.codec.decode({}),
-	usage: Usage.codec.decode({}),
-	request,
-});
-const detailed: Instructions = Instructions.of({
-	workflow: Workflow.codec.decode({}),
-	context: Context.codec.decode({}),
-	usage: Usage.codec.decode({}),
-	request,
-});
-const ruleset: Ruleset = Ruleset.codec.decode({});
-const definition: Definition = Definition.codec.decode({});
-const following: Surface = Surface.codec.decode({});
-const preceding: Surface = Surface.codec.decode({});
-const progress: Progress = Progress.codec.decode({});
-const expected: Acknowledgement = Acknowledgement.codec.decode("the phrase");
-const assignment: Assignment = Assignment.of({
-	briefing: Briefing.of(brief, ruleset, definition),
-	cursor: Cursor.of(following, preceding),
-	progress,
-	expected,
-	detailed,
-});
+const workdir: Workdir = Workdir.codec.decode("/work");
 
-const complete: CompleteReview = CompleteReview.of({
-	url: TargetUrl.codec.decode("https://host.test/change"),
-	outcome: Outcome.codec.decode({}),
-	state: ReviewStatus.codec.decode({}),
-	assignments: Assignments.of([assignment]),
-});
-type Entry = Parameters<ReviewStore["append"]>[1];
-
-const appended: Entry[] = [];
-const terminated: Assignment[] = [];
-
-const host: Host = {
-	getChange: (): Effect.Effect<Change, NotReviewable> =>
-		Effect.fail(HostError.create()),
-	post: (
-		_url: TargetUrl,
-		outcome: Outcome,
-	): Effect.Effect<Outcome, HostError> => Effect.succeed(outcome),
-};
-
-const store: ReviewStore = {
-	save: (_workdir: Workdir, review: Review): Effect.Effect<Review> =>
-		Effect.succeed(review),
-	inWorkdir: (): Effect.Effect<Review, NoReview> => Effect.succeed(complete),
-	ofProbe: (): Effect.Effect<Assignment, NoReview> =>
-		Effect.succeed(assignment),
-	append: (_probe: Probe, entry: Entry): Effect.Effect<Review, NoReview> =>
-		Effect.sync((): Review => {
-			appended.push(entry);
-
-			return complete;
-		}),
-};
-
-const agent: Agent = {
-	spawn: (given: Assignment): Effect.Effect<Assignment> =>
-		Effect.succeed(given),
-	terminate: (given: Assignment): Effect.Effect<Assignment> =>
-		Effect.sync((): Assignment => {
-			terminated.push(given);
-
-			return given;
-		}),
-};
-
-it("ack answers the progress of the assignment", () => {
-	const controller: ProgressController = ProgressController.over(
+it("standing before an acknowledgement is the detailed instructions", () => {
+	const answered = ProgressController.over(
 		host,
+		storeWithReview(),
+		agent,
+	).standing(probe);
+
+	assert.equal(
+		Effect.runSync(Effect.flip(answered)) instanceof Instructions,
+		true,
+	);
+});
+
+it("ack answers every rule as left to judge", () => {
+	const answered = ProgressController.over(host, storeWithReview(), agent).ack(
+		probe,
+		sent,
+	);
+
+	assert.deepEqual(Effect.runSync(answered), [purpose, unused]);
+});
+
+it("report fails before the instructions are acknowledged", () => {
+	const answered = ProgressController.over(
+		host,
+		storeWithReview(),
+		agent,
+	).report(probe, Verdict.on(purpose));
+
+	assert.equal(
+		Effect.runSync(Effect.flip(answered)) instanceof NotAcknowledged,
+		true,
+	);
+});
+
+it("report on a rule of the probe answers the rules still left", () => {
+	const progress: ProgressController = ProgressController.over(
+		host,
+		storeWithReview(),
+		agent,
+	);
+	const answered = progress
+		.ack(probe, sent)
+		.pipe(Effect.flatMap(() => progress.report(probe, Verdict.on(purpose))));
+
+	assert.deepEqual(Effect.runSync(answered), [unused]);
+});
+
+it("report on a rule that is not the probe's is refused", () => {
+	const progress: ProgressController = ProgressController.over(
+		host,
+		storeWithReview(),
+		agent,
+	);
+	const answered = progress
+		.ack(probe, sent)
+		.pipe(
+			Effect.flatMap(() =>
+				progress.report(probe, Verdict.on(ruleSample("Another rule"))),
+			),
+		);
+
+	assert.equal(
+		Effect.runSync(Effect.flip(answered)) instanceof NotAssigned,
+		true,
+	);
+});
+
+it("the last report posts the review once and records it", () => {
+	const posted: Outcome[] = [];
+	const recording: Host = {
+		...host,
+		post: (
+			_to: TargetUrl,
+			outcome: Outcome,
+		): Effect.Effect<Outcome, HostError> =>
+			Effect.sync((): Outcome => {
+				posted.push(outcome);
+
+				return outcome;
+			}),
+	};
+	const store: ReviewStore = storeWithReview();
+	const progress: ProgressController = ProgressController.over(
+		recording,
 		store,
 		agent,
 	);
-
-	assert.equal(Effect.runSync(controller.ack(probe, expected)), progress);
-});
-
-it("ack appends the accepted acknowledgement", () => {
-	const controller: ProgressController = ProgressController.over(
-		host,
-		store,
-		agent,
+	const finished = progress.ack(probe, sent).pipe(
+		Effect.flatMap(() => progress.report(probe, Verdict.on(purpose))),
+		Effect.flatMap(() => progress.report(probe, Verdict.on(unused))),
+		Effect.flatMap(() => progress.report(probe, Verdict.on(unused))),
+		Effect.flatMap(() => store.inWorkdir(workdir)),
+		Effect.map((review) => review.status().posts.length),
 	);
 
-	Effect.runSync(controller.ack(probe, expected));
-
-	assert.equal(appended.includes(expected), true);
+	assert.deepEqual([Effect.runSync(finished), posted.length], [1, 1]);
 });
 
-it("ack answers the detailed instructions to another acknowledgement", () => {
-	const controller: ProgressController = ProgressController.over(
-		host,
-		store,
-		agent,
-	);
-	const other: Acknowledgement = Acknowledgement.codec.decode("another phrase");
-	const answered = controller.ack(probe, other);
-
-	assert.equal(Effect.runSync(Effect.flip(answered)), detailed);
-});
-
-it("report answers the progress of the assignment", () => {
-	const controller: ProgressController = ProgressController.over(
-		host,
-		store,
-		agent,
-	);
-	const answered = controller.report(probe, Verdict.codec.decode({}));
-
-	assert.equal(Effect.runSync(answered), progress);
-});
-
-it("report appends the verdict", () => {
-	const verdict: Verdict = Verdict.codec.decode({});
-	const controller: ProgressController = ProgressController.over(
-		host,
-		store,
-		agent,
-	);
-
-	Effect.runSync(controller.report(probe, verdict));
-
-	assert.equal(appended.includes(verdict), true);
-});
-
-it("report has a complete review terminate its sub agents", () => {
-	const controller: ProgressController = ProgressController.over(
-		host,
-		store,
-		agent,
-	);
-
-	Effect.runSync(controller.report(probe, Verdict.codec.decode({})));
-
-	assert.equal(terminated.includes(assignment), true);
-});
-
-it("report appends the error of the host and still answers the progress", () => {
-	const hostError: HostError = HostError.create();
+it("a failed post is recorded and the sub agent is still answered", () => {
 	const refusing: Host = {
 		...host,
-		post: (): Effect.Effect<Outcome, HostError> => Effect.fail(hostError),
+		post: (): Effect.Effect<Outcome, HostError> =>
+			Effect.fail(HostError.create()),
 	};
-	const controller: ProgressController = ProgressController.over(
+	const store: ReviewStore = storeWithReview();
+	const progress: ProgressController = ProgressController.over(
 		refusing,
 		store,
 		agent,
 	);
-	const answered: Progress = Effect.runSync(
-		controller.report(probe, Verdict.codec.decode({})),
+	const finished = progress.ack(probe, sent).pipe(
+		Effect.flatMap(() => progress.report(probe, Verdict.on(purpose))),
+		Effect.flatMap(() => progress.report(probe, Verdict.on(unused))),
+		Effect.flatMap((remaining) =>
+			Effect.map(store.inWorkdir(workdir), (review) => [
+				remaining.length,
+				review.status().posts.some((post) => post instanceof HostError),
+			]),
+		),
 	);
 
-	assert.deepEqual([answered, appended.includes(hostError)], [progress, true]);
+	assert.deepEqual(Effect.runSync(finished), [0, true]);
+});
+
+it("the last report terminates the sub agent that has nothing left", () => {
+	const terminated: Assignment[] = [];
+	const recording: Agent = {
+		...agent,
+		terminate: (assignment: Assignment): Effect.Effect<Assignment> =>
+			Effect.sync((): Assignment => {
+				terminated.push(assignment);
+
+				return assignment;
+			}),
+	};
+	const progress: ProgressController = ProgressController.over(
+		host,
+		storeWithReview(),
+		recording,
+	);
+
+	Effect.runSync(
+		progress.ack(probe, sent).pipe(
+			Effect.flatMap(() => progress.report(probe, Verdict.on(purpose))),
+			Effect.flatMap(() => progress.report(probe, Verdict.on(unused))),
+		),
+	);
+
+	assert.equal(terminated.length, 1);
 });

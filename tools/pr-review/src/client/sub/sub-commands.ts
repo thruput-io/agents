@@ -4,18 +4,22 @@ import { PagingController } from "../../controller/sub/paging-controller.ts";
 import { ProgressController } from "../../controller/sub/progress-controller.ts";
 import type { Agent } from "../../domain/agent.ts";
 import type { Host } from "../../domain/host.ts";
+import type { Instructions } from "../../domain/instructions.ts";
 import type { ReviewStore } from "../../domain/review.ts";
 import { help } from "../../generated/client/sub/help.g.ts";
+import type { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
+import type { NoReview } from "../../generated/domain/no-review.g.ts";
 import type { Probe } from "../../generated/domain/probe.g.ts";
+import type { Rule } from "../../generated/domain/rule.g.ts";
 import {
 	type Answer,
 	definitionAnswer,
 	failureAnswer,
 	instructionsAnswer,
-	notAcceptedAnswer,
-	progressAnswer,
+	notReadyAnswer,
+	pageAnswer,
 	rulesAnswer,
-	surfaceAnswer,
+	standingAnswer,
 } from "../../perimeters/answer.ts";
 import {
 	ackCommandOf,
@@ -23,6 +27,7 @@ import {
 	instructionsCommandOf,
 	nextCommandOf,
 	prevCommandOf,
+	reportCommandOf,
 	rulesCommandOf,
 } from "../../perimeters/command-line.ts";
 import type { Commands } from "../common/runner.ts";
@@ -34,6 +39,7 @@ interface SubControllers {
 }
 
 type Answered = Effect.Effect<Answer, Answer>;
+type Standing = Effect.Effect<readonly Rule[], NoReview | Instructions>;
 
 const subCommands = ({
 	briefing,
@@ -61,22 +67,35 @@ const subCommands = ({
 	next: (commandArguments: readonly string[]): Answered =>
 		nextCommandOf(commandArguments).pipe(
 			Effect.flatMap((probe: Probe) => paging.next(probe)),
-			Effect.map(surfaceAnswer),
+			Effect.map(pageAnswer),
 			Effect.mapError(failureAnswer),
 		),
 	prev: (commandArguments: readonly string[]): Answered =>
 		prevCommandOf(commandArguments).pipe(
 			Effect.flatMap((probe: Probe) => paging.prev(probe)),
-			Effect.map(surfaceAnswer),
+			Effect.map(pageAnswer),
 			Effect.mapError(failureAnswer),
 		),
 	ack: (commandArguments: readonly string[]): Answered =>
 		ackCommandOf(commandArguments).pipe(
-			Effect.flatMap(({ probe, acknowledgement }) =>
-				progress.ack(probe, acknowledgement),
+			Effect.flatMap(
+				({ probe, sent }): Standing =>
+					sent.pipe(
+						Effect.matchEffect({
+							onSuccess: (acknowledgement: Acknowledgement): Standing =>
+								progress.ack(probe, acknowledgement),
+							onFailure: (): Standing => progress.standing(probe),
+						}),
+					),
 			),
-			Effect.map(progressAnswer),
-			Effect.mapError(notAcceptedAnswer),
+			Effect.map(standingAnswer),
+			Effect.mapError(notReadyAnswer),
+		),
+	report: (commandArguments: readonly string[]): Answered =>
+		reportCommandOf(commandArguments).pipe(
+			Effect.flatMap(({ probe, verdict }) => progress.report(probe, verdict)),
+			Effect.map(standingAnswer),
+			Effect.mapError(notReadyAnswer),
 		),
 });
 

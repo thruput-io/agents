@@ -1,24 +1,28 @@
 import { Effect } from "effect";
 import type { Agent } from "../../domain/agent.ts";
+import type { Assignment } from "../../domain/assignment.ts";
 import type { Host } from "../../domain/host.ts";
 import type { Instructions } from "../../domain/instructions.ts";
-import type { Review, ReviewStore } from "../../domain/review.ts";
+import type { Post, Review, ReviewStore } from "../../domain/review.ts";
+import type { Verdict } from "../../domain/verdict.ts";
 import type { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
-import type { HostError } from "../../generated/domain/host-error.g.ts";
 import type { NoReview } from "../../generated/domain/no-review.g.ts";
+import type { NotAcknowledged } from "../../generated/domain/not-acknowledged.g.ts";
+import type { NotAssigned } from "../../generated/domain/not-assigned.g.ts";
 import type { Probe } from "../../generated/domain/probe.g.ts";
-import type { Progress } from "../../generated/domain/progress.g.ts";
-import type { Verdict } from "../../generated/domain/verdict.g.ts";
+import type { Rule } from "../../generated/domain/rule.g.ts";
+
+type Standing = Effect.Effect<readonly Rule[], NoReview | Instructions>;
 
 class ProgressController {
-	readonly #host: Host;
-	readonly #store: ReviewStore;
-	readonly #agent: Agent;
+	private readonly host: Host;
+	private readonly store: ReviewStore;
+	private readonly agent: Agent;
 
 	private constructor(host: Host, store: ReviewStore, agent: Agent) {
-		this.#host = host;
-		this.#store = store;
-		this.#agent = agent;
+		this.host = host;
+		this.store = store;
+		this.agent = agent;
 	}
 
 	static over(
@@ -29,43 +33,74 @@ class ProgressController {
 		return new ProgressController(host, store, agent);
 	}
 
-	ack(
-		probe: Probe,
-		acknowledgement: Acknowledgement,
-	): Effect.Effect<Progress, NoReview | Instructions> {
-		return this.#store.ofProbe(probe).pipe(
-			Effect.flatMap((assignment) => assignment.accepted(acknowledgement)),
-			Effect.flatMap((accepted) => this.#store.append(probe, accepted)),
-			Effect.flatMap(() => this.#progressOf(probe)),
-		);
-	}
-
-	report(probe: Probe, verdict: Verdict): Effect.Effect<Progress, NoReview> {
-		return this.#store.append(probe, verdict).pipe(
-			Effect.flatMap((review) => this.#submitted(probe, review)),
-			Effect.flatMap((review) => this.#dismissed(review)),
-			Effect.flatMap(() => this.#progressOf(probe)),
-		);
-	}
-
-	#submitted(probe: Probe, review: Review): Effect.Effect<Review, NoReview> {
-		const submitted: Effect.Effect<Review, HostError> = review.submittedTo(
-			this.#host,
-		);
-
-		return submitted.pipe(
-			Effect.catch((hostError) => this.#store.append(probe, hostError)),
-		);
-	}
-
-	#dismissed(review: Review): Effect.Effect<Review> {
-		return review.dismissedBy(this.#agent);
-	}
-
-	#progressOf(probe: Probe): Effect.Effect<Progress, NoReview> {
-		return this.#store
+	standing(probe: Probe): Standing {
+		return this.store
 			.ofProbe(probe)
-			.pipe(Effect.map((assignment) => assignment.progress()));
+			.pipe(
+				Effect.flatMap(
+					(
+						assignment: Assignment,
+					): Effect.Effect<readonly Rule[], Instructions> =>
+						assignment.standing(),
+				),
+			);
+	}
+
+	ack(probe: Probe, sent: Acknowledgement): Standing {
+		return this.store
+			.append(probe, sent)
+			.pipe(Effect.flatMap((): Standing => this.standing(probe)));
+	}
+
+	report(
+		probe: Probe,
+		verdict: Verdict,
+	): Effect.Effect<
+		readonly Rule[],
+		NoReview | NotAcknowledged | NotAssigned | Instructions
+	> {
+		return this.store.ofProbe(probe).pipe(
+			Effect.flatMap(
+				(
+					assignment: Assignment,
+				): Effect.Effect<readonly Rule[], NotAcknowledged> =>
+					assignment.briefing().rules(),
+			),
+			Effect.flatMap(
+				(rules: readonly Rule[]): Effect.Effect<Verdict, NotAssigned> =>
+					verdict.among(rules),
+			),
+			Effect.flatMap(
+				(assigned: Verdict): Effect.Effect<Review, NoReview> =>
+					this.store.append(probe, assigned),
+			),
+			Effect.flatMap(
+				(review: Review): Effect.Effect<Review, NoReview> =>
+					this.concluded(probe, review),
+			),
+			Effect.flatMap((): Standing => this.standing(probe)),
+		);
+	}
+
+	private concluded(
+		probe: Probe,
+		review: Review,
+	): Effect.Effect<Review, NoReview> {
+		return review.posting(this.host).pipe(
+			Effect.flatMap(
+				(posts: readonly Post[]): Effect.Effect<Review, NoReview> =>
+					Effect.reduce(
+						posts,
+						(): Review => review,
+						(_latest: Review, post: Post): Effect.Effect<Review, NoReview> =>
+							this.store.append(probe, post),
+					),
+			),
+			Effect.flatMap(
+				(latest: Review): Effect.Effect<Review> =>
+					latest.dismissedBy(this.agent),
+			),
+		);
 	}
 }
 

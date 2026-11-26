@@ -13,29 +13,13 @@
 			"type": "string",
 			"minLength": 1
 		},
-		"Surface": {
-			"description": "The lines of a change a review looks at",
-			"type": "object"
-		},
 		"Probe": {
 			"description": "What a sub agent holds for its part of a review",
 			"type": "string",
 			"minLength": 1
 		},
-		"Probes": {
-			"description": "The probes of the review tool",
-			"type": "object"
-		},
 		"Rule": {
-			"description": "One rule a change is judged against",
-			"type": "object"
-		},
-		"Ruleset": {
-			"description": "The rules a sub agent is given",
-			"type": "object"
-		},
-		"Term": {
-			"description": "A word of the glossary",
+			"description": "One rule a change is judged against, by its id",
 			"type": "string",
 			"minLength": 1
 		},
@@ -60,28 +44,12 @@
 			"type": "object"
 		},
 		"Acknowledgement": {
-			"description": "What a sub agent sent back",
+			"description": "The one sentence a sub agent sends to acknowledge its instructions",
 			"type": "string",
-			"minLength": 1
+			"const": "By sending this ack I acknowledge that I have read all instructions, and implicitly that I know how to use the review tool."
 		},
-		"Verdict": {
-			"description": "The result of judging a change against one rule",
-			"type": "object"
-		},
-		"Violation": {
-			"description": "A finding that a change breaks a rule",
-			"type": "object"
-		},
-		"Outcome": {
-			"description": "What a review posts to the host",
-			"type": "object"
-		},
-		"ReviewStatus": {
-			"description": "How a review stands",
-			"type": "object"
-		},
-		"Progress": {
-			"description": "How one sub agent stands",
+		"Page": {
+			"description": "One page of the lines of a change a review looks at",
 			"type": "object"
 		}
 	}

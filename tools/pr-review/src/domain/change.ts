@@ -1,20 +1,28 @@
-import type { Probes } from "../generated/domain/probes.g.ts";
-import type { PendingReview } from "./pending-review.ts";
+import type { Page } from "../generated/domain/page.g.ts";
+import type { TargetUrl } from "../generated/domain/target-url.g.ts";
+import { Assignment } from "./assignment.ts";
+import { Review } from "./review.ts";
+import type { Probes, Task } from "./task.ts";
 
 class Change {
-	private readonly pending: PendingReview;
+	private readonly url: TargetUrl;
+	private readonly pages: readonly Page[];
 
-	private constructor(pending: PendingReview) {
-		this.pending = pending;
+	private constructor(url: TargetUrl, pages: readonly Page[]) {
+		this.url = url;
+		this.pages = pages;
 		Object.freeze(this);
 	}
 
-	static of(pending: PendingReview): Change {
-		return new Change(pending);
+	static of(url: TargetUrl, pages: readonly Page[]): Change {
+		return new Change(url, pages);
 	}
 
-	review(_probes: Probes): PendingReview {
-		return this.pending;
+	review(probes: Probes): Review {
+		return Review.of(
+			this.url,
+			probes.map((task: Task) => [task.probe, Assignment.of(task, this.pages)]),
+		);
 	}
 }
 

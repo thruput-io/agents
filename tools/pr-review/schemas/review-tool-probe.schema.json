@@ -91,6 +91,24 @@
 			],
 			"minItems": 1,
 			"maxItems": 1
+		},
+		"report": {
+			"description": "report <probe> <rule>: records that the rule is judged and answers the rules still to judge.",
+			"type": "array",
+			"items": [
+				{
+					"description": "What the sub agent was handed for its part of the review",
+					"type": "string",
+					"minLength": 1
+				},
+				{
+					"description": "The id of the rule that is judged",
+					"type": "string",
+					"minLength": 1
+				}
+			],
+			"minItems": 2,
+			"maxItems": 2
 		}
 	}
 }

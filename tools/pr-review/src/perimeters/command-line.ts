@@ -1,11 +1,13 @@
 import { Effect } from "effect";
 import { z } from "zod";
+import type { Probes } from "../domain/task.ts";
+import { Term } from "../domain/term.ts";
+import { Verdict } from "../domain/verdict.ts";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
 import { NotValid } from "../generated/domain/not-valid.g.ts";
 import { Probe } from "../generated/domain/probe.g.ts";
-import { Probes } from "../generated/domain/probes.g.ts";
+import { Rule } from "../generated/domain/rule.g.ts";
 import { TargetUrl } from "../generated/domain/target-url.g.ts";
-import { Term } from "../generated/domain/term.g.ts";
 import { Workdir } from "../generated/domain/workdir.g.ts";
 import {
 	prepareArguments,
@@ -17,6 +19,7 @@ import {
 	instructionsArguments,
 	nextArguments,
 	prevArguments,
+	reportArguments,
 	rulesArguments,
 } from "../generated/perimeters/sub-arguments.g.ts";
 
@@ -31,6 +34,27 @@ interface PrepareCommand {
 	readonly probes: Probes;
 }
 
+interface DefineCommand {
+	readonly probe: Probe;
+	readonly term: Term;
+}
+
+interface AckCommand {
+	readonly probe: Probe;
+	readonly sent: Effect.Effect<Acknowledgement, NotValid>;
+}
+
+interface ReportCommand {
+	readonly probe: Probe;
+	readonly verdict: Verdict;
+}
+
+interface Decoding<Value> {
+	readonly parse: (text: string) => Value;
+}
+
+const NO_PROBES: Probes = [];
+
 const CommandLineShape = z.tuple([z.string()]).rest(z.string());
 
 const parsedBy = <Shape>(
@@ -42,16 +66,12 @@ const parsedBy = <Shape>(
 		catch: (): NotValid => NotValid.create(),
 	});
 
-interface Decoding<Value> {
-	readonly decode: (text: string) => Value;
-}
-
 const decoded = <Value>(
 	codec: Decoding<Value>,
 	text: string,
 ): Effect.Effect<Value, NotValid> =>
 	Effect.try({
-		try: (): Value => codec.decode(text),
+		try: (): Value => codec.parse(text),
 		catch: (): NotValid => NotValid.create(),
 	});
 
@@ -79,7 +99,7 @@ const prepareCommandOf = (
 				Effect.all({
 					url: decoded(TargetUrl.codec, url),
 					workdir: decoded(Workdir.codec, workdir),
-					probes: Effect.succeed(Probes.codec.decode({})),
+					probes: Effect.succeed(NO_PROBES),
 				}),
 		),
 	);
@@ -93,16 +113,6 @@ const statusCommandOf = (
 				decoded(Workdir.codec, workdir),
 		),
 	);
-
-interface DefineCommand {
-	readonly probe: Probe;
-	readonly term: Term;
-}
-
-interface AckCommand {
-	readonly probe: Probe;
-	readonly acknowledgement: Acknowledgement;
-}
 
 const probeCommandBy =
 	(shape: z.ZodType<[string]>) =>
@@ -140,13 +150,29 @@ const ackCommandOf = (
 ): Effect.Effect<AckCommand, NotValid> =>
 	parsedBy(ackArguments, commandArguments).pipe(
 		Effect.flatMap(
-			([probe, acknowledgement]: [string, string]): Effect.Effect<
-				AckCommand,
+			([probe, sent]: [string, string]): Effect.Effect<AckCommand, NotValid> =>
+				Effect.map(
+					decoded(Probe.codec, probe),
+					(holder: Probe): AckCommand => ({
+						probe: holder,
+						sent: decoded(Acknowledgement.codec, sent),
+					}),
+				),
+		),
+	);
+
+const reportCommandOf = (
+	commandArguments: readonly string[],
+): Effect.Effect<ReportCommand, NotValid> =>
+	parsedBy(reportArguments, commandArguments).pipe(
+		Effect.flatMap(
+			([probe, rule]: [string, string]): Effect.Effect<
+				ReportCommand,
 				NotValid
 			> =>
 				Effect.all({
 					probe: decoded(Probe.codec, probe),
-					acknowledgement: decoded(Acknowledgement.codec, acknowledgement),
+					verdict: Effect.map(decoded(Rule.codec, rule), Verdict.on),
 				}),
 		),
 	);
@@ -160,6 +186,7 @@ export {
 	nextCommandOf,
 	prepareCommandOf,
 	prevCommandOf,
+	reportCommandOf,
 	rulesCommandOf,
 	statusCommandOf,
 };

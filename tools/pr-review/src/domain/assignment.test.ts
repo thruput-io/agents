@@ -2,99 +2,136 @@ import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
-import { Context } from "../generated/domain/context.g.ts";
-import { Definition } from "../generated/domain/definition.g.ts";
-import { Progress } from "../generated/domain/progress.g.ts";
-import { Ruleset } from "../generated/domain/ruleset.g.ts";
-import { Surface } from "../generated/domain/surface.g.ts";
-import { Term } from "../generated/domain/term.g.ts";
-import { Usage } from "../generated/domain/usage.g.ts";
-import { Workflow } from "../generated/domain/workflow.g.ts";
+import { Back } from "../generated/domain/back.g.ts";
+import { Forward } from "../generated/domain/forward.g.ts";
+import { NoPage } from "../generated/domain/no-page.g.ts";
+import { NotAcknowledged } from "../generated/domain/not-acknowledged.g.ts";
+import { NotDefined } from "../generated/domain/not-defined.g.ts";
+import type { Page } from "../generated/domain/page.g.ts";
+import type { Rule } from "../generated/domain/rule.g.ts";
 import { Assignment } from "./assignment.ts";
-import { Briefing } from "./briefing.ts";
-import { Cursor } from "./cursor.ts";
-import { Instructions } from "./instructions.ts";
+import {
+	pageSample,
+	probeSample,
+	ruleSample,
+	taskSample,
+} from "./sample.test-support.ts";
+import type { Task } from "./task.ts";
+import { Term } from "./term.ts";
+import { Verdict } from "./verdict.ts";
 
-const term: Term = Term.codec.decode("Ledger");
+const first: Rule = ruleSample("Stated purpose");
+const second: Rule = ruleSample("Delete unused");
+const pages: readonly Page[] = [pageSample(), pageSample()];
+const task: Task = taskSample(probeSample("probe-1"), [first, second]);
+const sentence =
+	"By sending this ack I acknowledge that I have read all instructions, and implicitly that I know how to use the review tool.";
+const briefed: Assignment = Assignment.of(task, pages);
+const working: Assignment = briefed.after(
+	Acknowledgement.codec.decode(sentence),
+);
 
-const workflow: Workflow = Workflow.codec.decode({});
-const request: AcknowledgementRequest = AcknowledgementRequest.codec.decode({});
-const brief: Instructions = Instructions.of({
-	workflow,
-	context: Context.codec.decode({}),
-	usage: Usage.codec.decode({}),
-	request,
-});
-const detailed: Instructions = Instructions.of({
-	workflow: Workflow.codec.decode({}),
-	context: Context.codec.decode({}),
-	usage: Usage.codec.decode({}),
-	request,
-});
-const ruleset: Ruleset = Ruleset.codec.decode({});
-const definition: Definition = Definition.codec.decode({});
-const briefing: Briefing = Briefing.of(brief, ruleset, definition);
-const following: Surface = Surface.codec.decode({});
-const preceding: Surface = Surface.codec.decode({});
-const cursor: Cursor = Cursor.of(following, preceding);
-const progress: Progress = Progress.codec.decode({});
-const expected: Acknowledgement = Acknowledgement.codec.decode("the phrase");
-const assignment: Assignment = Assignment.of({
-	briefing,
-	cursor,
-	progress,
-	expected,
-	detailed,
+it("the instructions are answered before they are acknowledged", () => {
+	assert.equal(briefed.briefing().instructions(), task.instructions);
 });
 
-it("an assignment answers the briefing it holds", () => {
-	assert.equal(assignment.briefing(), briefing);
+it("the rules are not answered before the instructions are acknowledged", () => {
+	const refused = Effect.runSync(Effect.flip(briefed.briefing().rules()));
+
+	assert.equal(refused instanceof NotAcknowledged, true);
 });
 
-it("an assignment answers the cursor it holds", () => {
-	assert.equal(assignment.cursor(), cursor);
+it("the standing before an acknowledgement is the detailed instructions", () => {
+	assert.equal(Effect.runSync(Effect.flip(briefed.standing())), task.detailed);
 });
 
-it("an assignment answers the progress it holds", () => {
-	assert.equal(assignment.progress(), progress);
+it("an acknowledged assignment answers its rules", () => {
+	assert.deepEqual(Effect.runSync(working.briefing().rules()), [first, second]);
 });
 
-it("an assignment accepts the acknowledgement it expects", () => {
-	const sent: Acknowledgement = Acknowledgement.codec.decode("the phrase");
-
-	assert.equal(Effect.runSync(assignment.accepted(sent)), sent);
+it("an acknowledged assignment has every rule left to judge", () => {
+	assert.deepEqual(Effect.runSync(working.standing()), [first, second]);
 });
 
-it("an assignment answers the detailed instructions to another acknowledgement", () => {
-	const sent: Acknowledgement = Acknowledgement.codec.decode("another phrase");
+it("a judged rule is no longer left", () => {
+	const judged: Assignment = working.after(Verdict.on(first));
 
-	assert.equal(
-		Effect.runSync(Effect.flip(assignment.accepted(sent))),
-		detailed,
+	assert.deepEqual(Effect.runSync(judged.standing()), [second]);
+});
+
+it("a later verdict on the same rule replaces the earlier one", () => {
+	const earlier: Verdict = Verdict.on(first);
+	const later: Verdict = Verdict.on(first);
+	const judged: Assignment = working.after(earlier).after(later);
+
+	assert.deepEqual(judged.ledger().verdicts, [later]);
+});
+
+it("an assignment with every rule judged has nothing left", () => {
+	const judged: Assignment = working
+		.after(Verdict.on(first))
+		.after(Verdict.on(second));
+
+	assert.deepEqual(judged.ledger().remaining, []);
+});
+
+it("no page is answered before the instructions are acknowledged", () => {
+	const turned: Assignment = briefed.after(Forward.create());
+	const refused = Effect.runSync(Effect.flip(turned.briefing().page()));
+
+	assert.equal(refused instanceof NotAcknowledged, true);
+});
+
+it("there is no page before the first turn", () => {
+	const refused = Effect.runSync(Effect.flip(working.briefing().page()));
+
+	assert.equal(refused instanceof NoPage, true);
+});
+
+it("turning forward answers the pages in order", () => {
+	const once: Assignment = working.after(Forward.create());
+	const twice: Assignment = once.after(Forward.create());
+
+	assert.deepEqual(
+		[
+			Effect.runSync(once.briefing().page()),
+			Effect.runSync(twice.briefing().page()),
+		],
+		pages,
 	);
 });
 
-it("a briefing answers the instructions it holds", () => {
-	assert.equal(briefing.instructions(), brief);
+it("turning forward past the last page answers no page", () => {
+	const past: Assignment = working
+		.after(Forward.create())
+		.after(Forward.create())
+		.after(Forward.create());
+	const refused = Effect.runSync(Effect.flip(past.briefing().page()));
+
+	assert.equal(refused instanceof NoPage, true);
 });
 
-it("a briefing answers the rules it holds", () => {
-	assert.equal(briefing.rules(), ruleset);
+it("turning back answers the page before", () => {
+	const back: Assignment = working
+		.after(Forward.create())
+		.after(Forward.create())
+		.after(Back.create());
+
+	assert.equal(Effect.runSync(back.briefing().page()), pages[0]);
 });
 
-it("a briefing answers the definition it holds", () => {
-	assert.equal(briefing.definitionOf(term), definition);
+it("a term the glossary holds is defined, however it is written", () => {
+	const definition = briefed
+		.briefing()
+		.definitionOf(Term.codec.decode("[[LEDGER]]"));
+
+	assert.equal(Effect.runSync(definition), task.glossary[0]?.[1]);
 });
 
-it("a cursor answers the following page it holds", () => {
-	assert.equal(cursor.next(), following);
-});
+it("a term the glossary does not hold is not defined", () => {
+	const refused = Effect.runSync(
+		Effect.flip(briefed.briefing().definitionOf(Term.codec.decode("Nothing"))),
+	);
 
-it("a cursor answers the preceding page it holds", () => {
-	assert.equal(cursor.previous(), preceding);
-});
-
-it("instructions answer the workflow they hold", () => {
-	assert.equal(brief.workflow(), workflow);
+	assert.equal(refused instanceof NotDefined, true);
 });

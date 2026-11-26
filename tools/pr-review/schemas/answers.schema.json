@@ -14,7 +14,11 @@
 				"refused",
 				"host-error",
 				"not-started",
-				"no-review"
+				"no-review",
+				"not-defined",
+				"not-assigned",
+				"no-page",
+				"not-acknowledged"
 			]
 		}
 	},

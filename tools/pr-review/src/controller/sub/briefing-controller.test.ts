@@ -1,91 +1,69 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
-import { Assignment } from "../../domain/assignment.ts";
-import { Briefing } from "../../domain/briefing.ts";
-import { Cursor } from "../../domain/cursor.ts";
-import { Instructions } from "../../domain/instructions.ts";
-import type { Review, ReviewStore } from "../../domain/review.ts";
-import { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
-import { AcknowledgementRequest } from "../../generated/domain/acknowledgement-request.g.ts";
-import { Context } from "../../generated/domain/context.g.ts";
-import { Definition } from "../../generated/domain/definition.g.ts";
+import type { ReviewStore } from "../../domain/review.ts";
+import { Term } from "../../domain/term.ts";
 import { NoReview } from "../../generated/domain/no-review.g.ts";
-import { Probe } from "../../generated/domain/probe.g.ts";
-import { Progress } from "../../generated/domain/progress.g.ts";
-import { Ruleset } from "../../generated/domain/ruleset.g.ts";
-import { Surface } from "../../generated/domain/surface.g.ts";
-import { Term } from "../../generated/domain/term.g.ts";
-import { Usage } from "../../generated/domain/usage.g.ts";
-import type { Workdir } from "../../generated/domain/workdir.g.ts";
-import { Workflow } from "../../generated/domain/workflow.g.ts";
+import { NotAcknowledged } from "../../generated/domain/not-acknowledged.g.ts";
+import { NotDefined } from "../../generated/domain/not-defined.g.ts";
+import {
+	emptyStore,
+	probe,
+	purpose,
+	sent,
+	storeWithReview,
+	unused,
+} from "../common/stand-in.test-support.ts";
 import { BriefingController } from "./briefing-controller.ts";
 
-const probe: Probe = Probe.codec.decode("probe-1");
-const term: Term = Term.codec.decode("Ledger");
+it("instructions answers the four parts a probe is briefed with", () => {
+	const answered = BriefingController.over(storeWithReview())
+		.instructions(probe)
+		.pipe(Effect.map((instructions) => typeof instructions.workflow()));
 
-const request: AcknowledgementRequest = AcknowledgementRequest.codec.decode({});
-const brief: Instructions = Instructions.of({
-	workflow: Workflow.codec.decode({}),
-	context: Context.codec.decode({}),
-	usage: Usage.codec.decode({}),
-	request,
-});
-const detailed: Instructions = Instructions.of({
-	workflow: Workflow.codec.decode({}),
-	context: Context.codec.decode({}),
-	usage: Usage.codec.decode({}),
-	request,
-});
-const ruleset: Ruleset = Ruleset.codec.decode({});
-const definition: Definition = Definition.codec.decode({});
-const following: Surface = Surface.codec.decode({});
-const preceding: Surface = Surface.codec.decode({});
-const progress: Progress = Progress.codec.decode({});
-const expected: Acknowledgement = Acknowledgement.codec.decode("the phrase");
-const assignment: Assignment = Assignment.of({
-	briefing: Briefing.of(brief, ruleset, definition),
-	cursor: Cursor.of(following, preceding),
-	progress,
-	expected,
-	detailed,
+	assert.equal(Effect.runSync(answered), "object");
 });
 
-const store: ReviewStore = {
-	save: (_workdir: Workdir, review: Review): Effect.Effect<Review> =>
-		Effect.succeed(review),
-	inWorkdir: (): Effect.Effect<Review, NoReview> =>
-		Effect.fail(NoReview.create()),
-	ofProbe: (): Effect.Effect<Assignment, NoReview> =>
-		Effect.succeed(assignment),
-	append: (): Effect.Effect<Review, NoReview> => Effect.fail(NoReview.create()),
-};
+it("instructions fails for a probe of no review", () => {
+	const answered = BriefingController.over(emptyStore()).instructions(probe);
 
-it("instructions answers the instructions of the briefing", () => {
-	const answered = BriefingController.over(store).instructions(probe);
-
-	assert.equal(Effect.runSync(answered), brief);
+	assert.equal(Effect.runSync(Effect.flip(answered)) instanceof NoReview, true);
 });
 
-it("rules answers the rules of the briefing", () => {
-	const answered = BriefingController.over(store).rules(probe);
+it("rules fails before the instructions are acknowledged", () => {
+	const answered = BriefingController.over(storeWithReview()).rules(probe);
 
-	assert.equal(Effect.runSync(answered), ruleset);
+	assert.equal(
+		Effect.runSync(Effect.flip(answered)) instanceof NotAcknowledged,
+		true,
+	);
 });
 
-it("define answers the definition of the term", () => {
-	const answered = BriefingController.over(store).define(probe, term);
+it("rules answers the rules of the probe once acknowledged", () => {
+	const store: ReviewStore = storeWithReview();
+	const answered = store
+		.append(probe, sent)
+		.pipe(Effect.flatMap(() => BriefingController.over(store).rules(probe)));
 
-	assert.equal(Effect.runSync(answered), definition);
+	assert.deepEqual(Effect.runSync(answered), [purpose, unused]);
 });
 
-it("instructions fails for a probe that holds no review", () => {
-	const noReview: NoReview = NoReview.create();
-	const empty: ReviewStore = {
-		...store,
-		ofProbe: (): Effect.Effect<Assignment, NoReview> => Effect.fail(noReview),
-	};
-	const answered = BriefingController.over(empty).instructions(probe);
+it("define answers the definition of a term the glossary holds", () => {
+	const answered = BriefingController.over(storeWithReview())
+		.define(probe, Term.codec.decode("ledger"))
+		.pipe(Effect.map((definition) => typeof definition));
 
-	assert.equal(Effect.runSync(Effect.flip(answered)), noReview);
+	assert.equal(Effect.runSync(answered), "object");
+});
+
+it("define fails for a term nothing declares", () => {
+	const answered = BriefingController.over(storeWithReview()).define(
+		probe,
+		Term.codec.decode("Nothing"),
+	);
+
+	assert.equal(
+		Effect.runSync(Effect.flip(answered)) instanceof NotDefined,
+		true,
+	);
 });

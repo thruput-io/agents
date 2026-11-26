@@ -35,8 +35,8 @@ const valueModuleOf = {
 			`const schema = ${jsonSchemaToZod(schema, { zodVersion: 4 })};`,
 			"",
 			`export class ${name} {`,
-			"\tprivate readonly data: string;",
-			"\tprivate constructor(data: string) {",
+			"\tprivate readonly data: z.infer<typeof schema>;",
+			"\tprivate constructor(data: z.infer<typeof schema>) {",
 			"\t\tthis.data = data;",
 			"\t\tObject.freeze(this);",
 			"\t}",
@@ -93,7 +93,11 @@ Object.entries(document.$defs).map(([name, schema]) =>
 		valueModuleOf[schema.type](name, schema),
 	),
 );
-Object.keys(failures.$defs).map((name) =>
+const signals: DomainDocument = JSON.parse(
+	readFileSync(resolve(root, "schemas/signals.schema.json"), "utf8"),
+);
+
+[...Object.keys(failures.$defs), ...Object.keys(signals.$defs)].map((name) =>
 	writeFileSync(resolve(target, `${kebabOf(name)}.g.ts`), failureOf(name)),
 );
 

@@ -17,7 +17,7 @@ const gitHostOver = (git: Git): Pick<Host, "getChange"> => ({
 			try: (): Promise<string> =>
 				git(["ls-remote", "--exit-code", remoteOf(url)]),
 			catch: (): HostError => unreachableRemote(),
-		}).pipe(Effect.map((): Change => changeOfRemote())),
+		}).pipe(Effect.map((): Change => changeOfRemote(url))),
 });
 
 export type { Git };

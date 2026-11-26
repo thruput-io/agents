@@ -34,6 +34,22 @@
 		"NotValid": {
 			"description": "What was given does not make a valid value",
 			"type": "object"
+		},
+		"NotDefined": {
+			"description": "Nothing declares the term",
+			"type": "object"
+		},
+		"NotAssigned": {
+			"description": "The rule is not one of the probe's rules",
+			"type": "object"
+		},
+		"NoPage": {
+			"description": "The surface has no page there",
+			"type": "object"
+		},
+		"NotAcknowledged": {
+			"description": "The instructions are not acknowledged yet",
+			"type": "object"
 		}
 	}
 }

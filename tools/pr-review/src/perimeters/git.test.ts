@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Change } from "../domain/change.ts";
-import { PendingReview } from "../domain/pending-review.ts";
+import { urlSample } from "../domain/sample.test-support.ts";
 import { HostError } from "../generated/domain/host-error.g.ts";
-import { Probes } from "../generated/domain/probes.g.ts";
 import { TargetUrl } from "../generated/domain/target-url.g.ts";
 import { changeOfRemote, remoteOf, unreachableRemote } from "./git.ts";
 
@@ -14,13 +13,7 @@ it("a target URL is the remote git is asked for", () => {
 });
 
 it("a remote that answers is a change", () => {
-	assert.equal(changeOfRemote() instanceof Change, true);
-});
-
-it("the change of a remote is reviewed in a pending review", () => {
-	const review = changeOfRemote().review(Probes.codec.decode({}));
-
-	assert.equal(review instanceof PendingReview, true);
+	assert.equal(changeOfRemote(urlSample()) instanceof Change, true);
 });
 
 it("a remote that does not answer is a host error", () => {

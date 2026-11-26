@@ -10,6 +10,7 @@
 		"src/**/*.ts!",
 		"!src/**/*.test.ts!",
 		"!src/**/*.narrow-test.ts!",
+		"!src/**/*.test-support.ts!",
 		"!src/architecture.ts!",
 		"scripts/*.ts"
 	],
