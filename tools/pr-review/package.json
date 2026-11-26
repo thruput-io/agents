@@ -9,8 +9,9 @@
 		"lint": "biome check --error-on-warnings",
 		"semgrep": "semgrep scan --error --metrics=off --config p/default --config https://thruput.se/semgrep/all.yaml .",
 		"typecheck": "tsc --noEmit",
-		"test": "c8 --all --src src --include 'src/**/*.ts' --exclude 'src/**/*.test.ts' --exclude 'src/generated/**' --exclude 'src/mock-server/**' --check-coverage --lines 90 --branches 90 --reporter text node --test 'src/**/*.test.ts'",
-		"verify": "npm run generate && npm run build && npm run knip && npm run lint && npm run semgrep && npm run typecheck && npm test"
+		"test": "c8 --all --src src --include 'src/**/*.ts' --exclude 'src/**/*.test.ts' --exclude 'src/**/*.narrow-test.ts' --exclude 'src/generated/**' --exclude 'src/mock-server/**' --check-coverage --lines 90 --branches 90 --reporter text node --test 'src/**/*.test.ts'",
+		"test:narrow": "PROJECT_ROOT=\"$PWD/../..\" scripts/narrow.sh",
+		"verify": "npm run generate && npm run build && npm run knip && npm run lint && npm run semgrep && npm run typecheck && npm test && npm run test:narrow"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.6.4",

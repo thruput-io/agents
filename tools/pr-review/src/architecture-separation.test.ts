@@ -8,6 +8,10 @@ import {
 	TSCONFIG_PATH,
 } from "./architecture.ts";
 
+const MOCK_HOST = "{src/mock-server/**,src/generated/mock-server/**}";
+const INTEGRATION_TESTS =
+	"{src/integration-test/**,src/generated/integration-test/**}";
+
 const ENTRY_POINTS =
 	"{src/client/main/review-tool.ts,src/client/sub/review-tool-probe.ts}";
 
@@ -60,24 +64,21 @@ it("the sub client never depends on the main client or the main controller", asy
 	);
 });
 
-it("the mock host depends on no other folder", async () => {
+it("the mock host depends only on itself and its generated mirror", async () => {
+	assert.deepEqual(await dependsOnlyOn("src/mock-server/**", MOCK_HOST), []);
+});
+
+it("no other folder depends on the mock host or its generated mirror", async () => {
+	assert.deepEqual(await othersNeverDependOn(MOCK_HOST), []);
+});
+
+it("the integration tests depend only on themselves and their generated mirror", async () => {
 	assert.deepEqual(
-		await dependsOnlyOn("src/mock-server/**", "src/mock-server/**"),
+		await dependsOnlyOn("src/integration-test/**", INTEGRATION_TESTS),
 		[],
 	);
 });
 
-it("no other folder depends on the mock host", async () => {
-	assert.deepEqual(await othersNeverDependOn("src/mock-server/**"), []);
-});
-
-it("the integration tests depend on no other folder", async () => {
-	assert.deepEqual(
-		await dependsOnlyOn("src/integration-test/**", "src/integration-test/**"),
-		[],
-	);
-});
-
-it("no other folder depends on the integration tests", async () => {
-	assert.deepEqual(await othersNeverDependOn("src/integration-test/**"), []);
+it("no other folder depends on the integration tests or their generated mirror", async () => {
+	assert.deepEqual(await othersNeverDependOn(INTEGRATION_TESTS), []);
 });

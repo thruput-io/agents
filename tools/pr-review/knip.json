@@ -1,9 +1,14 @@
 {
 	"$schema": "https://unpkg.com/knip@6/schema.json",
-	"entry": ["src/client/main/review-tool.ts!", "src/mock-server/serve.ts"],
+	"entry": [
+		"src/client/main/review-tool.ts!",
+		"src/mock-server/serve.ts",
+		"src/**/*.narrow-test.ts"
+	],
 	"project": [
 		"src/**/*.ts!",
 		"!src/**/*.test.ts!",
+		"!src/**/*.narrow-test.ts!",
 		"!src/architecture.ts!",
 		"scripts/*.ts"
 	],
