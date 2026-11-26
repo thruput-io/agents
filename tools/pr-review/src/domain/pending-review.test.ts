@@ -4,11 +4,14 @@ import { Effect } from "effect";
 import { NotStarted } from "../generated/domain/not-started.g.ts";
 import { ReviewStatus } from "../generated/domain/review-status.g.ts";
 import type { Agent } from "./agent.ts";
+import type { Assignment } from "./assignment.ts";
 import { PendingReview } from "./pending-review.ts";
 
 const agent: Agent = {
-	spawn: (assignment) => Effect.succeed(assignment),
-	terminate: (assignment) => Effect.succeed(assignment),
+	spawn: (assignment: Assignment): Effect.Effect<Assignment> =>
+		Effect.succeed(assignment),
+	terminate: (assignment: Assignment): Effect.Effect<Assignment> =>
+		Effect.succeed(assignment),
 };
 
 it("a pending review states its status", () => {

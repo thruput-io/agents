@@ -4,16 +4,18 @@ import { Effect } from "effect";
 import { Assignment } from "../../domain/assignment.ts";
 import { Instructions } from "../../domain/instructions.ts";
 import { PendingReview } from "../../domain/pending-review.ts";
-import type { ReviewStore } from "../../domain/review.ts";
+import type { Review, ReviewStore } from "../../domain/review.ts";
 import { Definition } from "../../generated/domain/definition.g.ts";
 import { NoReview } from "../../generated/domain/no-review.g.ts";
 import { Probe } from "../../generated/domain/probe.g.ts";
 import { Ruleset } from "../../generated/domain/ruleset.g.ts";
 import { Term } from "../../generated/domain/term.g.ts";
+import type { Workdir } from "../../generated/domain/workdir.g.ts";
 import { BriefingController } from "./briefing-controller.ts";
 
 const store: ReviewStore = {
-	save: (_workdir, review) => Effect.succeed(review),
+	save: (_workdir: Workdir, review: Review): Effect.Effect<Review> =>
+		Effect.succeed(review),
 	inWorkdir: () => Effect.succeed(PendingReview.create()),
 	ofProbe: () => Effect.succeed(Assignment.create()),
 	append: () => Effect.succeed(PendingReview.create()),

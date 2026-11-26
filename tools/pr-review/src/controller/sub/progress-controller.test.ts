@@ -6,7 +6,7 @@ import { Assignment } from "../../domain/assignment.ts";
 import { Change } from "../../domain/change.ts";
 import { CompleteReview } from "../../domain/complete-review.ts";
 import type { Host } from "../../domain/host.ts";
-import type { Entry, ReviewStore } from "../../domain/review.ts";
+import type { Entry, Review, ReviewStore } from "../../domain/review.ts";
 import { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
 import { HostError } from "../../generated/domain/host-error.g.ts";
 import { Outcome } from "../../generated/domain/outcome.g.ts";
@@ -14,6 +14,7 @@ import { Probe } from "../../generated/domain/probe.g.ts";
 import { Progress } from "../../generated/domain/progress.g.ts";
 import { TargetUrl } from "../../generated/domain/target-url.g.ts";
 import { Verdict } from "../../generated/domain/verdict.g.ts";
+import type { Workdir } from "../../generated/domain/workdir.g.ts";
 import { ProgressController } from "./progress-controller.ts";
 
 const url = Effect.runSync(TargetUrl.from("https://host.test/change"));
@@ -25,10 +26,11 @@ const host: Host = {
 };
 
 const store: ReviewStore = {
-	save: (_workdir, review) => Effect.succeed(review),
+	save: (_workdir: Workdir, review: Review): Effect.Effect<Review> =>
+		Effect.succeed(review),
 	inWorkdir: () => Effect.succeed(CompleteReview.of(url)),
 	ofProbe: () => Effect.succeed(Assignment.create()),
-	append: (_probe, entry) =>
+	append: (_probe: Probe, entry: Entry): Effect.Effect<Review> =>
 		Effect.sync(() => {
 			appended.push(entry);
 
@@ -37,8 +39,10 @@ const store: ReviewStore = {
 };
 
 const agent: Agent = {
-	spawn: (assignment) => Effect.succeed(assignment),
-	terminate: (assignment) => Effect.succeed(assignment),
+	spawn: (assignment: Assignment): Effect.Effect<Assignment> =>
+		Effect.succeed(assignment),
+	terminate: (assignment: Assignment): Effect.Effect<Assignment> =>
+		Effect.succeed(assignment),
 };
 
 it("ack answers the progress of the assignment", () => {

@@ -6,7 +6,7 @@ import { Assignment } from "../../domain/assignment.ts";
 import { Change } from "../../domain/change.ts";
 import type { Host } from "../../domain/host.ts";
 import { PendingReview } from "../../domain/pending-review.ts";
-import type { ReviewStore } from "../../domain/review.ts";
+import type { Review, ReviewStore } from "../../domain/review.ts";
 import { NoReview } from "../../generated/domain/no-review.g.ts";
 import { NotStarted } from "../../generated/domain/not-started.g.ts";
 import { Outcome } from "../../generated/domain/outcome.g.ts";
@@ -26,15 +26,18 @@ const host: Host = {
 };
 
 const store: ReviewStore = {
-	save: (_workdir, review) => Effect.succeed(review),
+	save: (_workdir: Workdir, review: Review): Effect.Effect<Review> =>
+		Effect.succeed(review),
 	inWorkdir: () => Effect.succeed(PendingReview.create()),
 	ofProbe: () => Effect.succeed(Assignment.create()),
 	append: () => Effect.succeed(PendingReview.create()),
 };
 
 const agent: Agent = {
-	spawn: (assignment) => Effect.succeed(assignment),
-	terminate: (assignment) => Effect.succeed(assignment),
+	spawn: (assignment: Assignment): Effect.Effect<Assignment> =>
+		Effect.succeed(assignment),
+	terminate: (assignment: Assignment): Effect.Effect<Assignment> =>
+		Effect.succeed(assignment),
 };
 
 it("prepare answers the status of the review", () => {

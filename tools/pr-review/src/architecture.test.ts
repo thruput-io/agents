@@ -1,47 +1,27 @@
 import assert from "node:assert/strict";
-import { dirname, resolve } from "node:path";
 import { test as it } from "node:test";
-import { fileURLToPath } from "node:url";
 import { projectFiles } from "archunit";
-
-const TSCONFIG_PATH = resolve(
-	dirname(fileURLToPath(import.meta.url)),
-	"../tsconfig.json",
-);
+import {
+	DOMAIN,
+	dependsOnlyOn,
+	PERIMETERS,
+	TSCONFIG_PATH,
+} from "./architecture.ts";
 
 const LAYOUT =
-	"{src/client/main/**,src/client/sub/**,src/client/common/**,src/controller/main/**,src/controller/sub/**,src/controller/common/**,src/domain/**,src/perimeters/**,src/adapters/github/**,src/adapters/azure/**,src/adapters/git/**,src/adapters/persistence/memory/**,src/adapters/persistence/disk/**,src/generated/domain/**,src/generated/perimeters/**,src/generated/adapters/**,src/integration-test/**,src/mock-server/**,src/architecture.test.ts}";
-
-const ENTRY_POINTS =
-	"{src/client/main/review-tool.ts,src/client/sub/review-tool-probe.ts}";
-
-const DOMAIN = "src/domain/**,src/generated/domain/**";
-const PERIMETERS = `src/perimeters/**,src/generated/perimeters/**,${DOMAIN}`;
+	"{src/client/main/**,src/client/sub/**,src/client/common/**,src/controller/main/**,src/controller/sub/**,src/controller/common/**,src/domain/**,src/perimeters/**,src/adapters/github/**,src/adapters/azure/**,src/adapters/git/**,src/adapters/persistence/memory/**,src/adapters/persistence/disk/**,src/generated/domain/**,src/generated/perimeters/**,src/generated/adapters/**,src/integration-test/**,src/mock-server/**,src/architecture.ts,src/architecture.test.ts,src/architecture-separation.test.ts}";
 
 const UNKNOWN_TYPE =
 	/(?:[:<,|&(=]|=>|\bas|\bextends|\bkeyof)\s*unknown\b(?!-)/u;
-
-const dependsOnlyOn = (sourceGlob: string, allowedGlob: string) =>
-	projectFiles(TSCONFIG_PATH)
-		.inPath(sourceGlob)
-		.shouldNot()
-		.dependOnFiles()
-		.inPath("**", { except: { inPath: allowedGlob } })
-		.check({ allowEmptyTests: true });
-
-const neverDependsOn = (sourceGlob: string, forbiddenGlob: string) =>
-	projectFiles(TSCONFIG_PATH)
-		.inPath(sourceGlob)
-		.shouldNot()
-		.dependOnFiles()
-		.inPath(forbiddenGlob)
-		.check({ allowEmptyTests: true });
 
 it("every file in src lives in a folder of the layout", async () => {
 	const violations = await projectFiles(TSCONFIG_PATH)
 		.inPath("src/**", { except: { inPath: LAYOUT } })
 		.should()
-		.adhereTo(() => false, "The file is outside the folders of the layout")
+		.adhereTo(
+			(): boolean => false,
+			"The file is outside the folders of the layout",
+		)
 		.check({ allowEmptyTests: true });
 
 	assert.deepEqual(violations, []);
@@ -53,6 +33,20 @@ it("src has no circular dependencies", async () => {
 		.should()
 		.haveNoCycles()
 		.check();
+
+	assert.deepEqual(violations, []);
+});
+
+it("no file uses the type unknown", async () => {
+	const violations = await projectFiles(TSCONFIG_PATH)
+		.inPath("{src/**,scripts/**}")
+		.should()
+		.adhereTo(
+			(file: { readonly content: string }): boolean =>
+				!UNKNOWN_TYPE.test(file.content),
+			"The type unknown is not allowed: use a contract or a domain type",
+		)
+		.check({ allowEmptyTests: true });
 
 	assert.deepEqual(violations, []);
 });
@@ -130,109 +124,4 @@ it("the disk store depends only on itself and the perimeters", async () => {
 		),
 		[],
 	);
-});
-
-it("only the entry points depend on adapters", async () => {
-	const violations = await projectFiles(TSCONFIG_PATH)
-		.inPath("src/client/**", { except: { inPath: ENTRY_POINTS } })
-		.shouldNot()
-		.dependOnFiles()
-		.inPath("src/adapters/**")
-		.check({ allowEmptyTests: true });
-
-	assert.deepEqual(violations, []);
-});
-
-it("nothing depends on an entry point", async () => {
-	const violations = await projectFiles(TSCONFIG_PATH)
-		.inPath("src/**", { except: { inPath: ENTRY_POINTS } })
-		.shouldNot()
-		.dependOnFiles()
-		.inPath(ENTRY_POINTS)
-		.check({ allowEmptyTests: true });
-
-	assert.deepEqual(violations, []);
-});
-
-it("the main controller never depends on the sub controller", async () => {
-	assert.deepEqual(
-		await neverDependsOn("src/controller/main/**", "src/controller/sub/**"),
-		[],
-	);
-});
-
-it("the sub controller never depends on the main controller", async () => {
-	assert.deepEqual(
-		await neverDependsOn("src/controller/sub/**", "src/controller/main/**"),
-		[],
-	);
-});
-
-it("the main client never depends on the sub client or the sub controller", async () => {
-	assert.deepEqual(
-		await neverDependsOn(
-			"src/client/main/**",
-			"{src/client/sub/**,src/controller/sub/**}",
-		),
-		[],
-	);
-});
-
-it("the sub client never depends on the main client or the main controller", async () => {
-	assert.deepEqual(
-		await neverDependsOn(
-			"src/client/sub/**",
-			"{src/client/main/**,src/controller/main/**}",
-		),
-		[],
-	);
-});
-
-it("the mock host depends on no other folder", async () => {
-	assert.deepEqual(
-		await dependsOnlyOn("src/mock-server/**", "src/mock-server/**"),
-		[],
-	);
-});
-
-it("no other folder depends on the mock host", async () => {
-	const violations = await projectFiles(TSCONFIG_PATH)
-		.inPath("src/**", { except: { inPath: "src/mock-server/**" } })
-		.shouldNot()
-		.dependOnFiles()
-		.inPath("src/mock-server/**")
-		.check({ allowEmptyTests: true });
-
-	assert.deepEqual(violations, []);
-});
-
-it("the integration tests depend on no other folder", async () => {
-	assert.deepEqual(
-		await dependsOnlyOn("src/integration-test/**", "src/integration-test/**"),
-		[],
-	);
-});
-
-it("no other folder depends on the integration tests", async () => {
-	const violations = await projectFiles(TSCONFIG_PATH)
-		.inPath("src/**", { except: { inPath: "src/integration-test/**" } })
-		.shouldNot()
-		.dependOnFiles()
-		.inPath("src/integration-test/**")
-		.check({ allowEmptyTests: true });
-
-	assert.deepEqual(violations, []);
-});
-
-it("no file uses the type unknown", async () => {
-	const violations = await projectFiles(TSCONFIG_PATH)
-		.inPath("{src/**,scripts/**}")
-		.should()
-		.adhereTo(
-			(file) => !UNKNOWN_TYPE.test(file.content),
-			"The type unknown is not allowed: use a contract or a domain type",
-		)
-		.check({ allowEmptyTests: true });
-
-	assert.deepEqual(violations, []);
 });

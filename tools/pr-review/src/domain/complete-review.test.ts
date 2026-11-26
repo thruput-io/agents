@@ -6,6 +6,7 @@ import { Outcome } from "../generated/domain/outcome.g.ts";
 import { ReviewStatus } from "../generated/domain/review-status.g.ts";
 import { TargetUrl } from "../generated/domain/target-url.g.ts";
 import type { Agent } from "./agent.ts";
+import type { Assignment } from "./assignment.ts";
 import { Change } from "./change.ts";
 import { CompleteReview } from "./complete-review.ts";
 import type { Host } from "./host.ts";
@@ -18,8 +19,10 @@ const host: Host = {
 };
 
 const agent: Agent = {
-	spawn: (assignment) => Effect.succeed(assignment),
-	terminate: (assignment) => Effect.succeed(assignment),
+	spawn: (assignment: Assignment): Effect.Effect<Assignment> =>
+		Effect.succeed(assignment),
+	terminate: (assignment: Assignment): Effect.Effect<Assignment> =>
+		Effect.succeed(assignment),
 };
 
 it("a complete review states its status", () => {

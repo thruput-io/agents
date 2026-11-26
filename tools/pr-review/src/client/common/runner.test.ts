@@ -1,48 +1,51 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
-import { NoReview } from "../../generated/domain/no-review.g.ts";
-import { ReviewStatus } from "../../generated/domain/review-status.g.ts";
+import type { Answer } from "../../perimeters/answer.ts";
 import { type Commands, run } from "./runner.ts";
 
 const commands: Commands = {
-	answering: () => Effect.succeed(ReviewStatus.create()),
-	refusing: () => Effect.fail(NoReview.create()),
-	echoing: ([first = ""]) =>
-		Effect.succeed({ toJSON: () => ({ kind: first }) }),
+	answering: (): Effect.Effect<Answer, Answer> =>
+		Effect.succeed({ answered: "yes" }),
+	refusing: (): Effect.Effect<Answer, Answer> =>
+		Effect.fail({ failure: "refused" }),
+	echoing: (
+		commandArguments: readonly string[],
+	): Effect.Effect<Answer, Answer> =>
+		Effect.succeed({ given: commandArguments.join(" ") }),
 };
 
 it("an answer is printed as JSON with exit code 0", () => {
 	assert.deepEqual(Effect.runSync(run(commands, ["answering"])), {
-		line: '{"kind":"review-status"}\n',
+		line: '{"answered":"yes"}\n',
 		exitCode: 0,
 	});
 });
 
 it("a failure is printed as JSON with exit code 1", () => {
 	assert.deepEqual(Effect.runSync(run(commands, ["refusing"])), {
-		line: '{"kind":"no-review"}\n',
+		line: '{"failure":"refused"}\n',
 		exitCode: 1,
 	});
 });
 
 it("a command is handed the arguments after its name", () => {
-	assert.deepEqual(Effect.runSync(run(commands, ["echoing", "given"])), {
-		line: '{"kind":"given"}\n',
+	assert.deepEqual(Effect.runSync(run(commands, ["echoing", "one", "two"])), {
+		line: '{"given":"one two"}\n',
 		exitCode: 0,
 	});
 });
 
 it("a name that is no command is answered as not valid", () => {
 	assert.deepEqual(Effect.runSync(run(commands, ["other"])), {
-		line: '{"kind":"not-valid"}\n',
+		line: '{"failure":"not-valid"}\n',
 		exitCode: 1,
 	});
 });
 
 it("an empty command line is answered as not valid", () => {
 	assert.deepEqual(Effect.runSync(run(commands, [])), {
-		line: '{"kind":"not-valid"}\n',
+		line: '{"failure":"not-valid"}\n',
 		exitCode: 1,
 	});
 });

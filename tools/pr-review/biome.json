@@ -9,14 +9,30 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"preset": "all",
-			"correctness": {
-				"noNodejsModules": "off",
-				"useQwikValidLexicalScope": "off"
-			}
+			"a11y": "error",
+			"complexity": "error",
+			"correctness": "error",
+			"nursery": "error",
+			"performance": "error",
+			"security": "error",
+			"style": "error",
+			"suspicious": "error"
 		}
 	},
 	"formatter": {
 		"enabled": true
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["**"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noNodejsModules": "off",
+						"useQwikValidLexicalScope": "off"
+					}
+				}
+			}
+		}
+	]
 }

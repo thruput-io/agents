@@ -1,9 +1,10 @@
 import { Effect } from "effect";
 import { NotValid } from "../../generated/domain/not-valid.g.ts";
-
-interface Answer {
-	toJSON: () => string | { readonly kind: string };
-}
+import { type Answer, failureAnswer } from "../../perimeters/answer.ts";
+import {
+	type CommandLine,
+	commandLineOf,
+} from "../../perimeters/command-line.ts";
 
 interface Printed {
 	readonly line: string;
@@ -24,18 +25,33 @@ const printed = (answer: Answer, exitCode: number): Printed => ({
 	exitCode,
 });
 
-const noCommand: Command = () => Effect.fail(NotValid.create());
+const answered = (
+	commands: Commands,
+	{ name, commandArguments }: CommandLine,
+): Effect.Effect<Answer, Answer> =>
+	Effect.fromNullishOr(commands[name]).pipe(
+		Effect.mapError((): Answer => failureAnswer(NotValid.create())),
+		Effect.flatMap(
+			(command: Command): Effect.Effect<Answer, Answer> =>
+				command(commandArguments),
+		),
+	);
 
 const run = (
 	commands: Commands,
-	[name = "", ...commandArguments]: readonly string[],
+	given: readonly string[],
 ): Effect.Effect<Printed> =>
-	(commands[name] ?? noCommand)(commandArguments).pipe(
+	commandLineOf(given).pipe(
+		Effect.mapError(failureAnswer),
+		Effect.flatMap(
+			(commandLine: CommandLine): Effect.Effect<Answer, Answer> =>
+				answered(commands, commandLine),
+		),
 		Effect.match({
-			onSuccess: (answer) => printed(answer, ANSWERED),
-			onFailure: (failure) => printed(failure, REFUSED),
+			onSuccess: (answer: Answer): Printed => printed(answer, ANSWERED),
+			onFailure: (failure: Answer): Printed => printed(failure, REFUSED),
 		}),
 	);
 
-export type { Commands };
+export type { Commands, Printed };
 export { run };
