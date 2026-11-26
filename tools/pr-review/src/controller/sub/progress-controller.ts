@@ -1,17 +1,17 @@
 import { Effect } from "effect";
 import type {
-	Acknowledgement,
-	NoReview,
-	Probe,
-	Progress,
-	Verdict,
-} from "../../domain/domain.ts";
-import type {
 	Agent,
 	Host,
 	Instructions,
 	ReviewStore,
 } from "../../domain/review.ts";
+import type {
+	Acknowledgement,
+	NoReview,
+	Probe,
+	Progress,
+	Verdict,
+} from "../../generated/domain/value.g.ts";
 
 class ProgressController {
 	readonly #host: Host;

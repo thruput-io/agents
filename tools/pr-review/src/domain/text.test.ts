@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
-import type { TargetUrl } from "./domain.ts";
-import { targetUrlFrom, workdirFrom } from "./factory.ts";
-import { targetUrlMark } from "./mark.ts";
+import { targetUrlFrom, workdirFrom } from "../generated/domain/factory.g.ts";
+import { targetUrlMark } from "../generated/domain/mark.g.ts";
+import type { TargetUrl } from "../generated/domain/value.g.ts";
 import { textOf } from "./text.ts";
 
 it("a target URL gives back the text it was made from", () => {

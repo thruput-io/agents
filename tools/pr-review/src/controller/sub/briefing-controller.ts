@@ -1,12 +1,12 @@
 import { Effect } from "effect";
+import type { Instructions, ReviewStore } from "../../domain/review.ts";
 import type {
 	Definition,
 	NoReview,
 	Probe,
 	Ruleset,
 	Term,
-} from "../../domain/domain.ts";
-import type { Instructions, ReviewStore } from "../../domain/review.ts";
+} from "../../generated/domain/value.g.ts";
 
 class BriefingController {
 	readonly #store: ReviewStore;

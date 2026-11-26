@@ -1,4 +1,4 @@
-import type { TargetUrl, Workdir } from "./domain.ts";
+import type { TargetUrl, Workdir } from "../generated/domain/value.g.ts";
 import { isMinted } from "./mint.ts";
 
 interface Worded {

@@ -2,15 +2,6 @@ import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
 import {
-	acknowledgementFrom,
-	hostErrorFrom,
-	outcomeFrom,
-	probeFrom,
-	progressFrom,
-	targetUrlFrom,
-	verdictFrom,
-} from "../../domain/factory.ts";
-import {
 	assignmentFrom,
 	changeFrom,
 	completeReviewFrom,
@@ -22,6 +13,15 @@ import type {
 	Host,
 	ReviewStore,
 } from "../../domain/review.ts";
+import {
+	acknowledgementFrom,
+	hostErrorFrom,
+	outcomeFrom,
+	probeFrom,
+	progressFrom,
+	targetUrlFrom,
+	verdictFrom,
+} from "../../generated/domain/factory.g.ts";
 import { ProgressController } from "./progress-controller.ts";
 
 const url = targetUrlFrom("https://host.test/change");

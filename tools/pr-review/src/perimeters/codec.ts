@@ -1,16 +1,20 @@
 import { z } from "zod";
-import type { ReviewStatus, TargetUrl, Workdir } from "../domain/domain.ts";
+import { textOf } from "../domain/text.ts";
 import {
 	reviewStatusFrom,
 	targetUrlFrom,
 	workdirFrom,
-} from "../domain/factory.ts";
-import { textOf } from "../domain/text.ts";
+} from "../generated/domain/factory.g.ts";
 import {
 	ReviewStatusSchema,
 	TargetUrlSchema,
 	WorkdirSchema,
-} from "../generated/domain/domain.g.ts";
+} from "../generated/domain/schema.g.ts";
+import type {
+	ReviewStatus,
+	TargetUrl,
+	Workdir,
+} from "../generated/domain/value.g.ts";
 
 const TargetUrlCodec = z.codec(TargetUrlSchema, z.custom<TargetUrl>(), {
 	decode: (text) => targetUrlFrom(text),

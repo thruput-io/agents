@@ -24,7 +24,7 @@ import type {
 	Verdict,
 	Workdir,
 	Workflow,
-} from "./domain.ts";
+} from "../generated/domain/value.g.ts";
 import type {
 	assignmentMark,
 	briefingMark,
@@ -33,7 +33,7 @@ import type {
 	cursorMark,
 	instructionsMark,
 	pendingReviewMark,
-} from "./mark.ts";
+} from "./review-mark.ts";
 
 interface Instructions {
 	readonly [instructionsMark]: typeof instructionsMark;

@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
-import { probeFrom, surfaceFrom } from "../../domain/factory.ts";
 import {
 	assignmentFrom,
 	pendingReviewFrom,
 } from "../../domain/minted-review.ts";
 import type { Assignment, Cursor, ReviewStore } from "../../domain/review.ts";
+import { probeFrom, surfaceFrom } from "../../generated/domain/factory.g.ts";
 import { PagingController } from "./paging-controller.ts";
 
 const following = surfaceFrom();

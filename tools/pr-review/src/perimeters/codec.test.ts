@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
-import { reviewStatusFrom } from "../domain/factory.ts";
 import { textOf } from "../domain/text.ts";
+import { reviewStatusFrom } from "../generated/domain/factory.g.ts";
 import { ReviewStatusCodec, TargetUrlCodec, WorkdirCodec } from "./codec.ts";
 
 it("a target URL is parsed from its text and encoded back to it", () => {

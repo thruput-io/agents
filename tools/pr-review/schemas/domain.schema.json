@@ -1,7 +1,7 @@
 {
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"title": "Domain",
-	"description": "The data of the domain values of the review tool, the source their zod schemas are generated from",
+	"description": "The domain values of the review tool, the source their schemas, marks, interfaces and factories are generated from",
 	"$defs": {
 		"TargetUrl": {
 			"description": "The address of the change to review",
@@ -13,8 +13,100 @@
 			"type": "string",
 			"minLength": 1
 		},
+		"Surface": {
+			"description": "The lines of a change a review looks at",
+			"type": "object"
+		},
+		"Probe": {
+			"description": "What a sub agent holds for its part of a review",
+			"type": "object"
+		},
+		"Probes": {
+			"description": "The probes of the review tool",
+			"type": "object"
+		},
+		"Rule": {
+			"description": "One rule a change is judged against",
+			"type": "object"
+		},
+		"Ruleset": {
+			"description": "The rules a sub agent is given",
+			"type": "object"
+		},
+		"Term": {
+			"description": "A word of the glossary",
+			"type": "object"
+		},
+		"Definition": {
+			"description": "What a term means",
+			"type": "object"
+		},
+		"Workflow": {
+			"description": "The steps a sub agent follows",
+			"type": "object"
+		},
+		"Context": {
+			"description": "What is special for one review",
+			"type": "object"
+		},
+		"Usage": {
+			"description": "How the review tool is called",
+			"type": "object"
+		},
+		"AcknowledgementRequest": {
+			"description": "What a sub agent sends back to show it read its instructions",
+			"type": "object"
+		},
+		"Acknowledgement": {
+			"description": "What a sub agent sent back",
+			"type": "object"
+		},
+		"Verdict": {
+			"description": "The result of judging a change against one rule",
+			"type": "object"
+		},
+		"Violation": {
+			"description": "A finding that a change breaks a rule",
+			"type": "object"
+		},
+		"Outcome": {
+			"description": "What a review posts to the host",
+			"type": "object"
+		},
 		"ReviewStatus": {
 			"description": "How a review stands",
+			"type": "object"
+		},
+		"Progress": {
+			"description": "How one sub agent stands",
+			"type": "object"
+		},
+		"NotStarted": {
+			"description": "A sub agent could not be started",
+			"type": "object"
+		},
+		"NoReview": {
+			"description": "Nothing is under review here",
+			"type": "object"
+		},
+		"UnknownFormat": {
+			"description": "No host recognises the address",
+			"type": "object"
+		},
+		"AlreadyReviewed": {
+			"description": "The change was reviewed before",
+			"type": "object"
+		},
+		"TooLarge": {
+			"description": "The change is over a limit",
+			"type": "object"
+		},
+		"Refused": {
+			"description": "The change is not in a state to review",
+			"type": "object"
+		},
+		"HostError": {
+			"description": "The host failed",
 			"type": "object"
 		}
 	}

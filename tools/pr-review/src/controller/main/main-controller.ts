@@ -1,18 +1,18 @@
 import { Effect } from "effect";
 import type {
+	Agent,
+	Host,
+	NotReviewable,
+	ReviewStore,
+} from "../../domain/review.ts";
+import type {
 	NoReview,
 	NotStarted,
 	Probes,
 	ReviewStatus,
 	TargetUrl,
 	Workdir,
-} from "../../domain/domain.ts";
-import type {
-	Agent,
-	Host,
-	NotReviewable,
-	ReviewStore,
-} from "../../domain/review.ts";
+} from "../../generated/domain/value.g.ts";
 
 class MainController {
 	readonly #host: Host;

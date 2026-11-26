@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
+import { changeFrom, pendingReviewFrom } from "../../domain/minted-review.ts";
+import type {
+	Agent,
+	Change,
+	Host,
+	PendingReview,
+	ReviewStore,
+} from "../../domain/review.ts";
 import {
 	noReviewFrom,
 	notStartedFrom,
@@ -10,15 +18,7 @@ import {
 	targetUrlFrom,
 	unknownFormatFrom,
 	workdirFrom,
-} from "../../domain/factory.ts";
-import { changeFrom, pendingReviewFrom } from "../../domain/minted-review.ts";
-import type {
-	Agent,
-	Change,
-	Host,
-	PendingReview,
-	ReviewStore,
-} from "../../domain/review.ts";
+} from "../../generated/domain/factory.g.ts";
 import { MainController } from "./main-controller.ts";
 
 const url = targetUrlFrom("https://host.test/change");

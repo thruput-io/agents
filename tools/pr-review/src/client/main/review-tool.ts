@@ -4,7 +4,7 @@ import { z } from "zod";
 import { gitHost } from "../../adapters/git/git-host.ts";
 import { memoryStore } from "../../adapters/persistence/memory/memory-store.ts";
 import { MainController } from "../../controller/main/main-controller.ts";
-import { probesFrom } from "../../domain/factory.ts";
+import { probesFrom } from "../../generated/domain/factory.g.ts";
 import {
 	ReviewStatusCodec,
 	TargetUrlCodec,

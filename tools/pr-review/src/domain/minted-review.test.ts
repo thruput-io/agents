@@ -9,23 +9,18 @@ import {
 	probesFrom,
 	targetUrlFrom,
 	termFrom,
-} from "./factory.ts";
+} from "../generated/domain/factory.g.ts";
 import {
 	acknowledgementRequestMark,
-	briefingMark,
-	completeReviewMark,
 	contextMark,
-	cursorMark,
 	definitionMark,
-	instructionsMark,
-	pendingReviewMark,
 	progressMark,
 	reviewStatusMark,
 	rulesetMark,
 	surfaceMark,
 	usageMark,
 	workflowMark,
-} from "./mark.ts";
+} from "../generated/domain/mark.g.ts";
 import {
 	assignmentFrom,
 	changeFrom,
@@ -33,6 +28,13 @@ import {
 	pendingReviewFrom,
 } from "./minted-review.ts";
 import type { Agent, Host } from "./review.ts";
+import {
+	briefingMark,
+	completeReviewMark,
+	cursorMark,
+	instructionsMark,
+	pendingReviewMark,
+} from "./review-mark.ts";
 
 const url = targetUrlFrom("https://host.test/change");
 

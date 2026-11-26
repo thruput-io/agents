@@ -1,5 +1,4 @@
 import { Effect } from "effect";
-import type { Acknowledgement, TargetUrl } from "./domain.ts";
 import {
 	acknowledgementRequestFrom,
 	contextFrom,
@@ -11,16 +10,11 @@ import {
 	surfaceFrom,
 	usageFrom,
 	workflowFrom,
-} from "./factory.ts";
-import {
-	assignmentMark,
-	briefingMark,
-	changeMark,
-	completeReviewMark,
-	cursorMark,
-	instructionsMark,
-	pendingReviewMark,
-} from "./mark.ts";
+} from "../generated/domain/factory.g.ts";
+import type {
+	Acknowledgement,
+	TargetUrl,
+} from "../generated/domain/value.g.ts";
 import { mint } from "./mint.ts";
 import type {
 	Agent,
@@ -33,6 +27,15 @@ import type {
 	Instructions,
 	PendingReview,
 } from "./review.ts";
+import {
+	assignmentMark,
+	briefingMark,
+	changeMark,
+	completeReviewMark,
+	cursorMark,
+	instructionsMark,
+	pendingReviewMark,
+} from "./review-mark.ts";
 
 const instructionsFrom = (): Instructions =>
 	mint({

@@ -1,9 +1,9 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Effect } from "effect";
-import { hostErrorFrom } from "../../domain/factory.ts";
 import { changeFrom } from "../../domain/minted-review.ts";
 import type { Host } from "../../domain/review.ts";
+import { hostErrorFrom } from "../../generated/domain/factory.g.ts";
 import { TargetUrlCodec } from "../../perimeters/codec.ts";
 
 const git = promisify(execFile);

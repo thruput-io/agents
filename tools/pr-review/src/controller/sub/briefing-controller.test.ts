@@ -2,17 +2,17 @@ import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
 import {
+	assignmentFrom,
+	pendingReviewFrom,
+} from "../../domain/minted-review.ts";
+import type { Assignment, Briefing, ReviewStore } from "../../domain/review.ts";
+import {
 	definitionFrom,
 	noReviewFrom,
 	probeFrom,
 	rulesetFrom,
 	termFrom,
-} from "../../domain/factory.ts";
-import {
-	assignmentFrom,
-	pendingReviewFrom,
-} from "../../domain/minted-review.ts";
-import type { Assignment, Briefing, ReviewStore } from "../../domain/review.ts";
+} from "../../generated/domain/factory.g.ts";
 import { BriefingController } from "./briefing-controller.ts";
 
 const instructions = assignmentFrom().briefing().instructions();

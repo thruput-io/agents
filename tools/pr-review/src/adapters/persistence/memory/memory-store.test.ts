@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
+import { pendingReviewFrom } from "../../../domain/minted-review.ts";
 import {
 	probeFrom,
 	verdictFrom,
 	workdirFrom,
-} from "../../../domain/factory.ts";
-import { noReviewMark } from "../../../domain/mark.ts";
-import { pendingReviewFrom } from "../../../domain/minted-review.ts";
+} from "../../../generated/domain/factory.g.ts";
+import { noReviewMark } from "../../../generated/domain/mark.g.ts";
 import { memoryStore } from "./memory-store.ts";
 
 const workdir = workdirFrom("/work");
