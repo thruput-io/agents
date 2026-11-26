@@ -1,15 +1,41 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
+import { Instructions } from "../domain/instructions.ts";
+import { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
 import { AlreadyReviewed } from "../generated/domain/already-reviewed.g.ts";
+import { Context } from "../generated/domain/context.g.ts";
+import { Definition } from "../generated/domain/definition.g.ts";
 import { HostError } from "../generated/domain/host-error.g.ts";
 import { NoReview } from "../generated/domain/no-review.g.ts";
 import { NotStarted } from "../generated/domain/not-started.g.ts";
 import { NotValid } from "../generated/domain/not-valid.g.ts";
+import { Progress } from "../generated/domain/progress.g.ts";
 import { Refused } from "../generated/domain/refused.g.ts";
 import { ReviewStatus } from "../generated/domain/review-status.g.ts";
+import { Ruleset } from "../generated/domain/ruleset.g.ts";
+import { Surface } from "../generated/domain/surface.g.ts";
 import { TooLarge } from "../generated/domain/too-large.g.ts";
 import { UnknownFormat } from "../generated/domain/unknown-format.g.ts";
-import { failureAnswer, statusAnswer } from "./answer.ts";
+import { Usage } from "../generated/domain/usage.g.ts";
+import { Workflow } from "../generated/domain/workflow.g.ts";
+import {
+	definitionAnswer,
+	failureAnswer,
+	instructionsAnswer,
+	notAcceptedAnswer,
+	progressAnswer,
+	rulesAnswer,
+	statusAnswer,
+	surfaceAnswer,
+} from "./answer.ts";
+
+const instructions: Instructions = Instructions.of({
+	workflow: Workflow.create(),
+	context: Context.create(),
+	usage: Usage.create(),
+	request: AcknowledgementRequest.create(),
+});
+const fourEmptyParts = { workflow: {}, context: {}, usage: {}, request: {} };
 
 it("a review status is answered as an object without properties", () => {
 	assert.deepEqual(statusAnswer(ReviewStatus.create()), {});
@@ -53,4 +79,34 @@ it("a not started is answered by its name", () => {
 
 it("a no review is answered by its name", () => {
 	assert.deepEqual(failureAnswer(NoReview.create()), { failure: "no-review" });
+});
+
+it("a progress is answered as an object without properties", () => {
+	assert.deepEqual(progressAnswer(Progress.create()), {});
+});
+
+it("a ruleset is answered as an object without properties", () => {
+	assert.deepEqual(rulesAnswer(Ruleset.create()), {});
+});
+
+it("a definition is answered as an object without properties", () => {
+	assert.deepEqual(definitionAnswer(Definition.create()), {});
+});
+
+it("a surface is answered as an object without properties", () => {
+	assert.deepEqual(surfaceAnswer(Surface.create()), {});
+});
+
+it("instructions are answered by their four parts", () => {
+	assert.deepEqual(instructionsAnswer(instructions), fourEmptyParts);
+});
+
+it("an acknowledgement that is not accepted is answered with the instructions", () => {
+	assert.deepEqual(notAcceptedAnswer(instructions), fourEmptyParts);
+});
+
+it("an acknowledgement refused for another reason is answered by that reason", () => {
+	assert.deepEqual(notAcceptedAnswer(NoReview.create()), {
+		failure: "no-review",
+	});
 });

@@ -21,6 +21,9 @@ import type { Workdir } from "../../generated/domain/workdir.g.ts";
 import { Workflow } from "../../generated/domain/workflow.g.ts";
 import { BriefingController } from "./briefing-controller.ts";
 
+const probe: Probe = Effect.runSync(Probe.from("probe-1"));
+const term: Term = Effect.runSync(Term.from("Ledger"));
+
 const request: AcknowledgementRequest = AcknowledgementRequest.create();
 const brief: Instructions = Instructions.of({
 	workflow: Workflow.create(),
@@ -61,22 +64,19 @@ const store: ReviewStore = {
 };
 
 it("instructions answers the instructions of the briefing", () => {
-	const answered = BriefingController.over(store).instructions(Probe.create());
+	const answered = BriefingController.over(store).instructions(probe);
 
 	assert.equal(Effect.runSync(answered), brief);
 });
 
 it("rules answers the rules of the briefing", () => {
-	const answered = BriefingController.over(store).rules(Probe.create());
+	const answered = BriefingController.over(store).rules(probe);
 
 	assert.equal(Effect.runSync(answered), ruleset);
 });
 
 it("define answers the definition of the term", () => {
-	const answered = BriefingController.over(store).define(
-		Probe.create(),
-		Term.create(),
-	);
+	const answered = BriefingController.over(store).define(probe, term);
 
 	assert.equal(Effect.runSync(answered), definition);
 });
@@ -87,7 +87,7 @@ it("instructions fails for a probe that holds no review", () => {
 		...store,
 		ofProbe: (): Effect.Effect<Assignment, NoReview> => Effect.fail(noReview),
 	};
-	const answered = BriefingController.over(empty).instructions(Probe.create());
+	const answered = BriefingController.over(empty).instructions(probe);
 
 	assert.equal(Effect.runSync(Effect.flip(answered)), noReview);
 });

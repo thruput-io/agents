@@ -20,6 +20,8 @@ import type { Workdir } from "../../generated/domain/workdir.g.ts";
 import { Workflow } from "../../generated/domain/workflow.g.ts";
 import { PagingController } from "./paging-controller.ts";
 
+const probe: Probe = Effect.runSync(Probe.from("probe-1"));
+
 const request: AcknowledgementRequest = AcknowledgementRequest.create();
 const brief: Instructions = Instructions.of({
 	workflow: Workflow.create(),
@@ -60,13 +62,13 @@ const store: ReviewStore = {
 };
 
 it("next answers the following page", () => {
-	const answered = PagingController.over(store).next(Probe.create());
+	const answered = PagingController.over(store).next(probe);
 
 	assert.equal(Effect.runSync(answered), following);
 });
 
 it("prev answers the preceding page", () => {
-	const answered = PagingController.over(store).prev(Probe.create());
+	const answered = PagingController.over(store).prev(probe);
 
 	assert.equal(Effect.runSync(answered), preceding);
 });

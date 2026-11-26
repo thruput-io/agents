@@ -20,4 +20,4 @@ interface ReviewStore {
 	append: (probe: Probe, entry: Entry) => Effect.Effect<Review, NoReview>;
 }
 
-export type { Entry, Review, ReviewStore };
+export type { Review, ReviewStore };

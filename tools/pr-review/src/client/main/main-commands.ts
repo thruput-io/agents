@@ -1,5 +1,9 @@
 import { Effect } from "effect";
-import type { MainController } from "../../controller/main/main-controller.ts";
+import { MainController } from "../../controller/main/main-controller.ts";
+import type { Agent } from "../../domain/agent.ts";
+import type { Host } from "../../domain/host.ts";
+import type { ReviewStore } from "../../domain/review.ts";
+import { help } from "../../generated/client/main/help.g.ts";
 import type { Workdir } from "../../generated/domain/workdir.g.ts";
 import {
 	type Answer,
@@ -33,4 +37,9 @@ const mainCommands = (controller: MainController): Commands => ({
 		),
 });
 
-export { mainCommands };
+const mainTool = (host: Host, store: ReviewStore, agent: Agent): Commands => ({
+	...mainCommands(MainController.over(host, store, agent)),
+	"-h": (): Effect.Effect<Answer, Answer> => Effect.succeed(help),
+});
+
+export { mainTool };

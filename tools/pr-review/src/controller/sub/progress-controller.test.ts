@@ -10,7 +10,7 @@ import { CompleteReview } from "../../domain/complete-review.ts";
 import { Cursor } from "../../domain/cursor.ts";
 import type { Host, NotReviewable } from "../../domain/host.ts";
 import { Instructions } from "../../domain/instructions.ts";
-import type { Entry, Review, ReviewStore } from "../../domain/review.ts";
+import type { Review, ReviewStore } from "../../domain/review.ts";
 import { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
 import { AcknowledgementRequest } from "../../generated/domain/acknowledgement-request.g.ts";
 import { Context } from "../../generated/domain/context.g.ts";
@@ -29,6 +29,8 @@ import { Verdict } from "../../generated/domain/verdict.g.ts";
 import type { Workdir } from "../../generated/domain/workdir.g.ts";
 import { Workflow } from "../../generated/domain/workflow.g.ts";
 import { ProgressController } from "./progress-controller.ts";
+
+const probe: Probe = Effect.runSync(Probe.from("probe-1"));
 
 const request: AcknowledgementRequest = AcknowledgementRequest.create();
 const brief: Instructions = Instructions.of({
@@ -65,6 +67,8 @@ const complete: CompleteReview = CompleteReview.of({
 	state: ReviewStatus.create(),
 	assignments: Assignments.of([assignment]),
 });
+type Entry = Parameters<ReviewStore["append"]>[1];
+
 const appended: Entry[] = [];
 const terminated: Assignment[] = [];
 
@@ -109,10 +113,7 @@ it("ack answers the progress of the assignment", () => {
 		agent,
 	);
 
-	assert.equal(
-		Effect.runSync(controller.ack(Probe.create(), expected)),
-		progress,
-	);
+	assert.equal(Effect.runSync(controller.ack(probe, expected)), progress);
 });
 
 it("ack appends the accepted acknowledgement", () => {
@@ -122,7 +123,7 @@ it("ack appends the accepted acknowledgement", () => {
 		agent,
 	);
 
-	Effect.runSync(controller.ack(Probe.create(), expected));
+	Effect.runSync(controller.ack(probe, expected));
 
 	assert.equal(appended.includes(expected), true);
 });
@@ -136,7 +137,7 @@ it("ack answers the detailed instructions to another acknowledgement", () => {
 	const other: Acknowledgement = Effect.runSync(
 		Acknowledgement.from("another phrase"),
 	);
-	const answered = controller.ack(Probe.create(), other);
+	const answered = controller.ack(probe, other);
 
 	assert.equal(Effect.runSync(Effect.flip(answered)), detailed);
 });
@@ -147,7 +148,7 @@ it("report answers the progress of the assignment", () => {
 		store,
 		agent,
 	);
-	const answered = controller.report(Probe.create(), Verdict.create());
+	const answered = controller.report(probe, Verdict.create());
 
 	assert.equal(Effect.runSync(answered), progress);
 });
@@ -160,7 +161,7 @@ it("report appends the verdict", () => {
 		agent,
 	);
 
-	Effect.runSync(controller.report(Probe.create(), verdict));
+	Effect.runSync(controller.report(probe, verdict));
 
 	assert.equal(appended.includes(verdict), true);
 });
@@ -172,7 +173,7 @@ it("report has a complete review terminate its sub agents", () => {
 		agent,
 	);
 
-	Effect.runSync(controller.report(Probe.create(), Verdict.create()));
+	Effect.runSync(controller.report(probe, Verdict.create()));
 
 	assert.equal(terminated.includes(assignment), true);
 });
@@ -189,7 +190,7 @@ it("report appends the error of the host and still answers the progress", () => 
 		agent,
 	);
 	const answered: Progress = Effect.runSync(
-		controller.report(Probe.create(), Verdict.create()),
+		controller.report(probe, Verdict.create()),
 	);
 
 	assert.deepEqual([answered, appended.includes(hostError)], [progress, true]);

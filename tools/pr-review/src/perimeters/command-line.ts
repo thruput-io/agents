@@ -1,8 +1,11 @@
 import { Effect } from "effect";
 import { z } from "zod";
+import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
 import { NotValid } from "../generated/domain/not-valid.g.ts";
+import { Probe } from "../generated/domain/probe.g.ts";
 import { Probes } from "../generated/domain/probes.g.ts";
 import { TargetUrl } from "../generated/domain/target-url.g.ts";
+import { Term } from "../generated/domain/term.g.ts";
 import { Workdir } from "../generated/domain/workdir.g.ts";
 
 interface CommandLine {
@@ -68,5 +71,62 @@ const statusCommandOf = (
 		),
 	);
 
+interface DefineCommand {
+	readonly probe: Probe;
+	readonly term: Term;
+}
+
+interface AckCommand {
+	readonly probe: Probe;
+	readonly acknowledgement: Acknowledgement;
+}
+
+const ProbeArguments = z.tuple([z.string()]);
+const TwoArguments = z.tuple([z.string(), z.string()]);
+
+const probeCommandOf = (
+	commandArguments: readonly string[],
+): Effect.Effect<Probe, NotValid> =>
+	parsedBy(ProbeArguments, commandArguments).pipe(
+		Effect.flatMap(
+			([probe]: [string]): Effect.Effect<Probe, NotValid> => Probe.from(probe),
+		),
+	);
+
+const defineCommandOf = (
+	commandArguments: readonly string[],
+): Effect.Effect<DefineCommand, NotValid> =>
+	parsedBy(TwoArguments, commandArguments).pipe(
+		Effect.flatMap(
+			([probe, term]: [string, string]): Effect.Effect<
+				DefineCommand,
+				NotValid
+			> => Effect.all({ probe: Probe.from(probe), term: Term.from(term) }),
+		),
+	);
+
+const ackCommandOf = (
+	commandArguments: readonly string[],
+): Effect.Effect<AckCommand, NotValid> =>
+	parsedBy(TwoArguments, commandArguments).pipe(
+		Effect.flatMap(
+			([probe, acknowledgement]: [string, string]): Effect.Effect<
+				AckCommand,
+				NotValid
+			> =>
+				Effect.all({
+					probe: Probe.from(probe),
+					acknowledgement: Acknowledgement.from(acknowledgement),
+				}),
+		),
+	);
+
 export type { CommandLine };
-export { commandLineOf, prepareCommandOf, statusCommandOf };
+export {
+	ackCommandOf,
+	commandLineOf,
+	defineCommandOf,
+	prepareCommandOf,
+	probeCommandOf,
+	statusCommandOf,
+};

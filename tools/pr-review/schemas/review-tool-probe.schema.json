@@ -1,0 +1,31 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "review-tool-probe",
+	"description": "The commands of a sub agent. Each answers one line of JSON and exits with 0 for an answer and 1 for a failure.",
+	"oneOf": [
+		{
+			"title": "instructions",
+			"description": "instructions <probe>: answers the instructions of the probe."
+		},
+		{
+			"title": "ack",
+			"description": "ack <probe> <acknowledgement>: acknowledges the instructions and answers the progress, or answers more detailed instructions when the acknowledgement is not the one asked for."
+		},
+		{
+			"title": "rules",
+			"description": "rules <probe>: answers the rules of the probe."
+		},
+		{
+			"title": "define",
+			"description": "define <probe> <term>: answers the definition of the term."
+		},
+		{
+			"title": "next",
+			"description": "next <probe>: answers the next page of the surface."
+		},
+		{
+			"title": "prev",
+			"description": "prev <probe>: answers the previous page of the surface."
+		}
+	]
+}

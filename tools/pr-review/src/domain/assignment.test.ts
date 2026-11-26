@@ -16,6 +16,8 @@ import { Briefing } from "./briefing.ts";
 import { Cursor } from "./cursor.ts";
 import { Instructions } from "./instructions.ts";
 
+const term: Term = Effect.runSync(Term.from("Ledger"));
+
 const workflow: Workflow = Workflow.create();
 const request: AcknowledgementRequest = AcknowledgementRequest.create();
 const brief: Instructions = Instructions.of({
@@ -88,7 +90,7 @@ it("a briefing answers the rules it holds", () => {
 });
 
 it("a briefing answers the definition it holds", () => {
-	assert.equal(briefing.definitionOf(Term.create()), definition);
+	assert.equal(briefing.definitionOf(term), definition);
 });
 
 it("a cursor answers the following page it holds", () => {

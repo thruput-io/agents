@@ -1,0 +1,15 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "review-tool",
+	"description": "The commands of the main agent. Each answers one line of JSON and exits with 0 for an answer and 1 for a failure.",
+	"oneOf": [
+		{
+			"title": "prepare",
+			"description": "prepare <url> <workdir>: starts the review of the change at the URL, keeps it in the workdir, and answers how the review stands."
+		},
+		{
+			"title": "status",
+			"description": "status <workdir>: answers how the review kept in the workdir stands."
+		}
+	]
+}

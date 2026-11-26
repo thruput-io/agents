@@ -35,7 +35,10 @@
 			}
 		},
 		{
-			"includes": ["src/client/main/review-tool.ts"],
+			"includes": [
+				"src/client/main/review-tool.ts",
+				"src/client/sub/review-tool-probe.ts"
+			],
 			"linter": {
 				"rules": {
 					"nursery": {

@@ -81,3 +81,38 @@ Object.entries(document.$defs).map(([name, schema]) =>
 		moduleOf[schema.type](name, schema),
 	),
 );
+
+interface CommandSchema {
+	readonly title: string;
+	readonly description: string;
+}
+
+interface ToolDocument {
+	readonly description: string;
+	readonly oneOf: readonly CommandSchema[];
+}
+
+const helpOf = (schemaFile: string): string => {
+	const tool: ToolDocument = JSON.parse(
+		readFileSync(resolve(root, "schemas", schemaFile), "utf8"),
+	);
+	const help = {
+		description: tool.description,
+		commands: Object.fromEntries(
+			tool.oneOf.map(({ title, description }) => [title, description]),
+		),
+	};
+
+	return `export const help = ${JSON.stringify(help, undefined, "\t")} as const;\n`;
+};
+
+mkdirSync(resolve(generated, "client/main"), { recursive: true });
+mkdirSync(resolve(generated, "client/sub"), { recursive: true });
+writeFileSync(
+	resolve(generated, "client/main/help.g.ts"),
+	helpOf("review-tool.schema.json"),
+);
+writeFileSync(
+	resolve(generated, "client/sub/help.g.ts"),
+	helpOf("review-tool-probe.schema.json"),
+);

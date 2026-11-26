@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
-import { MainController } from "../../controller/main/main-controller.ts";
 import type { Agent } from "../../domain/agent.ts";
 import type { Assignment } from "../../domain/assignment.ts";
 import { Assignments } from "../../domain/assignments.ts";
@@ -15,7 +14,7 @@ import type { Outcome } from "../../generated/domain/outcome.g.ts";
 import { ReviewStatus } from "../../generated/domain/review-status.g.ts";
 import type { Workdir } from "../../generated/domain/workdir.g.ts";
 import { type Commands, run } from "../common/runner.ts";
-import { mainCommands } from "./main-commands.ts";
+import { mainTool } from "./main-commands.ts";
 
 const pending: PendingReview = PendingReview.of(
 	ReviewStatus.create(),
@@ -46,9 +45,7 @@ const agent: Agent = {
 		Effect.succeed(given),
 };
 
-const commands: Commands = mainCommands(
-	MainController.over(host, store, agent),
-);
+const commands: Commands = mainTool(host, store, agent);
 
 it("prepare answers the review status", () => {
 	const printed = Effect.runSync(
@@ -76,4 +73,13 @@ it("status of a workdir without a review is answered as no review", () => {
 		line: '{"failure":"no-review"}\n',
 		exitCode: 1,
 	});
+});
+
+it("-h answers the description of the tool and of each command", () => {
+	const printed = Effect.runSync(run(commands, ["-h"]));
+
+	assert.deepEqual(
+		[Object.keys(JSON.parse(printed.line).commands), printed.exitCode],
+		[["prepare", "status"], 0],
+	);
 });

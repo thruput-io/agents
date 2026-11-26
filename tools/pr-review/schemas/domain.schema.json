@@ -19,7 +19,8 @@
 		},
 		"Probe": {
 			"description": "What a sub agent holds for its part of a review",
-			"type": "object"
+			"type": "string",
+			"minLength": 1
 		},
 		"Probes": {
 			"description": "The probes of the review tool",
@@ -35,7 +36,8 @@
 		},
 		"Term": {
 			"description": "A word of the glossary",
-			"type": "object"
+			"type": "string",
+			"minLength": 1
 		},
 		"Definition": {
 			"description": "What a term means",
