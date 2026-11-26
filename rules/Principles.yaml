@@ -32,7 +32,7 @@ principles:
   body: |
     A system fails loudly and at once on an unexpected state; it never continues on a guess. A safeguard that swallows a failure is added only where [[Evidence]] shows the need.
 - id: Fold at Perimeter
-  parent: Translate at the door
+  parent: Anti-Corruption Layer
   body: |
     The [[Foreign shape]] is folded into an [[Encapsulated type]] at the [[Perimeter]] and back only there. Inward of that point nothing sees it.
 - id: Make illegal states unrepresentable

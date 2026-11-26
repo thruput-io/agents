@@ -87,7 +87,7 @@ rationales:
   - marker: SHOULD
     body: |
       Leave recovery to a supervisor outside the failing process.
-- id: Translate at the door
+- id: Anti-Corruption Layer
   parent: Easy to Change
   body: |
     [[Code We Cannot Control]] speaks a [[Foreign shape]]. Alistair Cockburn's [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/) and Eric Evans's [Anti-Corruption Layer](https://learn.microsoft.com/en-us/azure/architecture/patterns/anti-corruption-layer) isolate translation in dedicated adapters at the [[Perimeter]], preventing external models and null references (Tony Hoare, [Null References: The Billion Dollar Mistake](https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/)) from leaking inward.
