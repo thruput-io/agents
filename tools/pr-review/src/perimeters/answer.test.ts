@@ -30,15 +30,15 @@ import {
 } from "./answer.ts";
 
 const instructions: Instructions = Instructions.of({
-	workflow: Workflow.create(),
-	context: Context.create(),
-	usage: Usage.create(),
-	request: AcknowledgementRequest.create(),
+	workflow: Workflow.codec.decode({}),
+	context: Context.codec.decode({}),
+	usage: Usage.codec.decode({}),
+	request: AcknowledgementRequest.codec.decode({}),
 });
 const fourEmptyParts = { workflow: {}, context: {}, usage: {}, request: {} };
 
 it("a review status is answered as an object without properties", () => {
-	assert.deepEqual(statusAnswer(ReviewStatus.create()), {});
+	assert.deepEqual(statusAnswer(ReviewStatus.codec.decode({})), {});
 });
 
 it("a not valid is answered by its name", () => {
@@ -82,19 +82,19 @@ it("a no review is answered by its name", () => {
 });
 
 it("a progress is answered as an object without properties", () => {
-	assert.deepEqual(progressAnswer(Progress.create()), {});
+	assert.deepEqual(progressAnswer(Progress.codec.decode({})), {});
 });
 
 it("a ruleset is answered as an object without properties", () => {
-	assert.deepEqual(rulesAnswer(Ruleset.create()), {});
+	assert.deepEqual(rulesAnswer(Ruleset.codec.decode({})), {});
 });
 
 it("a definition is answered as an object without properties", () => {
-	assert.deepEqual(definitionAnswer(Definition.create()), {});
+	assert.deepEqual(definitionAnswer(Definition.codec.decode({})), {});
 });
 
 it("a surface is answered as an object without properties", () => {
-	assert.deepEqual(surfaceAnswer(Surface.create()), {});
+	assert.deepEqual(surfaceAnswer(Surface.codec.decode({})), {});
 });
 
 it("instructions are answered by their four parts", () => {

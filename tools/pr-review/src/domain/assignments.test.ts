@@ -18,27 +18,25 @@ import { Briefing } from "./briefing.ts";
 import { Cursor } from "./cursor.ts";
 import { Instructions } from "./instructions.ts";
 
-const request: AcknowledgementRequest = AcknowledgementRequest.create();
+const request: AcknowledgementRequest = AcknowledgementRequest.codec.decode({});
 const brief: Instructions = Instructions.of({
-	workflow: Workflow.create(),
-	context: Context.create(),
-	usage: Usage.create(),
+	workflow: Workflow.codec.decode({}),
+	context: Context.codec.decode({}),
+	usage: Usage.codec.decode({}),
 	request,
 });
 const detailed: Instructions = Instructions.of({
-	workflow: Workflow.create(),
-	context: Context.create(),
-	usage: Usage.create(),
+	workflow: Workflow.codec.decode({}),
+	context: Context.codec.decode({}),
+	usage: Usage.codec.decode({}),
 	request,
 });
-const ruleset: Ruleset = Ruleset.create();
-const definition: Definition = Definition.create();
-const following: Surface = Surface.create();
-const preceding: Surface = Surface.create();
-const progress: Progress = Progress.create();
-const expected: Acknowledgement = Effect.runSync(
-	Acknowledgement.from("the phrase"),
-);
+const ruleset: Ruleset = Ruleset.codec.decode({});
+const definition: Definition = Definition.codec.decode({});
+const following: Surface = Surface.codec.decode({});
+const preceding: Surface = Surface.codec.decode({});
+const progress: Progress = Progress.codec.decode({});
+const expected: Acknowledgement = Acknowledgement.codec.decode("the phrase");
 const assignment: Assignment = Assignment.of({
 	briefing: Briefing.of(brief, ruleset, definition),
 	cursor: Cursor.of(following, preceding),

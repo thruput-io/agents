@@ -16,32 +16,30 @@ import { Briefing } from "./briefing.ts";
 import { Cursor } from "./cursor.ts";
 import { Instructions } from "./instructions.ts";
 
-const term: Term = Effect.runSync(Term.from("Ledger"));
+const term: Term = Term.codec.decode("Ledger");
 
-const workflow: Workflow = Workflow.create();
-const request: AcknowledgementRequest = AcknowledgementRequest.create();
+const workflow: Workflow = Workflow.codec.decode({});
+const request: AcknowledgementRequest = AcknowledgementRequest.codec.decode({});
 const brief: Instructions = Instructions.of({
 	workflow,
-	context: Context.create(),
-	usage: Usage.create(),
+	context: Context.codec.decode({}),
+	usage: Usage.codec.decode({}),
 	request,
 });
 const detailed: Instructions = Instructions.of({
-	workflow: Workflow.create(),
-	context: Context.create(),
-	usage: Usage.create(),
+	workflow: Workflow.codec.decode({}),
+	context: Context.codec.decode({}),
+	usage: Usage.codec.decode({}),
 	request,
 });
-const ruleset: Ruleset = Ruleset.create();
-const definition: Definition = Definition.create();
+const ruleset: Ruleset = Ruleset.codec.decode({});
+const definition: Definition = Definition.codec.decode({});
 const briefing: Briefing = Briefing.of(brief, ruleset, definition);
-const following: Surface = Surface.create();
-const preceding: Surface = Surface.create();
+const following: Surface = Surface.codec.decode({});
+const preceding: Surface = Surface.codec.decode({});
 const cursor: Cursor = Cursor.of(following, preceding);
-const progress: Progress = Progress.create();
-const expected: Acknowledgement = Effect.runSync(
-	Acknowledgement.from("the phrase"),
-);
+const progress: Progress = Progress.codec.decode({});
+const expected: Acknowledgement = Acknowledgement.codec.decode("the phrase");
 const assignment: Assignment = Assignment.of({
 	briefing,
 	cursor,
@@ -63,17 +61,13 @@ it("an assignment answers the progress it holds", () => {
 });
 
 it("an assignment accepts the acknowledgement it expects", () => {
-	const sent: Acknowledgement = Effect.runSync(
-		Acknowledgement.from("the phrase"),
-	);
+	const sent: Acknowledgement = Acknowledgement.codec.decode("the phrase");
 
 	assert.equal(Effect.runSync(assignment.accepted(sent)), sent);
 });
 
 it("an assignment answers the detailed instructions to another acknowledgement", () => {
-	const sent: Acknowledgement = Effect.runSync(
-		Acknowledgement.from("another phrase"),
-	);
+	const sent: Acknowledgement = Acknowledgement.codec.decode("another phrase");
 
 	assert.equal(
 		Effect.runSync(Effect.flip(assignment.accepted(sent))),

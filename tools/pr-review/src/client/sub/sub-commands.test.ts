@@ -29,20 +29,24 @@ import { type Commands, run } from "../common/runner.ts";
 import { subTool } from "./sub-commands.ts";
 
 const instructions: Instructions = Instructions.of({
-	workflow: Workflow.create(),
-	context: Context.create(),
-	usage: Usage.create(),
-	request: AcknowledgementRequest.create(),
+	workflow: Workflow.codec.decode({}),
+	context: Context.codec.decode({}),
+	usage: Usage.codec.decode({}),
+	request: AcknowledgementRequest.codec.decode({}),
 });
 const assignment: Assignment = Assignment.of({
-	briefing: Briefing.of(instructions, Ruleset.create(), Definition.create()),
-	cursor: Cursor.of(Surface.create(), Surface.create()),
-	progress: Progress.create(),
-	expected: Effect.runSync(Acknowledgement.from("the phrase")),
+	briefing: Briefing.of(
+		instructions,
+		Ruleset.codec.decode({}),
+		Definition.codec.decode({}),
+	),
+	cursor: Cursor.of(Surface.codec.decode({}), Surface.codec.decode({})),
+	progress: Progress.codec.decode({}),
+	expected: Acknowledgement.codec.decode("the phrase"),
 	detailed: instructions,
 });
 const pending: PendingReview = PendingReview.of(
-	ReviewStatus.create(),
+	ReviewStatus.codec.decode({}),
 	Assignments.of([assignment]),
 );
 const fourEmptyParts = '{"workflow":{},"context":{},"usage":{},"request":{}}\n';

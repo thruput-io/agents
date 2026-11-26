@@ -17,7 +17,7 @@ import { type Commands, run } from "../common/runner.ts";
 import { mainTool } from "./main-commands.ts";
 
 const pending: PendingReview = PendingReview.of(
-	ReviewStatus.create(),
+	ReviewStatus.codec.decode({}),
 	Assignments.of([]),
 );
 

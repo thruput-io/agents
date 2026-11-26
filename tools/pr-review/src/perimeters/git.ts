@@ -5,10 +5,12 @@ import { HostError } from "../generated/domain/host-error.g.ts";
 import { ReviewStatus } from "../generated/domain/review-status.g.ts";
 import { TargetUrl } from "../generated/domain/target-url.g.ts";
 
-const remoteOf = (url: TargetUrl): string => TargetUrl.dataOf(url);
+const remoteOf = (url: TargetUrl): string => TargetUrl.codec.encode(url);
 
 const changeOfRemote = (): Change =>
-	Change.of(PendingReview.of(ReviewStatus.create(), Assignments.of([])));
+	Change.of(
+		PendingReview.of(ReviewStatus.codec.decode({}), Assignments.of([])),
+	);
 
 const unreachableRemote = (): HostError => HostError.create();
 

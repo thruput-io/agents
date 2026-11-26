@@ -8,9 +8,9 @@ import { PendingReview } from "./pending-review.ts";
 
 it("a change is reviewed in the pending review it holds", () => {
 	const pending: PendingReview = PendingReview.of(
-		ReviewStatus.create(),
+		ReviewStatus.codec.decode({}),
 		Assignments.of([]),
 	);
 
-	assert.equal(Change.of(pending).review(Probes.create()), pending);
+	assert.equal(Change.of(pending).review(Probes.codec.decode({})), pending);
 });

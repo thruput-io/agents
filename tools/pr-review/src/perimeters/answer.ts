@@ -45,23 +45,24 @@ const a =
 		value instanceof kind;
 
 const statusAnswer = (status: ReviewStatus): Answer =>
-	ReviewStatus.dataOf(status);
+	ReviewStatus.codec.encode(status);
 
 const progressAnswer = (progress: Progress): Answer =>
-	Progress.dataOf(progress);
+	Progress.codec.encode(progress);
 
-const rulesAnswer = (ruleset: Ruleset): Answer => Ruleset.dataOf(ruleset);
+const rulesAnswer = (ruleset: Ruleset): Answer => Ruleset.codec.encode(ruleset);
 
 const definitionAnswer = (definition: Definition): Answer =>
-	Definition.dataOf(definition);
+	Definition.codec.encode(definition);
 
-const surfaceAnswer = (surface: Surface): Answer => Surface.dataOf(surface);
+const surfaceAnswer = (surface: Surface): Answer =>
+	Surface.codec.encode(surface);
 
 const instructionsAnswer = (instructions: Instructions): Answer => ({
-	workflow: Workflow.dataOf(instructions.workflow()),
-	context: Context.dataOf(instructions.context()),
-	usage: Usage.dataOf(instructions.usage()),
-	request: AcknowledgementRequest.dataOf(instructions.request()),
+	workflow: Workflow.codec.encode(instructions.workflow()),
+	context: Context.codec.encode(instructions.context()),
+	usage: Usage.codec.encode(instructions.usage()),
+	request: AcknowledgementRequest.codec.encode(instructions.request()),
 });
 
 const failureAnswer: (failure: Failure) => Answer = Match.type<Failure>().pipe(

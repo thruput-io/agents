@@ -12,11 +12,9 @@ import type { Change } from "./change.ts";
 import { CompleteReview } from "./complete-review.ts";
 import type { Host, NotReviewable } from "./host.ts";
 
-const url: TargetUrl = Effect.runSync(
-	TargetUrl.from("https://host.test/change"),
-);
-const outcome: Outcome = Outcome.create();
-const status: ReviewStatus = ReviewStatus.create();
+const url: TargetUrl = TargetUrl.codec.decode("https://host.test/change");
+const outcome: Outcome = Outcome.codec.decode({});
+const status: ReviewStatus = ReviewStatus.codec.decode({});
 const review: CompleteReview = CompleteReview.of({
 	url,
 	outcome,

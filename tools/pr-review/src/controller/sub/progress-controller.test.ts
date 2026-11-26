@@ -30,29 +30,27 @@ import type { Workdir } from "../../generated/domain/workdir.g.ts";
 import { Workflow } from "../../generated/domain/workflow.g.ts";
 import { ProgressController } from "./progress-controller.ts";
 
-const probe: Probe = Effect.runSync(Probe.from("probe-1"));
+const probe: Probe = Probe.codec.decode("probe-1");
 
-const request: AcknowledgementRequest = AcknowledgementRequest.create();
+const request: AcknowledgementRequest = AcknowledgementRequest.codec.decode({});
 const brief: Instructions = Instructions.of({
-	workflow: Workflow.create(),
-	context: Context.create(),
-	usage: Usage.create(),
+	workflow: Workflow.codec.decode({}),
+	context: Context.codec.decode({}),
+	usage: Usage.codec.decode({}),
 	request,
 });
 const detailed: Instructions = Instructions.of({
-	workflow: Workflow.create(),
-	context: Context.create(),
-	usage: Usage.create(),
+	workflow: Workflow.codec.decode({}),
+	context: Context.codec.decode({}),
+	usage: Usage.codec.decode({}),
 	request,
 });
-const ruleset: Ruleset = Ruleset.create();
-const definition: Definition = Definition.create();
-const following: Surface = Surface.create();
-const preceding: Surface = Surface.create();
-const progress: Progress = Progress.create();
-const expected: Acknowledgement = Effect.runSync(
-	Acknowledgement.from("the phrase"),
-);
+const ruleset: Ruleset = Ruleset.codec.decode({});
+const definition: Definition = Definition.codec.decode({});
+const following: Surface = Surface.codec.decode({});
+const preceding: Surface = Surface.codec.decode({});
+const progress: Progress = Progress.codec.decode({});
+const expected: Acknowledgement = Acknowledgement.codec.decode("the phrase");
 const assignment: Assignment = Assignment.of({
 	briefing: Briefing.of(brief, ruleset, definition),
 	cursor: Cursor.of(following, preceding),
@@ -62,9 +60,9 @@ const assignment: Assignment = Assignment.of({
 });
 
 const complete: CompleteReview = CompleteReview.of({
-	url: Effect.runSync(TargetUrl.from("https://host.test/change")),
-	outcome: Outcome.create(),
-	state: ReviewStatus.create(),
+	url: TargetUrl.codec.decode("https://host.test/change"),
+	outcome: Outcome.codec.decode({}),
+	state: ReviewStatus.codec.decode({}),
 	assignments: Assignments.of([assignment]),
 });
 type Entry = Parameters<ReviewStore["append"]>[1];
@@ -134,9 +132,7 @@ it("ack answers the detailed instructions to another acknowledgement", () => {
 		store,
 		agent,
 	);
-	const other: Acknowledgement = Effect.runSync(
-		Acknowledgement.from("another phrase"),
-	);
+	const other: Acknowledgement = Acknowledgement.codec.decode("another phrase");
 	const answered = controller.ack(probe, other);
 
 	assert.equal(Effect.runSync(Effect.flip(answered)), detailed);
@@ -148,13 +144,13 @@ it("report answers the progress of the assignment", () => {
 		store,
 		agent,
 	);
-	const answered = controller.report(probe, Verdict.create());
+	const answered = controller.report(probe, Verdict.codec.decode({}));
 
 	assert.equal(Effect.runSync(answered), progress);
 });
 
 it("report appends the verdict", () => {
-	const verdict: Verdict = Verdict.create();
+	const verdict: Verdict = Verdict.codec.decode({});
 	const controller: ProgressController = ProgressController.over(
 		host,
 		store,
@@ -173,7 +169,7 @@ it("report has a complete review terminate its sub agents", () => {
 		agent,
 	);
 
-	Effect.runSync(controller.report(probe, Verdict.create()));
+	Effect.runSync(controller.report(probe, Verdict.codec.decode({})));
 
 	assert.equal(terminated.includes(assignment), true);
 });
@@ -190,7 +186,7 @@ it("report appends the error of the host and still answers the progress", () => 
 		agent,
 	);
 	const answered: Progress = Effect.runSync(
-		controller.report(probe, Verdict.create()),
+		controller.report(probe, Verdict.codec.decode({})),
 	);
 
 	assert.deepEqual([answered, appended.includes(hostError)], [progress, true]);

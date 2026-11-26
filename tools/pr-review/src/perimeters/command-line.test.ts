@@ -24,8 +24,8 @@ it("the arguments of prepare give the target URL, the workdir and the probes", (
 
 	assert.deepEqual(
 		[
-			TargetUrl.dataOf(command.url),
-			Workdir.dataOf(command.workdir),
+			TargetUrl.codec.encode(command.url),
+			Workdir.codec.encode(command.workdir),
 			command.probes instanceof Probes,
 		],
 		["https://host.test/change", "/work", true],
@@ -47,7 +47,7 @@ it("an empty target URL is not valid", () => {
 it("the argument of status gives the workdir", () => {
 	const workdir = Effect.runSync(statusCommandOf(["/work"]));
 
-	assert.equal(Workdir.dataOf(workdir), "/work");
+	assert.equal(Workdir.codec.encode(workdir), "/work");
 });
 
 it("arguments of status of another shape are not valid", () => {
@@ -72,7 +72,7 @@ it("an empty command line is not valid", () => {
 it("the argument of a probe command gives the probe", () => {
 	const probe = Effect.runSync(rulesCommandOf(["probe-1"]));
 
-	assert.equal(Probe.dataOf(probe), "probe-1");
+	assert.equal(Probe.codec.encode(probe), "probe-1");
 });
 
 it("a probe command without its probe is not valid", () => {
@@ -85,7 +85,7 @@ it("the arguments of define give the probe and the term", () => {
 	const command = Effect.runSync(defineCommandOf(["probe-1", "Ledger"]));
 
 	assert.deepEqual(
-		[Probe.dataOf(command.probe), Term.dataOf(command.term)],
+		[Probe.codec.encode(command.probe), Term.codec.encode(command.term)],
 		["probe-1", "Ledger"],
 	);
 });
@@ -101,8 +101,8 @@ it("the arguments of ack give the probe and the acknowledgement", () => {
 
 	assert.deepEqual(
 		[
-			Probe.dataOf(command.probe),
-			Acknowledgement.dataOf(command.acknowledgement),
+			Probe.codec.encode(command.probe),
+			Acknowledgement.codec.encode(command.acknowledgement),
 		],
 		["probe-1", "the phrase"],
 	);

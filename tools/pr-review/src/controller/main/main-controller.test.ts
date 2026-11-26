@@ -18,11 +18,9 @@ import { UnknownFormat } from "../../generated/domain/unknown-format.g.ts";
 import { Workdir } from "../../generated/domain/workdir.g.ts";
 import { MainController } from "./main-controller.ts";
 
-const url: TargetUrl = Effect.runSync(
-	TargetUrl.from("https://host.test/change"),
-);
-const workdir: Workdir = Effect.runSync(Workdir.from("/work"));
-const status: ReviewStatus = ReviewStatus.create();
+const url: TargetUrl = TargetUrl.codec.decode("https://host.test/change");
+const workdir: Workdir = Workdir.codec.decode("/work");
+const status: ReviewStatus = ReviewStatus.codec.decode({});
 const pending: PendingReview = PendingReview.of(status, Assignments.of([]));
 const saved: Review[] = [];
 
@@ -55,7 +53,7 @@ const agent: Agent = {
 
 it("prepare answers the status of the review of the change", () => {
 	const controller: MainController = MainController.over(host, store, agent);
-	const prepared = controller.prepare(url, workdir, Probes.create());
+	const prepared = controller.prepare(url, workdir, Probes.codec.decode({}));
 
 	assert.equal(Effect.runSync(prepared), status);
 });
@@ -63,7 +61,7 @@ it("prepare answers the status of the review of the change", () => {
 it("prepare saves the review of the change", () => {
 	const controller: MainController = MainController.over(host, store, agent);
 
-	Effect.runSync(controller.prepare(url, workdir, Probes.create()));
+	Effect.runSync(controller.prepare(url, workdir, Probes.codec.decode({})));
 
 	assert.equal(saved.includes(pending), true);
 });
@@ -80,7 +78,7 @@ it("prepare fails with what the host answers", () => {
 		store,
 		agent,
 	);
-	const prepared = controller.prepare(url, workdir, Probes.create());
+	const prepared = controller.prepare(url, workdir, Probes.codec.decode({}));
 
 	assert.equal(Effect.runSync(Effect.flip(prepared)), unknownFormat);
 });

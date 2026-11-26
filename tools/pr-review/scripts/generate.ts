@@ -27,12 +27,10 @@ const document: DomainDocument = JSON.parse(
 	readFileSync(resolve(root, "schemas/domain.schema.json"), "utf8"),
 );
 
-const moduleOf = {
+const valueModuleOf = {
 	string: (name: string, schema: ValueSchema): string =>
 		[
-			'import { Effect } from "effect";',
 			'import { z } from "zod";',
-			'import { NotValid } from "./not-valid.g.ts";',
 			"",
 			`const schema = ${jsonSchemaToZod(schema, { zodVersion: 4 })};`,
 			"",
@@ -42,15 +40,10 @@ const moduleOf = {
 			"\t\tthis.data = data;",
 			"\t\tObject.freeze(this);",
 			"\t}",
-			`\tstatic from(input: string): Effect.Effect<${name}, NotValid> {`,
-			"\t\treturn Effect.try({",
-			`\t\t\ttry: () => new ${name}(schema.parse(input)),`,
-			"\t\t\tcatch: () => NotValid.create(),",
-			"\t\t});",
-			"\t}",
-			`\tstatic dataOf(value: ${name}): string {`,
-			"\t\treturn value.data;",
-			"\t}",
+			`\tstatic readonly codec = z.codec(schema, z.custom<${name}>((value) => value instanceof ${name}), {`,
+			`\t\tdecode: (data) => new ${name}(data),`,
+			"\t\tencode: (value) => value.data,",
+			"\t});",
 			`\tisSameAs(other: ${name}): boolean {`,
 			"\t\treturn this.data === other.data;",
 			"\t}",
@@ -59,27 +52,49 @@ const moduleOf = {
 		].join("\n"),
 	object: (name: string): string =>
 		[
+			'import { z } from "zod";',
+			"",
 			`export class ${name} {`,
-			"\tprivate readonly data: Readonly<Record<string, never>> = {};",
-			"\tprivate constructor() {",
+			"\tprivate readonly data: Readonly<Record<string, never>>;",
+			"\tprivate constructor(data: Readonly<Record<string, never>>) {",
+			"\t\tthis.data = data;",
 			"\t\tObject.freeze(this);",
 			"\t}",
-			`\tstatic create(): ${name} {`,
-			`\t\treturn new ${name}();`,
-			"\t}",
-			`\tstatic dataOf(value: ${name}): Readonly<Record<string, never>> {`,
-			"\t\treturn value.data;",
-			"\t}",
+			`\tstatic readonly codec = z.codec(z.strictObject({}), z.custom<${name}>((value) => value instanceof ${name}), {`,
+			`\t\tdecode: (data) => new ${name}(data),`,
+			"\t\tencode: (value) => value.data,",
+			"\t});",
 			"}",
 			"",
 		].join("\n"),
 };
 
+const failureOf = (name: string): string =>
+	[
+		`export class ${name} {`,
+		"\tdeclare private readonly nominal: never;",
+		"\tprivate constructor() {",
+		"\t\tObject.freeze(this);",
+		"\t}",
+		`\tstatic create(): ${name} {`,
+		`\t\treturn new ${name}();`,
+		"\t}",
+		"}",
+		"",
+	].join("\n");
+
+const failures: DomainDocument = JSON.parse(
+	readFileSync(resolve(root, "schemas/failures.schema.json"), "utf8"),
+);
+
 Object.entries(document.$defs).map(([name, schema]) =>
 	writeFileSync(
 		resolve(target, `${kebabOf(name)}.g.ts`),
-		moduleOf[schema.type](name, schema),
+		valueModuleOf[schema.type](name, schema),
 	),
+);
+Object.keys(failures.$defs).map((name) =>
+	writeFileSync(resolve(target, `${kebabOf(name)}.g.ts`), failureOf(name)),
 );
 
 interface CommandSchema {

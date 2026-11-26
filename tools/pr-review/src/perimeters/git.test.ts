@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
-import { Effect } from "effect";
 import { Change } from "../domain/change.ts";
 import { PendingReview } from "../domain/pending-review.ts";
 import { HostError } from "../generated/domain/host-error.g.ts";
@@ -9,9 +8,7 @@ import { TargetUrl } from "../generated/domain/target-url.g.ts";
 import { changeOfRemote, remoteOf, unreachableRemote } from "./git.ts";
 
 it("a target URL is the remote git is asked for", () => {
-	const url: TargetUrl = Effect.runSync(
-		TargetUrl.from("https://host.test/change.git"),
-	);
+	const url: TargetUrl = TargetUrl.codec.decode("https://host.test/change.git");
 
 	assert.equal(remoteOf(url), "https://host.test/change.git");
 });
@@ -21,7 +18,7 @@ it("a remote that answers is a change", () => {
 });
 
 it("the change of a remote is reviewed in a pending review", () => {
-	const review = changeOfRemote().review(Probes.create());
+	const review = changeOfRemote().review(Probes.codec.decode({}));
 
 	assert.equal(review instanceof PendingReview, true);
 });

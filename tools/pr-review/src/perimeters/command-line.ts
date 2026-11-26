@@ -42,6 +42,19 @@ const parsedBy = <Shape>(
 		catch: (): NotValid => NotValid.create(),
 	});
 
+interface Decoding<Value> {
+	readonly decode: (text: string) => Value;
+}
+
+const decoded = <Value>(
+	codec: Decoding<Value>,
+	text: string,
+): Effect.Effect<Value, NotValid> =>
+	Effect.try({
+		try: (): Value => codec.decode(text),
+		catch: (): NotValid => NotValid.create(),
+	});
+
 const commandLineOf = (
 	given: readonly string[],
 ): Effect.Effect<CommandLine, NotValid> =>
@@ -64,9 +77,9 @@ const prepareCommandOf = (
 				NotValid
 			> =>
 				Effect.all({
-					url: TargetUrl.from(url),
-					workdir: Workdir.from(workdir),
-					probes: Effect.succeed(Probes.create()),
+					url: decoded(TargetUrl.codec, url),
+					workdir: decoded(Workdir.codec, workdir),
+					probes: Effect.succeed(Probes.codec.decode({})),
 				}),
 		),
 	);
@@ -77,7 +90,7 @@ const statusCommandOf = (
 	parsedBy(statusArguments, commandArguments).pipe(
 		Effect.flatMap(
 			([workdir]: [string]): Effect.Effect<Workdir, NotValid> =>
-				Workdir.from(workdir),
+				decoded(Workdir.codec, workdir),
 		),
 	);
 
@@ -97,7 +110,7 @@ const probeCommandBy =
 		parsedBy(shape, commandArguments).pipe(
 			Effect.flatMap(
 				([probe]: [string]): Effect.Effect<Probe, NotValid> =>
-					Probe.from(probe),
+					decoded(Probe.codec, probe),
 			),
 		);
 
@@ -114,7 +127,11 @@ const defineCommandOf = (
 			([probe, term]: [string, string]): Effect.Effect<
 				DefineCommand,
 				NotValid
-			> => Effect.all({ probe: Probe.from(probe), term: Term.from(term) }),
+			> =>
+				Effect.all({
+					probe: decoded(Probe.codec, probe),
+					term: decoded(Term.codec, term),
+				}),
 		),
 	);
 
@@ -128,8 +145,8 @@ const ackCommandOf = (
 				NotValid
 			> =>
 				Effect.all({
-					probe: Probe.from(probe),
-					acknowledgement: Acknowledgement.from(acknowledgement),
+					probe: decoded(Probe.codec, probe),
+					acknowledgement: decoded(Acknowledgement.codec, acknowledgement),
 				}),
 		),
 	);

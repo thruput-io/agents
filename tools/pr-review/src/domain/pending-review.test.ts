@@ -7,7 +7,7 @@ import type { Assignment } from "./assignment.ts";
 import { Assignments } from "./assignments.ts";
 import { PendingReview } from "./pending-review.ts";
 
-const status: ReviewStatus = ReviewStatus.create();
+const status: ReviewStatus = ReviewStatus.codec.decode({});
 const review: PendingReview = PendingReview.of(status, Assignments.of([]));
 
 const agent: Agent = {

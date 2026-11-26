@@ -83,38 +83,6 @@
 		"Progress": {
 			"description": "How one sub agent stands",
 			"type": "object"
-		},
-		"NotStarted": {
-			"description": "A sub agent could not be started",
-			"type": "object"
-		},
-		"NoReview": {
-			"description": "Nothing is under review here",
-			"type": "object"
-		},
-		"UnknownFormat": {
-			"description": "No host recognises the address",
-			"type": "object"
-		},
-		"AlreadyReviewed": {
-			"description": "The change was reviewed before",
-			"type": "object"
-		},
-		"TooLarge": {
-			"description": "The change is over a limit",
-			"type": "object"
-		},
-		"Refused": {
-			"description": "The change is not in a state to review",
-			"type": "object"
-		},
-		"HostError": {
-			"description": "The host failed",
-			"type": "object"
-		},
-		"NotValid": {
-			"description": "What was given does not make a valid value",
-			"type": "object"
 		}
 	}
 }

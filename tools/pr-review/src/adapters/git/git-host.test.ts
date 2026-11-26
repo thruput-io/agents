@@ -6,9 +6,7 @@ import { HostError } from "../../generated/domain/host-error.g.ts";
 import { TargetUrl } from "../../generated/domain/target-url.g.ts";
 import { type Git, gitHostOver } from "./git-host.ts";
 
-const url: TargetUrl = Effect.runSync(
-	TargetUrl.from("https://host.test/change.git"),
-);
+const url: TargetUrl = TargetUrl.codec.decode("https://host.test/change.git");
 
 it("get change asks git for the refs of the target URL", async () => {
 	const asked: (readonly string[])[] = [];

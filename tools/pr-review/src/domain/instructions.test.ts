@@ -7,10 +7,10 @@ import { Workflow } from "../generated/domain/workflow.g.ts";
 import { Instructions } from "./instructions.ts";
 
 const parts = {
-	workflow: Workflow.create(),
-	context: Context.create(),
-	usage: Usage.create(),
-	request: AcknowledgementRequest.create(),
+	workflow: Workflow.codec.decode({}),
+	context: Context.codec.decode({}),
+	usage: Usage.codec.decode({}),
+	request: AcknowledgementRequest.codec.decode({}),
 } as const;
 
 it("instructions answer the workflow they hold", () => {
