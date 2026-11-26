@@ -40,9 +40,9 @@ principles:
   body: |
     Choose the [[Type system]] over a [[Runtime check]], and model every business rule, transition, and entity as a dedicated type rather than a data bag. A state that cannot be held needs no validator, no test, and no bug report.
 - id: Parse, don't validate
-  parent: Translate at the door
+  parent: Encapsulation
   body: |
-    Parse raw input once, at the [[Perimeter]], through the [[Validating path of creation]], and pass the type on; never check a primitive and pass the primitive on.
+    Parse raw input once at the [[Perimeter]] through a [[Validating path of creation]] into an [[Encapsulated type]], and pass the validated [[Type]] inward.
 - id: Immutable by default
   parent: Encapsulation
   body: |
@@ -64,21 +64,21 @@ principles:
   body: |
     A bug is pinned by a [[Failing test]] before it is fixed, and the fix is done when that test passes.
 - id: No gray tests
-  parent: Tests prove behavior, not execution
+  parent: The Practical Test Pyramid
   body: |
-    A test is either a black-box test of the shipped artifact or a test of one subject in isolation; nothing in between.
+    Every [[Test]] is either a [[Black-box testing]] check of the shipped [[Runtime artifact]] or an isolated test of a single [[Subject under test]].
 - id: Never trust a test you haven't seen fail
   parent: Tests prove behavior, not execution
   body: |
     A test counts only once it has failed for the behaviour it checks; a test that cannot fail checks nothing.
 - id: F.I.R.S.T.
-  parent: Tests prove behavior, not execution
+  parent: The Practical Test Pyramid
   body: |
-    Tests are Fast, Independent, Repeatable, Self-validating, and Timely.
+    Every [[Test case]] is Fast, Independent, Repeatable, Self-validating, and Timely.
 - id: Verification ends the chain
   parent: Tests prove behavior, not execution
   body: |
-    All [[Production code]] is tested. [[Verification code]] is not [[Production code]] and is not tested.
+    All [[Production code]] is verified by [[Test]]s, whereas [[Verification code]] is not [[Production code]] and is not itself tested.
 - id: Separation of Concerns
   parent: One concern, one owner
   body: |
@@ -87,6 +87,10 @@ principles:
   parent: Make the wrong thing fail
   body: |
     The quality bar is defined once, in the build, and the build makes the wrong thing fail; it is never weakened to let a change through.
+- id: Quality axes over competing goods
+  parent: What wins when values collide
+  body: |
+    Uphold every [[Software quality axis]] over any [[Competing good]], and report any weakening of [[Guardrails Against Doing the Wrong Thing]] on detection.
 - id: Prepare reader for evolving producer
   parent: Robustness Principle
   body: |
@@ -126,11 +130,7 @@ principles:
 - id: Make it work, make it right, make it fast
   parent: Premature optimization and Jackson's rules
   body: |
-    Deliver working behaviour in small slices first, structure the code clearly for the reader second, and optimise only measured bottlenecks last ([Kent Beck](https://wiki.c2.com/?MakeItWorkMakeItRightMakeItFast)); speed is never bought with less readable code.
-  solutions:
-  - marker: SHOULD
-    body: |
-      Reduce scope, split the [[Pull request]] into several smaller ones, and ship a working slice.
+    Deliver working behavior in small slices first, structure code for [[Readability]] second, and optimize only bottlenecks proved by [[Evidence]] last ([Kent Beck](https://wiki.c2.com/?MakeItWorkMakeItRightMakeItFast)).
 - id: Iterations over calls over the network is bad design
   parent: Amdahl's Law and the I/O-bound reality
   body: |

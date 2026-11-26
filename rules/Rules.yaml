@@ -13,8 +13,6 @@ rules:
   parent: Do One Thing
   body: |
     Trace every part of the [[Change]] to the part of the stated [[Purpose]] it solves.
-  smells:
-  - A [[Change]] that solves more than the stated [[Purpose]].
 - id: Predictable user-facing behavior
   marker: MUST
   group: Purpose
@@ -33,7 +31,7 @@ rules:
 - id: Keep pull requests small
   marker: MUST
   group: Purpose
-  parent: Make it work, make it right, make it fast
+  parent: Do One Thing
   body: |
     Keep every [[Pull request]] small enough to merge quickly without diverging from the main branch.
   smells:
@@ -123,24 +121,24 @@ rules:
   group: Conventions
   parent: Less is more
   body: |
-    Keep every prose [[Representation]] on point and adhering to [[Single Source of Truth]].
+    Keep every prose [[Representation]] concise, on point, and free of repetition.
   smells:
-  - Repeating what the code or [[Contract]] already defines.
-  - Inline code snippets in a prose [[Representation]] when not motivated.
-  - Exact [[File]] names or paths referenced in a prose [[Representation]] when not motivated.
+  - Repeating in a prose [[Representation]] what code or a [[Contract]] already defines.
+  - Unmotivated inline code snippets in a prose [[Representation]].
+  - Unmotivated exact [[File]] names or paths in a prose [[Representation]].
   - Restating the same point across sections of a [[Representation]].
-  - A prose walkthrough in a [[Representation]] of logic or schemas that the code or [[Contract]] already states.
+  - Walking through logic or schemas in prose that code or a [[Contract]] already states.
   - Hedging, filler, or decorative phrasing in a [[Representation]] that can be removed without losing meaning.
 - id: ADRs state direction only
   marker: MUST
   group: Conventions
-  parent: Less is more
+  parent: No Comments
   body: |
-    Write every [[Architectural Direction]] record to follow [adr.schema.json](https://thruput.se/agents/schemas/repository/adr.schema.json), in addition to [[On point prose]].
+    Write every [[Architectural Direction]] record to conform to [adr.schema.json](https://thruput.se/agents/schemas/repository/adr.schema.json) and [[On point prose]].
   smells:
   - An [[Architectural Direction]] record placed outside `docs/adrs/` or carrying disallowed sections such as Status, Considered Options, Reasoning, How It Works, Acceptance Criteria, or Consequences.
-  - An [[Architectural Direction]] record describing current codebase state, file inventory, or a step-by-step implementation walkthrough.
-  - An [[Architectural Direction]] record that embeds code snippets or phase-by-phase rollout plans instead of the decision itself.
+  - An [[Architectural Direction]] record describing current codebase state, [[File]] inventory, or a step-by-step implementation walkthrough.
+  - An [[Architectural Direction]] record that embeds code snippets or rollout phases instead of the decision itself.
 - id: Validating factory
   marker: MUST
   group: Types
@@ -158,7 +156,7 @@ rules:
   group: Types
   parent: Parse, don't validate
   body: |
-    Return an [[Illegal state]] from a [[Factory]] in its type [[Signature]] rather than throw an [[Exception]].
+    Return an [[Illegal state]] from a [[Factory]] in its [[Signature]] rather than throwing an [[Exception]].
 - id: Sum types
   marker: MUST
   group: Types
@@ -170,16 +168,15 @@ rules:
   group: Types
   parent: Make illegal states unrepresentable
   body: |
-    Model every legal domain state as a closed enumeration of [[Encapsulated type]]s with belonging [[Domain method]]s and possible transitions.
+    Model every legal domain state as a closed enumeration of [[Encapsulated type]]s with belonging [[Domain method]]s and valid transitions.
   smells:
   - A [[Primitive]] or [[Pure enum]] representing a domain state.
-  - "[[Branching]] outside of a [[Perimeter]] fold."
 - id: Compile-time optionality
   marker: MUST
   group: Types
   parent: Make illegal states unrepresentable
   body: |
-    Make absence an explicit case the [[Compiler]] forces every caller to handle.
+    Make absence an explicit case in the [[Type system]] that the [[Compiler]] forces every caller to handle.
   smells:
   - A [[Runtime check]] for absence.
 - id: Wrap primitives
@@ -195,9 +192,9 @@ rules:
   group: Types
   parent: No Primitive Obsession
   body: |
-    Keep every [[Encapsulated type]] opaque so no code depends on its internal representation. Never collapse it back into [[Primitive]]s inside our code; convert it to another type only through a verified conversion, and fold it into a [[Foreign shape]] only through a contract of the type at an outbound [[Perimeter]].
+    Keep every [[Encapsulated type]] opaque, convert it to another [[Type]] only through a verified conversion, and fold it into a [[Foreign shape]] only at an outbound [[Perimeter]].
   smells:
-  - Unwrapping [[Domain objects]] into [[Primitive]]s anywhere but at the [[Perimeter]].
+  - Unwrapping [[Domain objects]] into [[Primitive]]s anywhere outside a [[Perimeter]].
 - id: Exhaustive matching
   marker: MUST
   group: Domain Model
@@ -215,7 +212,7 @@ rules:
   group: Domain Model
   parent: Immutable by default
   body: |
-    Expose a [[Setter]] or any operation that breaks [[Immutable]] on a [[Domain object]]. A change returns a new [[Instance]] that passes the [[Validating path of creation]] again.
+    Expose a [[Setter]] or any operation that breaks [[Immutable]] on a [[Domain object]]; every update returns a new [[Instance]] through the [[Validating path of creation]].
   smells:
   - An exposed [[Setter]] or [[Raw collection]] on an [[Aggregate]].
 - id: Strong typing
@@ -231,7 +228,7 @@ rules:
   body: |
     Access a [[Domain object]] only through methods that accept and return [[Domain object]]s, the [[Factory]] at the [[Perimeter]] excepted.
   smells:
-  - A [[Primitive]] in the [[Interface]] of a [[Component]] outside of a [[Perimeter]].
+  - A [[Primitive]] in the [[Interface]] of a [[Component]] outside a [[Perimeter]].
 - id: Domain operations
   marker: MUST
   group: Domain Model
@@ -243,7 +240,7 @@ rules:
   group: Domain Model
   parent: Replace conditional with polymorphism
   body: |
-    Use a [[Factory]] with [[Inheritance]], a [[Feature]], a [[Strategy]], or a [[Builder]] instead of a [[Primitive]] or [[Pure enum]].
+    Use a [[Factory]] with [[Inheritance]], a [[Feature]], a [[Strategy]], or a [[Builder]] instead of a [[Primitive]] flag or [[Pure enum]].
   smells:
   - "[[Branching]] outside of a [[Perimeter]] fold."
 - id: Tell, don't ask
@@ -295,13 +292,13 @@ rules:
   group: Conventions
   parent: No Comments
   body: |
-    Comment any [[Representation]]. Only a [[Machine-read comment]] is exempt.
+    Comment any [[Representation]]; only a [[Machine-read comment]] is exempt.
 - id: No silent catch
   marker: MUST NOT
   group: Failure Handling
   parent: Fail fast
   body: |
-    Use [[Try/catch block]]s that do not [[Rethrow]].
+    Use [[Try/catch block]]s that neither [[Rethrow]] nor fold the [[Exception]] into a failure [[Return value]] at the [[Perimeter]].
 - id: No default on failure
   marker: MUST NOT
   group: Failure Handling
@@ -349,27 +346,27 @@ rules:
   group: Tests
   parent: Test-Driven Development
   body: |
-    Leave a [[Muted test]].
+    Leave a [[Muted test]] in the test suite.
 - id: Assert values
   marker: MUST
   group: Tests
   parent: Never trust a test you haven't seen fail
   body: |
-    Verify the expected outcome of the [[Subject under test]] with an [[Assertion]] on the actual values produced, achieving [[True Test Coverage]] rather than merely executing code paths.
+    Verify the expected outcome of the [[Subject under test]] with an [[Assertion]] on the actual [[Return value]]s produced, achieving [[True Test Coverage]].
   smells:
-  - "[[Test]]s that discard return values just to increase [[Code coverage]]."
-  - "[[Assertion]]s that only check no error occurred."
-  - "[[Assertion]]s on generalizations such as the presence or type of the asserted value."
+  - "[[Test]]s that discard [[Return value]]s just to inflate [[Code coverage]]."
+  - "[[Assertion]]s that check only that no [[Exception]] or error occurred."
+  - "[[Assertion]]s on generalizations such as presence or [[Type]] rather than exact value."
 - id: Add tests for new code
   marker: MUST
   group: Tests
-  parent: Test-Driven Development
+  parent: Verification ends the chain
   body: |
     Add [[Test]]s for new [[Production code]].
 - id: Add tests for updated code
   marker: MUST
   group: Tests
-  parent: Test-Driven Development
+  parent: Verification ends the chain
   body: |
     Add [[Test]]s for updated [[Production code]].
 - id: Troubleshooting unit test
@@ -389,7 +386,7 @@ rules:
   group: Tests
   parent: No gray tests
   body: |
-    Include more than one [[Subject under test]] in a [[Unit test]], [[Narrow integration test]], or [[Integration test]], or test the composition of [[Component]]s within a [[Unit test]] or a [[Narrow integration test]].
+    Include more than one [[Subject under test]] in a [[Unit test]], [[Narrow integration test]], or [[Integration test]], or test the composition of [[Component]]s within a [[Unit test]] or [[Narrow integration test]].
 - id: No test case coupling
   marker: MUST NOT
   group: Tests
@@ -411,9 +408,9 @@ rules:
 - id: No global quality changes
   marker: MUST NOT
   group: Toolchain & Environment
-  parent: The Toolchain Is the Guardrail
+  parent: Quality axes over competing goods
   body: |
-    Change global or project-wide [[Quality]] standards, except in a [[Pull request]] that contains only that [[Change]].
+    Change global or project-wide [[Quality]] standards, except in a dedicated [[Pull request]] containing only that [[Change]].
   smells:
   - Changing global or project-wide [[Lint rule]]s outside a dedicated [[Pull request]].
 - id: No local disabling of lint rules
@@ -427,7 +424,7 @@ rules:
   group: Test Pyramid
   parent: Push tests down the pyramid
   body: |
-    Write a [[Runtime check]] or a [[Test]] for what the [[Type system]] can reject.
+    Write a [[Runtime check]] or [[Test]] for what the [[Type system]] can reject.
 - id: No test a linter makes
   marker: MUST NOT
   group: Test Pyramid
@@ -461,7 +458,7 @@ rules:
 - id: No committing generated code
   marker: MUST NOT
   group: Toolchain & Environment
-  parent: The Toolchain Is the Guardrail
+  parent: Don't Repeat Yourself
   body: |
     Commit [[Generated code]].
 - id: Strict presets
@@ -469,11 +466,11 @@ rules:
   group: Toolchain & Environment
   parent: The Toolchain Is the Guardrail
   body: |
-    Use the strictest possible [[Preset]]s on linting and style.
+    Use the strictest available [[Preset]]s for [[Static code analysis]] and formatting.
 - id: Obligation to report
   marker: MUST
   group: Toolchain & Environment
-  parent: The Toolchain Is the Guardrail
+  parent: Quality axes over competing goods
   body: |
     [[Developers]] can base weeks of effort on the basis that [[Test]]s and [[Lint rule]]s are operational. A non-operational [[Guardrails Against Doing the Wrong Thing]] may ruin such efforts and cause direct financial damage as well as legal. Report any spotted weakening of [[Guardrails Against Doing the Wrong Thing]] **on detection**—not later, never finishing a task before or delaying in any other way—and make sure via explicit confirmation from the human, as every [[Developer]]'s responsibility.
 - id: No optionality
@@ -499,7 +496,7 @@ rules:
   group: Contracts
   parent: Fold at Perimeter
   body: |
-    Handle [[Optionality]] forced by [[Code We Cannot Control]] in the [[Statement]] that invokes it or receives its return.
+    Handle [[Optionality]] forced by [[Code We Cannot Control]] in the immediate [[Statement]] that invokes it or receives its [[Return value]].
 - id: Accept unknown properties
   marker: MUST
   group: Contracts

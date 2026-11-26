@@ -88,49 +88,45 @@ rationales:
     body: |
       Leave recovery to a supervisor outside the failing process.
 - id: Translate at the door
-  parent: Shift Left
+  parent: Easy to Change
   body: |
-    [[Code We Cannot Control]] speaks its own dialect, a [[Foreign shape]]. Alistair Cockburn's [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/) and Eric Evans's Anti-Corruption Layer both put translation at a port, so foreign models never leak inward. Parsed once at the [[Perimeter]] into types that cannot hold [[Illegal states]], a value is never checked again. Tony Hoare's [billion-dollar mistake](https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/) shows the cost of uncertainty travelling through every reference. One adapter per [[Foreign shape]] keeps upgrades local.
+    [[Code We Cannot Control]] speaks a [[Foreign shape]]. Alistair Cockburn's [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/) and Eric Evans's [Anti-Corruption Layer](https://learn.microsoft.com/en-us/azure/architecture/patterns/anti-corruption-layer) isolate translation in dedicated adapters at the [[Perimeter]], preventing external models and null references (Tony Hoare, [Null References: The Billion Dollar Mistake](https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/)) from leaking inward.
   solutions:
   - marker: SHOULD
     body: |
-      Give every foreign system its own adapter behind a port.
+      Give every [[External system]] its own adapter behind a port [[Interface]].
   - marker: SHOULD
     body: |
-      Introduce an anti-corruption layer where the foreign model's meaning differs from ours ([Anti-Corruption Layer](https://learn.microsoft.com/en-us/azure/architecture/patterns/anti-corruption-layer)).
+      Introduce an anti-corruption layer at the [[Perimeter]] where a [[Foreign shape]] diverges from the domain model.
 - id: Encapsulation
   parent: Shift Left
   body: |
-    An [[Encapsulated type]] with one [[Validating path of creation]] makes [[Illegal states]] unrepresentable. Yaron Minsky's [Effective ML Revisited](https://blog.janestreet.com/effective-ml-revisited/) names the idiom, [[Make illegal states unrepresentable]], and Scott Wlaschin's [Designing with types](https://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/) works it through. Any weaker typing, one that does not fully encapsulate or leaves a second path of creation open, hands the validation back to every caller.
-
-    When an API passes `int x, int y` as coordinates, fold them into a `CarPosition`, not a `Coordinate`. When `CarPosition` is written to the database at the [[Perimeter]], the database context consumes it as a `CarPosition` and, by contract, folds it into a database parameter belonging to the `CAR_POSITION` table.
-
-    Every typing add-on to a weakly typed language exists to be used for this. Even an environment without types can mint a naming standard in which a variable prefix carries the signature "validated by factory", and a linter enforcing that standard shifts the validated contract further left.
+    An [[Encapsulated type]] with a single [[Validating path of creation]] makes [[Illegal states]] unrepresentable at compile time (Yaron Minsky, [Effective ML Revisited](https://blog.janestreet.com/effective-ml-revisited/); Scott Wlaschin, [Designing with types](https://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/)). Any second creation path or unencapsulated [[Primitive]] hands validation back to every caller.
   solutions:
   - marker: SHOULD
     body: |
-      Use every typing add-on the language offers to give every type one [[Validating path of creation]] and no other.
+      Use every typing mechanism the language offers to give each [[Type]] a single [[Validating path of creation]].
   - marker: SHOULD
     body: |
-      Where code smells of [[Optionality]] and [[Primitive Obsession]], improve it first by introducing encapsulation: refactor to opaque types, and retire the tests that only guarded against values the types can no longer hold.
+      Replace [[Optionality]] and [[Primitive Obsession]] with opaque [[Encapsulated type]]s and retire [[Test]]s that guarded against unreachable states.
   - marker: MAY
     body: |
-      Where the environment has no types, mint a naming prefix that marks a value validated by its factory, and enforce it with a linter.
+      In untyped languages, mint a naming prefix for values produced by a [[Factory]] and enforce it with a [[Lint rule]].
   - marker: SHOULD
     body: |
-      Hide a type's representation outside its defining module, as a new type or a branded type, rather than share it through an alias, so values that share a representation but not a meaning cannot be mixed.
+      Hide a [[Type]]'s underlying representation outside its [[Module]] via branded or nominal types rather than type aliases.
   - marker: SHOULD
     body: |
-      Encode a state machine in the type, each transition consuming the old state's type and returning the new one, so an operation invalid in the current state does not typecheck.
+      Encode state transitions in the [[Type system]] so each transition consumes the prior state [[Type]] and returns the next.
   - marker: SHOULD
     body: |
-      Enforce a collection's invariants in its type: a non-empty list makes `head` and `max` total, and a first-class collection enforces uniqueness, bounds, and ordering in one place.
+      Enforce collection [[Invariant]]s (such as non-emptiness, uniqueness, and bounds) in a dedicated [[Encapsulated type]].
   - marker: SHOULD
     body: |
-      Attach predicates to types and have them verified at compile time where the ecosystem provides it: refinement types, units of measure, checked type qualifiers.
+      Attach compile-time predicates or refinement types where the ecosystem supports them.
   - marker: MAY
     body: |
-      Implement the language's comparison interface on a [[Domain object]] rather than compare its primitives.
+      Implement the language's comparison [[Interface]] on a [[Domain object]] rather than comparing its [[Primitive]]s.
 - id: Optionality Drives Complexity
   parent: Simplicity
   body: |
@@ -176,66 +172,64 @@ rationales:
 - id: The practitioner decides the outcome
   parent: Competence Applied Is Leverage
   body: |
-    AI is leverage applied to a [[Practitioner]] ([[Competence Applied Is Leverage]]). Applied by someone who does not know what good looks like, it produces a mess at a speed no one could reach unaided, and the mess arrives reviewed, formatted, and entirely plausible. Applied by someone working from these documents, it produces the same [[Quality]] faster, and more of it. Lisanne Bainbridge's [Ironies of Automation](https://doi.org/10.1016/0005-1098(83)90046-8) (1983) names the mechanism: automation takes over the routine and leaves the [[Practitioner]] exactly the judgement it could not encode, so the more capable the tool, the more the outcome rests on the person. Two measurements show it from both sides. [Generative AI at Work](https://www.nber.org/papers/w31161) (Brynjolfsson, Li, Raymond, 2023) found the gains concentrated in novices, because the model disseminated the practice of the most able workers: the tool carried competence that already existed. METR's [early-2025 study](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/) found experienced [[Developer]]s 19% slower with AI tools while believing themselves 20% faster: what the tool multiplied there was the confidence, not the result.
-
-    The distance between what a person and what a model can do narrows every day, so anything justified by "AI cannot do this yet" carries an expiry date and is not written as permanent. What does not narrow is Fred Brooks's [essential complexity](https://worrydream.com/refs/Brooks_1986_-_No_Silver_Bullet.pdf): tools attack the accidental, and knowing which problem is worth solving, what good means here, and whether the result is true stays with the [[Practitioner]]. Investment therefore goes to the [[Practitioner]]'s competence, and to stating our standard explicitly enough to be applied, over the expectation that a better model compensates for the absence of both.
+    Automation takes over routine work and leaves the [[Practitioner]] with essential judgement (Lisanne Bainbridge, [Ironies of Automation](https://doi.org/10.1016/0005-1098(83)90046-8); Fred Brooks, [No Silver Bullet](https://worrydream.com/refs/Brooks_1986_-_No_Silver_Bullet.pdf)). AI tools disseminate codified practice to novices ([Generative AI at Work](https://www.nber.org/papers/w31161)) but slow experienced [[Developer]]s when unguided ([METR Early-2025 Study](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/)); articulating explicit [[Coding standard]]s is what turns tool speed into [[Quality]].
   solutions:
   - marker: SHOULD
     body: |
-      State a standard in these documents before handing it to a tool to apply, so the tool multiplies a definition and not a habit.
+      Record every [[Coding standard]] in these governance documents before handing it to an [[AI agent]] or tool.
   - marker: SHOULD
     body: |
-      Keep the rules, prompts, harnesses, and pipelines that carry our standard under our own control; a vendor's default encodes the vendor's standard, an average of everyone's practice rather than ours. Everything below that layer is consumed through the [[Development Stack]] like any other component.
+      Keep rules, prompts, harnesses, and verification pipelines under repository control rather than relying on vendor defaults.
   - marker: SHOULD
     body: |
-      Verify generated output by the same means as any other change; fluency and confidence are properties of its form and say nothing about its [[Correctness]].
+      Verify tool-generated changes with the same [[Test]]s and [[Static code analysis]] as human changes to prove [[Correctness]].
 - id: Environment parity
   parent: Without Verification It Is Worthless
   body: |
-    If it works on your machine but not in production, the environment is the bug. Keeping parity between production and test is what guarantees that a verification also holds in production, and that no time goes to hunting bugs that exist only in test. [The Twelve-Factor App, X. Dev/prod parity](https://12factor.net/dev-prod-parity) names three gaps that open between the two, in time, in personnel, and in tools, and every gap is a place where a defect hides until the deploy. Closing them means the environment stops being a state each machine has drifted into and becomes a definition every machine is provisioned from: one description, in code, from which local, staging, and production are all built. GitHub's [Scripts to Rule Them All](https://github.blog/engineering/scripts-to-rule-them-all/) applies the same idea at the entry point: one consistent bootstrap across every project, so a newcomer clones, builds, and tests with a single command instead of a page of steps. A manual step is a second definition of the procedure, kept in the head of whoever last ran it.
+    Gaps between local, test, and production [[Environment]]s hide defects until deployment ([The Twelve-Factor App, X. Dev/prod parity](https://12factor.net/dev-prod-parity)). Provisioning every [[Environment]] from version control and bootstrapping via a single command ([Scripts to Rule Them All](https://github.blog/engineering/scripts-to-rule-them-all/)) eliminates manual drift.
   solutions:
   - marker: SHOULD
     body: |
-      Provision every environment, the local one included, from the same infrastructure-as-code definition.
+      Provision local, staging, and production [[Environment]]s from the same infrastructure-as-code definition.
   - marker: SHOULD
     body: |
-      Run the production artifact itself locally and in [[Integration test]]s, rather than a lighter stand-in for it.
+      Execute the shipped [[Runtime artifact]] itself locally and in [[Integration test]]s rather than a stand-in.
 - id: Telemetry over guesswork
-  parent: Shift Left
+  parent: Without Verification It Is Worthless
   body: |
-    A feature that has shipped without a signal is a feature we hope works. The [[Shift Left]] axiom does not stop at release: the earliest point at which a production defect can be observed is by us, from telemetry, and the latest is by the customer, from the symptom. The Google SRE book's [Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/) reduces what to watch to four golden signals, latency, traffic, errors, and saturation, and pages only on symptoms already affecting users, which is possible only if the [[Signal]]s were in place before the change was. The [[Signal]] therefore ships with the behaviour it shows, not after its first incident, and a regression is found and resolved before the customer notices a flicker. Adding them afterwards is the same shortcut as adding the test afterwards, and is skipped for the same reasons.
+    A behavior shipped without a [[Signal]] is unverified in production. Instrumenting the four golden signals—latency, traffic, errors, and saturation ([Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/))—in the same [[Change]] surfaces regressions before [[Users]] report them.
   solutions:
   - marker: SHOULD
     body: |
-      Instrument every service for the four golden signals before its first deploy.
+      Instrument every service for latency, traffic, errors, and saturation before its initial deployment.
   - marker: SHOULD
     body: |
-      Alert on symptoms [[Users]] experience, and keep cause-level [[Signal]]s for diagnosis rather than paging.
+      Alert on symptoms [[Users]] experience and retain cause-level [[Signal]]s for diagnosis.
 - id: What wins when values collide
   parent: Quality Uncompromised
   body: |
-    Each [[Software quality axis]] is challenged by a [[Competing good]], and when they collide the axis wins. The pairs read in both directions: finding the [[Competing good]] in code is a symptom that its axis needs attention, and the repair belongs on the axis, not in more of the good. Quality is not measured by what a [[Competing good]] offers: [[Performance]] and [[Feature Rich]] are requirements like any other, and meeting one is part of [[Correctness]], but neither earns credit against the other axes.
+    Each [[Software quality axis]] is challenged by a [[Competing good]], and when they collide the axis wins: [[Performance]] and [[Feature Rich]] are requirements within [[Correctness]] where specified, never credit traded against [[Maintainability]], [[Readability]], [[Testability]], [[Structural simplicity]], [[True Test Coverage]], or [[Guardrails Against Doing the Wrong Thing]].
   solutions:
   - marker: SHOULD
     body: |
-      Name the [[Software quality axis]] a review comment is about, so a disagreement is about which kind of worse.
+      Cite the specific [[Software quality axis]] in review findings so trade-offs are evaluated against the axis.
   - marker: SHOULD
     body: |
-      Where [[Ease of Doing the Right Thing]] and [[Guardrails Against Doing the Wrong Thing]] compete, build the easy path first, and let the guardrail point at it.
+      Establish [[Ease of Doing the Right Thing]] first and point [[Guardrails Against Doing the Wrong Thing]] at that path.
 - id: Agree at the boundary
-  parent: Shift Left
+  parent: Single Source of Truth
   body: |
-    Two sides of a boundary that each define the shape they expect hold two definitions of one thing, and the two drift until the day they disagree in production. One contract, written apart from either side, is the single definition: both sides are derived from it and checked against it, and a disagreement between code and contract is a defect in the code. Bertrand Meyer's [Design by Contract](https://www.eiffel.org/doc/eiffel/ET-_Design_by_Contract_%28tm%29,_Assertions_and_Exceptions) binds client and supplier to one specification, where each party's obligation is the other's benefit. The OpenAPI Initiative's [design-first guidance](https://learn.openapis.org/best-practices.html) makes the description the contract that the code is validated against in continuous integration, and [Protocol Buffers](https://protobuf.dev/overview/) define a structure once and generate every side from it.
+    When two sides of a boundary define shapes independently, they drift until production fails. A single independent [[Contract]] binds both sides (Bertrand Meyer, [Design by Contract](https://www.eiffel.org/doc/eiffel/ET-_Design_by_Contract_%28tm%29,_Assertions_and_Exceptions); [OpenAPI Design-First Guidance](https://learn.openapis.org/best-practices.html); [Protocol Buffers](https://protobuf.dev/overview/)).
   solutions:
   - marker: SHOULD
     body: |
-      Generate both sides of a boundary from the contract rather than write either by hand.
+      Generate both sides of a boundary from the [[Contract]] rather than writing either by hand.
   - marker: SHOULD
     body: |
-      Check the running code against the contract in the build, so a drift fails before it ships.
+      Validate running code against the [[Contract]] in the build so drift fails before merge.
   - marker: MAY
     body: |
-      Publish the contract on its own, versioned apart from any implementation, so every consumer reads the same definition.
+      Publish the [[Contract]] as an independently versioned artifact for consumers.
 - id: Clarity over cleverness
   parent: Code Is Written for People
   body: |

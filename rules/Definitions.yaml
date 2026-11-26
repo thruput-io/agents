@@ -1,7 +1,7 @@
 definitions:
 - id: Marker
   specification: |
-    The RFC 2119 priority word that opens a rule or a solution.
+    The RFC 2119 priority word that opens a [[Rule]] or a solution.
   closedEnumerationOf:
   - MUST
   - MUST NOT
@@ -31,16 +31,16 @@ definitions:
     The name of an entry, and the only stable handle for citing it. Ids are unique across every document, compared case-insensitively with whitespace normalized. In prose an id is cited as [[Id]].
 - id: Group
   specification: |
-    The topical cluster a rule belongs to, taken from the heading the rule sat under. It orders and clusters rules for readers and has no bearing on precedence.
+    The topical cluster that orders and categorizes [[Rule]]s for readers without affecting precedence.
 - id: Parent
   specification: |
-    The id of the entry directly above. Every entry below the root has exactly one parent.
+    The [[Id]] of the entry directly above in the hierarchy.
 - id: Purpose
   specification: |
     The stated reason something is built or changed, expressed as the benefit it delivers to [[Users]].
 - id: Users
   specification: |
-    Whoever consumes the software or system to fulfill a need. A [[Developer]] is not a user.
+    Whoever consumes the software or system to fulfill a need; a [[Developer]] is not a [[User]].
   openEnumerationOf:
   - End user
   - Operator
@@ -60,28 +60,31 @@ definitions:
     A program that pursues a goal autonomously, using a model to decide its next action.
 - id: Developer
   specification: |
-    Whoever writes, reviews, or maintains the code: a person or an [[AI agent]]. Every rule is applied by a developer, on a diff, and holds the same for either kind. A developer is not a [[User]].
+    A person or [[AI agent]] who writes, reviews, or maintains code and applies every [[Rule]] on a [[Change]].
+- id: Type
+  specification: |
+    A construct that defines a set of values together with the valid operations on them.
 - id: Component
   specification: |
-    A [[Class]] or any larger unit of code—such as a file, folder, module, package, or project—with its own [[Interface]] and namespace that decides which of its parts are visible outside it.
+    A [[Class]] or larger unit of code—such as a file, folder, [[Module]], package, or project—with its own [[Interface]] and namespace governing visibility.
 - id: Class
   specification: |
-    A construct that defines a type as a set of values together with the operations on them. A rule that names a Class applies to every construct that does this, whatever the language calls it.
+    A construct that defines a [[Type]] as a set of values together with the operations on them.
 - id: File
   specification: |
     Alias for [[Component]].
 - id: Function
   specification: |
-    A callable unit of code that takes zero or more parameters and returns a result.
+    A callable unit of code that accepts zero or more [[Parameter type]]s and returns a [[Return value]].
 - id: Interface
   specification: |
     The boundary through which code outside a [[Component]] invokes it.
 - id: Public method
   specification: |
-    A single invocation receiver of an [[Interface]]: one operation that code outside the [[Component]] can invoke through it. An operation that only code inside the [[Component]] can invoke is not a public method.
+    An invocation receiver of an [[Interface]] callable by code outside the [[Component]].
 - id: Domain object
   specification: |
-    A type in the domain layer that models a business concept and upholds its own invariants: [[Immutable]], created only through its [[Validating path of creation]], and operated on only through other [[Domain objects]].
+    An [[Immutable]] [[Type]] in the domain [[Layer]] that models a business concept, upholds its [[Invariant]]s through its [[Validating path of creation]], and interacts only through [[Domain objects]].
 - id: Encapsulated type
   specification: |
     A [[Class]] into which one or more [[Primitive]]s are folded at the [[Perimeter]], named for what the values mean rather than for their shape, with a single [[Validating path of creation]], and [[Immutable]].
@@ -92,26 +95,26 @@ definitions:
     The special case where a single [[Primitive]] is wrapped.
 - id: Loose type
   specification: |
-    The shape of a variable, defined so loosely that it admits [[Illegal state]]s by design, the opposite of [[Make illegal states unrepresentable]]. Its looseness shows in the type's cardinality, which every field and every open choice multiplies while the legal states stay few.
+    A [[Type]] whose cardinality admits [[Illegal state]]s by design, the opposite of [[Make illegal states unrepresentable]].
   openEnumerationOf:
   - Optionality
   - Primitive Obsession
   - Mutator
 - id: Primitive Obsession
   specification: |
-    Representing a value by one or more [[Primitive]]s instead of a type of its own, leaving its meaning and constraints to every piece of code that handles it.
+    Representing a domain value with one or more [[Primitive]]s instead of a dedicated [[Encapsulated type]].
 - id: Optionality
   specification: |
     A choice left open in a value or parameter, such as whether it is present at all.
 - id: Setter
   specification: |
-    An operation that assigns a new value to a field of an existing object, a second path of creation that skips the validation of the first. A strong code smell.
+    An operation that assigns a new value to a field of an existing [[Instance]], bypassing its [[Validating path of creation]].
 - id: Immutable
   specification: |
-    Unable to change after creation. A change produces a new value, which passes the same [[Validating path of creation]] as the first. Without it, a factory's validation holds only for the moment of creation.
+    Unable to change state after creation; any update produces a new [[Instance]] through the [[Validating path of creation]].
 - id: Code We Cannot Control
   specification: |
-    Code that is not part of the current code base and whose shape we cannot change.
+    Code outside the current codebase whose [[Foreign shape]] we cannot change.
   openEnumerationOf:
   - Framework
   - Library
@@ -125,7 +128,7 @@ definitions:
     Code outside the current code base that our code calls, leaving the flow of control with our code.
 - id: User input
   specification: |
-    Data a person enters through a user interface.
+    Data entered by a person through a user [[Interface]].
 - id: Perimeter
   specification: |
     A point in our code that either invokes, or is invoked by, [[Code We Cannot Control]].
@@ -173,7 +176,7 @@ definitions:
   - Manual test
 - id: Type system
   specification: |
-    Preventing a defect by choosing a type in which the [[Illegal state]] cannot be constructed.
+    Preventing a defect at compile time by choosing a [[Type]] in which an [[Illegal state]] cannot be constructed.
 - id: Static code analysis
   specification: |
     Catching a defect by analysing the code before it runs, with a linter or another static tool.
@@ -182,19 +185,19 @@ definitions:
     Catching a defect by exercising one [[Subject under test]] in-process, without an [[External dependency]].
 - id: Narrow integration test
   specification: |
-    A [[Unit test]] without the in-process requirement: one [[Subject under test]] exercised against a real instance of the [[External dependency]] it talks to, such as a repository against a database in a container ([Martin Fowler, IntegrationTest](https://martinfowler.com/bliki/IntegrationTest.html)).
+    Exercising one [[Subject under test]] against a real instance of the [[External dependency]] it communicates with, such as a database container ([Martin Fowler, IntegrationTest](https://martinfowler.com/bliki/IntegrationTest.html)).
 - id: Integration test
   specification: |
-    A [[Test]] of one [[Subject under test]]—the shipped [[Runtime artifact]]—running and tested through its public [[API]]s using [[Black-box testing]], with [[External dependency]] instances emulated via their official containers, or second-best containers as production-like as possible.
+    Exercising one [[Subject under test]]—the shipped [[Runtime artifact]]—using [[Black-box testing]] against containerized [[External dependency]] instances.
 - id: End-to-end test
   specification: |
-    Catching a defect by exercising fully deployed services in a running staging environment.
+    Catching a defect by exercising deployed services across a running staging [[Environment]].
 - id: Manual test
   specification: |
     Catching a defect by a person exercising the running system.
 - id: Evidence
   specification: |
-    A verifiable reference that grounds a change or an assumption. A practice recalled from experience is not evidence.
+    A verifiable reference that grounds a [[Change]] or assumption; a practice recalled from experience is not [[Evidence]].
   closedEnumerationOf:
   - Code reference
   - Test reference
@@ -204,7 +207,7 @@ definitions:
     A full URL to code on the main branch of an existing or public repository.
 - id: Test reference
   specification: |
-    A test in an existing repository.
+    An executable [[Test]] in an existing repository.
 - id: Document reference
   specification: |
     A full URL to a specific section of an article or document.
@@ -238,16 +241,16 @@ definitions:
     The first line of a script, naming the interpreter that runs it.
 - id: Machine-read directive
   specification: |
-    A directive to a tool that is syntactically a comment.
+    A directive to a [[Compiler]] or linter that is syntactically a comment.
 - id: Published API documentation
   specification: |
     Documentation of an [[Interface]] that a tool extracts to a published documentation site.
 - id: Mandated license header
   specification: |
-    A license notice that a license or policy requires at the top of a file.
+    A legal license notice required at the top of a [[File]].
 - id: Generated-file banner
   specification: |
-    A notice marking a file as generated by a tool.
+    A notice marking a [[File]] as [[Generated code]].
 - id: Great Code
   specification: |
     Code that avoids becoming a [[System Failed State]].
@@ -256,7 +259,7 @@ definitions:
     Alias for [[Great Code]].
 - id: Bad Code
   specification: |
-    Code that drives the system toward a [[System Failed State]].
+    Code that drives a software system through [[System Decay]] toward a [[System Failed State]].
 - id: Accuracy
   specification: |
     Alias for [[Correctness]].
@@ -283,16 +286,16 @@ definitions:
     Fixing one bug consistently introduces new, unrelated bugs elsewhere in the application.
 - id: Knowledge Dissipation
   specification: |
-    The codebase still runs, but no active team member understands how or why its core logic works.
+    A condition where the system runs, but no active [[Developer]] understands how or why its core logic works.
 - id: Deployment Paralysis
   specification: |
-    Code changes are complete, but the system cannot be safely or reliably shipped to production.
+    A condition where [[Change]]s are complete, but the system cannot be safely shipped to production.
 - id: Value Failure
   specification: |
     The system has become [[Inaccurate]], failing to do what [[Users]] need.
 - id: Architectural Direction
   specification: |
-    The fold of every ADR, read from the highest-numbered downward: a later ADR supersedes an earlier one, so where ADRs are ambiguous or conflict, the first read holds. ADRs are immutable; a change is a new ADR, never an edit, because the history explains why decisions were made and why the project is designed the way it is. The Architectural Direction governs where the project is heading; it does not describe its current state.
+    The cumulative fold of immutable ADR records under `docs/adrs/`, read from highest-numbered downward so later decisions supersede earlier ones, governing where the project is heading rather than describing its current state.
 - id: Software quality axis
   specification: |
     One of ten dimensions defining software quality.
@@ -312,10 +315,10 @@ definitions:
     The degree to which software accurately delivers what [[Users]] need.
 - id: Maintainability
   specification: |
-    The property that changing a behavior requires understanding and touching only the component that owns it.
+    The property that changing a behavior requires understanding and touching only the [[Component]] that owns it.
 - id: Readability
   specification: |
-    The property that a reader unfamiliar with the code understands what it does and why without asking the author.
+    The property that a [[Developer]] unfamiliar with the code understands what it does and why without asking the author.
 - id: Testability
   specification: |
     The property that behavior is exercised in isolation without standing up networks, clocks, or global state.
@@ -324,19 +327,19 @@ definitions:
     [[Simplicity]] as it shows in the design: the property that the design carries no structure that a present requirement does not demand.
 - id: True Test Coverage
   specification: |
-    The property that tests fail when behavior breaks, rather than merely executing code paths.
+    The property that [[Test]]s fail when behavior breaks rather than merely executing code paths.
 - id: Ease of Doing the Right Thing
   specification: |
-    The property that the correct approach is the [[Path of least resistance]] for the next contributor.
+    The property that the compliant approach is the [[Path of least resistance]] for the next [[Developer]].
 - id: Guardrails Against Doing the Wrong Thing
   specification: |
-    The property that types, tests, and tooling cause incorrect approaches to fail early at compile time rather than relying on human vigilance.
+    The property that [[Type]]s, [[Test]]s, and [[Static code analysis]] cause invalid approaches to fail early rather than relying on human vigilance.
 - id: Automation
   specification: |
-    The property that the path between a change and its verified deployment runs without manual intervention.
+    The property that the path from a [[Change]] to verified deployment executes without manual intervention.
 - id: Currency of Tools and Libraries
   specification: |
-    The property that dependencies are current and easily kept that way.
+    The property that [[External dependency]] versions stay current and easily updated.
 - id: Comment intent
   specification: |
     A reason prose is written as a comment in code. Every comment intent is replaced by a durable, verifiable mechanism, leaving only [[Machine-read comment]]s exempt.
@@ -348,10 +351,10 @@ definitions:
   - Apology or confession
 - id: Clarification
   specification: |
-    Explaining intent in code, replaced by intent-revealing variable names, focused functions, or negative tests.
+    Explaining intent in code, replaced by intent-revealing names, focused [[Function]]s, or [[Test]]s.
 - id: Procrastination
   specification: |
-    Deferring work via a TODO, replaced by a [[Failing test]] pinning the weakness, smaller production-ready changes, or an explicit plan document.
+    Deferring work via a marker, replaced by a [[Failing test]], smaller [[Change]]s, or an explicit plan document.
 - id: Architectural decision
   specification: |
     Recording a design choice, replaced by an [[Architectural Direction]] record under `docs/adrs/`.
@@ -372,7 +375,7 @@ definitions:
     Alias for [[Domain object]].
 - id: Validating path of creation
   specification: |
-    The single path through which an [[Encapsulated type]] or [[Domain primitive]] is constructed at the [[Perimeter]], running all required checks before a value is minted. Holding a value of the type is proof it was checked.
+    The single path through which an [[Encapsulated type]] or [[Domain object]] is constructed at the [[Perimeter]], establishing every [[Invariant]] before returning an [[Instance]].
 - id: Path of least resistance
   specification: |
     Alias for [[Ease of Doing the Right Thing]].
@@ -381,7 +384,7 @@ definitions:
     Alias for [[Illegal state]].
 - id: Failing test
   specification: |
-    A test that exercises a capability or defect and fails until the correct behavior is implemented.
+    A [[Test]] that exercises a capability or defect and fails until the correct behavior is implemented.
 - id: Production code
   specification: |
     Code that executes in a deployment runtime after the build and serves [[Users]].
@@ -397,25 +400,21 @@ definitions:
 - id: Developers
   specification: |
     Alias for [[Developer]].
-
-
-
-
 - id: Practitioner
   specification: |
-    A human [[Developer]] in the act of applying a tool, method, or standard, and whose competence the tool multiplies. Not an [[Operator]], who keeps the system running, and not a [[User]], who consumes it.
+    A human [[Developer]] applying a tool, method, or [[Coding standard]] whose competence the tool multiplies.
 - id: Signal
   specification: |
     A log line, metric, or alert that shows a behaviour working in production.
 - id: Runtime check
   specification: |
-    A check on a value while the program runs, for a condition a type or a [[Static code analysis]] could have rejected before it ran.
+    A check executed while the program runs for a condition that the [[Type system]] or [[Static code analysis]] can reject beforehand.
 - id: Foreign shape
   specification: |
     The form in which [[Code We Cannot Control]] represents a value.
 - id: Surrounding code
   specification: |
-    The code a change sits among. Its conventions decide what no [[Demonstrable standard]] decides.
+    The existing code a [[Change]] sits among, whose conventions govern choices undecided by a [[Demonstrable standard]].
 - id: Competing good
   specification: |
     A good commonly offered in exchange for a [[Software quality axis]], which loses to the axis when the two collide.
@@ -428,7 +427,7 @@ definitions:
   - Measured Coverage
 - id: Feature Rich
   specification: |
-    Many capabilities in one system or dependency. Challenges [[Correctness]] and [[Currency of Tools and Libraries]].
+    Carrying many capabilities in one system or [[External dependency]], which challenges [[Correctness]] and [[Currency of Tools and Libraries]].
 - id: Performance
   specification: |
     A system that is perceived as fast by [[Users]]. Challenges [[Maintainability]].
@@ -437,7 +436,7 @@ definitions:
     Human-readable artifacts that quickly explain the system to [[Developer]]s. Challenges [[Readability]], [[Automation]], and [[Guardrails Against Doing the Wrong Thing]].
 - id: User Friendly
   specification: |
-    A system a person operates through its interface with little effort. Challenges [[Testability]].
+    An [[Interface]] a person operates with minimal effort, which challenges [[Testability]].
 - id: Industry Standard
   specification: |
     A technical standard or set of guidelines established by consensus and adopted across the software development
@@ -462,79 +461,79 @@ definitions:
     One place where a piece of knowledge is written down: in code, configuration, schema, or documentation.
 - id: Instance
   specification: |
-    One concrete value of a type, created from it.
+    One concrete value constructed from a [[Type]].
 - id: Factory
   specification: |
-    A named function that creates instances of a type and returns invalid input as a value in its signature. A constructor cannot: it can only throw.
+    A named [[Function]] that creates [[Instance]]s of a [[Type]] and returns invalid input as a value in its [[Signature]] rather than throwing an [[Exception]].
 - id: Invariant
   specification: |
-    A condition that holds for every instance of a type, from creation onward.
+    A condition that holds true for every [[Instance]] of a [[Type]] from creation onward.
 - id: Constructor
   specification: |
-    The operation a language runs to create and initialise a new instance of a type.
+    The language operation that allocates and initializes a new [[Instance]] of a [[Type]].
 - id: Module
   specification: |
     A [[Component]] that forms a namespace and, where the language supports it, a compile-time dependency boundary—such as a project or assembly in C#, a package in Go, a crate in Rust, or a module in Java or TypeScript—that decides which of its parts are visible outside it and which other modules it may reference.
 - id: Signature
   specification: |
-    The declared [[Parameter type]]s and [[Return type]] of a function or method.
+    The declared [[Parameter type]]s and [[Return type]] of a [[Function]] or method.
 - id: Exception
   specification: |
     A signal that interrupts normal control flow to report a failure, unwinding the stack until something catches it.
 - id: Sum type
   specification: |
-    A type whose value is exactly one of a fixed set of alternatives, each possibly carrying its own data.
+    A [[Type]] whose value is exactly one of a closed set of alternatives, each optionally carrying its own data.
 - id: Product type
   specification: |
-    A type whose value holds one of each of its fields at once, such as a record, struct, or tuple.
+    A [[Type]] whose value holds all of its declared fields simultaneously, such as a record, struct, or tuple.
 - id: Enum
   specification: |
-    A type with a fixed, named set of values.
+    A [[Type]] with a fixed, named set of values.
 - id: Pure enum
   specification: |
     An [[Enum]] that carries only labels or scalar values without [[Domain method]]s of its own, forcing callers to use [[Branching]] on its cases.
 - id: Inheritance
   specification: |
-    Defining specialised subtypes that fulfil a shared base type or [[Interface]] so each subtype supplies its own behaviour.
+    Defining specialized subtypes that fulfill a shared base [[Type]] or [[Interface]] so each subtype supplies its own behavior.
 - id: Strategy
   specification: |
     An object that encapsulates one interchangeable behaviour behind a shared [[Interface]] so callers invoke the [[Interface]] without [[Branching]].
 - id: Compiler
   specification: |
-    A program that translates source code into another form and rejects code that breaks the language's rules.
+    A program that translates source code into another form and rejects code that violates language and [[Type system]] rules.
 - id: Pattern matching
   specification: |
     Selecting code to run by the shape of a value, with one branch per case.
 - id: Wildcard pattern
   specification: |
-    A pattern that matches any value, used as a catch-all case.
+    A catch-all pattern in [[Pattern matching]] that matches any unlisted value.
 - id: Aggregate
   specification: |
-    A cluster of [[Domain objects]] treated as one unit for changes, entered only through its root, which keeps the cluster's invariants.
+    A cluster of [[Domain objects]] treated as a single unit for state changes and entered only through its root, which upholds all [[Invariant]]s.
 - id: Domain method
   specification: |
-    An operation defined on a domain type that expresses a business action in the domain's own terms.
+    An operation defined on a [[Domain object]] that expresses a business action in domain terms.
 - id: Raw collection
   specification: |
-    A plain list, set, or map exposed directly, so callers can change it without going through its owner.
+    A plain list, set, or map exposed directly so callers can mutate it without going through its owning [[Domain object]].
 - id: Primitive
   specification: |
-    A type—or a value of such a type—with no bounded context. All language literals and built-in scalars (such as integers, strings, or booleans) automatically fall into this category, along with general-purpose value types (such as `Money`, `Date`, or `Span`) that carry no domain-specific [[Invariant]]s.
+    A built-in scalar, literal, or general-purpose value [[Type]] (such as integers, strings, booleans, `Money`, or `Date`) that carries no domain-specific [[Invariant]]s.
 - id: Layer
   specification: |
-    A horizontal slice of an architecture that groups code with the same responsibility and depends only in one declared direction.
+    A horizontal architectural slice that groups code with a shared responsibility and depends only in the declared [[Dependency direction]].
 - id: Dependency direction
   specification: |
-    The direction in which one layer or module may depend on another, as the architecture declares it.
+    The direction in which one [[Layer]] or [[Module]] is permitted to depend on another.
 - id: Helper code
   specification: |
-    Small supporting code that exists to serve other code rather than a user-facing behaviour.
+    Supporting utility code that serves other code rather than a direct [[User]]-facing behavior.
 - id: Try/catch block
   specification: |
-    A language construct that runs a block and, if it raises an exception, hands control to a handler.
+    A language construct that executes a block and hands control to a handler when an [[Exception]] is raised.
 - id: Rethrow
   specification: |
-    Raising an exception again from its handler, so it keeps travelling up instead of being swallowed.
+    Raising a caught [[Exception]] again from its handler so it continues propagating upward instead of being swallowed.
 - id: Default value
   specification: |
     A value used when no other is given, or when obtaining the real one failed.
@@ -543,12 +542,12 @@ definitions:
     A second way of doing the same work, tried when the first one fails.
 - id: Return value
   specification: |
-    The outcome returned by a function, command, or process, including an error return or faulted task.
+    The outcome returned by a [[Function]], command, or process, including an error return or faulted task.
   openEnumerationOf:
   - Exit status
 - id: Exit status
   specification: |
-    The [[Return value]] of a process or command indicating whether it succeeded or failed, such as a process exit code.
+    The outcome code of a process or command indicating whether it succeeded or failed.
 - id: Error output
   specification: |
     The separate output stream a program writes its error messages and diagnostics to.
@@ -563,44 +562,43 @@ definitions:
     Alias for [[Branching logic]].
 - id: Test
   specification: |
-    Code that runs a piece of the system and checks that it behaves as specified.
+    Executable [[Verification code]] that runs a [[Subject under test]] and checks that it behaves as specified.
 - id: Test case
   specification: |
-    One scenario within a test suite: a setup, an action, and the expected outcome.
+    One discrete scenario within a [[Test]] suite comprising [[Test setup]], an action, and the expected [[Assertion]].
 - id: Muted test
   specification: |
-    A test that is present but switched off, not run by CI/CD [[Pull request]] checks, or whose failure does not block a
-    [[Pull request]].
+    A [[Test]] that is switched off, omitted from CI/CD [[Pull request]] checks, or prevented from failing the build.
 - id: Code coverage
   specification: |
-    The share of the code that is executed while the tests run.
+    The proportion of [[Production code]] executed while the [[Test]]s run.
 - id: Assertion
   specification: |
-    A statement in a test that compares an actual result with the expected one and fails the test when they differ.
+    A statement in a [[Test]] that compares an actual [[Return value]] against the expected value and fails the [[Test]] when they differ.
 - id: Flaky test
   specification: |
-    A test that passes and fails on the same code without any change.
+    A [[Test]] that passes and fails on the same code without any [[Change]].
 - id: Subject under test
   specification: |
     The one [[Component]] a [[Test]] exercises and whose behaviour it checks.
 - id: Runtime artifact
   specification: |
-    The built output that is deployed and run, such as a container image, package, or binary.
+    The built output deployed and executed in an [[Environment]], such as a container image, package, or binary.
 - id: Black-box testing
   specification: |
-    Testing through the public [[Interface]] only, without depending on the internals.
+    Testing exclusively through a [[Component]]'s public [[Interface]] without coupling to internal implementation.
 - id: Test setup
   specification: |
     The code that brings the system into the state a [[Test]] needs before the action runs.
 - id: Lint rule
   specification: |
-    One check a linter performs on the code, reporting each place that breaks it.
+    One check performed by [[Static code analysis]], reporting each location that violates it.
 - id: Pragma
   specification: |
     A directive to a [[Compiler]] or tool, written in the code, that changes how it treats that code.
 - id: Generated code
   specification: |
-    Code written by a tool from some other source, rather than by a person.
+    Code produced by a tool from another [[Representation]] rather than authored directly by a [[Developer]].
 - id: Preset
   specification: |
     A named set of [[Lint rule]]s and settings shared by many projects, used as a starting configuration.
@@ -618,16 +616,16 @@ definitions:
     The smallest unit of code that performs an action, such as an assignment, a call, or a return.
 - id: Return type
   specification: |
-    The declared type of what a [[Function]] returns.
+    The declared [[Type]] of what a [[Function]] returns.
 - id: Parameter type
   specification: |
-    The declared type of what a [[Function]] accepts in one of its parameters.
+    The declared [[Type]] accepted by a [[Function]] parameter.
 - id: Feature
   specification: |
-    A cohesive user-facing capability or vertical slice of behaviour isolated in its own [[Component]].
+    A cohesive [[User]]-facing capability or vertical slice of behavior isolated in its own [[Component]].
 - id: Feature toggle
   specification: |
-    A conditional switch that enables or disables a [[Feature]] at run time without deploying new code.
+    A conditional switch that enables or disables a [[Feature]] at runtime without deploying a new [[Change]].
 - id: Builder
   specification: |
     A construct that assembles a valid, [[Immutable]] [[Domain object]] step by step instead of taking [[Optional parameter]]s or [[Branching logic]].
@@ -639,7 +637,7 @@ definitions:
     A specification, separate from the code, of what crosses a boundary and what each side must provide.
 - id: Coding standard
   specification: |
-    A set of rules for how code is written in a team, so all of it reads as if one person wrote it.
+    A written set of [[Rule]]s governing how code is authored so the codebase reads with uniform structure.
 - id: Environment
   specification: |
     A place where the system runs with its own configuration and infrastructure, such as local, test, or production.
@@ -667,13 +665,13 @@ definitions:
     The commit a review of a [[Change]] is anchored to. Every file read and every inline comment resolves against it.
 - id: Checkout
   specification: |
-    The [[Head commit]] checked out with a clean working tree. A checkout at any other commit is not a checkout of the [[Change]].
+    The [[Head commit]] checked out with a clean working tree.
 - id: Surface
   specification: |
     The code a [[Violation]] may be reported against, identified by file and line numbers on the left (base) and right (head): changes carrying an unresolved comment, changes carrying a comment the author has resolved since the prior review, and changes new since the prior review (on a first review, the whole [[Change]]).
 - id: Full context
   specification: |
-    The [[Surface]] together with every changed file in full, the call sites of changed public symbols, and the covering [[Verification code]]. Context is what a [[Verdict]] is reached from, never what a [[Violation]] is reported against.
+    The [[Checkout]] and [[Surface]] together with every changed [[File]] in full, call sites of changed public symbols, and covering [[Verification code]] used to reach a [[Verdict]].
 - id: Ruleset
   specification: |
     A subset or grouping of [[Rule]]s evaluated together as a unit.
@@ -682,7 +680,7 @@ definitions:
     A finding that code on the [[Surface]] breaks a [[Rule]].
 - id: Verdict
   specification: |
-    The result of evaluating against a [[Rule]] or [[Ruleset]]: [[Violation]] or non-violation.
+    The outcome of evaluating [[Full context]] against a [[Rule]] or [[Ruleset]] and recording it in the [[Ledger]]: [[Violation]] or non-violation.
 - id: Ledger
   specification: |
-    The list across the sum of [[Ruleset]]s providing reassurance that every [[Rule]] was reviewed: one row per [[Rule]], recording [[Evidence]] of what was examined and whether [[Violation]]s were found or not found.
+    The audit record across all [[Ruleset]]s containing one row per [[Rule]] with [[Evidence]] of what was examined and the resulting [[Verdict]].
