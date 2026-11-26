@@ -11,10 +11,10 @@ principles:
   parent: Validated user need over speculative scope
   body: |
     A system behaves in the way [[Users]] expect it to behave, without hidden side effects or surprising outcomes ([Saltzer and Kaashoek](https://en.wikipedia.org/wiki/Principle_of_least_astonishment)).
-- id: Choose boring technology
+- id: The best code is no code
   parent: Code is a liability, not an asset
   body: |
-    Keep the [[Development Stack]] small and well known: "every company gets about three innovation tokens" ([Dan McKinley](https://mcfunley.com/choose-boring-technology)).
+    Satisfy every need at the highest rung of the [[Development Stack]] that serves, descending to a lower rung only when the one above cannot ([Jeff Atwood, The Best Code is No Code At All](https://blog.codinghorror.com/the-best-code-is-no-code-at-all/)).
 - id: Convention over Invention
   parent: Clarity over cleverness
   body: |

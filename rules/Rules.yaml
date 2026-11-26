@@ -49,37 +49,37 @@ rules:
 - id: No platform feature where reuse serves
   marker: MUST NOT
   group: Reuse
-  parent: Choose boring technology
+  parent: The best code is no code
   body: |
     Meet a need with the [[Platform or framework]] when [[Codebase reuse]] meets it.
 - id: No dependency where the platform serves
   marker: MUST NOT
   group: Reuse
-  parent: Choose boring technology
+  parent: The best code is no code
   body: |
     Add an [[External dependency]] when the [[Platform or framework]] meets the need.
 - id: No external service where a dependency serves
   marker: MUST NOT
   group: Reuse
-  parent: Choose boring technology
+  parent: The best code is no code
   body: |
     Integrate an [[External tool or service]] when an [[External dependency]] meets the need.
 - id: No new code where an external tool serves
   marker: MUST NOT
   group: Reuse
-  parent: Choose boring technology
+  parent: The best code is no code
   body: |
     Write [[New code]] when an [[External tool or service]] meets the need.
 - id: Available
   marker: MUST NOT
   group: Reuse
-  parent: Choose boring technology
+  parent: The best code is no code
   body: |
     Adopt existing code that requires payments or license models, or an extra [[Platform or framework]], that would increase the maintenance burden.
 - id: Maintained
   marker: MUST
   group: Reuse
-  parent: Choose boring technology
+  parent: The best code is no code
   body: |
     Adopt existing code only where it is a [[Maintained library or framework]] that is stable, documented, and maintained by several active contributors.
 - id: No second representation
