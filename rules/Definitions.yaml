@@ -260,9 +260,6 @@ definitions:
 - id: Bad Code
   specification: |
     Code that drives a software system through [[System Decay]] toward a [[System Failed State]].
-- id: Accuracy
-  specification: |
-    Alias for [[Correctness]].
 - id: Inaccurate
   specification: |
     The state where the system diverges from what [[Users]] need, failing to fulfill their intended outcome.
@@ -405,7 +402,7 @@ definitions:
     A human [[Developer]] applying a tool, method, or [[Coding standard]], whose competence or incompetence the tool multiplies.
 - id: Signal
   specification: |
-    A log line, metric, or alert that shows a behaviour working in production.
+    A log line, metric, or alert that shows a behavior working in production.
 - id: Runtime check
   specification: |
     A check on a value or condition executed while the program runs.
@@ -453,9 +450,6 @@ definitions:
 - id: Compatibility branch
   specification: |
     A conditional path that runs only on a particular platform, shell, or [[Environment]].
-- id: Dependency
-  specification: |
-    Alias for [[External dependency]].
 - id: Representation
   specification: |
     One place where a piece of knowledge is written down: in code, configuration, schema, or documentation.
@@ -497,7 +491,7 @@ definitions:
     Defining specialized subtypes that fulfill a shared base [[Type]] or [[Interface]] so each subtype supplies its own behavior.
 - id: Strategy
   specification: |
-    An object that encapsulates one interchangeable behaviour behind a shared [[Interface]] so callers invoke the [[Interface]] without [[Branching]].
+    An object that encapsulates one interchangeable behavior behind a shared [[Interface]] so callers invoke the [[Interface]] without [[Branching]].
 - id: Compiler
   specification: |
     A program that translates source code into another form and rejects code that violates language and [[Type system]] rules.
@@ -580,7 +574,7 @@ definitions:
     A [[Test]] that passes and fails on the same code without any [[Change]].
 - id: Subject under test
   specification: |
-    The one [[Component]] a [[Test]] exercises and whose behaviour it checks.
+    The one [[Component]] a [[Test]] exercises and whose behavior it checks.
 - id: Runtime artifact
   specification: |
     The built output deployed and executed in an [[Environment]], such as a container image, package, or binary.
@@ -648,9 +642,6 @@ definitions:
   - Access to filesystem
   - Access to database
   - Access to HTTP
-- id: Call over the network
-  specification: |
-    Alias for [[Calls over the network]].
 - id: Access to filesystem
   specification: |
     Accessing a local or remote file system.

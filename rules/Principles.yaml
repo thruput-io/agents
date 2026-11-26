@@ -70,7 +70,7 @@ principles:
 - id: Never trust a test you haven't seen fail
   parent: Tests prove behavior, not execution
   body: |
-    A test counts only once it has failed for the behaviour it checks; a test that cannot fail checks nothing.
+    A test counts only once it has failed for the behavior it checks; a test that cannot fail checks nothing.
 - id: F.I.R.S.T.
   parent: Tests prove behavior, not execution
   body: |
@@ -82,7 +82,7 @@ principles:
 - id: Separation of Concerns
   parent: One concern, one owner
   body: |
-    Each concern has one owner in one layer, and a change to a behaviour touches only its owner.
+    Each concern has one owner in one layer, and a change to a behavior touches only its owner.
 - id: The Toolchain Is the Guardrail
   parent: Make the wrong thing fail
   body: |

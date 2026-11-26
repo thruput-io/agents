@@ -41,7 +41,7 @@ rules:
   group: Purpose
   parent: Make it work, make it right, make it fast
   body: |
-    Deliver working behaviour for the stated [[Purpose]] before refactoring structure or optimising [[Performance]].
+    Deliver working behavior for the stated [[Purpose]] before refactoring structure or optimizing [[Performance]].
   smells:
   - Using [[Feature toggle]]s instead of shipping a small working slice.
   - Preparations for future extensions of a [[Component]] not already laid out in a well-researched plan.
@@ -134,9 +134,8 @@ rules:
   group: Conventions
   parent: No Comments
   body: |
-    Write every [[Architectural Direction]] record to conform to `adr.schema.json` and [[On point prose]].
+    Write every [[Architectural Direction]] record to state future direction and decisions—which may override a [[Rule]] when conforming to its [[Principle]]—without describing current codebase state, [[File]] inventory, or implementation walkthroughs.
   smells:
-  - An [[Architectural Direction]] record placed outside `docs/adrs/` or carrying disallowed sections such as Status, Considered Options, Reasoning, How It Works, Acceptance Criteria, or Consequences.
   - An [[Architectural Direction]] record describing current codebase state, [[File]] inventory, or a step-by-step implementation walkthrough.
   - An [[Architectural Direction]] record that embeds code snippets or rollout phases instead of the decision itself.
 - id: Validating factory
@@ -316,7 +315,7 @@ rules:
   group: Failure Handling
   parent: Fail fast
   body: |
-    Discard or ignore a failed [[Return value]] or faulted operation so that a failure passes as success.
+    Discard or ignore a failed [[Return value]], [[Exit status]], or faulted operation so that a failure passes as success.
 - id: No discarded diagnostics
   marker: MUST NOT
   group: Failure Handling
@@ -334,7 +333,7 @@ rules:
   group: Failure Handling
   parent: Fail fast
   body: |
-    Proceed with stale, partial, or assumed input after the step that produces it failed with a failed [[Exit status]] or [[Exception]]; report and stop.
+    Proceed with stale, partial, or assumed input after the step that produces it failed with a failed [[Return value]], [[Exit status]], or [[Exception]]; report and stop.
 - id: Linear deterministic code
   marker: MUST NOT
   group: Failure Handling
@@ -404,7 +403,7 @@ rules:
   group: Toolchain & Environment
   parent: Production Parity
   body: |
-    Alter the behaviour of [[Production code]] in [[Test setup]].
+    Alter the behavior of [[Production code]] in [[Test setup]].
 - id: No global quality changes
   marker: MUST NOT
   group: Toolchain & Environment
@@ -508,7 +507,7 @@ rules:
   group: Contracts
   parent: Prepare reader for evolving producer
   body: |
-    Declare the most generic [[Parameter type]]s and the most specific [[Return type]] a [[Public method]] can honour.
+    Declare the most generic [[Parameter type]]s and the most specific [[Return type]] a [[Public method]] can honor.
 - id: Shapes live in the contract
   marker: MUST
   group: Contracts

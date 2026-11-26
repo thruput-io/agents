@@ -34,3 +34,8 @@ standards:
   parent: Respect layering
   body: |
     A layered-architecture test that declares each layer and the layers it may depend on, failing the build on any other dependency.
+- id: ADR schema and directory
+  context: JSON Schema
+  parent: ADRs state direction only
+  body: |
+    Every [[Architectural Direction]] record lives under `docs/adrs/` and validates against `adr.schema.json`.
