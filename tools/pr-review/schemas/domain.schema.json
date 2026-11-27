@@ -25,7 +25,8 @@
 		},
 		"Definition": {
 			"description": "What a term means",
-			"type": "object"
+			"type": "string",
+			"minLength": 1
 		},
 		"Workflow": {
 			"description": "The steps a sub agent follows",

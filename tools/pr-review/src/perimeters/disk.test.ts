@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { Buffer } from "node:buffer";
 import { test as it } from "node:test";
 import { Change } from "../domain/change.ts";
 import type { Review } from "../domain/review.ts";
@@ -19,6 +18,7 @@ import {
 	fileOf,
 	nothingStored,
 	notWritable,
+	probeIn,
 	reviewOfText,
 	writtenRecording,
 	writtenReview,
@@ -42,9 +42,9 @@ it("a review is kept in one file in its workdir", () => {
 });
 
 it("a probe leads to the file of its review", () => {
-	const place = Buffer.from("/work").toString("base64url");
+	const held = probeIn(Workdir.codec.decode("/work"), "probe-1");
 
-	assert.equal(fileOf(probeSample(`probe-1.${place}`)), "/work/review.jsonl");
+	assert.equal(fileOf(held), "/work/review.jsonl");
 });
 
 it("a review is written as one line", () => {

@@ -1,0 +1,25 @@
+probes:
+  - name: contracts
+    group: Contracts
+  - name: conventions
+    group: Conventions
+  - name: dead-code
+    group: Dead Code
+  - name: domain-model
+    group: Domain Model
+  - name: failure-handling
+    group: Failure Handling
+  - name: performance
+    group: Performance
+  - name: purpose
+    group: Purpose
+  - name: reuse
+    group: Reuse
+  - name: test-pyramid
+    group: Test Pyramid
+  - name: tests
+    group: Tests
+  - name: toolchain-environment
+    group: Toolchain & Environment
+  - name: types
+    group: Types

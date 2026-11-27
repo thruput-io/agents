@@ -33,7 +33,9 @@ const taskSample = (probe: Probe, rules: readonly Rule[]): Task => ({
 	instructions: instructionsSample(),
 	detailed: instructionsSample(),
 	rules,
-	glossary: [[Term.codec.decode("Ledger"), Definition.codec.decode({})]],
+	glossary: [
+		[Term.codec.decode("Ledger"), Definition.codec.decode("a definition")],
+	],
 });
 
 export {

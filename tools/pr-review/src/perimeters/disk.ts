@@ -19,6 +19,11 @@ const fileOf = (probe: Probe): string => {
 	return join(Buffer.from(place, "base64url").toString(), FILE);
 };
 
+const probeIn = (workdir: Workdir, name: string): Probe =>
+	Probe.codec.decode(
+		`${name}.${Buffer.from(Workdir.codec.encode(workdir)).toString("base64url")}`,
+	);
+
 const writtenReview = (review: Review): string =>
 	`${JSON.stringify(Review.codec.encode(review))}\n`;
 
@@ -46,6 +51,7 @@ export {
 	fileOf,
 	nothingStored,
 	notWritable,
+	probeIn,
 	reviewOfText,
 	writtenRecording,
 	writtenReview,

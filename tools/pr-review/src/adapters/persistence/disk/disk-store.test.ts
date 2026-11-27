@@ -1,12 +1,10 @@
 import assert from "node:assert/strict";
-import { Buffer } from "node:buffer";
 import { test as it } from "node:test";
 import { Effect } from "effect";
 import { z } from "zod";
 import { Change } from "../../../domain/change.ts";
 import type { Review } from "../../../domain/review.ts";
 import {
-	probeSample,
 	ruleSample,
 	taskSample,
 	urlSample,
@@ -17,12 +15,11 @@ import type { Probe } from "../../../generated/domain/probe.g.ts";
 import { Rule } from "../../../generated/domain/rule.g.ts";
 import { Workdir } from "../../../generated/domain/workdir.g.ts";
 import { WorkdirFailed } from "../../../generated/domain/workdir-failed.g.ts";
+import { probeIn } from "../../../perimeters/disk.ts";
 import { diskStoreOver, type Files } from "./disk-store.ts";
 
 const workdir: Workdir = Workdir.codec.decode("/work");
-const located = (name: string, place: string): Probe =>
-	probeSample(`${name}.${Buffer.from(place).toString("base64url")}`);
-const probe: Probe = located("probe-1", "/work");
+const probe: Probe = probeIn(workdir, "probe-1");
 const purpose: Rule = ruleSample("Stated purpose");
 const review: Review = Change.of(urlSample(), []).review([
 	taskSample(probe, [purpose, ruleSample("Delete unused")]),
@@ -119,7 +116,7 @@ it("a probe the review does not know appends nothing", async () => {
 	await Effect.runPromise(store.save(workdir, review));
 	const saved = kept.get("/work/review.jsonl");
 	const missing = await Effect.runPromise(
-		Effect.flip(store.append(located("probe-2", "/work"), Verdict.on(purpose))),
+		Effect.flip(store.append(probeIn(workdir, "probe-2"), Verdict.on(purpose))),
 	);
 
 	assert.deepEqual(

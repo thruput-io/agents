@@ -65,7 +65,7 @@ it("an acknowledged sub agent reads its rules, pages and definitions", () => {
 			'"a page"\n',
 			'{"failure":"no-page"}\n',
 			'"a page"\n',
-			"{}\n",
+			'"a definition"\n',
 			'{"failure":"not-defined"}\n',
 		],
 	);

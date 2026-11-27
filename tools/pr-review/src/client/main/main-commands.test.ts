@@ -6,20 +6,26 @@ import {
 	emptyStore,
 	host,
 } from "../../controller/common/stand-in.test-support.ts";
-import { type Commands, run } from "../common/runner.ts";
+import { type Commands, type Printed, run } from "../common/runner.ts";
 import { mainTool } from "./main-commands.ts";
 
 const tool = (): Commands => mainTool(host, emptyStore(), agent);
+
+const standingIn = ({
+	line,
+	exitCode,
+}: Printed): readonly (boolean | number)[] => {
+	const { remaining, posted, postFailed } = JSON.parse(line);
+
+	return [remaining.includes("Stated purpose"), posted, postFailed, exitCode];
+};
 
 it("prepare answers how the new review stands", () => {
 	const printed = Effect.runSync(
 		run(tool(), ["prepare", "https://host.test/change", "/work"]),
 	);
 
-	assert.deepEqual(printed, {
-		line: '{"remaining":[],"posted":false,"postFailed":false}\n',
-		exitCode: 0,
-	});
+	assert.deepEqual(standingIn(printed), [true, false, false, 0]);
 });
 
 it("prepare without a workdir is answered as not valid", () => {
@@ -47,10 +53,10 @@ it("status after prepare answers how the review stands", () => {
 		run(commands, ["prepare", "https://host.test/change", "/work"]),
 	);
 
-	assert.deepEqual(Effect.runSync(run(commands, ["status", "/work"])), {
-		line: '{"remaining":[],"posted":false,"postFailed":false}\n',
-		exitCode: 0,
-	});
+	assert.deepEqual(
+		standingIn(Effect.runSync(run(commands, ["status", "/work"]))),
+		[true, false, false, 0],
+	);
 });
 
 it("-h names every command", () => {

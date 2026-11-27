@@ -22,6 +22,7 @@ import {
 	reportArguments,
 	rulesArguments,
 } from "../generated/perimeters/sub-arguments.g.ts";
+import { probesIn } from "./rulebook.ts";
 
 interface CommandLine {
 	readonly name: string;
@@ -52,8 +53,6 @@ interface ReportCommand {
 interface Decoding<Value> {
 	readonly parse: (text: string) => Value;
 }
-
-const NO_PROBES: Probes = [];
 
 const CommandLineShape = z.tuple([z.string()]).rest(z.string());
 
@@ -99,8 +98,14 @@ const prepareCommandOf = (
 				Effect.all({
 					url: decoded(TargetUrl.codec, url),
 					workdir: decoded(Workdir.codec, workdir),
-					probes: Effect.succeed(NO_PROBES),
-				}),
+				}).pipe(
+					Effect.map(
+						(given): PrepareCommand => ({
+							...given,
+							probes: probesIn(given.workdir),
+						}),
+					),
+				),
 		),
 	);
 

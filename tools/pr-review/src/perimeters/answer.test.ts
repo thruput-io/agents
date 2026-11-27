@@ -68,7 +68,10 @@ it("a status says that posting failed", () => {
 });
 
 it("a definition is answered as an object without properties", () => {
-	assert.deepEqual(definitionAnswer(Definition.codec.decode({})), {});
+	assert.equal(
+		definitionAnswer(Definition.codec.decode("a definition")),
+		"a definition",
+	);
 });
 
 it("a page is answered as its text", () => {

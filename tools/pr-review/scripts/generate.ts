@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { jsonSchemaToZod } from "json-schema-to-zod";
+import { rulebookModule } from "./rulebook.ts";
 
 interface ValueSchema {
 	readonly type: "string" | "object";
@@ -155,4 +156,12 @@ writeFileSync(resolve(perimeters, "sub-arguments.g.ts"), argumentsOf(subTool));
 writeFileSync(
 	resolve(perimeters, "answers.g.ts"),
 	`import { z } from "zod";\n\nexport const failureAnswer = ${jsonSchemaToZod(toolOf("answers.schema.json"), { zodVersion: 4 })};\n`,
+);
+
+writeFileSync(
+	resolve(perimeters, "rulebook.g.ts"),
+	rulebookModule(
+		resolve(root, "../../skills/pr-review/rules"),
+		resolve(root, "probes/probes.yaml"),
+	),
 );
