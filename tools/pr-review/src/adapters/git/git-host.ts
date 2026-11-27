@@ -1,15 +1,12 @@
 import { Effect } from "effect";
 import type { Change } from "../../domain/change.ts";
 import type { Host, NotReviewable } from "../../domain/host.ts";
-import type { HostError } from "../../domain/host-error.ts";
+import { HostError } from "../../domain/host-error.ts";
 import type { TargetUrl } from "../../domain/target-url.ts";
 import type { Workdir } from "../../domain/workdir.ts";
-import {
-	addressOf,
-	changeOfDiff,
-	repositoryIn,
-	unreachableRemote,
-} from "../../perimeters/git.ts";
+import { changeOf } from "../../perimeters/change.ts";
+import { addressOf, repositoryIn } from "./git-address.ts";
+import { pagesOf } from "./git-diff.ts";
 
 type Git = (gitArguments: readonly string[]) => Promise<string>;
 type Asked = (
@@ -21,7 +18,7 @@ const askedOver =
 	(gitArguments: readonly string[]): Effect.Effect<string, HostError> =>
 		Effect.tryPromise({
 			try: (): Promise<string> => git(gitArguments),
-			catch: (): HostError => unreachableRemote(),
+			catch: (): HostError => HostError.create(),
 		});
 
 const cloneOf = (remote: string, workdir: Workdir): readonly string[] => [
@@ -57,7 +54,7 @@ const gitHostOver = (git: Git): Pick<Host, "getChange"> => {
 						),
 					),
 				),
-				Effect.map((diff: string): Change => changeOfDiff(url, diff)),
+				Effect.map((diff: string): Change => changeOf(url, pagesOf(diff))),
 			),
 	};
 };

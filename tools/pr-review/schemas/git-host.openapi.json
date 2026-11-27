@@ -1,0 +1,35 @@
+{
+	"openapi": "3.1.0",
+	"info": {
+		"title": "git-host",
+		"version": "0.0.0",
+		"description": "What the git adapter reads from the address of a change in a plain git repository."
+	},
+	"paths": {},
+	"components": {
+		"schemas": {
+			"GitAddress": {
+				"description": "The parts of the address of a change in a plain git repository",
+				"type": "object",
+				"properties": {
+					"remote": {
+						"description": "The repository the change is fetched from",
+						"type": "string",
+						"minLength": 1
+					},
+					"base": {
+						"description": "The revision the change starts from",
+						"type": "string",
+						"minLength": 1
+					},
+					"head": {
+						"description": "The revision the change ends at",
+						"type": "string",
+						"minLength": 1
+					}
+				},
+				"required": ["remote", "base", "head"]
+			}
+		}
+	}
+}

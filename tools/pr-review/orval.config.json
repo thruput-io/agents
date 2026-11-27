@@ -61,5 +61,26 @@
 				}
 			}
 		}
+	},
+	"git": {
+		"input": {
+			"target": "schemas/git-host.openapi.json"
+		},
+		"output": {
+			"client": "zod",
+			"mode": "single",
+			"schemas": {
+				"path": "src/generated/perimeters",
+				"type": "zod"
+			},
+			"schemaFileExtension": ".g.ts",
+			"indexFiles": false,
+			"namingConvention": "kebab-case",
+			"override": {
+				"zod": {
+					"version": 4
+				}
+			}
+		}
 	}
 }
