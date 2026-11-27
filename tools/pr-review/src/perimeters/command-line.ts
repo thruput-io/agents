@@ -29,8 +29,8 @@ import {
 	ProbeCodec,
 	RuleCodec,
 	TargetUrlCodec,
-	WorkdirCodec,
 } from "./values.ts";
+import { workdirOf } from "./workdir.ts";
 
 interface CommandLine {
 	readonly name: string;
@@ -80,7 +80,7 @@ const prepareCommandOf = (
 			({ url, workdir }): Effect.Effect<PrepareCommand, NotValid> =>
 				Effect.all({
 					url: decoded(TargetUrlCodec, url),
-					workdir: decoded(WorkdirCodec, workdir),
+					workdir: Effect.succeed(workdirOf(workdir)),
 				}).pipe(
 					Effect.map(
 						(given): PrepareCommand => ({
@@ -98,7 +98,7 @@ const statusCommandOf = (
 	namedBy(StatusParams, commandArguments).pipe(
 		Effect.flatMap(
 			({ workdir }): Effect.Effect<Workdir, NotValid> =>
-				decoded(WorkdirCodec, workdir),
+				Effect.succeed(workdirOf(workdir)),
 		),
 	);
 

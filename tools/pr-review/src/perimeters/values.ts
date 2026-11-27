@@ -8,7 +8,6 @@ import { Probe } from "../domain/probe.ts";
 import { Rule } from "../domain/rule.ts";
 import { TargetUrl } from "../domain/target-url.ts";
 import { Usage } from "../domain/usage.ts";
-import { Workdir } from "../domain/workdir.ts";
 import { Workflow } from "../domain/workflow.ts";
 import { Acknowledgement as AcknowledgementShape } from "../generated/domain/acknowledgement.g.ts";
 import { AcknowledgementRequest as AcknowledgementRequestShape } from "../generated/domain/acknowledgement-request.g.ts";
@@ -19,7 +18,6 @@ import { Probe as ProbeShape } from "../generated/domain/probe.g.ts";
 import { Rule as RuleShape } from "../generated/domain/rule.g.ts";
 import { TargetUrl as TargetUrlShape } from "../generated/domain/target-url.g.ts";
 import { Usage as UsageShape } from "../generated/domain/usage.g.ts";
-import { Workdir as WorkdirShape } from "../generated/domain/workdir.g.ts";
 import { Workflow as WorkflowShape } from "../generated/domain/workflow.g.ts";
 
 const AcknowledgementCodec = z.codec(
@@ -80,12 +78,6 @@ const UsageCodec = z.codec(
 	{ decode: Usage.of, encode: Usage.shapeOf },
 );
 
-const WorkdirCodec = z.codec(
-	WorkdirShape,
-	z.custom<Workdir>((value): boolean => value instanceof Workdir),
-	{ decode: Workdir.of, encode: Workdir.shapeOf },
-);
-
 const WorkflowCodec = z.codec(
 	WorkflowShape,
 	z.custom<Workflow>((value): boolean => value instanceof Workflow),
@@ -102,6 +94,5 @@ export {
 	RuleCodec,
 	TargetUrlCodec,
 	UsageCodec,
-	WorkdirCodec,
 	WorkflowCodec,
 };

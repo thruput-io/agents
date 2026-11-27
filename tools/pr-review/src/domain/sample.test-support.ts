@@ -7,6 +7,7 @@ import { Probe } from "../domain/probe.ts";
 import { Rule } from "../domain/rule.ts";
 import { TargetUrl } from "../domain/target-url.ts";
 import { Usage } from "../domain/usage.ts";
+import { Workdir } from "../domain/workdir.ts";
 import { Workflow } from "../domain/workflow.ts";
 import { Instructions } from "./instructions.ts";
 import type { Task } from "./task.ts";
@@ -19,6 +20,9 @@ const instructionsSample = (): Instructions =>
 		usage: Usage.of({}),
 		request: AcknowledgementRequest.of("a request"),
 	});
+
+const workdirSample = (): Workdir =>
+	Reflect.construct(Workdir, [{ path: "/work" }]);
 
 const ruleSample = (id: string): Rule => Rule.of(id);
 
@@ -45,4 +49,5 @@ export {
 	ruleSample,
 	taskSample,
 	urlSample,
+	workdirSample,
 };

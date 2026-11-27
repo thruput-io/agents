@@ -10,8 +10,13 @@
 		"schemas": {
 			"Workdir": {
 				"description": "The directory a review is kept in",
-				"type": "string",
-				"minLength": 1
+				"type": "object",
+				"properties": {
+					"path": {
+						"$ref": "#/components/schemas/WorkdirPath"
+					}
+				},
+				"required": ["path"]
 			},
 			"TargetUrl": {
 				"description": "The address of the change to review",
@@ -59,6 +64,11 @@
 			"Usage": {
 				"description": "How the review tool is called",
 				"type": "object"
+			},
+			"WorkdirPath": {
+				"description": "The path of the directory a review is kept in",
+				"type": "string",
+				"minLength": 1
 			}
 		}
 	}

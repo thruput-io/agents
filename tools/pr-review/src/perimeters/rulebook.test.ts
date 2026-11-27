@@ -12,10 +12,10 @@ import {
 	AcknowledgementRequestCodec,
 	DefinitionCodec,
 	RuleCodec,
-	WorkdirCodec,
 } from "./values.ts";
+import { workdirOf } from "./workdir.ts";
 
-const workdir: Workdir = WorkdirCodec.decode("/work");
+const workdir: Workdir = workdirOf("/work");
 const purpose = probeIn(workdir, "purpose");
 
 const taskOfPurpose = (): readonly Task[] =>

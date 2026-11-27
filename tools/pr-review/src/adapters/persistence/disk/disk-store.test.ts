@@ -16,10 +16,11 @@ import { Verdict } from "../../../domain/verdict.ts";
 import type { Workdir } from "../../../domain/workdir.ts";
 import { WorkdirFailed } from "../../../domain/workdir-failed.ts";
 import { probeIn } from "../../../perimeters/disk.ts";
-import { RuleCodec, WorkdirCodec } from "../../../perimeters/values.ts";
+import { RuleCodec } from "../../../perimeters/values.ts";
+import { workdirOf } from "../../../perimeters/workdir.ts";
 import { diskStoreOver, type Files } from "./disk-store.ts";
 
-const workdir: Workdir = WorkdirCodec.decode("/work");
+const workdir: Workdir = workdirOf("/work");
 const probe: Probe = probeIn(workdir, "probe-1");
 const purpose: Rule = ruleSample("Stated purpose");
 const review: Review = Change.of(urlSample(), []).review([

@@ -1,19 +1,11 @@
 import type { Workdir as WorkdirShape } from "../generated/domain/workdir.g.ts";
 
 class Workdir {
-	private readonly shape: WorkdirShape;
+	declare private readonly path: WorkdirShape["path"];
 
 	private constructor(shape: WorkdirShape) {
-		this.shape = shape;
+		this.path = shape.path;
 		Object.freeze(this);
-	}
-
-	static of(shape: WorkdirShape): Workdir {
-		return new Workdir(shape);
-	}
-
-	static shapeOf(workdir: Workdir): WorkdirShape {
-		return workdir.shape;
 	}
 }
 

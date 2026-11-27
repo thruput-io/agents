@@ -11,10 +11,10 @@ import { NotAssigned } from "../../domain/not-assigned.ts";
 import type { Poster } from "../../domain/posting.ts";
 import type { Review } from "../../domain/review.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
-import { ruleSample } from "../../domain/sample.test-support.ts";
+import { ruleSample, workdirSample } from "../../domain/sample.test-support.ts";
 import type { TargetUrl } from "../../domain/target-url.ts";
 import { Verdict } from "../../domain/verdict.ts";
-import { Workdir } from "../../domain/workdir.ts";
+import type { Workdir } from "../../domain/workdir.ts";
 import {
 	agent,
 	host,
@@ -28,7 +28,7 @@ import { ProgressController } from "./progress-controller.ts";
 
 type Outcome = Parameters<Poster["post"]>[1];
 
-const workdir: Workdir = Workdir.of("/work");
+const workdir: Workdir = workdirSample();
 
 const hasFailedPost = (review: Review): boolean =>
 	review.status().posts.some((post) => post instanceof HostError);

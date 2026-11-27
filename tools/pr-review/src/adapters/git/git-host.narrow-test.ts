@@ -20,8 +20,8 @@ import {
 	AcknowledgementCodec,
 	PageCodec,
 	TargetUrlCodec,
-	WorkdirCodec,
 } from "../../perimeters/values.ts";
+import { workdirOf } from "../../perimeters/workdir.ts";
 import { gitBinary } from "./git-binary.ts";
 import { gitHostOver } from "./git-host.ts";
 
@@ -30,7 +30,7 @@ const sentence =
 	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
 
 const emptyWorkdir = (): Workdir =>
-	WorkdirCodec.decode(mkdtempSync(join(tmpdir(), "narrow-git-")));
+	workdirOf(mkdtempSync(join(tmpdir(), "narrow-git-")));
 
 const firstPageOf = (change: Change): string => {
 	const probe: Probe = probeSample("probe-1");

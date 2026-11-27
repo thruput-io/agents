@@ -17,9 +17,10 @@ import {
 	ruleSample,
 	taskSample,
 	urlSample,
+	workdirSample,
 } from "../../domain/sample.test-support.ts";
 import type { TargetUrl } from "../../domain/target-url.ts";
-import { Workdir } from "../../domain/workdir.ts";
+import type { Workdir } from "../../domain/workdir.ts";
 
 type Outcome = Parameters<Poster["post"]>[1];
 
@@ -93,7 +94,7 @@ const storeWithReview = (): ReviewStore => {
 
 	Effect.runSync(
 		store.save(
-			Workdir.of("/work"),
+			workdirSample(),
 			change.review([taskSample(probe, [purpose, unused])]),
 		),
 	);
