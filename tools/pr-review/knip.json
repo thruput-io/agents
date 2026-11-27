@@ -1,18 +1,18 @@
 {
-  "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": [
-    "src/client/main/review-tool.ts!",
-    "src/client/sub/review-tool-probe.ts!",
-    "src/mock-server/serve.ts",
-    "src/**/*.test.ts",
-    "src/**/*.narrow-test.ts"
-  ],
-  "project": [
-    "src/{client,controller,domain,perimeters,adapters,generated}/**/!(*.test|*.narrow-test|*.test-support).ts!",
-    "src/**/*.ts",
-    "scripts/*.ts"
-  ],
-  "ignoreBinaries": [
-    "semgrep"
-  ]
+	"$schema": "https://unpkg.com/knip@6/schema.json",
+	"entry": [
+		"src/client/main/review-tool.ts!",
+		"src/client/sub/review-tool-probe.ts!",
+		"src/mock-server/serve.ts",
+		"src/**/*.narrow-test.ts"
+	],
+	"project": [
+		"src/**/*.ts!",
+		"!src/**/*.test.ts!",
+		"!src/**/*.narrow-test.ts!",
+		"!src/**/*.test-support.ts!",
+		"!src/architecture.ts!",
+		"scripts/*.ts"
+	],
+	"ignoreBinaries": ["semgrep"]
 }

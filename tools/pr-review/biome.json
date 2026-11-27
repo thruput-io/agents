@@ -1,119 +1,107 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
-  "files": {
-    "includes": [
-      "**",
-      "!references"
-    ]
-  },
-  "vcs": {
-    "enabled": true,
-    "clientKind": "git",
-    "useIgnoreFile": true
-  },
-  "formatter": {
-    "enabled": true,
-    "lineWidth": 120
-  },
-  "assist": {
-    "enabled": true,
-    "actions": {
-      "preset": "all"
-    }
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "a11y": "error",
-      "complexity": "error",
-      "correctness": "error",
-      "nursery": "error",
-      "performance": "error",
-      "security": "error",
-      "style": "error",
-      "suspicious": "error"
-    }
-  },
-  "overrides": [
-    {
-      "includes": [
-        "**"
-      ],
-      "linter": {
-        "rules": {
-          "complexity": {
-            "noExcessiveCognitiveComplexity": {
-              "level": "error",
-              "options": {
-                "maxAllowedComplexity": 10
-              }
-            },
-            "noExcessiveLinesPerFunction": {
-              "level": "error",
-              "options": {
-                "maxLines": 30
-              }
-            },
-            "noExcessiveNestedCallbacks": {
-              "level": "error",
-              "options": {
-                "max": 2
-              }
-            },
-            "useMaxParams": {
-              "level": "error",
-              "options": {
-                "max": 3
-              }
-            }
-          },
-          "correctness": {
-            "noNodejsModules": "off",
-            "useQwikValidLexicalScope": "off"
-          },
-          "style": {
-            "noExcessiveLinesPerFile": {
-              "level": "error",
-              "options": {
-                "maxLines": 200
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "includes": [
-        "scripts/**/*.ts",
-        "src/**/*.test.ts",
-        "src/**/*.narrow-test.ts",
-        "src/**/*.test-support.ts"
-      ],
-      "linter": {
-        "rules": {
-          "complexity": {
-            "noExcessiveCognitiveComplexity": {
-              "level": "error",
-              "options": {
-                "maxAllowedComplexity": 1
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "includes": [
-        "src/client/main/review-tool.ts",
-        "src/client/sub/review-tool-probe.ts"
-      ],
-      "linter": {
-        "rules": {
-          "nursery": {
-            "noProcessExit": "off"
-          }
-        }
-      }
-    }
-  ]
+	"$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
+	"files": {
+		"includes": ["**", "!references"]
+	},
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"a11y": "error",
+			"complexity": "error",
+			"correctness": "error",
+			"nursery": "error",
+			"performance": "error",
+			"security": "error",
+			"style": "error",
+			"suspicious": "error"
+		}
+	},
+	"formatter": {
+		"enabled": true
+	},
+	"overrides": [
+		{
+			"includes": ["**"],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noExcessiveCognitiveComplexity": {
+							"level": "error",
+							"options": {
+								"maxAllowedComplexity": 10
+							}
+						},
+						"noExcessiveLinesPerFunction": {
+							"level": "error",
+							"options": {
+								"maxLines": 30
+							}
+						},
+						"noExcessiveNestedCallbacks": {
+							"level": "error",
+							"options": {
+								"max": 2
+							}
+						},
+						"useMaxParams": {
+							"level": "error",
+							"options": {
+								"max": 3
+							}
+						}
+					},
+					"correctness": {
+						"noNodejsModules": "off",
+						"useQwikValidLexicalScope": "off"
+					},
+					"style": {
+						"noExcessiveLinesPerFile": {
+							"level": "error",
+							"options": {
+								"maxLines": 200
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": [
+				"scripts/**/*.ts",
+				"src/**/*.test.ts",
+				"src/**/*.narrow-test.ts",
+				"src/**/*.test-support.ts"
+			],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noExcessiveCognitiveComplexity": {
+							"level": "error",
+							"options": {
+								"maxAllowedComplexity": 1
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": [
+				"src/client/main/review-tool.ts",
+				"src/client/sub/review-tool-probe.ts"
+			],
+			"linter": {
+				"rules": {
+					"nursery": {
+						"noProcessExit": "off"
+					}
+				}
+			}
+		}
+	]
 }

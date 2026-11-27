@@ -3,15 +3,15 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"generate": "node scripts/generate.ts",
-		"build": "esbuild src/client/main/review-tool.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=../../skills/pr-review/dist/bin/review-tool.mjs && esbuild src/client/sub/review-tool-probe.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=../../skills/pr-review/dist/bin/review-tool-probe.mjs",
+		"generate": "node scripts/generate.ts \"${PROJECT_ROOT:?}\"",
+		"build": "esbuild src/client/main/review-tool.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=\"${PROJECT_ROOT:?}/skills/pr-review/dist/bin/review-tool.mjs\" && esbuild src/client/sub/review-tool-probe.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=\"${PROJECT_ROOT:?}/skills/pr-review/dist/bin/review-tool-probe.mjs\"",
 		"unused:anywhere": "knip",
 		"unused:production": "knip --strict",
-		"lint": "biome check --error-on-warnings",
-		"semgrep": "semgrep scan --error --metrics=off --config p/default --config https://thruput.se/semgrep/all.yaml --config ../../semgrep/pr-review .",
+		"lint": "biome check --error-on-warnings --vcs-root=\"${PROJECT_ROOT:?}\"",
+		"semgrep": "semgrep scan --error --metrics=off --config p/default --config https://thruput.se/semgrep/all.yaml --config \"${PROJECT_ROOT:?}/semgrep/pr-review\" .",
 		"typecheck": "tsc --noEmit",
 		"test": "c8 --all --src src --include 'src/**/*.ts' --exclude 'src/**/*.test.ts' --exclude 'src/**/*.narrow-test.ts' --exclude 'src/**/*.test-support.ts' --exclude 'src/generated/**' --exclude 'src/mock-server/**' --check-coverage --lines 90 --branches 90 --reporter text node --test 'src/**/*.test.ts'",
-		"test:narrow": "PROJECT_ROOT=\"$PWD/../..\" scripts/narrow.sh",
+		"test:narrow": "scripts/narrow.sh",
 		"verify": "npm run generate && npm run build && npm run unused:anywhere && npm run unused:production && npm run lint && npm run semgrep && npm run typecheck && npm test && npm run test:narrow"
 	},
 	"devDependencies": {
