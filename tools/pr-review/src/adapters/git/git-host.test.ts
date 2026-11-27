@@ -7,13 +7,13 @@ import type { TargetUrl } from "../../domain/target-url.ts";
 import { UnknownFormat } from "../../domain/unknown-format.ts";
 import type { Workdir } from "../../domain/workdir.ts";
 import { TargetUrlCodec } from "../../perimeters/values.ts";
-import { workdirIn } from "../../perimeters/workdir.ts";
+import { statusDto } from "../../perimeters/workdir.ts";
 import { type Git, gitHostOver } from "./git-host.ts";
 
 const url: TargetUrl = TargetUrlCodec.decode(
 	"https://host.test/change.git@main..feature",
 );
-const workdir: Workdir = workdirIn({ workdir: "/work" });
+const workdir: Workdir = statusDto({ workdir: "/work" }).toDomain();
 
 it("get change clones the remote into the workdir and takes the diff of the range", async () => {
 	const asked: (readonly string[])[] = [];

@@ -29,6 +29,18 @@
 					}
 				},
 				"required": ["remote", "base", "head"]
+			},
+			"GitCheckout": {
+				"description": "Where the git adapter keeps what it fetches for a review",
+				"type": "object",
+				"properties": {
+					"directory": {
+						"description": "The directory the review is kept in",
+						"type": "string",
+						"minLength": 1
+					}
+				},
+				"required": ["directory"]
 			}
 		}
 	}

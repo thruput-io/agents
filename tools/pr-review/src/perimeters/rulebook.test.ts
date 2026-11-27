@@ -13,9 +13,9 @@ import {
 	DefinitionCodec,
 	RuleCodec,
 } from "./values.ts";
-import { workdirIn } from "./workdir.ts";
+import { statusDto } from "./workdir.ts";
 
-const workdir: Workdir = workdirIn({ workdir: "/work" });
+const workdir: Workdir = statusDto({ workdir: "/work" }).toDomain();
 const purpose = probeIn(workdir, "purpose");
 
 const taskOfPurpose = (): readonly Task[] =>
