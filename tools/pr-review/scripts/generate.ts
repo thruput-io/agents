@@ -2,8 +2,8 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import process from "node:process";
 import { jsonSchemaToZod } from "json-schema-to-zod";
+import { generate } from "orval";
 import { z } from "zod";
-import { writeClient } from "./client.ts";
 import { rulebookModule } from "./rulebook.ts";
 
 interface ValueSchema {
@@ -110,8 +110,6 @@ const signals: DomainDocument = JSON.parse(
 
 const perimeters = resolve(generated, "perimeters");
 
-mkdirSync(resolve(generated, "client/main"), { recursive: true });
-mkdirSync(resolve(generated, "client/sub"), { recursive: true });
 mkdirSync(perimeters, { recursive: true });
 
 writeFileSync(
@@ -122,16 +120,4 @@ writeFileSync(
 	),
 );
 
-await writeClient({
-	name: "review-tool",
-	side: "main",
-	schemas: resolve(root, "schemas"),
-	generated,
-});
-
-await writeClient({
-	name: "review-tool-probe",
-	side: "sub",
-	schemas: resolve(root, "schemas"),
-	generated,
-});
+await generate(resolve(root, "orval.config.json"), root);

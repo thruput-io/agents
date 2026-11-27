@@ -54,6 +54,16 @@ interface Help {
 	readonly commands: Readonly<Record<string, string>>;
 }
 
+interface Described {
+	readonly operationId: string;
+	readonly description: string;
+}
+
+interface ClientDocument {
+	readonly info: { readonly description: string };
+	readonly paths: Readonly<Record<string, Readonly<Record<string, Described>>>>;
+}
+
 type Answer =
 	| Status
 	| Rules
@@ -91,6 +101,18 @@ const a =
 	<Value extends object>(kind: Kind<Value>) =>
 	(value: object): value is Value =>
 		value instanceof kind;
+
+const helpAnswer = ({ info, paths }: ClientDocument): Help => ({
+	description: info.description,
+	commands: Object.fromEntries(
+		Object.values(paths)
+			.flatMap((methods): readonly Described[] => Object.values(methods))
+			.map(({ operationId, description }: Described) => [
+				operationId,
+				description,
+			]),
+	),
+});
 
 const idsOf = (rules: readonly Rule[]): string[] =>
 	rules.map((rule: Rule): string => Rule.codec.encode(rule));
@@ -162,6 +184,7 @@ export type { Answer };
 export {
 	definitionAnswer,
 	failureAnswer,
+	helpAnswer,
 	instructionsAnswer,
 	notReadyAnswer,
 	pageAnswer,

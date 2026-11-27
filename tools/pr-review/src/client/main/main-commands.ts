@@ -1,13 +1,16 @@
 import { Effect } from "effect";
+import document from "../../../schemas/review-tool.openapi.json" with {
+	type: "json",
+};
 import { MainController } from "../../controller/main/main-controller.ts";
 import type { Agent } from "../../domain/agent.ts";
 import type { Host } from "../../domain/host.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
-import { help } from "../../generated/client/main/help.g.ts";
 import type { Workdir } from "../../generated/domain/workdir.g.ts";
 import {
 	type Answer,
 	failureAnswer,
+	helpAnswer,
 	statusAnswer,
 } from "../../perimeters/answer.ts";
 import {
@@ -39,7 +42,8 @@ const mainCommands = (controller: MainController): Commands => ({
 
 const mainTool = (host: Host, store: ReviewStore, agent: Agent): Commands => ({
 	...mainCommands(MainController.over(host, store, agent)),
-	"-h": (): Effect.Effect<Answer, Answer> => Effect.succeed(help),
+	"-h": (): Effect.Effect<Answer, Answer> =>
+		Effect.succeed(helpAnswer(document)),
 });
 
 export { mainTool };

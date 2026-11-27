@@ -4,24 +4,25 @@ import type { Probes } from "../domain/task.ts";
 import { Term } from "../domain/term.ts";
 import { Verdict } from "../domain/verdict.ts";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { NotValid } from "../generated/domain/not-valid.g.ts";
+import type { NotValid } from "../generated/domain/not-valid.g.ts";
 import { Probe } from "../generated/domain/probe.g.ts";
 import { Rule } from "../generated/domain/rule.g.ts";
 import { TargetUrl } from "../generated/domain/target-url.g.ts";
 import { Workdir } from "../generated/domain/workdir.g.ts";
 import {
-	prepareArguments,
-	statusArguments,
-} from "../generated/perimeters/main-arguments.g.ts";
+	PrepareParams,
+	StatusParams,
+} from "../generated/perimeters/review-tool.g.ts";
 import {
-	ackArguments,
-	defineArguments,
-	instructionsArguments,
-	nextArguments,
-	prevArguments,
-	reportArguments,
-	rulesArguments,
-} from "../generated/perimeters/sub-arguments.g.ts";
+	AckParams,
+	DefineParams,
+	InstructionsParams,
+	NextParams,
+	PrevParams,
+	ReportParams,
+	RulesParams,
+} from "../generated/perimeters/review-tool-probe.g.ts";
+import { decoded, namedBy, parsedBy } from "./parsing.ts";
 import { probesIn } from "./rulebook.ts";
 
 interface CommandLine {
@@ -50,29 +51,7 @@ interface ReportCommand {
 	readonly verdict: Verdict;
 }
 
-interface Decoding<Value> {
-	readonly parse: (text: string) => Value;
-}
-
 const CommandLineShape = z.tuple([z.string()]).rest(z.string());
-
-const parsedBy = <Shape>(
-	shape: z.ZodType<Shape>,
-	given: readonly string[],
-): Effect.Effect<Shape, NotValid> =>
-	Effect.try({
-		try: (): Shape => shape.parse(given),
-		catch: (): NotValid => NotValid.create(),
-	});
-
-const decoded = <Value>(
-	codec: Decoding<Value>,
-	text: string,
-): Effect.Effect<Value, NotValid> =>
-	Effect.try({
-		try: (): Value => codec.parse(text),
-		catch: (): NotValid => NotValid.create(),
-	});
 
 const commandLineOf = (
 	given: readonly string[],
@@ -89,12 +68,9 @@ const commandLineOf = (
 const prepareCommandOf = (
 	commandArguments: readonly string[],
 ): Effect.Effect<PrepareCommand, NotValid> =>
-	parsedBy(prepareArguments, commandArguments).pipe(
+	namedBy(PrepareParams, commandArguments).pipe(
 		Effect.flatMap(
-			([url, workdir]: [string, string]): Effect.Effect<
-				PrepareCommand,
-				NotValid
-			> =>
+			({ url, workdir }): Effect.Effect<PrepareCommand, NotValid> =>
 				Effect.all({
 					url: decoded(TargetUrl.codec, url),
 					workdir: decoded(Workdir.codec, workdir),
@@ -112,37 +88,34 @@ const prepareCommandOf = (
 const statusCommandOf = (
 	commandArguments: readonly string[],
 ): Effect.Effect<Workdir, NotValid> =>
-	parsedBy(statusArguments, commandArguments).pipe(
+	namedBy(StatusParams, commandArguments).pipe(
 		Effect.flatMap(
-			([workdir]: [string]): Effect.Effect<Workdir, NotValid> =>
+			({ workdir }): Effect.Effect<Workdir, NotValid> =>
 				decoded(Workdir.codec, workdir),
 		),
 	);
 
 const probeCommandBy =
-	(shape: z.ZodType<[string]>) =>
+	(shape: typeof RulesParams) =>
 	(commandArguments: readonly string[]): Effect.Effect<Probe, NotValid> =>
-		parsedBy(shape, commandArguments).pipe(
+		namedBy(shape, commandArguments).pipe(
 			Effect.flatMap(
-				([probe]: [string]): Effect.Effect<Probe, NotValid> =>
+				({ probe }): Effect.Effect<Probe, NotValid> =>
 					decoded(Probe.codec, probe),
 			),
 		);
 
-const instructionsCommandOf = probeCommandBy(instructionsArguments);
-const rulesCommandOf = probeCommandBy(rulesArguments);
-const nextCommandOf = probeCommandBy(nextArguments);
-const prevCommandOf = probeCommandBy(prevArguments);
+const instructionsCommandOf = probeCommandBy(InstructionsParams);
+const rulesCommandOf = probeCommandBy(RulesParams);
+const nextCommandOf = probeCommandBy(NextParams);
+const prevCommandOf = probeCommandBy(PrevParams);
 
 const defineCommandOf = (
 	commandArguments: readonly string[],
 ): Effect.Effect<DefineCommand, NotValid> =>
-	parsedBy(defineArguments, commandArguments).pipe(
+	namedBy(DefineParams, commandArguments).pipe(
 		Effect.flatMap(
-			([probe, term]: [string, string]): Effect.Effect<
-				DefineCommand,
-				NotValid
-			> =>
+			({ probe, term }): Effect.Effect<DefineCommand, NotValid> =>
 				Effect.all({
 					probe: decoded(Probe.codec, probe),
 					term: decoded(Term.codec, term),
@@ -153,9 +126,9 @@ const defineCommandOf = (
 const ackCommandOf = (
 	commandArguments: readonly string[],
 ): Effect.Effect<AckCommand, NotValid> =>
-	parsedBy(ackArguments, commandArguments).pipe(
+	namedBy(AckParams, commandArguments).pipe(
 		Effect.flatMap(
-			([probe, sent]: [string, string]): Effect.Effect<AckCommand, NotValid> =>
+			({ probe, acknowledgement: sent }): Effect.Effect<AckCommand, NotValid> =>
 				Effect.map(
 					decoded(Probe.codec, probe),
 					(holder: Probe): AckCommand => ({
@@ -169,12 +142,9 @@ const ackCommandOf = (
 const reportCommandOf = (
 	commandArguments: readonly string[],
 ): Effect.Effect<ReportCommand, NotValid> =>
-	parsedBy(reportArguments, commandArguments).pipe(
+	namedBy(ReportParams, commandArguments).pipe(
 		Effect.flatMap(
-			([probe, rule]: [string, string]): Effect.Effect<
-				ReportCommand,
-				NotValid
-			> =>
+			({ probe, rule }): Effect.Effect<ReportCommand, NotValid> =>
 				Effect.all({
 					probe: decoded(Probe.codec, probe),
 					verdict: Effect.map(decoded(Rule.codec, rule), Verdict.on),

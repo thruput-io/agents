@@ -1,0 +1,44 @@
+{
+	"main": {
+		"input": {
+			"target": "schemas/review-tool.openapi.json",
+			"parserOptions": {
+				"externalRefs": {
+					"allow": ["domain.schema.json", "failures.schema.json"]
+				}
+			}
+		},
+		"output": {
+			"client": "zod",
+			"mode": "single",
+			"target": "src/generated/perimeters/review-tool.g.ts",
+			"override": {
+				"zod": {
+					"version": 4,
+					"generateEachHttpStatus": true
+				}
+			}
+		}
+	},
+	"sub": {
+		"input": {
+			"target": "schemas/review-tool-probe.openapi.json",
+			"parserOptions": {
+				"externalRefs": {
+					"allow": ["domain.schema.json", "failures.schema.json"]
+				}
+			}
+		},
+		"output": {
+			"client": "zod",
+			"mode": "single",
+			"target": "src/generated/perimeters/review-tool-probe.g.ts",
+			"override": {
+				"zod": {
+					"version": 4,
+					"generateEachHttpStatus": true
+				}
+			}
+		}
+	}
+}

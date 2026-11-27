@@ -1,4 +1,7 @@
 import { Effect } from "effect";
+import document from "../../../schemas/review-tool-probe.openapi.json" with {
+	type: "json",
+};
 import { BriefingController } from "../../controller/sub/briefing-controller.ts";
 import { PagingController } from "../../controller/sub/paging-controller.ts";
 import { ProgressController } from "../../controller/sub/progress-controller.ts";
@@ -6,7 +9,6 @@ import type { Agent } from "../../domain/agent.ts";
 import type { Host } from "../../domain/host.ts";
 import type { Instructions } from "../../domain/instructions.ts";
 import type { NotRecorded, ReviewStore } from "../../domain/review-store.ts";
-import { help } from "../../generated/client/sub/help.g.ts";
 import type { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
 import type { Probe } from "../../generated/domain/probe.g.ts";
 import type { Rule } from "../../generated/domain/rule.g.ts";
@@ -14,6 +16,7 @@ import {
 	type Answer,
 	definitionAnswer,
 	failureAnswer,
+	helpAnswer,
 	instructionsAnswer,
 	notReadyAnswer,
 	pageAnswer,
@@ -98,7 +101,7 @@ const subTool = (host: Host, store: ReviewStore, agent: Agent): Commands => ({
 	...briefingCommands(BriefingController.over(store)),
 	...pagingCommands(PagingController.over(store)),
 	...progressCommands(ProgressController.over(host, store, agent)),
-	"-h": (): Answered => Effect.succeed(help),
+	"-h": (): Answered => Effect.succeed(helpAnswer(document)),
 });
 
 export { subTool };
