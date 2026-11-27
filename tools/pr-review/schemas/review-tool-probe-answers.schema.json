@@ -1,0 +1,99 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "review-tool-probe-answers",
+	"description": "What each command of a sub agent answers: its answer, or why it failed.",
+	"type": "object",
+	"properties": {
+		"instructions": {
+			"description": "The instructions of the probe",
+			"anyOf": [
+				{
+					"$ref": "answers.schema.json#/$defs/Instructions"
+				},
+				{
+					"$ref": "answers.schema.json"
+				}
+			]
+		},
+		"ack": {
+			"description": "What is left to judge, or the detailed instructions when the acknowledgement is not the one asked for",
+			"anyOf": [
+				{
+					"$ref": "answers.schema.json#/$defs/Standing"
+				},
+				{
+					"$ref": "answers.schema.json#/$defs/Instructions"
+				},
+				{
+					"$ref": "answers.schema.json"
+				}
+			]
+		},
+		"rules": {
+			"description": "The rules of the probe",
+			"anyOf": [
+				{
+					"$ref": "answers.schema.json#/$defs/Rules"
+				},
+				{
+					"$ref": "answers.schema.json"
+				}
+			]
+		},
+		"define": {
+			"description": "The definition of the term",
+			"anyOf": [
+				{
+					"$ref": "domain.schema.json#/$defs/Definition"
+				},
+				{
+					"$ref": "answers.schema.json"
+				}
+			]
+		},
+		"next": {
+			"description": "The next page of the surface",
+			"anyOf": [
+				{
+					"$ref": "domain.schema.json#/$defs/Page"
+				},
+				{
+					"$ref": "answers.schema.json"
+				}
+			]
+		},
+		"prev": {
+			"description": "The previous page of the surface",
+			"anyOf": [
+				{
+					"$ref": "domain.schema.json#/$defs/Page"
+				},
+				{
+					"$ref": "answers.schema.json"
+				}
+			]
+		},
+		"report": {
+			"description": "What is left to judge, or the detailed instructions when they are not acknowledged",
+			"anyOf": [
+				{
+					"$ref": "answers.schema.json#/$defs/Standing"
+				},
+				{
+					"$ref": "answers.schema.json#/$defs/Instructions"
+				},
+				{
+					"$ref": "answers.schema.json"
+				}
+			]
+		},
+		"-h": {
+			"description": "The help of the tool",
+			"anyOf": [
+				{
+					"$ref": "answers.schema.json#/$defs/Help"
+				}
+			]
+		}
+	}
+}
