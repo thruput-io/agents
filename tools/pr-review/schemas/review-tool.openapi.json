@@ -9,7 +9,7 @@
 		"/prepare/{url}/{workdir}": {
 			"post": {
 				"operationId": "prepare",
-				"description": "prepare <url> <workdir>: starts the review of the change at the URL, keeps it in the workdir, and answers how the review stands.",
+				"description": "prepare <url> <workdir>: starts the review of the change at the URL, keeps it in the workdir, and answers how the review stands and the session to ask for its status with.",
 				"parameters": [
 					{
 						"name": "url",
@@ -52,17 +52,17 @@
 				}
 			}
 		},
-		"/status/{workdir}": {
+		"/status/{session}": {
 			"get": {
 				"operationId": "status",
-				"description": "status <workdir>: answers how the review kept in the workdir stands.",
+				"description": "status <session>: answers how the review of the session stands.",
 				"parameters": [
 					{
-						"name": "workdir",
+						"name": "session",
 						"in": "path",
 						"required": true,
 						"schema": {
-							"$ref": "domain.openapi.json#/components/schemas/WorkdirPath"
+							"$ref": "#/components/schemas/Session"
 						}
 					}
 				],
@@ -97,6 +97,9 @@
 				"description": "How a review stands",
 				"type": "object",
 				"properties": {
+					"session": {
+						"$ref": "#/components/schemas/Session"
+					},
 					"remaining": {
 						"description": "The rules not yet judged, by their ids",
 						"type": "array",
@@ -113,7 +116,12 @@
 						"type": "boolean"
 					}
 				},
-				"required": ["remaining", "posted", "postFailed"]
+				"required": ["session", "remaining", "posted", "postFailed"]
+			},
+			"Session": {
+				"description": "What prepare answers for a review, and what status takes to find it again",
+				"type": "string",
+				"minLength": 1
 			}
 		}
 	}

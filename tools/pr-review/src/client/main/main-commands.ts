@@ -11,12 +11,12 @@ import {
 	type Answer,
 	failureAnswer,
 	helpAnswer,
-	statusAnswer,
 } from "../../perimeters/answer.ts";
 import {
 	prepareCommandOf,
 	statusCommandOf,
 } from "../../perimeters/command-line.ts";
+import { statusAnswer } from "../../perimeters/status-answer.ts";
 import type { Commands } from "../common/runner.ts";
 
 const mainCommands = (controller: MainController): Commands => ({
@@ -25,17 +25,19 @@ const mainCommands = (controller: MainController): Commands => ({
 	): Effect.Effect<Answer, Answer> =>
 		prepareCommandOf(commandArguments).pipe(
 			Effect.flatMap(({ url, workdir, probes }) =>
-				controller.prepare(url, workdir, probes),
+				controller
+					.prepare(url, workdir, probes)
+					.pipe(Effect.map(statusAnswer(workdir))),
 			),
-			Effect.map(statusAnswer),
 			Effect.mapError(failureAnswer),
 		),
 	status: (
 		commandArguments: readonly string[],
 	): Effect.Effect<Answer, Answer> =>
 		statusCommandOf(commandArguments).pipe(
-			Effect.flatMap((workdir: Workdir) => controller.status(workdir)),
-			Effect.map(statusAnswer),
+			Effect.flatMap((workdir: Workdir) =>
+				controller.status(workdir).pipe(Effect.map(statusAnswer(workdir))),
+			),
 			Effect.mapError(failureAnswer),
 		),
 });

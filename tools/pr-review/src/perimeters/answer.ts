@@ -12,10 +12,7 @@ import { NotDefined } from "../domain/not-defined.ts";
 import { NotStarted } from "../domain/not-started.ts";
 import { NotValid } from "../domain/not-valid.ts";
 import type { Page } from "../domain/page.ts";
-import type { Post } from "../domain/post.ts";
-import { Posted } from "../domain/posted.ts";
 import { Refused } from "../domain/refused.ts";
-import type { ReviewStatus } from "../domain/review.ts";
 import type { Rule } from "../domain/rule.ts";
 import { TooLarge } from "../domain/too-large.ts";
 import { UnknownFormat } from "../domain/unknown-format.ts";
@@ -130,12 +127,6 @@ const standingAnswer = (remaining: readonly Rule[]): Standing => ({
 	remaining: idsOf(remaining),
 });
 
-const statusAnswer = ({ remaining, posts }: ReviewStatus): Status => ({
-	remaining: idsOf(remaining),
-	posted: posts.some((post: Post): boolean => post instanceof Posted),
-	postFailed: posts.some((post: Post): boolean => post instanceof HostError),
-});
-
 const definitionAnswer = (definition: Definition): Defined =>
 	DefinitionCodec.encode(definition);
 
@@ -195,5 +186,4 @@ export {
 	pageAnswer,
 	rulesAnswer,
 	standingAnswer,
-	statusAnswer,
 };

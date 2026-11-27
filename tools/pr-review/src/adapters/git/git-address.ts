@@ -1,5 +1,4 @@
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
 import type { Effect } from "effect";
 import type { TargetUrl } from "../../domain/target-url.ts";
 import type { UnknownFormat } from "../../domain/unknown-format.ts";
@@ -14,7 +13,7 @@ const RANGE = /^(?<remote>.+)@(?<base>[^.]+(?:\.[^.]+)*)\.\.(?<head>[^.].*)$/u;
 const addressOf = (url: TargetUrl): Effect.Effect<GitAddress, UnknownFormat> =>
 	addressIn(RANGE.exec(TargetUrlCodec.encode(url))?.groups);
 
-const toPath = (workdir: Workdir): URL =>
-	pathToFileURL(join(checkoutOf(workdir).directory, "repository.git"));
+const repositoryOf = (workdir: Workdir): string =>
+	join(checkoutOf(workdir).directory, "repository.git");
 
-export { addressOf, toPath };
+export { addressOf, repositoryOf };

@@ -21,7 +21,7 @@ import {
 	PageCodec,
 	TargetUrlCodec,
 } from "../../perimeters/values.ts";
-import { statusDto } from "../../perimeters/workdir.ts";
+import { prepareDto } from "../../perimeters/workdir.ts";
 import { gitBinary } from "./git-binary.ts";
 import { gitHostOver } from "./git-host.ts";
 
@@ -30,7 +30,7 @@ const sentence =
 	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
 
 const emptyWorkdir = (): Workdir =>
-	statusDto({
+	prepareDto({
 		workdir: mkdtempSync(join(tmpdir(), "narrow-git-")),
 	}).toDomain();
 

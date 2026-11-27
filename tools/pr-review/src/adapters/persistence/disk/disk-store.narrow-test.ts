@@ -18,7 +18,7 @@ import { Verdict } from "../../../domain/verdict.ts";
 import { WorkdirFailed } from "../../../domain/workdir-failed.ts";
 import { probeIn } from "../../../perimeters/disk.ts";
 import { RuleCodec } from "../../../perimeters/values.ts";
-import { statusDto } from "../../../perimeters/workdir.ts";
+import { prepareDto } from "../../../perimeters/workdir.ts";
 import { diskFiles } from "./disk-files.ts";
 import { diskStoreOver } from "./disk-store.ts";
 
@@ -26,7 +26,7 @@ const purpose: Rule = ruleSample("Stated purpose");
 const emptyDirectory = (): string =>
 	mkdtempSync(join(tmpdir(), "narrow-disk-"));
 const probeOf = (directory: string): Probe =>
-	probeIn(statusDto({ workdir: directory }).toDomain(), "probe-1");
+	probeIn(prepareDto({ workdir: directory }).toDomain(), "probe-1");
 const reviewOf = (probe: Probe): Review =>
 	Change.of(urlSample(), []).review([
 		taskSample(probe, [purpose, ruleSample("Delete unused")]),
@@ -35,7 +35,7 @@ const reviewOf = (probe: Probe): Review =>
 it("a review saved on disk and appended to is read back by a store that starts later", async () => {
 	const directory = emptyDirectory();
 	const probe = probeOf(directory);
-	const workdir = statusDto({ workdir: directory }).toDomain();
+	const workdir = prepareDto({ workdir: directory }).toDomain();
 
 	await Effect.runPromise(
 		diskStoreOver(diskFiles).save(workdir, reviewOf(probe)),
@@ -59,7 +59,7 @@ it("an empty directory holds no review", async () => {
 	const missing = await Effect.runPromise(
 		Effect.flip(
 			diskStoreOver(diskFiles).inWorkdir(
-				statusDto({ workdir: emptyDirectory() }).toDomain(),
+				prepareDto({ workdir: emptyDirectory() }).toDomain(),
 			),
 		),
 	);
@@ -72,7 +72,7 @@ it("a review cannot be saved in a directory that does not exist", async () => {
 	const failed = await Effect.runPromise(
 		Effect.flip(
 			diskStoreOver(diskFiles).save(
-				statusDto({ workdir: directory }).toDomain(),
+				prepareDto({ workdir: directory }).toDomain(),
 				reviewOf(probeOf(directory)),
 			),
 		),

@@ -9,7 +9,6 @@ import { NotAssigned } from "../domain/not-assigned.ts";
 import { NotDefined } from "../domain/not-defined.ts";
 import { NotStarted } from "../domain/not-started.ts";
 import { NotValid } from "../domain/not-valid.ts";
-import { Posted } from "../domain/posted.ts";
 import { Refused } from "../domain/refused.ts";
 import {
 	instructionsSample,
@@ -26,7 +25,6 @@ import {
 	pageAnswer,
 	rulesAnswer,
 	standingAnswer,
-	statusAnswer,
 } from "./answer.ts";
 import { DefinitionCodec, PageCodec } from "./values.ts";
 
@@ -47,28 +45,6 @@ it("a standing is answered by the ids of the rules left", () => {
 	assert.deepEqual(standingAnswer([ruleSample("Delete unused")]), {
 		remaining: ["Delete unused"],
 	});
-});
-
-it("a status says what is left and that nothing was posted", () => {
-	const answer = statusAnswer({ remaining: [ruleSample("A rule")], posts: [] });
-
-	assert.deepEqual(answer, {
-		remaining: ["A rule"],
-		posted: false,
-		postFailed: false,
-	});
-});
-
-it("a status says that the review was posted", () => {
-	const answer = statusAnswer({ remaining: [], posts: [Posted.create()] });
-
-	assert.deepEqual(answer, { remaining: [], posted: true, postFailed: false });
-});
-
-it("a status says that posting failed", () => {
-	const answer = statusAnswer({ remaining: [], posts: [HostError.create()] });
-
-	assert.deepEqual(answer, { remaining: [], posted: false, postFailed: true });
 });
 
 it("a definition is answered as an object without properties", () => {

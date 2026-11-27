@@ -15,14 +15,14 @@ import {
 	storedStart,
 } from "./stored-review.ts";
 import { ProbeCodec } from "./values.ts";
-import { paramsOf } from "./workdir.ts";
+import { placeOf } from "./workdir.ts";
 
 const FILE = "review.jsonl";
 const StartLine = jsonOf(StoredStart);
 const RecordingLine = jsonOf(StoredRecording);
 
 const fileIn = (workdir: Workdir): string =>
-	join(paramsOf(workdir).workdir, FILE);
+	join(placeOf(workdir).directory, FILE);
 
 const fileOf = (probe: Probe): string => {
 	const held = ProbeCodec.encode(probe);
@@ -33,7 +33,7 @@ const fileOf = (probe: Probe): string => {
 
 const probeIn = (workdir: Workdir, name: string): Probe =>
 	ProbeCodec.decode(
-		`${name}.${Buffer.from(paramsOf(workdir).workdir).toString("base64url")}`,
+		`${name}.${Buffer.from(placeOf(workdir).directory).toString("base64url")}`,
 	);
 
 const writtenReview = (review: Review): string =>

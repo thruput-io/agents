@@ -3,8 +3,8 @@ import { test as it } from "node:test";
 import { Effect } from "effect";
 import { UnknownFormat } from "../../domain/unknown-format.ts";
 import { TargetUrlCodec } from "../../perimeters/values.ts";
-import { statusDto } from "../../perimeters/workdir.ts";
-import { addressOf, toPath } from "./git-address.ts";
+import { prepareDto } from "../../perimeters/workdir.ts";
+import { addressOf, repositoryOf } from "./git-address.ts";
 
 it("an address names the remote, the base and the head", () => {
 	const url = TargetUrlCodec.decode(
@@ -29,7 +29,7 @@ it("an address without a range is of an unknown format", () => {
 
 it("the repository is kept inside the workdir", () => {
 	assert.equal(
-		toPath(statusDto({ workdir: "/work" }).toDomain()).pathname,
+		repositoryOf(prepareDto({ workdir: "/work" }).toDomain()),
 		"/work/repository.git",
 	);
 });

@@ -1,4 +1,3 @@
-import { fileURLToPath } from "node:url";
 import { Effect } from "effect";
 import type { Change } from "../../domain/change.ts";
 import type { Host, NotReviewable } from "../../domain/host.ts";
@@ -6,7 +5,7 @@ import { HostError } from "../../domain/host-error.ts";
 import type { TargetUrl } from "../../domain/target-url.ts";
 import type { Workdir } from "../../domain/workdir.ts";
 import { changeOf } from "../../perimeters/change.ts";
-import { addressOf, toPath } from "./git-address.ts";
+import { addressOf, repositoryOf } from "./git-address.ts";
 import { pagesOf } from "./git-diff.ts";
 
 type Git = (gitArguments: readonly string[]) => Promise<string>;
@@ -27,12 +26,12 @@ const cloneOf = (remote: string, workdir: Workdir): readonly string[] => [
 	"--quiet",
 	"--bare",
 	remote,
-	fileURLToPath(toPath(workdir)),
+	repositoryOf(workdir),
 ];
 
 const diffOf = (workdir: Workdir, range: string): readonly string[] => [
 	"-C",
-	fileURLToPath(toPath(workdir)),
+	repositoryOf(workdir),
 	"diff",
 	"--unified=3",
 	range,

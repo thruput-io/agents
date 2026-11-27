@@ -143,6 +143,18 @@
 					}
 				},
 				"required": ["probe", "recorded"]
+			},
+			"StoredPlace": {
+				"description": "Where the file of a review is kept",
+				"type": "object",
+				"properties": {
+					"directory": {
+						"description": "The directory that holds the file",
+						"type": "string",
+						"minLength": 1
+					}
+				},
+				"required": ["directory"]
 			}
 		}
 	}

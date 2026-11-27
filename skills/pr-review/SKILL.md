@@ -37,14 +37,15 @@ mkdir -p <workdir>
 <skill>/dist/bin/review-tool.mjs prepare <url> <workdir>
 ```
 
-`prepare` reads the [[Change]] from the host, starts the sub agents, and answers how the review stands. A failure names
+`prepare` reads the [[Change]] from the host, starts the sub agents, and answers how the review stands, with the
+`session` of the review. `status` takes that session; the workdir is never given again. A failure names
 why no review was started: the address is not valid or no host recognises it, the [[Change]] is already reviewed, too
 large or not in a state to review, the host failed, or a sub agent could not be started.
 
 ## 2. Status
 
 ```sh
-<skill>/dist/bin/review-tool.mjs status <workdir>
+<skill>/dist/bin/review-tool.mjs status <session>
 ```
 
 Run `status` until it answers that the review is complete. The sub agents report one [[Verdict]] per [[Rule]]; when the

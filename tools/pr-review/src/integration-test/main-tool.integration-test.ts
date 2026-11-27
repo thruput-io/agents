@@ -1,15 +1,12 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 import { test as it } from "node:test";
 import { fileURLToPath } from "node:url";
-import {
-	Prepare200Response,
-	PrepareDefaultResponse,
-} from "../generated/integration-test/review-tool.g.ts";
+import { PrepareDefaultResponse } from "../generated/integration-test/review-tool.g.ts";
 
 interface Ran {
 	readonly exitCode: number | null;
@@ -21,7 +18,6 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const tool = join(root, "skills/pr-review/dist/bin/review-tool.mjs");
 const mockHost = "http://localhost:8617";
 const served = `${mockHost}/first-review.git@main..first-review`;
-const RULE = /^- id: /gmu;
 
 const ran = (commandArguments: readonly string[]): Ran => {
 	const { status, stdout, stderr } = spawnSync(
@@ -77,11 +73,8 @@ it("prepare for a repository the host does not serve is a host error", () => {
 	);
 });
 
-it("status for a workdir without a review is no review", () => {
-	assert.deepEqual(failureOf(ran(["status", emptyWorkdir()])), [
-		1,
-		"no-review",
-	]);
+it("status for a session that has no review is no review", () => {
+	assert.deepEqual(failureOf(ran(["status", "none"])), [1, "no-review"]);
 });
 
 it("prepare stops where starting the sub agents is not implemented, and answers nothing", () => {
@@ -98,22 +91,5 @@ it("prepare stops where starting the sub agents is not implemented, and answers 
 			complained.includes("not yet implemented: Agent.spawn"),
 		],
 		[1, "", true],
-	);
-});
-
-it("status after that stop shows every rule left to judge and nothing posted", () => {
-	const workdir = emptyWorkdir();
-	const rules = readFileSync(join(root, "rules/Rules.yaml"), "utf8");
-
-	ran(["prepare", served, workdir]);
-
-	const { exitCode, printed } = ran(["status", workdir]);
-	const { remaining, posted, postFailed } = Prepare200Response.parse(
-		JSON.parse(printed),
-	);
-
-	assert.deepEqual(
-		[exitCode, remaining.length, posted, postFailed],
-		[0, [...rules.matchAll(RULE)].length, false, false],
 	);
 });
