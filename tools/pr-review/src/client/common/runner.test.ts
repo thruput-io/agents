@@ -6,18 +6,18 @@ import { type Commands, run } from "./runner.ts";
 
 const commands: Commands = {
 	answering: (): Effect.Effect<Answer, Answer> =>
-		Effect.succeed({ answered: "yes" }),
+		Effect.succeed({ rules: ["yes"] }),
 	refusing: (): Effect.Effect<Answer, Answer> =>
 		Effect.fail({ failure: "refused" }),
 	echoing: (
 		commandArguments: readonly string[],
 	): Effect.Effect<Answer, Answer> =>
-		Effect.succeed({ given: commandArguments.join(" ") }),
+		Effect.succeed({ rules: [commandArguments.join(" ")] }),
 };
 
 it("an answer is printed as JSON with exit code 0", () => {
 	assert.deepEqual(Effect.runSync(run(commands, ["answering"])), {
-		line: '{"answered":"yes"}\n',
+		line: '{"rules":["yes"]}\n',
 		exitCode: 0,
 	});
 });
@@ -31,7 +31,7 @@ it("a failure is printed as JSON with exit code 1", () => {
 
 it("a command is handed the arguments after its name", () => {
 	assert.deepEqual(Effect.runSync(run(commands, ["echoing", "one", "two"])), {
-		line: '{"given":"one two"}\n',
+		line: '{"rules":["one two"]}\n',
 		exitCode: 0,
 	});
 });

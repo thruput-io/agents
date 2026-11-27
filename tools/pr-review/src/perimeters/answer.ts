@@ -24,19 +24,46 @@ import { UnknownFormat } from "../generated/domain/unknown-format.g.ts";
 import { Usage } from "../generated/domain/usage.g.ts";
 import { WorkdirFailed } from "../generated/domain/workdir-failed.g.ts";
 import { Workflow } from "../generated/domain/workflow.g.ts";
-import type { failureAnswer as failureShape } from "../generated/perimeters/answers.g.ts";
 import type {
 	Prepare200Response,
+	PrepareDefaultResponse,
 	Status200Response,
 } from "../generated/perimeters/review-tool.g.ts";
+import type {
+	Ack200Response,
+	AckDefaultResponse,
+	Define200Response,
+	Instructions200Response,
+	Next200Response,
+	Prev200Response,
+	Report200Response,
+	Rules200Response,
+} from "../generated/perimeters/review-tool-probe.g.ts";
+
+type Refusal = z.infer<typeof PrepareDefaultResponse>;
+type Rules = z.infer<typeof Rules200Response>;
+type Standing = z.infer<typeof Ack200Response> &
+	z.infer<typeof Report200Response>;
+type Told = z.infer<typeof Instructions200Response>;
+type Defined = z.infer<typeof Define200Response>;
+type Paged = z.infer<typeof Next200Response> & z.infer<typeof Prev200Response>;
+type NotReady = z.infer<typeof AckDefaultResponse>;
+
+interface Help {
+	readonly description: string;
+	readonly commands: Readonly<Record<string, string>>;
+}
 
 type Answer =
-	| string
-	| boolean
-	| readonly Answer[]
-	| { readonly [key: string]: Answer };
-
-type Refusal = z.infer<typeof failureShape>;
+	| Status
+	| Rules
+	| Standing
+	| Told
+	| Defined
+	| Paged
+	| Refusal
+	| NotReady
+	| Help;
 type Status = z.infer<typeof Prepare200Response> &
 	z.infer<typeof Status200Response>;
 
@@ -68,11 +95,11 @@ const a =
 const idsOf = (rules: readonly Rule[]): string[] =>
 	rules.map((rule: Rule): string => Rule.codec.encode(rule));
 
-const rulesAnswer = (rules: readonly Rule[]): Answer => ({
+const rulesAnswer = (rules: readonly Rule[]): Rules => ({
 	rules: idsOf(rules),
 });
 
-const standingAnswer = (remaining: readonly Rule[]): Answer => ({
+const standingAnswer = (remaining: readonly Rule[]): Standing => ({
 	remaining: idsOf(remaining),
 });
 
@@ -82,19 +109,19 @@ const statusAnswer = ({ remaining, posts }: ReviewStatus): Status => ({
 	postFailed: posts.some((post: Post): boolean => post instanceof HostError),
 });
 
-const definitionAnswer = (definition: Definition): Answer =>
+const definitionAnswer = (definition: Definition): Defined =>
 	Definition.codec.encode(definition);
 
-const pageAnswer = (page: Page): Answer => Page.codec.encode(page);
+const pageAnswer = (page: Page): Paged => Page.codec.encode(page);
 
-const instructionsAnswer = (instructions: Instructions): Answer => ({
+const instructionsAnswer = (instructions: Instructions): Told => ({
 	workflow: Workflow.codec.encode(instructions.workflow()),
 	context: Context.codec.encode(instructions.context()),
 	usage: Usage.codec.encode(instructions.usage()),
 	request: AcknowledgementRequest.codec.encode(instructions.request()),
 });
 
-const failureAnswer: (failure: Failure) => Answer = Match.type<Failure>().pipe(
+const failureAnswer: (failure: Failure) => Refusal = Match.type<Failure>().pipe(
 	Match.when(a(NotValid), (): Refusal => ({ failure: "not-valid" })),
 	Match.when(a(UnknownFormat), (): Refusal => ({ failure: "unknown-format" })),
 	Match.when(
@@ -124,13 +151,12 @@ const isInstructions = (
 const isFailure = (refused: Instructions | Failure): refused is Failure =>
 	!isInstructions(refused);
 
-const notReadyAnswer: (refused: Instructions | Failure) => Answer = Match.type<
-	Instructions | Failure
->().pipe(
-	Match.when(isInstructions, instructionsAnswer),
-	Match.when(isFailure, failureAnswer),
-	Match.exhaustive,
-);
+const notReadyAnswer: (refused: Instructions | Failure) => NotReady =
+	Match.type<Instructions | Failure>().pipe(
+		Match.when(isInstructions, instructionsAnswer),
+		Match.when(isFailure, failureAnswer),
+		Match.exhaustive,
+	);
 
 export type { Answer };
 export {

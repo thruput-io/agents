@@ -108,55 +108,11 @@ const signals: DomainDocument = JSON.parse(
 	writeFileSync(resolve(target, `${kebabOf(name)}.g.ts`), failureOf(name)),
 );
 
-interface CommandSchema {
-	readonly description: string;
-}
-
-interface ToolDocument {
-	readonly description: string;
-	readonly properties: Readonly<Record<string, CommandSchema>>;
-}
-
-const toolOf = (schemaFile: string): ToolDocument =>
-	JSON.parse(readFileSync(resolve(root, "schemas", schemaFile), "utf8"));
-
-const helpOf = (tool: ToolDocument): string => {
-	const help = {
-		description: tool.description,
-		commands: Object.fromEntries(
-			Object.entries(tool.properties).map(([name, { description }]) => [
-				name,
-				description,
-			]),
-		),
-	};
-
-	return `export const help = ${JSON.stringify(help, undefined, "\t")} as const;\n`;
-};
-
-const argumentsOf = (tool: ToolDocument): string =>
-	[
-		'import { z } from "zod";',
-		"",
-		...Object.entries(tool.properties).map(
-			([name, schema]) =>
-				`export const ${name}Arguments = ${jsonSchemaToZod(schema, { zodVersion: 4 })};`,
-		),
-		"",
-	].join("\n");
-
-const subTool = toolOf("review-tool-probe.schema.json");
 const perimeters = resolve(generated, "perimeters");
 
 mkdirSync(resolve(generated, "client/main"), { recursive: true });
 mkdirSync(resolve(generated, "client/sub"), { recursive: true });
 mkdirSync(perimeters, { recursive: true });
-writeFileSync(resolve(generated, "client/sub/help.g.ts"), helpOf(subTool));
-writeFileSync(resolve(perimeters, "sub-arguments.g.ts"), argumentsOf(subTool));
-writeFileSync(
-	resolve(perimeters, "answers.g.ts"),
-	`import { z } from "zod";\n\nexport const failureAnswer = ${jsonSchemaToZod(toolOf("failures.schema.json"), { zodVersion: 4 })};\n`,
-);
 
 writeFileSync(
 	resolve(perimeters, "rulebook.g.ts"),
@@ -169,6 +125,13 @@ writeFileSync(
 await writeClient({
 	name: "review-tool",
 	side: "main",
+	schemas: resolve(root, "schemas"),
+	generated,
+});
+
+await writeClient({
+	name: "review-tool-probe",
+	side: "sub",
 	schemas: resolve(root, "schemas"),
 	generated,
 });
