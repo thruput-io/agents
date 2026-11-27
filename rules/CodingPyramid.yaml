@@ -1,24 +1,24 @@
 levels:
 - id: Value
   specification: |
-    Terminal human intent: a cultural disposition that answers why we hold our [[Axiom]]s and decides weighings below it.
+    Terminal human intent: a disposition we hold that answers why we chose our [[Axiom]]s and decides the weighings below.
 - id: Axiom
   parent: Value
   specification: |
-    An irreducible foundational premise held beyond argument, answering to a [[Value]].
+    An irreducible truth we hold beyond argument.
 - id: Rationale
   parent: Axiom
   specification: |
-    The explanation of how an [[Axiom]] turns into a [[Principle]], weighing competing goods or explaining a causal mechanism with a [[Document reference]] and optional [[SHOULD]] or [[MAY]] solutions.
+    The reasoning that turns an [[Axiom]] into a [[Principle]] by weighing competing goods or explaining a mechanism, backed by a [[Document reference]].
 - id: Principle
   parent: Rationale
   specification: |
-    A well-known, easy-to-remember statement of one to three sentences—such as [[Don't Repeat Yourself]] or [[Contract First]]—stating the stance that guides how we design and write code.
+    A memorable one- to three-sentence statement of how we design and write code, such as [[Don't Repeat Yourself]] or [[Contract First]].
 - id: Rule
   parent: Principle
   specification: |
-    A [[MUST]] or [[MUST NOT]] requirement in a [[Group]] that a [[Developer]] answers with [[Violation]] or non-violation on a diff; [[Architectural Direction]] overrides a [[Rule]].
+    A concrete requirement or prohibition that a [[Developer]] can evaluate on a [[Change]] as a [[Violation]] or non-violation without knowing the specific technology in use.
 - id: Standard
   parent: Rule
   specification: |
-    A [[Rule]] implemented in code for a single technology context so [[Static code analysis]] evaluates and rejects a [[Violation]] deterministically.
+    A [[Rule]] implemented for a specific technology so [[Static code analysis]] can evaluate and reject a [[Violation]] deterministically.
