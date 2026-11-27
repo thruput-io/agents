@@ -1,0 +1,120 @@
+{
+	"openapi": "3.1.0",
+	"info": {
+		"title": "review-tool",
+		"version": "0.0.0",
+		"description": "The commands of the main agent. Each answers one line of JSON and exits with 0 for an answer and 1 for a failure."
+	},
+	"paths": {
+		"/prepare/{url}/{workdir}": {
+			"post": {
+				"operationId": "prepare",
+				"description": "prepare <url> <workdir>: starts the review of the change at the URL, keeps it in the workdir, and answers how the review stands.",
+				"parameters": [
+					{
+						"name": "url",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"$ref": "domain.schema.json#/$defs/TargetUrl"
+						}
+					},
+					{
+						"name": "workdir",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"$ref": "domain.schema.json#/$defs/Workdir"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "How the review that was started stands",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Status"
+								}
+							}
+						}
+					},
+					"default": {
+						"description": "Why the command failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "failures.schema.json"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/status/{workdir}": {
+			"get": {
+				"operationId": "status",
+				"description": "status <workdir>: answers how the review kept in the workdir stands.",
+				"parameters": [
+					{
+						"name": "workdir",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"$ref": "domain.schema.json#/$defs/Workdir"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "How the review stands",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Status"
+								}
+							}
+						}
+					},
+					"default": {
+						"description": "Why the command failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "failures.schema.json"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"Status": {
+				"description": "How a review stands",
+				"type": "object",
+				"properties": {
+					"remaining": {
+						"description": "The rules not yet judged, by their ids",
+						"type": "array",
+						"items": {
+							"$ref": "domain.schema.json#/$defs/Rule"
+						}
+					},
+					"posted": {
+						"description": "Whether the review was posted to the host",
+						"type": "boolean"
+					},
+					"postFailed": {
+						"description": "Whether posting the review failed",
+						"type": "boolean"
+					}
+				},
+				"required": ["remaining", "posted", "postFailed"]
+			}
+		}
+	}
+}

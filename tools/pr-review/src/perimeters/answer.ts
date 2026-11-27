@@ -25,6 +25,10 @@ import { Usage } from "../generated/domain/usage.g.ts";
 import { WorkdirFailed } from "../generated/domain/workdir-failed.g.ts";
 import { Workflow } from "../generated/domain/workflow.g.ts";
 import type { failureAnswer as failureShape } from "../generated/perimeters/answers.g.ts";
+import type {
+	Prepare200Response,
+	Status200Response,
+} from "../generated/perimeters/review-tool.g.ts";
 
 type Answer =
 	| string
@@ -33,6 +37,8 @@ type Answer =
 	| { readonly [key: string]: Answer };
 
 type Refusal = z.infer<typeof failureShape>;
+type Status = z.infer<typeof Prepare200Response> &
+	z.infer<typeof Status200Response>;
 
 type Failure =
 	| NotValid
@@ -59,7 +65,7 @@ const a =
 	(value: object): value is Value =>
 		value instanceof kind;
 
-const idsOf = (rules: readonly Rule[]): readonly string[] =>
+const idsOf = (rules: readonly Rule[]): string[] =>
 	rules.map((rule: Rule): string => Rule.codec.encode(rule));
 
 const rulesAnswer = (rules: readonly Rule[]): Answer => ({
@@ -70,7 +76,7 @@ const standingAnswer = (remaining: readonly Rule[]): Answer => ({
 	remaining: idsOf(remaining),
 });
 
-const statusAnswer = ({ remaining, posts }: ReviewStatus): Answer => ({
+const statusAnswer = ({ remaining, posts }: ReviewStatus): Status => ({
 	remaining: idsOf(remaining),
 	posted: posts.some((post: Post): boolean => post instanceof Posted),
 	postFailed: posts.some((post: Post): boolean => post instanceof HostError),

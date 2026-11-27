@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import process from "node:process";
 import { jsonSchemaToZod } from "json-schema-to-zod";
 import { z } from "zod";
+import { writeClient } from "./client.ts";
 import { rulebookModule } from "./rulebook.ts";
 
 interface ValueSchema {
@@ -144,23 +145,17 @@ const argumentsOf = (tool: ToolDocument): string =>
 		"",
 	].join("\n");
 
-const mainTool = toolOf("review-tool.schema.json");
 const subTool = toolOf("review-tool-probe.schema.json");
 const perimeters = resolve(generated, "perimeters");
 
 mkdirSync(resolve(generated, "client/main"), { recursive: true });
 mkdirSync(resolve(generated, "client/sub"), { recursive: true });
 mkdirSync(perimeters, { recursive: true });
-writeFileSync(resolve(generated, "client/main/help.g.ts"), helpOf(mainTool));
 writeFileSync(resolve(generated, "client/sub/help.g.ts"), helpOf(subTool));
-writeFileSync(
-	resolve(perimeters, "main-arguments.g.ts"),
-	argumentsOf(mainTool),
-);
 writeFileSync(resolve(perimeters, "sub-arguments.g.ts"), argumentsOf(subTool));
 writeFileSync(
 	resolve(perimeters, "answers.g.ts"),
-	`import { z } from "zod";\n\nexport const failureAnswer = ${jsonSchemaToZod(toolOf("answers.schema.json"), { zodVersion: 4 })};\n`,
+	`import { z } from "zod";\n\nexport const failureAnswer = ${jsonSchemaToZod(toolOf("failures.schema.json"), { zodVersion: 4 })};\n`,
 );
 
 writeFileSync(
@@ -170,3 +165,10 @@ writeFileSync(
 		resolve(root, "probes/probes.yaml"),
 	),
 );
+
+await writeClient({
+	name: "review-tool",
+	side: "main",
+	schemas: resolve(root, "schemas"),
+	generated,
+});

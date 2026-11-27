@@ -1,7 +1,29 @@
 {
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"title": "Failures",
-	"description": "The reasons a command of the review tool can fail. A failure carries no data and is made in code.",
+	"description": "The reasons a command of the review tool can fail, and what a command answers when it does. A failure carries no data and is made in code.",
+	"type": "object",
+	"properties": {
+		"failure": {
+			"description": "Why the command failed",
+			"enum": [
+				"not-valid",
+				"unknown-format",
+				"already-reviewed",
+				"too-large",
+				"refused",
+				"host-error",
+				"not-started",
+				"no-review",
+				"not-defined",
+				"not-assigned",
+				"no-page",
+				"not-acknowledged",
+				"workdir-failed"
+			]
+		}
+	},
+	"required": ["failure"],
 	"$defs": {
 		"NotStarted": {
 			"description": "A sub agent could not be started",
