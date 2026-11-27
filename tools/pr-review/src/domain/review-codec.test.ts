@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { Forward } from "../generated/domain/forward.g.ts";
-import { HostError } from "../generated/domain/host-error.g.ts";
 import { Page } from "../generated/domain/page.g.ts";
-import { Posted } from "../generated/domain/posted.g.ts";
 import type { Probe } from "../generated/domain/probe.g.ts";
 import { Rule } from "../generated/domain/rule.g.ts";
 import { Change } from "./change.ts";
+import { Forward } from "./forward.ts";
+import { HostError } from "./host-error.ts";
+import { Posted } from "./posted.ts";
 import { Review } from "./review.ts";
 import {
 	pageSample,

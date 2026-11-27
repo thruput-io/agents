@@ -1,13 +1,13 @@
 import type { Effect } from "effect";
-import type { AlreadyReviewed } from "../generated/domain/already-reviewed.g.ts";
-import type { HostError } from "../generated/domain/host-error.g.ts";
-import type { Refused } from "../generated/domain/refused.g.ts";
 import type { TargetUrl } from "../generated/domain/target-url.g.ts";
-import type { TooLarge } from "../generated/domain/too-large.g.ts";
-import type { UnknownFormat } from "../generated/domain/unknown-format.g.ts";
 import type { Workdir } from "../generated/domain/workdir.g.ts";
+import type { AlreadyReviewed } from "./already-reviewed.ts";
 import type { Change } from "./change.ts";
+import type { HostError } from "./host-error.ts";
 import type { Poster } from "./posting.ts";
+import type { Refused } from "./refused.ts";
+import type { TooLarge } from "./too-large.ts";
+import type { UnknownFormat } from "./unknown-format.ts";
 
 type NotReviewable =
 	| UnknownFormat

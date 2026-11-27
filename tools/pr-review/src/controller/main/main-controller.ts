@@ -2,14 +2,14 @@ import { Effect } from "effect";
 import type { Agent } from "../../domain/agent.ts";
 import type { Change } from "../../domain/change.ts";
 import type { Host, NotReviewable } from "../../domain/host.ts";
+import type { NoReview } from "../../domain/no-review.ts";
+import type { NotStarted } from "../../domain/not-started.ts";
 import type { Review, ReviewStatus } from "../../domain/review.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
 import type { Probes } from "../../domain/task.ts";
-import type { NoReview } from "../../generated/domain/no-review.g.ts";
-import type { NotStarted } from "../../generated/domain/not-started.g.ts";
+import type { WorkdirFailed } from "../../domain/workdir-failed.ts";
 import type { TargetUrl } from "../../generated/domain/target-url.g.ts";
 import type { Workdir } from "../../generated/domain/workdir.g.ts";
-import type { WorkdirFailed } from "../../generated/domain/workdir-failed.g.ts";
 
 class MainController {
 	private readonly host: Host;

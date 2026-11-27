@@ -1,11 +1,11 @@
 import { Effect } from "effect";
 import type { Definition } from "../generated/domain/definition.g.ts";
-import type { NoPage } from "../generated/domain/no-page.g.ts";
-import type { NotAcknowledged } from "../generated/domain/not-acknowledged.g.ts";
-import { NotDefined } from "../generated/domain/not-defined.g.ts";
 import type { Page } from "../generated/domain/page.g.ts";
 import type { Rule } from "../generated/domain/rule.g.ts";
 import type { Instructions } from "./instructions.ts";
+import type { NoPage } from "./no-page.ts";
+import type { NotAcknowledged } from "./not-acknowledged.ts";
+import { NotDefined } from "./not-defined.ts";
 import type { Defined } from "./task.ts";
 import type { Term } from "./term.ts";
 

@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import type { z } from "zod";
-import { NotValid } from "../generated/domain/not-valid.g.ts";
+import { NotValid } from "../domain/not-valid.ts";
 
 interface Decoding<Value> {
 	readonly parse: (text: string) => Value;

@@ -1,11 +1,11 @@
 import { Buffer } from "node:buffer";
 import { join } from "node:path";
+import { NoReview } from "../domain/no-review.ts";
 import { type Recording, RecordingShape } from "../domain/recording.ts";
 import { type Recorded, Review } from "../domain/review.ts";
-import { NoReview } from "../generated/domain/no-review.g.ts";
+import { WorkdirFailed } from "../domain/workdir-failed.ts";
 import { Probe } from "../generated/domain/probe.g.ts";
 import { Workdir } from "../generated/domain/workdir.g.ts";
-import { WorkdirFailed } from "../generated/domain/workdir-failed.g.ts";
 
 const FILE = "review.jsonl";
 

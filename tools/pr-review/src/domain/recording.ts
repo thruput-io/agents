@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { Back } from "../generated/domain/back.g.ts";
-import { Forward } from "../generated/domain/forward.g.ts";
 import { Probe } from "../generated/domain/probe.g.ts";
+import { Back } from "./back.ts";
+import { Forward } from "./forward.ts";
 import { PostShape } from "./post.ts";
 import { Verdict } from "./verdict.ts";
 

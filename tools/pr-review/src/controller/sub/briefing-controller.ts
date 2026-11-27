@@ -1,12 +1,12 @@
 import { Effect } from "effect";
 import type { Assignment } from "../../domain/assignment.ts";
 import type { Instructions } from "../../domain/instructions.ts";
+import type { NoReview } from "../../domain/no-review.ts";
+import type { NotAcknowledged } from "../../domain/not-acknowledged.ts";
+import type { NotDefined } from "../../domain/not-defined.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
 import type { Term } from "../../domain/term.ts";
 import type { Definition } from "../../generated/domain/definition.g.ts";
-import type { NoReview } from "../../generated/domain/no-review.g.ts";
-import type { NotAcknowledged } from "../../generated/domain/not-acknowledged.g.ts";
-import type { NotDefined } from "../../generated/domain/not-defined.g.ts";
 import type { Probe } from "../../generated/domain/probe.g.ts";
 import type { Rule } from "../../generated/domain/rule.g.ts";
 

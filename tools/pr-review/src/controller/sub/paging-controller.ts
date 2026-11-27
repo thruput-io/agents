@@ -1,12 +1,12 @@
 import { Effect } from "effect";
 import type { Assignment, Entry } from "../../domain/assignment.ts";
+import { Back } from "../../domain/back.ts";
+import { Forward } from "../../domain/forward.ts";
+import type { NoPage } from "../../domain/no-page.ts";
+import type { NoReview } from "../../domain/no-review.ts";
+import type { NotAcknowledged } from "../../domain/not-acknowledged.ts";
 import type { Review } from "../../domain/review.ts";
 import type { NotRecorded, ReviewStore } from "../../domain/review-store.ts";
-import { Back } from "../../generated/domain/back.g.ts";
-import { Forward } from "../../generated/domain/forward.g.ts";
-import type { NoPage } from "../../generated/domain/no-page.g.ts";
-import type { NoReview } from "../../generated/domain/no-review.g.ts";
-import type { NotAcknowledged } from "../../generated/domain/not-acknowledged.g.ts";
 import type { Page } from "../../generated/domain/page.g.ts";
 import type { Probe } from "../../generated/domain/probe.g.ts";
 

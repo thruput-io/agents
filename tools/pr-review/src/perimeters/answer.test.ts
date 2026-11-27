@@ -1,25 +1,25 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
+import { AlreadyReviewed } from "../domain/already-reviewed.ts";
+import { HostError } from "../domain/host-error.ts";
+import { NoPage } from "../domain/no-page.ts";
+import { NoReview } from "../domain/no-review.ts";
+import { NotAcknowledged } from "../domain/not-acknowledged.ts";
+import { NotAssigned } from "../domain/not-assigned.ts";
+import { NotDefined } from "../domain/not-defined.ts";
+import { NotStarted } from "../domain/not-started.ts";
+import { NotValid } from "../domain/not-valid.ts";
+import { Posted } from "../domain/posted.ts";
+import { Refused } from "../domain/refused.ts";
 import {
 	instructionsSample,
 	ruleSample,
 } from "../domain/sample.test-support.ts";
-import { AlreadyReviewed } from "../generated/domain/already-reviewed.g.ts";
+import { TooLarge } from "../domain/too-large.ts";
+import { UnknownFormat } from "../domain/unknown-format.ts";
+import { WorkdirFailed } from "../domain/workdir-failed.ts";
 import { Definition } from "../generated/domain/definition.g.ts";
-import { HostError } from "../generated/domain/host-error.g.ts";
-import { NoPage } from "../generated/domain/no-page.g.ts";
-import { NoReview } from "../generated/domain/no-review.g.ts";
-import { NotAcknowledged } from "../generated/domain/not-acknowledged.g.ts";
-import { NotAssigned } from "../generated/domain/not-assigned.g.ts";
-import { NotDefined } from "../generated/domain/not-defined.g.ts";
-import { NotStarted } from "../generated/domain/not-started.g.ts";
-import { NotValid } from "../generated/domain/not-valid.g.ts";
 import { Page } from "../generated/domain/page.g.ts";
-import { Posted } from "../generated/domain/posted.g.ts";
-import { Refused } from "../generated/domain/refused.g.ts";
-import { TooLarge } from "../generated/domain/too-large.g.ts";
-import { UnknownFormat } from "../generated/domain/unknown-format.g.ts";
-import { WorkdirFailed } from "../generated/domain/workdir-failed.g.ts";
 import {
 	definitionAnswer,
 	failureAnswer,

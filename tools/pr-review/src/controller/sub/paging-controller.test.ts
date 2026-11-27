@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
+import { NoPage } from "../../domain/no-page.ts";
+import { NotAcknowledged } from "../../domain/not-acknowledged.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
-import { NoPage } from "../../generated/domain/no-page.g.ts";
-import { NotAcknowledged } from "../../generated/domain/not-acknowledged.g.ts";
 import { Page } from "../../generated/domain/page.g.ts";
 import {
 	probe,

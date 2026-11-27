@@ -1,7 +1,7 @@
 {
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"title": "Failures",
-	"description": "The reasons a command of the review tool can fail, and what a command answers when it does. A failure carries no data and is made in code.",
+	"description": "What a command of the review tool answers when it fails.",
 	"type": "object",
 	"properties": {
 		"failure": {
@@ -23,59 +23,5 @@
 			]
 		}
 	},
-	"required": ["failure"],
-	"$defs": {
-		"NotStarted": {
-			"description": "A sub agent could not be started",
-			"type": "object"
-		},
-		"NoReview": {
-			"description": "Nothing is under review here",
-			"type": "object"
-		},
-		"UnknownFormat": {
-			"description": "No host recognises the address",
-			"type": "object"
-		},
-		"AlreadyReviewed": {
-			"description": "The change was reviewed before",
-			"type": "object"
-		},
-		"TooLarge": {
-			"description": "The change is over a limit",
-			"type": "object"
-		},
-		"Refused": {
-			"description": "The change is not in a state to review",
-			"type": "object"
-		},
-		"HostError": {
-			"description": "The host failed",
-			"type": "object"
-		},
-		"NotValid": {
-			"description": "What was given does not make a valid value",
-			"type": "object"
-		},
-		"NotDefined": {
-			"description": "Nothing declares the term",
-			"type": "object"
-		},
-		"NotAssigned": {
-			"description": "The rule is not one of the probe's rules",
-			"type": "object"
-		},
-		"NoPage": {
-			"description": "The surface has no page there",
-			"type": "object"
-		},
-		"NotAcknowledged": {
-			"description": "The instructions are not acknowledged yet",
-			"type": "object"
-		},
-		"WorkdirFailed": {
-			"description": "The workdir could not be read or written",
-			"type": "object"
-		}
-	}
+	"required": ["failure"]
 }

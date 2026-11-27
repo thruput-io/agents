@@ -2,10 +2,10 @@ import { join } from "node:path";
 import { Effect } from "effect";
 import { z } from "zod";
 import { Change } from "../domain/change.ts";
-import { HostError } from "../generated/domain/host-error.g.ts";
+import { HostError } from "../domain/host-error.ts";
+import { UnknownFormat } from "../domain/unknown-format.ts";
 import { Page } from "../generated/domain/page.g.ts";
 import { TargetUrl } from "../generated/domain/target-url.g.ts";
-import { UnknownFormat } from "../generated/domain/unknown-format.g.ts";
 import { Workdir } from "../generated/domain/workdir.g.ts";
 
 interface Address {

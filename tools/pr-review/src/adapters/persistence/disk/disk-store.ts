@@ -1,11 +1,11 @@
 import { Effect } from "effect";
 import type { Assignment } from "../../../domain/assignment.ts";
+import type { NoReview } from "../../../domain/no-review.ts";
 import type { Recorded, Review } from "../../../domain/review.ts";
 import type { NotRecorded, ReviewStore } from "../../../domain/review-store.ts";
-import type { NoReview } from "../../../generated/domain/no-review.g.ts";
+import type { WorkdirFailed } from "../../../domain/workdir-failed.ts";
 import type { Probe } from "../../../generated/domain/probe.g.ts";
 import type { Workdir } from "../../../generated/domain/workdir.g.ts";
-import type { WorkdirFailed } from "../../../generated/domain/workdir-failed.g.ts";
 import {
 	fileIn,
 	fileOf,

@@ -1,7 +1,7 @@
 import { Match } from "effect";
 import { z } from "zod";
-import { HostError } from "../generated/domain/host-error.g.ts";
-import { Posted } from "../generated/domain/posted.g.ts";
+import { HostError } from "./host-error.ts";
+import { Posted } from "./posted.ts";
 
 type Post = Posted | HostError;
 const POSTS = {

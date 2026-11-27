@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
+import { NoReview } from "../../domain/no-review.ts";
+import { NotAcknowledged } from "../../domain/not-acknowledged.ts";
+import { NotDefined } from "../../domain/not-defined.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
 import { Term } from "../../domain/term.ts";
-import { NoReview } from "../../generated/domain/no-review.g.ts";
-import { NotAcknowledged } from "../../generated/domain/not-acknowledged.g.ts";
-import { NotDefined } from "../../generated/domain/not-defined.g.ts";
 import {
 	emptyStore,
 	probe,

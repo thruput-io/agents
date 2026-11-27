@@ -76,38 +76,12 @@ const valueModuleOf = {
 		].join("\n"),
 };
 
-const failureOf = (name: string): string =>
-	[
-		`export class ${name} {`,
-		"\tdeclare private readonly nominal: never;",
-		"\tprivate constructor() {",
-		"\t\tObject.freeze(this);",
-		"\t}",
-		`\tstatic create(): ${name} {`,
-		`\t\treturn new ${name}();`,
-		"\t}",
-		"}",
-		"",
-	].join("\n");
-
-const failures: DomainDocument = JSON.parse(
-	readFileSync(resolve(root, "schemas/failures.schema.json"), "utf8"),
-);
-
 Object.entries(document.$defs).map(([name, schema]) =>
 	writeFileSync(
 		resolve(target, `${kebabOf(name)}.g.ts`),
 		valueModuleOf[schema.type](name, schema),
 	),
 );
-const signals: DomainDocument = JSON.parse(
-	readFileSync(resolve(root, "schemas/signals.schema.json"), "utf8"),
-);
-
-[...Object.keys(failures.$defs), ...Object.keys(signals.$defs)].map((name) =>
-	writeFileSync(resolve(target, `${kebabOf(name)}.g.ts`), failureOf(name)),
-);
-
 const perimeters = resolve(generated, "perimeters");
 
 mkdirSync(perimeters, { recursive: true });

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
-import { NotAssigned } from "../generated/domain/not-assigned.g.ts";
+import { NotAssigned } from "./not-assigned.ts";
 import { ruleSample } from "./sample.test-support.ts";
 import { Verdict } from "./verdict.ts";
 

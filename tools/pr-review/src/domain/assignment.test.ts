@@ -2,14 +2,14 @@ import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { Back } from "../generated/domain/back.g.ts";
-import { Forward } from "../generated/domain/forward.g.ts";
-import { NoPage } from "../generated/domain/no-page.g.ts";
-import { NotAcknowledged } from "../generated/domain/not-acknowledged.g.ts";
-import { NotDefined } from "../generated/domain/not-defined.g.ts";
 import type { Page } from "../generated/domain/page.g.ts";
 import type { Rule } from "../generated/domain/rule.g.ts";
 import { Assignment } from "./assignment.ts";
+import { Back } from "./back.ts";
+import { Forward } from "./forward.ts";
+import { NoPage } from "./no-page.ts";
+import { NotAcknowledged } from "./not-acknowledged.ts";
+import { NotDefined } from "./not-defined.ts";
 import {
 	pageSample,
 	probeSample,

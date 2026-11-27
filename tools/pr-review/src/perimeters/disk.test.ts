@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Change } from "../domain/change.ts";
+import { NoReview } from "../domain/no-review.ts";
 import type { Review } from "../domain/review.ts";
 import {
 	probeSample,
@@ -9,10 +10,9 @@ import {
 	urlSample,
 } from "../domain/sample.test-support.ts";
 import { Verdict } from "../domain/verdict.ts";
-import { NoReview } from "../generated/domain/no-review.g.ts";
+import { WorkdirFailed } from "../domain/workdir-failed.ts";
 import { Rule } from "../generated/domain/rule.g.ts";
 import { Workdir } from "../generated/domain/workdir.g.ts";
-import { WorkdirFailed } from "../generated/domain/workdir-failed.g.ts";
 import {
 	fileIn,
 	fileOf,

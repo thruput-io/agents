@@ -1,6 +1,6 @@
 import type { Effect } from "effect";
-import type { HostError } from "../generated/domain/host-error.g.ts";
 import type { TargetUrl } from "../generated/domain/target-url.g.ts";
+import type { HostError } from "./host-error.ts";
 import type { Verdict } from "./verdict.ts";
 
 interface Outcome {

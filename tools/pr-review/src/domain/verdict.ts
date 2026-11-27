@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { z } from "zod";
-import { NotAssigned } from "../generated/domain/not-assigned.g.ts";
 import { Rule } from "../generated/domain/rule.g.ts";
+import { NotAssigned } from "./not-assigned.ts";
 
 class Verdict {
 	private readonly rule: Rule;

@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { Back } from "../generated/domain/back.g.ts";
-import { Forward } from "../generated/domain/forward.g.ts";
-import { HostError } from "../generated/domain/host-error.g.ts";
-import { Posted } from "../generated/domain/posted.g.ts";
+import { Back } from "./back.ts";
+import { Forward } from "./forward.ts";
+import { HostError } from "./host-error.ts";
+import { Posted } from "./posted.ts";
 import { RecordingShape } from "./recording.ts";
 import { probeSample, ruleSample } from "./sample.test-support.ts";
 import { Verdict } from "./verdict.ts";

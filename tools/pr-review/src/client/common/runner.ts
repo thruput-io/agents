@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { NotValid } from "../../generated/domain/not-valid.g.ts";
+import { NotValid } from "../../domain/not-valid.ts";
 import { type Answer, failureAnswer } from "../../perimeters/answer.ts";
 import {
 	type CommandLine,

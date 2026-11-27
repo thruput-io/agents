@@ -1,10 +1,10 @@
 import { Effect } from "effect";
 import { z } from "zod";
+import type { NotValid } from "../domain/not-valid.ts";
 import type { Probes } from "../domain/task.ts";
 import { Term } from "../domain/term.ts";
 import { Verdict } from "../domain/verdict.ts";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import type { NotValid } from "../generated/domain/not-valid.g.ts";
 import { Probe } from "../generated/domain/probe.g.ts";
 import { Rule } from "../generated/domain/rule.g.ts";
 import { TargetUrl } from "../generated/domain/target-url.g.ts";

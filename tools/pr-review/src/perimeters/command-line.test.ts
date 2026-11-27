@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
+import { NotValid } from "../domain/not-valid.ts";
 import { ruleSample } from "../domain/sample.test-support.ts";
 import { Term } from "../domain/term.ts";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { NotValid } from "../generated/domain/not-valid.g.ts";
 import { Probe } from "../generated/domain/probe.g.ts";
 import { TargetUrl } from "../generated/domain/target-url.g.ts";
 import { Workdir } from "../generated/domain/workdir.g.ts";

@@ -5,6 +5,9 @@ import type { Agent } from "../../domain/agent.ts";
 import type { Assignment } from "../../domain/assignment.ts";
 import { Change } from "../../domain/change.ts";
 import type { Host, NotReviewable } from "../../domain/host.ts";
+import { HostError } from "../../domain/host-error.ts";
+import { NoReview } from "../../domain/no-review.ts";
+import { NotStarted } from "../../domain/not-started.ts";
 import type { Poster } from "../../domain/posting.ts";
 import {
 	probeSample,
@@ -13,12 +16,9 @@ import {
 	urlSample,
 } from "../../domain/sample.test-support.ts";
 import type { Probes } from "../../domain/task.ts";
-import { HostError } from "../../generated/domain/host-error.g.ts";
-import { NoReview } from "../../generated/domain/no-review.g.ts";
-import { NotStarted } from "../../generated/domain/not-started.g.ts";
+import { UnknownFormat } from "../../domain/unknown-format.ts";
 import type { Rule } from "../../generated/domain/rule.g.ts";
 import type { TargetUrl } from "../../generated/domain/target-url.g.ts";
-import { UnknownFormat } from "../../generated/domain/unknown-format.g.ts";
 import { Workdir } from "../../generated/domain/workdir.g.ts";
 import { emptyStore } from "../common/stand-in.test-support.ts";
 import { MainController } from "./main-controller.ts";

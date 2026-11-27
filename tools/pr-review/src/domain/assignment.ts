@@ -1,14 +1,14 @@
 import { Effect, Match } from "effect";
 import { z } from "zod";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { Back } from "../generated/domain/back.g.ts";
-import { Forward } from "../generated/domain/forward.g.ts";
-import { NoPage } from "../generated/domain/no-page.g.ts";
-import { NotAcknowledged } from "../generated/domain/not-acknowledged.g.ts";
 import { Page } from "../generated/domain/page.g.ts";
 import type { Rule } from "../generated/domain/rule.g.ts";
+import { Back } from "./back.ts";
 import { Briefing } from "./briefing.ts";
+import { Forward } from "./forward.ts";
 import type { Instructions } from "./instructions.ts";
+import { NoPage } from "./no-page.ts";
+import { NotAcknowledged } from "./not-acknowledged.ts";
 import { type Task, TaskShape } from "./task.ts";
 import { Verdict } from "./verdict.ts";
 

@@ -3,6 +3,8 @@ import type { Agent } from "../../domain/agent.ts";
 import type { Assignment } from "../../domain/assignment.ts";
 import { Change } from "../../domain/change.ts";
 import type { Host, NotReviewable } from "../../domain/host.ts";
+import type { HostError } from "../../domain/host-error.ts";
+import { NoReview } from "../../domain/no-review.ts";
 import type { Poster } from "../../domain/posting.ts";
 import type { Recorded, Review } from "../../domain/review.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
@@ -14,8 +16,6 @@ import {
 	urlSample,
 } from "../../domain/sample.test-support.ts";
 import { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
-import type { HostError } from "../../generated/domain/host-error.g.ts";
-import { NoReview } from "../../generated/domain/no-review.g.ts";
 import type { Probe } from "../../generated/domain/probe.g.ts";
 import type { Rule } from "../../generated/domain/rule.g.ts";
 import type { TargetUrl } from "../../generated/domain/target-url.g.ts";

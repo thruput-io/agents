@@ -1,10 +1,10 @@
 import type { Effect } from "effect";
-import type { NoReview } from "../generated/domain/no-review.g.ts";
 import type { Probe } from "../generated/domain/probe.g.ts";
 import type { Workdir } from "../generated/domain/workdir.g.ts";
-import type { WorkdirFailed } from "../generated/domain/workdir-failed.g.ts";
 import type { Assignment } from "./assignment.ts";
+import type { NoReview } from "./no-review.ts";
 import type { Recorded, Review } from "./review.ts";
+import type { WorkdirFailed } from "./workdir-failed.ts";
 
 type NotRecorded = NoReview | WorkdirFailed;
 

@@ -5,14 +5,14 @@ import { join } from "node:path";
 import { test as it } from "node:test";
 import { Effect } from "effect";
 import type { Change } from "../../domain/change.ts";
+import { Forward } from "../../domain/forward.ts";
+import { HostError } from "../../domain/host-error.ts";
 import {
 	probeSample,
 	ruleSample,
 	taskSample,
 } from "../../domain/sample.test-support.ts";
 import { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
-import { Forward } from "../../generated/domain/forward.g.ts";
-import { HostError } from "../../generated/domain/host-error.g.ts";
 import { Page } from "../../generated/domain/page.g.ts";
 import type { Probe } from "../../generated/domain/probe.g.ts";
 import { TargetUrl } from "../../generated/domain/target-url.g.ts";
