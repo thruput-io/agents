@@ -1,11 +1,15 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
-import { pathOf, workdirOf } from "./workdir.ts";
+import { paramsOf, workdirIn } from "./workdir.ts";
 
-it("a workdir gives back the path it was made from", () => {
-	assert.equal(pathOf(workdirOf("/work")), "/work");
+it("a workdir gives back the parameters it was made from", () => {
+	assert.deepEqual(paramsOf(workdirIn({ workdir: "/work" })), {
+		workdir: "/work",
+	});
 });
 
-it("an empty path is no workdir", () => {
-	assert.throws((): string => pathOf(workdirOf("")));
+it("parameters with an empty path hold no workdir", () => {
+	assert.throws(
+		(): ReturnType<typeof paramsOf> => paramsOf(workdirIn({ workdir: "" })),
+	);
 });

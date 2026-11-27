@@ -1,17 +1,19 @@
 import { z } from "zod";
 import { Workdir } from "../domain/workdir.ts";
 import { Workdir as WorkdirShape } from "../generated/domain/workdir.g.ts";
-import { WorkdirPath } from "../generated/domain/workdir-path.g.ts";
+import { StatusParams } from "../generated/perimeters/review-tool.g.ts";
 
-const WorkdirOfPath = z.codec(WorkdirPath, WorkdirShape, {
-	decode: (path: WorkdirPath): WorkdirShape => ({ path }),
-	encode: ({ path }: WorkdirShape): WorkdirPath => path,
+type Status = z.output<typeof StatusParams>;
+
+const WorkdirOfStatus = z.codec(StatusParams, WorkdirShape, {
+	decode: ({ workdir }: Status): WorkdirShape => ({ path: workdir }),
+	encode: ({ path }: WorkdirShape): Status => ({ workdir: path }),
 });
 
-const workdirOf = (path: WorkdirPath): Workdir =>
-	Reflect.construct(Workdir, [WorkdirOfPath.decode(path)]);
+const workdirIn = (params: Status): Workdir =>
+	Reflect.construct(Workdir, [WorkdirOfStatus.decode(params)]);
 
-const pathOf = (workdir: Workdir): WorkdirPath =>
-	WorkdirOfPath.encode(WorkdirShape.parse(workdir));
+const paramsOf = (workdir: Workdir): Status =>
+	WorkdirOfStatus.encode(WorkdirShape.parse(workdir));
 
-export { pathOf, workdirOf };
+export { paramsOf, workdirIn };

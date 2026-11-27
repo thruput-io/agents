@@ -23,7 +23,7 @@ import {
 	writtenReview,
 } from "./disk.ts";
 import { RuleCodec } from "./values.ts";
-import { workdirOf } from "./workdir.ts";
+import { workdirIn } from "./workdir.ts";
 
 const probe = probeSample("probe-1");
 const review: Review = Change.of(urlSample(), []).review([
@@ -39,11 +39,11 @@ const remainingIn = (text: string): readonly string[] =>
 		.remaining.map((rule: Rule): string => RuleCodec.encode(rule));
 
 it("a review is kept in one file in its workdir", () => {
-	assert.equal(fileIn(workdirOf("/work")), "/work/review.jsonl");
+	assert.equal(fileIn(workdirIn({ workdir: "/work" })), "/work/review.jsonl");
 });
 
 it("a probe leads to the file of its review", () => {
-	const held = probeIn(workdirOf("/work"), "probe-1");
+	const held = probeIn(workdirIn({ workdir: "/work" }), "probe-1");
 
 	assert.equal(fileOf(held), "/work/review.jsonl");
 });

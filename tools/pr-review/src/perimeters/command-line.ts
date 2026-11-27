@@ -30,7 +30,7 @@ import {
 	RuleCodec,
 	TargetUrlCodec,
 } from "./values.ts";
-import { workdirOf } from "./workdir.ts";
+import { workdirIn } from "./workdir.ts";
 
 interface CommandLine {
 	readonly name: string;
@@ -77,10 +77,10 @@ const prepareCommandOf = (
 ): Effect.Effect<PrepareCommand, NotValid> =>
 	namedBy(PrepareParams, commandArguments).pipe(
 		Effect.flatMap(
-			({ url, workdir }): Effect.Effect<PrepareCommand, NotValid> =>
+			(params): Effect.Effect<PrepareCommand, NotValid> =>
 				Effect.all({
-					url: decoded(TargetUrlCodec, url),
-					workdir: Effect.succeed(workdirOf(workdir)),
+					url: decoded(TargetUrlCodec, params.url),
+					workdir: Effect.succeed(workdirIn(params)),
 				}).pipe(
 					Effect.map(
 						(given): PrepareCommand => ({
@@ -97,8 +97,8 @@ const statusCommandOf = (
 ): Effect.Effect<Workdir, NotValid> =>
 	namedBy(StatusParams, commandArguments).pipe(
 		Effect.flatMap(
-			({ workdir }): Effect.Effect<Workdir, NotValid> =>
-				Effect.succeed(workdirOf(workdir)),
+			(params): Effect.Effect<Workdir, NotValid> =>
+				Effect.succeed(workdirIn(params)),
 		),
 	);
 

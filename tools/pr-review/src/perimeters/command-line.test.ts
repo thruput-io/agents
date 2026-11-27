@@ -14,7 +14,7 @@ import {
 } from "./command-line.ts";
 import { TermCodec } from "./term.ts";
 import { AcknowledgementCodec, ProbeCodec, TargetUrlCodec } from "./values.ts";
-import { pathOf } from "./workdir.ts";
+import { paramsOf } from "./workdir.ts";
 
 const sentence =
 	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
@@ -38,7 +38,7 @@ it("the arguments of prepare give the target URL and the workdir", () => {
 	);
 
 	assert.deepEqual(
-		[TargetUrlCodec.encode(command.url), pathOf(command.workdir)],
+		[TargetUrlCodec.encode(command.url), paramsOf(command.workdir).workdir],
 		["https://host.test/change", "/work"],
 	);
 });
@@ -58,7 +58,7 @@ it("an empty target URL is not valid", () => {
 it("the argument of status gives the workdir", () => {
 	const workdir = Effect.runSync(statusCommandOf(["/work"]));
 
-	assert.equal(pathOf(workdir), "/work");
+	assert.equal(paramsOf(workdir).workdir, "/work");
 });
 
 it("the argument of a probe command gives the probe", () => {
