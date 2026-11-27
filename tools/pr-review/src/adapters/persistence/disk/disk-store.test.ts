@@ -17,7 +17,7 @@ import { Verdict } from "../../../domain/verdict.ts";
 import { WorkdirFailed } from "../../../domain/workdir-failed.ts";
 import { probeIn } from "../../../perimeters/disk.ts";
 import { sessionAt } from "../../../perimeters/session.test-support.ts";
-import { RuleCodec } from "../../../perimeters/values.ts";
+import { ProbeCodec, RuleCodec } from "../../../perimeters/values.ts";
 import { diskStoreOver, type Files } from "./disk-store.ts";
 
 const workdir: Session = sessionAt("/work");
@@ -106,7 +106,7 @@ it("what is appended is added as a line and is in the review read after", async 
 		[remainingOf(after), text],
 		[
 			["Delete unused"],
-			`${saved}{"probe":"probe-1.L3dvcms","recorded":{"verdict":{"rule":"Stated purpose"}}}\n`,
+			`${saved}{"probe":"${ProbeCodec.encode(probe)}","recorded":{"verdict":{"rule":"Stated purpose"}}}\n`,
 		],
 	);
 });

@@ -160,6 +160,21 @@
 					}
 				},
 				"required": ["session", "directory"]
+			},
+			"StoredProbe": {
+				"description": "What the session of a sub agent holds: its part of a review, and where that review is kept",
+				"type": "object",
+				"properties": {
+					"name": {
+						"description": "The name of the part of the review",
+						"type": "string",
+						"minLength": 1
+					},
+					"place": {
+						"$ref": "#/components/schemas/StoredPlace"
+					}
+				},
+				"required": ["name", "place"]
 			}
 		}
 	}
