@@ -1,116 +1,140 @@
 import { Match } from "effect";
 import { z } from "zod";
 import { Acknowledgement } from "../domain/acknowledgement.ts";
+import type { Assignment } from "../domain/assignment.ts";
 import { Back } from "../domain/back.ts";
 import { Forward } from "../domain/forward.ts";
 import { HostError } from "../domain/host-error.ts";
 import type { Post } from "../domain/post.ts";
 import { Posted } from "../domain/posted.ts";
-import { Review, type ReviewParts } from "../domain/review.ts";
+import { Probe } from "../domain/probe.ts";
+import { type Recorded, Review } from "../domain/review.ts";
+import { TargetUrl } from "../domain/target-url.ts";
 import { Verdict } from "../domain/verdict.ts";
-import { AssignmentCodec, VerdictCodec } from "./stored-assignment.ts";
-import { AcknowledgementCodec, ProbeCodec, TargetUrlCodec } from "./values.ts";
+import type { StoredAssigned } from "../generated/perimeters/stored-assigned.g.ts";
+import type { StoredPost } from "../generated/perimeters/stored-post.g.ts";
+import { StoredRecording } from "../generated/perimeters/stored-recording.g.ts";
+import { StoredReview } from "../generated/perimeters/stored-review.g.ts";
+import {
+	assignmentFrom,
+	storedAssignment,
+	storedVerdict,
+	verdictFrom,
+} from "./stored-assignment.ts";
 
-interface Sent {
-	readonly acknowledgement: Acknowledgement;
+type StoredRecorded = StoredRecording["recorded"];
+
+interface Recording {
+	readonly probe: Probe;
+	readonly recorded: Recorded;
 }
 
-interface Judged {
-	readonly verdict: Verdict;
-}
+const isPosted = (given: Recorded): given is Posted => given instanceof Posted;
+const isHostError = (given: Recorded): given is HostError =>
+	given instanceof HostError;
+const isForward = (given: Recorded): given is Forward =>
+	given instanceof Forward;
+const isBack = (given: Recorded): given is Back => given instanceof Back;
+const isVerdict = (given: Recorded): given is Verdict =>
+	given instanceof Verdict;
+const isAcknowledgement = (given: Recorded): given is Acknowledgement =>
+	given instanceof Acknowledgement;
 
 const POSTS = {
 	posted: (): Post => Posted.create(),
 	"host-error": (): Post => HostError.create(),
 };
 
-const PostShape = z.codec(
-	z.enum(["posted", "host-error"]),
-	z.custom<Post>(
-		(value): boolean => value instanceof Posted || value instanceof HostError,
-	),
-	{
-		decode: (name: keyof typeof POSTS): Post => POSTS[name](),
-		encode: (post: Post): keyof typeof POSTS =>
-			Match.value(post).pipe(
-				Match.when(
-					(given: Post): given is Posted => given instanceof Posted,
-					(): keyof typeof POSTS => "posted",
-				),
-				Match.when(
-					(given: Post): given is HostError => given instanceof HostError,
-					(): keyof typeof POSTS => "host-error",
-				),
-				Match.exhaustive,
-			),
-	},
-);
+const postFrom = (stored: StoredPost): Post => POSTS[stored]();
+
+const recordedFrom = (stored: StoredRecorded): Recorded =>
+	Match.value(stored).pipe(
+		Match.when("forward", (): Recorded => Forward.create()),
+		Match.when("back", (): Recorded => Back.create()),
+		Match.when("posted", (): Recorded => Posted.create()),
+		Match.when("host-error", (): Recorded => HostError.create()),
+		Match.when(
+			{ acknowledgement: Match.string },
+			({ acknowledgement }): Recorded => Acknowledgement.of(acknowledgement),
+		),
+		Match.when(
+			{ verdict: Match.defined },
+			({ verdict }): Recorded => verdictFrom(verdict),
+		),
+		Match.exhaustive,
+	);
+
+const storedRecorded = (recorded: Recorded): StoredRecorded =>
+	Match.value(recorded).pipe(
+		Match.when(isForward, (): StoredRecorded => "forward"),
+		Match.when(isBack, (): StoredRecorded => "back"),
+		Match.when(isPosted, (): StoredRecorded => "posted"),
+		Match.when(isHostError, (): StoredRecorded => "host-error"),
+		Match.when(
+			isAcknowledgement,
+			(sent: Acknowledgement): StoredRecorded => ({
+				acknowledgement: Acknowledgement.shapeOf(sent),
+			}),
+		),
+		Match.when(
+			isVerdict,
+			(verdict: Verdict): StoredRecorded => ({
+				verdict: storedVerdict(verdict),
+			}),
+		),
+		Match.exhaustive,
+	);
+
+const storedPost = (post: Post): StoredPost =>
+	Match.value(post).pipe(
+		Match.when(isPosted, (): StoredPost => "posted"),
+		Match.when(isHostError, (): StoredPost => "host-error"),
+		Match.exhaustive,
+	);
 
 const ReviewCodec = z.codec(
-	z.object({
-		url: TargetUrlCodec,
-		assigned: z
-			.array(z.tuple([ProbeCodec, AssignmentCodec]).readonly())
-			.readonly(),
-		posts: z.array(PostShape).readonly(),
-	}),
+	StoredReview,
 	z.custom<Review>((value): boolean => value instanceof Review),
 	{
-		decode: (parts: ReviewParts): Review => Review.from(parts),
-		encode: (review: Review): ReviewParts => Review.partsOf(review),
+		decode: (stored: StoredReview): Review =>
+			Review.from({
+				url: TargetUrl.of(stored.url),
+				assigned: stored.assigned.map(
+					({ probe, assignment }: StoredAssigned) =>
+						[Probe.of(probe), assignmentFrom(assignment)] as const,
+				),
+				posts: stored.posts.map(postFrom),
+			}),
+		encode: (review: Review): StoredReview => {
+			const { url, assigned, posts } = Review.partsOf(review);
+
+			return {
+				url: TargetUrl.shapeOf(url),
+				assigned: assigned.map(
+					([probe, assignment]: readonly [
+						Probe,
+						Assignment,
+					]): StoredAssigned => ({
+						probe: Probe.shapeOf(probe),
+						assignment: storedAssignment(assignment),
+					}),
+				),
+				posts: posts.map(storedPost),
+			};
+		},
 	},
 );
 
-const SentShape = z.codec(
-	z.object({ acknowledgement: AcknowledgementCodec }),
-	z.custom<Acknowledgement>(
-		(value): boolean => value instanceof Acknowledgement,
-	),
-	{
-		decode: ({ acknowledgement }: Sent): Acknowledgement => acknowledgement,
-		encode: (acknowledgement: Acknowledgement): Sent => ({ acknowledgement }),
-	},
-);
-
-const JudgedShape = z.codec(
-	z.object({ verdict: VerdictCodec }),
-	z.custom<Verdict>((value): boolean => value instanceof Verdict),
-	{
-		decode: ({ verdict }: Judged): Verdict => verdict,
-		encode: (verdict: Verdict): Judged => ({ verdict }),
-	},
-);
-
-const ForwardShape = z.codec(
-	z.literal("forward"),
-	z.custom<Forward>((value): boolean => value instanceof Forward),
-	{
-		decode: (): Forward => Forward.create(),
-		encode: (): "forward" => "forward",
-	},
-);
-
-const BackShape = z.codec(
-	z.literal("back"),
-	z.custom<Back>((value): boolean => value instanceof Back),
-	{
-		decode: (): Back => Back.create(),
-		encode: (): "back" => "back",
-	},
-);
-
-const RecordingShape = z.object({
-	probe: ProbeCodec,
-	recorded: z.union([
-		SentShape,
-		JudgedShape,
-		ForwardShape,
-		BackShape,
-		PostShape,
-	]),
+const RecordingCodec = z.codec(StoredRecording, z.custom<Recording>(), {
+	decode: ({ probe, recorded }: StoredRecording): Recording => ({
+		probe: Probe.of(probe),
+		recorded: recordedFrom(recorded),
+	}),
+	encode: ({ probe, recorded }: Recording): StoredRecording => ({
+		probe: Probe.shapeOf(probe),
+		recorded: storedRecorded(recorded),
+	}),
 });
 
-type Recording = z.output<typeof RecordingShape>;
-
 export type { Recording };
-export { RecordingShape, ReviewCodec };
+export { RecordingCodec, ReviewCodec };

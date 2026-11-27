@@ -82,5 +82,35 @@
 				}
 			}
 		}
+	},
+	"stored": {
+		"input": {
+			"target": "schemas/stored-review.openapi.json",
+			"parserOptions": {
+				"externalRefs": {
+					"allow": [
+						"domain.openapi.json",
+						"failures.schema.json",
+						"review-tool-probe.openapi.json"
+					]
+				}
+			}
+		},
+		"output": {
+			"client": "zod",
+			"mode": "single",
+			"schemas": {
+				"path": "src/generated/perimeters",
+				"type": "zod"
+			},
+			"schemaFileExtension": ".g.ts",
+			"indexFiles": false,
+			"namingConvention": "kebab-case",
+			"override": {
+				"zod": {
+					"version": 4
+				}
+			}
+		}
 	}
 }

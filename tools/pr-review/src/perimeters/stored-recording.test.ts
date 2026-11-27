@@ -7,7 +7,7 @@ import { HostError } from "../domain/host-error.ts";
 import { Posted } from "../domain/posted.ts";
 import { probeSample, ruleSample } from "../domain/sample.test-support.ts";
 import { Verdict } from "../domain/verdict.ts";
-import { RecordingShape } from "./stored-review.ts";
+import { RecordingCodec } from "./stored-review.ts";
 import { AcknowledgementCodec } from "./values.ts";
 
 const probe = probeSample("probe-1");
@@ -22,7 +22,7 @@ it("each thing recorded is written out in a form of its own", () => {
 		Back.create(),
 		Posted.create(),
 		HostError.create(),
-	].map((recorded) => RecordingShape.encode({ probe, recorded }));
+	].map((recorded) => RecordingCodec.encode({ probe, recorded }));
 
 	assert.deepEqual(written, [
 		{ probe: "probe-1", recorded: { acknowledgement: sentence } },
@@ -44,7 +44,7 @@ it("each thing recorded is read back as what it was", () => {
 		"host-error",
 	].map(
 		(recorded) =>
-			RecordingShape.parse({ probe: "probe-1", recorded }).recorded.constructor,
+			RecordingCodec.parse({ probe: "probe-1", recorded }).recorded.constructor,
 	);
 
 	assert.deepEqual(read, [
@@ -58,7 +58,7 @@ it("each thing recorded is read back as what it was", () => {
 });
 
 it("something that was never recorded is not read", () => {
-	const read = RecordingShape.safeParse({
+	const read = RecordingCodec.safeParse({
 		probe: "probe-1",
 		recorded: "sideways",
 	});

@@ -43,5 +43,4 @@ class Instructions {
 	}
 }
 
-export type { InstructionsParts };
 export { Instructions };

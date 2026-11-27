@@ -159,5 +159,5 @@ class Review {
 	}
 }
 
-export type { Recorded, ReviewParts, ReviewStatus };
+export type { Recorded, ReviewStatus };
 export { Review };
