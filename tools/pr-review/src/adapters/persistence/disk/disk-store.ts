@@ -22,12 +22,35 @@ interface Files {
 	append: (path: string, text: string) => Promise<void>;
 }
 
-const diskStoreOver = (files: Files): ReviewStore => {
-	const read = (path: string): Effect.Effect<Review, NoReview> =>
+const readingOver =
+	(files: Files) =>
+	(path: string): Effect.Effect<Review, NoReview> =>
 		Effect.tryPromise({
 			try: (): Promise<string> => files.read(path),
 			catch: (): NoReview => nothingStored(),
 		}).pipe(Effect.map(reviewOfText));
+
+const savingOver =
+	(files: Files) =>
+	(workdir: Workdir, review: Review): Effect.Effect<Review, WorkdirFailed> =>
+		Effect.tryPromise({
+			try: (): Promise<void> =>
+				files.write(fileIn(workdir), writtenReview(review)),
+			catch: (): WorkdirFailed => notWritable(),
+		}).pipe(Effect.map((): Review => review));
+
+const appendingOver =
+	(files: Files) =>
+	(probe: Probe, recorded: Recorded): Effect.Effect<void, WorkdirFailed> =>
+		Effect.tryPromise({
+			try: (): Promise<void> =>
+				files.append(fileOf(probe), writtenRecording(probe, recorded)),
+			catch: (): WorkdirFailed => notWritable(),
+		});
+
+const diskStoreOver = (files: Files): ReviewStore => {
+	const read = readingOver(files);
+	const appended = appendingOver(files);
 
 	const assignmentIn = (probe: Probe): Effect.Effect<Assignment, NoReview> =>
 		read(fileOf(probe)).pipe(
@@ -38,15 +61,7 @@ const diskStoreOver = (files: Files): ReviewStore => {
 		);
 
 	return {
-		save: (
-			workdir: Workdir,
-			review: Review,
-		): Effect.Effect<Review, WorkdirFailed> =>
-			Effect.tryPromise({
-				try: (): Promise<void> =>
-					files.write(fileIn(workdir), writtenReview(review)),
-				catch: (): WorkdirFailed => notWritable(),
-			}).pipe(Effect.map((): Review => review)),
+		save: savingOver(files),
 		inWorkdir: (workdir: Workdir): Effect.Effect<Review, NoReview> =>
 			read(fileIn(workdir)),
 		ofProbe: assignmentIn,
@@ -56,12 +71,7 @@ const diskStoreOver = (files: Files): ReviewStore => {
 		): Effect.Effect<Review, NotRecorded> =>
 			assignmentIn(probe).pipe(
 				Effect.flatMap(
-					(): Effect.Effect<void, WorkdirFailed> =>
-						Effect.tryPromise({
-							try: (): Promise<void> =>
-								files.append(fileOf(probe), writtenRecording(probe, recorded)),
-							catch: (): WorkdirFailed => notWritable(),
-						}),
+					(): Effect.Effect<void, WorkdirFailed> => appended(probe, recorded),
 				),
 				Effect.flatMap(
 					(): Effect.Effect<Review, NoReview> => read(fileOf(probe)),

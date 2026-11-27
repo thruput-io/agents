@@ -19,10 +19,29 @@ const taskOfPurpose = (): readonly Task[] =>
 		task.probe.isSameAs(purpose),
 	);
 
-it("the probe of a group holds a place in the workdir and is handed the rules of that group", () => {
-	const rules = taskOfPurpose().map((task: Task): readonly string[] =>
-		task.rules.map((rule: Rule): string => Rule.codec.encode(rule)),
+const rulesOf = (task: Task): readonly string[] =>
+	task.rules.map((rule: Rule): string => Rule.codec.encode(rule));
+
+const startOf = (task: Task, asked: string): string =>
+	Effect.runSync(
+		Effect.fromNullishOr(
+			task.glossary.find(([term]): boolean =>
+				term.isSameAs(Term.codec.decode(asked)),
+			),
+		).pipe(
+			Effect.map(([, definition]): string =>
+				Definition.codec.encode(definition).slice(0, "State the".length),
+			),
+		),
 	);
+
+const startsIn = (task: Task): readonly string[] =>
+	["stated purpose", "do one thing", "pull request"].map(
+		(asked: string): string => startOf(task, asked),
+	);
+
+it("the probe of a group holds a place in the workdir and is handed the rules of that group", () => {
+	const rules = taskOfPurpose().map(rulesOf);
 
 	assert.deepEqual(rules, [
 		[
@@ -37,30 +56,13 @@ it("the probe of a group holds a place in the workdir and is handed the rules of
 });
 
 it("no rule is handed to two probes", () => {
-	const handed = probesIn(workdir).flatMap((task: Task): readonly string[] =>
-		task.rules.map((rule: Rule): string => Rule.codec.encode(rule)),
-	);
+	const handed = probesIn(workdir).flatMap(rulesOf);
 
 	assert.equal(new Set(handed).size, handed.length);
 });
 
 it("the glossary of a probe defines a rule, a principle and a definition", () => {
-	const defined = taskOfPurpose().flatMap((task: Task): readonly string[] =>
-		["stated purpose", "do one thing", "pull request"].map(
-			(asked: string): string =>
-				Effect.runSync(
-					Effect.fromNullishOr(
-						task.glossary.find(([term]): boolean =>
-							term.isSameAs(Term.codec.decode(asked)),
-						),
-					).pipe(
-						Effect.map(([, definition]): string =>
-							Definition.codec.encode(definition).slice(0, "State the".length),
-						),
-					),
-				),
-		),
-	);
+	const defined = taskOfPurpose().flatMap(startsIn);
 
 	assert.deepEqual(defined.slice(0, 1), ["State the"]);
 	assert.equal(defined.length, "abc".length);

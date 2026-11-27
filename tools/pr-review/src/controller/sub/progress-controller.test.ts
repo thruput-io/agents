@@ -6,6 +6,7 @@ import type { Assignment } from "../../domain/assignment.ts";
 import type { Host } from "../../domain/host.ts";
 import { Instructions } from "../../domain/instructions.ts";
 import type { Poster } from "../../domain/posting.ts";
+import type { Review } from "../../domain/review.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
 import { ruleSample } from "../../domain/sample.test-support.ts";
 import { Verdict } from "../../domain/verdict.ts";
@@ -28,6 +29,9 @@ import { ProgressController } from "./progress-controller.ts";
 type Outcome = Parameters<Poster["post"]>[1];
 
 const workdir: Workdir = Workdir.codec.decode("/work");
+
+const hasFailedPost = (review: Review): boolean =>
+	review.status().posts.some((post) => post instanceof HostError);
 
 it("standing before an acknowledgement is the detailed instructions", () => {
 	const answered = ProgressController.over(
@@ -143,11 +147,9 @@ it("a failed post is recorded and the sub agent is still answered", () => {
 	const finished = progress.ack(probe, sent).pipe(
 		Effect.flatMap(() => progress.report(probe, Verdict.on(purpose))),
 		Effect.flatMap(() => progress.report(probe, Verdict.on(unused))),
-		Effect.flatMap((remaining) =>
-			Effect.map(store.inWorkdir(workdir), (review) => [
-				remaining.length,
-				review.status().posts.some((post) => post instanceof HostError),
-			]),
+		Effect.map((left) => left.length),
+		Effect.zip(
+			Effect.suspend(() => Effect.map(store.inWorkdir(workdir), hasFailedPost)),
 		),
 	);
 

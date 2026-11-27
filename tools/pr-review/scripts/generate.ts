@@ -1,7 +1,8 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
+import process from "node:process";
 import { jsonSchemaToZod } from "json-schema-to-zod";
+import { z } from "zod";
 import { rulebookModule } from "./rulebook.ts";
 
 interface ValueSchema {
@@ -17,7 +18,11 @@ const WORD_START = /(?<lower>[a-z])(?<upper>[A-Z])/gu;
 const kebabOf = (name: string): string =>
 	name.replace(WORD_START, "$<lower>-$<upper>").toLowerCase();
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const FIRST_ARGUMENT = 2;
+const [projectRoot] = z
+	.tuple([z.string().min(1)])
+	.parse(process.argv.slice(FIRST_ARGUMENT));
+const root = resolve(projectRoot, "tools/pr-review");
 const generated = resolve(root, "src/generated");
 const target = resolve(generated, "domain");
 
@@ -161,7 +166,7 @@ writeFileSync(
 writeFileSync(
 	resolve(perimeters, "rulebook.g.ts"),
 	rulebookModule(
-		resolve(root, "../../skills/pr-review/rules"),
+		resolve(projectRoot, "skills/pr-review/rules"),
 		resolve(root, "probes/probes.yaml"),
 	),
 );

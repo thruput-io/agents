@@ -31,20 +31,10 @@ import {
 } from "../../perimeters/command-line.ts";
 import type { Commands } from "../common/runner.ts";
 
-interface SubControllers {
-	readonly briefing: BriefingController;
-	readonly paging: PagingController;
-	readonly progress: ProgressController;
-}
-
 type Answered = Effect.Effect<Answer, Answer>;
 type Standing = Effect.Effect<readonly Rule[], NotRecorded | Instructions>;
 
-const subCommands = ({
-	briefing,
-	paging,
-	progress,
-}: SubControllers): Commands => ({
+const briefingCommands = (briefing: BriefingController): Commands => ({
 	instructions: (commandArguments: readonly string[]): Answered =>
 		instructionsCommandOf(commandArguments).pipe(
 			Effect.flatMap((probe: Probe) => briefing.instructions(probe)),
@@ -63,6 +53,9 @@ const subCommands = ({
 			Effect.map(definitionAnswer),
 			Effect.mapError(failureAnswer),
 		),
+});
+
+const pagingCommands = (paging: PagingController): Commands => ({
 	next: (commandArguments: readonly string[]): Answered =>
 		nextCommandOf(commandArguments).pipe(
 			Effect.flatMap((probe: Probe) => paging.next(probe)),
@@ -75,6 +68,9 @@ const subCommands = ({
 			Effect.map(pageAnswer),
 			Effect.mapError(failureAnswer),
 		),
+});
+
+const progressCommands = (progress: ProgressController): Commands => ({
 	ack: (commandArguments: readonly string[]): Answered =>
 		ackCommandOf(commandArguments).pipe(
 			Effect.flatMap(
@@ -99,11 +95,9 @@ const subCommands = ({
 });
 
 const subTool = (host: Host, store: ReviewStore, agent: Agent): Commands => ({
-	...subCommands({
-		briefing: BriefingController.over(store),
-		paging: PagingController.over(store),
-		progress: ProgressController.over(host, store, agent),
-	}),
+	...briefingCommands(BriefingController.over(store)),
+	...pagingCommands(PagingController.over(store)),
+	...progressCommands(ProgressController.over(host, store, agent)),
 	"-h": (): Answered => Effect.succeed(help),
 });
 

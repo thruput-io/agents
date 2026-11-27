@@ -44,18 +44,25 @@ const agent: Agent = {
 		Effect.succeed(assignment),
 };
 
-const emptyStore = (): ReviewStore => {
-	const kept: Review[] = [];
-	const latest = (): Effect.Effect<Review, NoReview> =>
+const latestOf =
+	(kept: readonly Review[]) => (): Effect.Effect<Review, NoReview> =>
 		Effect.fromNullishOr(kept.at(-1)).pipe(
 			Effect.mapError((): NoReview => NoReview.create()),
 		);
-	const keeping = (review: Review): Effect.Effect<Review> =>
+
+const keepingIn =
+	(kept: Review[]) =>
+	(review: Review): Effect.Effect<Review> =>
 		Effect.sync((): Review => {
 			kept.push(review);
 
 			return review;
 		});
+
+const emptyStore = (): ReviewStore => {
+	const kept: Review[] = [];
+	const latest = latestOf(kept);
+	const keeping = keepingIn(kept);
 
 	return {
 		save: (_workdir: Workdir, review: Review): Effect.Effect<Review> =>
