@@ -9,7 +9,7 @@ levels:
 - id: Rationale
   parent: Axiom
   specification: |
-    The reasoning that turns an [[Axiom]] into a [[Principle]] by weighing competing goods or explaining a mechanism, backed by a [[Document reference]].
+    The reasoning that turns an [[Axiom]] into a [[Principle]] by weighing competing goods or explaining a mechanism with a [[Document reference]], and whose [[SHOULD]] or [[MAY]] solutions say how to apply it.
 - id: Principle
   parent: Rationale
   specification: |
@@ -17,7 +17,7 @@ levels:
 - id: Rule
   parent: Principle
   specification: |
-    A concrete requirement or prohibition that a [[Developer]] can evaluate on a [[Change]] as a [[Violation]] or non-violation without knowing the specific technology in use.
+    A [[MUST]] requirement stating the [[Defined]] code required, or a [[MUST NOT]] prohibition naming the [[Defined]] [[Bad Code]] forbidden, that a [[Developer]] evaluates on a [[Change]] as a [[Violation]] or non-violation without knowing the technology in use.
 - id: Standard
   parent: Rule
   specification: |
