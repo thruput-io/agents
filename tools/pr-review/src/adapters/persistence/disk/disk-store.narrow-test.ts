@@ -16,8 +16,8 @@ import { Verdict } from "../../../domain/verdict.ts";
 import { WorkdirFailed } from "../../../domain/workdir-failed.ts";
 import type { Probe } from "../../../generated/domain/probe.g.ts";
 import { Rule } from "../../../generated/domain/rule.g.ts";
-import { Workdir } from "../../../generated/domain/workdir.g.ts";
 import { probeIn } from "../../../perimeters/disk.ts";
+import { WorkdirCodec } from "../../../perimeters/workdir.ts";
 import { diskFiles } from "./disk-files.ts";
 import { diskStoreOver } from "./disk-store.ts";
 
@@ -25,7 +25,7 @@ const purpose: Rule = ruleSample("Stated purpose");
 const emptyDirectory = (): string =>
 	mkdtempSync(join(tmpdir(), "narrow-disk-"));
 const probeOf = (directory: string): Probe =>
-	probeIn(Workdir.codec.decode(directory), "probe-1");
+	probeIn(WorkdirCodec.decode(directory), "probe-1");
 const reviewOf = (probe: Probe): Review =>
 	Change.of(urlSample(), []).review([
 		taskSample(probe, [purpose, ruleSample("Delete unused")]),
@@ -34,7 +34,7 @@ const reviewOf = (probe: Probe): Review =>
 it("a review saved on disk and appended to is read back by a store that starts later", async () => {
 	const directory = emptyDirectory();
 	const probe = probeOf(directory);
-	const workdir = Workdir.codec.decode(directory);
+	const workdir = WorkdirCodec.decode(directory);
 
 	await Effect.runPromise(
 		diskStoreOver(diskFiles).save(workdir, reviewOf(probe)),
@@ -57,9 +57,7 @@ it("a review saved on disk and appended to is read back by a store that starts l
 it("an empty directory holds no review", async () => {
 	const missing = await Effect.runPromise(
 		Effect.flip(
-			diskStoreOver(diskFiles).inWorkdir(
-				Workdir.codec.decode(emptyDirectory()),
-			),
+			diskStoreOver(diskFiles).inWorkdir(WorkdirCodec.decode(emptyDirectory())),
 		),
 	);
 
@@ -71,7 +69,7 @@ it("a review cannot be saved in a directory that does not exist", async () => {
 	const failed = await Effect.runPromise(
 		Effect.flip(
 			diskStoreOver(diskFiles).save(
-				Workdir.codec.decode(directory),
+				WorkdirCodec.decode(directory),
 				reviewOf(probeOf(directory)),
 			),
 		),

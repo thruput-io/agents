@@ -4,9 +4,10 @@ import { z } from "zod";
 import { Change } from "../domain/change.ts";
 import { HostError } from "../domain/host-error.ts";
 import { UnknownFormat } from "../domain/unknown-format.ts";
+import type { Workdir } from "../domain/workdir.ts";
 import { Page } from "../generated/domain/page.g.ts";
 import { TargetUrl } from "../generated/domain/target-url.g.ts";
-import { Workdir } from "../generated/domain/workdir.g.ts";
+import { WorkdirCodec } from "../perimeters/workdir.ts";
 
 interface Address {
 	readonly remote: string;
@@ -39,7 +40,7 @@ const addressOf = (url: TargetUrl): Effect.Effect<Address, UnknownFormat> =>
 	});
 
 const repositoryIn = (workdir: Workdir): string =>
-	join(Workdir.codec.encode(workdir), "repository.git");
+	join(WorkdirCodec.encode(workdir), "repository.git");
 
 const walked = (
 	path: string,

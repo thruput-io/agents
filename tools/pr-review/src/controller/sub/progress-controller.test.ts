@@ -13,8 +13,8 @@ import type { Review } from "../../domain/review.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
 import { ruleSample } from "../../domain/sample.test-support.ts";
 import { Verdict } from "../../domain/verdict.ts";
+import { Workdir } from "../../domain/workdir.ts";
 import type { TargetUrl } from "../../generated/domain/target-url.g.ts";
-import { Workdir } from "../../generated/domain/workdir.g.ts";
 import {
 	agent,
 	host,
@@ -28,7 +28,7 @@ import { ProgressController } from "./progress-controller.ts";
 
 type Outcome = Parameters<Poster["post"]>[1];
 
-const workdir: Workdir = Workdir.codec.decode("/work");
+const workdir: Workdir = Workdir.of("/work");
 
 const hasFailedPost = (review: Review): boolean =>
 	review.status().posts.some((post) => post instanceof HostError);

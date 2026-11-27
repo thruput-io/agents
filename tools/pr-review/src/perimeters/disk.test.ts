@@ -12,7 +12,7 @@ import {
 import { Verdict } from "../domain/verdict.ts";
 import { WorkdirFailed } from "../domain/workdir-failed.ts";
 import { Rule } from "../generated/domain/rule.g.ts";
-import { Workdir } from "../generated/domain/workdir.g.ts";
+import { WorkdirCodec } from "../perimeters/workdir.ts";
 import {
 	fileIn,
 	fileOf,
@@ -38,11 +38,11 @@ const remainingIn = (text: string): readonly string[] =>
 		.remaining.map((rule: Rule): string => Rule.codec.encode(rule));
 
 it("a review is kept in one file in its workdir", () => {
-	assert.equal(fileIn(Workdir.codec.decode("/work")), "/work/review.jsonl");
+	assert.equal(fileIn(WorkdirCodec.decode("/work")), "/work/review.jsonl");
 });
 
 it("a probe leads to the file of its review", () => {
-	const held = probeIn(Workdir.codec.decode("/work"), "probe-1");
+	const held = probeIn(WorkdirCodec.decode("/work"), "probe-1");
 
 	assert.equal(fileOf(held), "/work/review.jsonl");
 });

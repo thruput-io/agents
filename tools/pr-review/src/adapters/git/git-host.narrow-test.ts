@@ -12,11 +12,12 @@ import {
 	ruleSample,
 	taskSample,
 } from "../../domain/sample.test-support.ts";
+import type { Workdir } from "../../domain/workdir.ts";
 import { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
 import { Page } from "../../generated/domain/page.g.ts";
 import type { Probe } from "../../generated/domain/probe.g.ts";
 import { TargetUrl } from "../../generated/domain/target-url.g.ts";
-import { Workdir } from "../../generated/domain/workdir.g.ts";
+import { WorkdirCodec } from "../../perimeters/workdir.ts";
 import { gitBinary } from "./git-binary.ts";
 import { gitHostOver } from "./git-host.ts";
 
@@ -25,7 +26,7 @@ const sentence =
 	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
 
 const emptyWorkdir = (): Workdir =>
-	Workdir.codec.decode(mkdtempSync(join(tmpdir(), "narrow-git-")));
+	WorkdirCodec.decode(mkdtempSync(join(tmpdir(), "narrow-git-")));
 
 const firstPageOf = (change: Change): string => {
 	const probe: Probe = probeSample("probe-1");

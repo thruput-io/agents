@@ -1,6 +1,6 @@
 import type { Effect } from "effect";
+import type { Workdir } from "../domain/workdir.ts";
 import type { TargetUrl } from "../generated/domain/target-url.g.ts";
-import type { Workdir } from "../generated/domain/workdir.g.ts";
 import type { AlreadyReviewed } from "./already-reviewed.ts";
 import type { Change } from "./change.ts";
 import type { HostError } from "./host-error.ts";

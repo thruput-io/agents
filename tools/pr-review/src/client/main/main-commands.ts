@@ -6,7 +6,7 @@ import { MainController } from "../../controller/main/main-controller.ts";
 import type { Agent } from "../../domain/agent.ts";
 import type { Host } from "../../domain/host.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
-import type { Workdir } from "../../generated/domain/workdir.g.ts";
+import type { Workdir } from "../../domain/workdir.ts";
 import {
 	type Answer,
 	failureAnswer,

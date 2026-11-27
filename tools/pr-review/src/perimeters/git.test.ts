@@ -12,7 +12,7 @@ import { UnknownFormat } from "../domain/unknown-format.ts";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
 import { Page } from "../generated/domain/page.g.ts";
 import { TargetUrl } from "../generated/domain/target-url.g.ts";
-import { Workdir } from "../generated/domain/workdir.g.ts";
+import { WorkdirCodec } from "../perimeters/workdir.ts";
 import {
 	addressOf,
 	changeOfDiff,
@@ -84,7 +84,7 @@ it("an address without a range is of an unknown format", () => {
 
 it("the repository is kept inside the workdir", () => {
 	assert.equal(
-		repositoryIn(Workdir.codec.decode("/work")),
+		repositoryIn(WorkdirCodec.decode("/work")),
 		"/work/repository.git",
 	);
 });

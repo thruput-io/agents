@@ -15,11 +15,11 @@ import {
 	taskSample,
 	urlSample,
 } from "../../domain/sample.test-support.ts";
+import { Workdir } from "../../domain/workdir.ts";
 import { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
 import type { Probe } from "../../generated/domain/probe.g.ts";
 import type { Rule } from "../../generated/domain/rule.g.ts";
 import type { TargetUrl } from "../../generated/domain/target-url.g.ts";
-import { Workdir } from "../../generated/domain/workdir.g.ts";
 
 type Outcome = Parameters<Poster["post"]>[1];
 
@@ -93,7 +93,7 @@ const storeWithReview = (): ReviewStore => {
 
 	Effect.runSync(
 		store.save(
-			Workdir.codec.decode("/work"),
+			Workdir.of("/work"),
 			change.review([taskSample(probe, [purpose, unused])]),
 		),
 	);

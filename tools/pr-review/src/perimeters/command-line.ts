@@ -4,11 +4,11 @@ import type { NotValid } from "../domain/not-valid.ts";
 import type { Probes } from "../domain/task.ts";
 import { Term } from "../domain/term.ts";
 import { Verdict } from "../domain/verdict.ts";
+import type { Workdir } from "../domain/workdir.ts";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
 import { Probe } from "../generated/domain/probe.g.ts";
 import { Rule } from "../generated/domain/rule.g.ts";
 import { TargetUrl } from "../generated/domain/target-url.g.ts";
-import { Workdir } from "../generated/domain/workdir.g.ts";
 import {
 	PrepareParams,
 	StatusParams,
@@ -22,6 +22,7 @@ import {
 	ReportParams,
 	RulesParams,
 } from "../generated/perimeters/review-tool-probe.g.ts";
+import { WorkdirCodec } from "../perimeters/workdir.ts";
 import { decoded, namedBy, parsedBy } from "./parsing.ts";
 import { probesIn } from "./rulebook.ts";
 
@@ -73,7 +74,7 @@ const prepareCommandOf = (
 			({ url, workdir }): Effect.Effect<PrepareCommand, NotValid> =>
 				Effect.all({
 					url: decoded(TargetUrl.codec, url),
-					workdir: decoded(Workdir.codec, workdir),
+					workdir: decoded(WorkdirCodec, workdir),
 				}).pipe(
 					Effect.map(
 						(given): PrepareCommand => ({
@@ -91,7 +92,7 @@ const statusCommandOf = (
 	namedBy(StatusParams, commandArguments).pipe(
 		Effect.flatMap(
 			({ workdir }): Effect.Effect<Workdir, NotValid> =>
-				decoded(Workdir.codec, workdir),
+				decoded(WorkdirCodec, workdir),
 		),
 	);
 

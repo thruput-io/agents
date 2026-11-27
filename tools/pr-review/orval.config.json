@@ -4,7 +4,11 @@
 			"target": "schemas/review-tool.openapi.json",
 			"parserOptions": {
 				"externalRefs": {
-					"allow": ["domain.schema.json", "failures.schema.json"]
+					"allow": [
+						"domain.schema.json",
+						"domain.openapi.json",
+						"failures.schema.json"
+					]
 				}
 			}
 		},
@@ -25,7 +29,11 @@
 			"target": "schemas/review-tool-probe.openapi.json",
 			"parserOptions": {
 				"externalRefs": {
-					"allow": ["domain.schema.json", "failures.schema.json"]
+					"allow": [
+						"domain.schema.json",
+						"domain.openapi.json",
+						"failures.schema.json"
+					]
 				}
 			}
 		},
@@ -37,6 +45,27 @@
 				"zod": {
 					"version": 4,
 					"generateEachHttpStatus": true
+				}
+			}
+		}
+	},
+	"domain": {
+		"input": {
+			"target": "schemas/domain.openapi.json"
+		},
+		"output": {
+			"client": "zod",
+			"mode": "single",
+			"schemas": {
+				"path": "src/generated/domain",
+				"type": "zod"
+			},
+			"schemaFileExtension": ".g.ts",
+			"indexFiles": false,
+			"namingConvention": "kebab-case",
+			"override": {
+				"zod": {
+					"version": 4
 				}
 			}
 		}

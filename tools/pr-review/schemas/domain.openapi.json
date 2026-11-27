@@ -1,0 +1,18 @@
+{
+	"openapi": "3.1.0",
+	"info": {
+		"title": "domain",
+		"version": "0.0.0",
+		"description": "The values of the domain of the review tool."
+	},
+	"paths": {},
+	"components": {
+		"schemas": {
+			"Workdir": {
+				"description": "The directory a review is kept in",
+				"type": "string",
+				"minLength": 1
+			}
+		}
+	}
+}

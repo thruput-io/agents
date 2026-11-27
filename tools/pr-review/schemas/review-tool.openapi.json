@@ -24,7 +24,7 @@
 						"in": "path",
 						"required": true,
 						"schema": {
-							"$ref": "domain.schema.json#/$defs/Workdir"
+							"$ref": "domain.openapi.json#/components/schemas/Workdir"
 						}
 					}
 				],
@@ -62,7 +62,7 @@
 						"in": "path",
 						"required": true,
 						"schema": {
-							"$ref": "domain.schema.json#/$defs/Workdir"
+							"$ref": "domain.openapi.json#/components/schemas/Workdir"
 						}
 					}
 				],

@@ -8,11 +8,6 @@
 			"type": "string",
 			"minLength": 1
 		},
-		"Workdir": {
-			"description": "The directory a review is kept in",
-			"type": "string",
-			"minLength": 1
-		},
 		"Probe": {
 			"description": "What a sub agent holds for its part of a review",
 			"type": "string",

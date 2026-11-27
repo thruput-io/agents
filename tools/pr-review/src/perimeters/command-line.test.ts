@@ -7,7 +7,7 @@ import { Term } from "../domain/term.ts";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
 import { Probe } from "../generated/domain/probe.g.ts";
 import { TargetUrl } from "../generated/domain/target-url.g.ts";
-import { Workdir } from "../generated/domain/workdir.g.ts";
+import { WorkdirCodec } from "../perimeters/workdir.ts";
 import {
 	ackCommandOf,
 	commandLineOf,
@@ -40,10 +40,7 @@ it("the arguments of prepare give the target URL and the workdir", () => {
 	);
 
 	assert.deepEqual(
-		[
-			TargetUrl.codec.encode(command.url),
-			Workdir.codec.encode(command.workdir),
-		],
+		[TargetUrl.codec.encode(command.url), WorkdirCodec.encode(command.workdir)],
 		["https://host.test/change", "/work"],
 	);
 });
@@ -63,7 +60,7 @@ it("an empty target URL is not valid", () => {
 it("the argument of status gives the workdir", () => {
 	const workdir = Effect.runSync(statusCommandOf(["/work"]));
 
-	assert.equal(Workdir.codec.encode(workdir), "/work");
+	assert.equal(WorkdirCodec.encode(workdir), "/work");
 });
 
 it("the argument of a probe command gives the probe", () => {

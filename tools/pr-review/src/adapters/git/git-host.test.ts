@@ -4,14 +4,15 @@ import { Effect } from "effect";
 import { Change } from "../../domain/change.ts";
 import { HostError } from "../../domain/host-error.ts";
 import { UnknownFormat } from "../../domain/unknown-format.ts";
+import type { Workdir } from "../../domain/workdir.ts";
 import { TargetUrl } from "../../generated/domain/target-url.g.ts";
-import { Workdir } from "../../generated/domain/workdir.g.ts";
+import { WorkdirCodec } from "../../perimeters/workdir.ts";
 import { type Git, gitHostOver } from "./git-host.ts";
 
 const url: TargetUrl = TargetUrl.codec.decode(
 	"https://host.test/change.git@main..feature",
 );
-const workdir: Workdir = Workdir.codec.decode("/work");
+const workdir: Workdir = WorkdirCodec.decode("/work");
 
 it("get change clones the remote into the workdir and takes the diff of the range", async () => {
 	const asked: (readonly string[])[] = [];

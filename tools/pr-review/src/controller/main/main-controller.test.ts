@@ -17,16 +17,16 @@ import {
 } from "../../domain/sample.test-support.ts";
 import type { Probes } from "../../domain/task.ts";
 import { UnknownFormat } from "../../domain/unknown-format.ts";
+import { Workdir } from "../../domain/workdir.ts";
 import type { Rule } from "../../generated/domain/rule.g.ts";
 import type { TargetUrl } from "../../generated/domain/target-url.g.ts";
-import { Workdir } from "../../generated/domain/workdir.g.ts";
 import { emptyStore } from "../common/stand-in.test-support.ts";
 import { MainController } from "./main-controller.ts";
 
 type Outcome = Parameters<Poster["post"]>[1];
 
 const url: TargetUrl = urlSample();
-const workdir: Workdir = Workdir.codec.decode("/work");
+const workdir: Workdir = Workdir.of("/work");
 const purpose: Rule = ruleSample("Stated purpose");
 const probes: Probes = [taskSample(probeSample("probe-1"), [purpose])];
 

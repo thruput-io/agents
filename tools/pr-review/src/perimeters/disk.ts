@@ -3,14 +3,15 @@ import { join } from "node:path";
 import { NoReview } from "../domain/no-review.ts";
 import { type Recording, RecordingShape } from "../domain/recording.ts";
 import { type Recorded, Review } from "../domain/review.ts";
+import type { Workdir } from "../domain/workdir.ts";
 import { WorkdirFailed } from "../domain/workdir-failed.ts";
 import { Probe } from "../generated/domain/probe.g.ts";
-import { Workdir } from "../generated/domain/workdir.g.ts";
+import { WorkdirCodec } from "../perimeters/workdir.ts";
 
 const FILE = "review.jsonl";
 
 const fileIn = (workdir: Workdir): string =>
-	join(Workdir.codec.encode(workdir), FILE);
+	join(WorkdirCodec.encode(workdir), FILE);
 
 const fileOf = (probe: Probe): string => {
 	const held = Probe.codec.encode(probe);
@@ -21,7 +22,7 @@ const fileOf = (probe: Probe): string => {
 
 const probeIn = (workdir: Workdir, name: string): Probe =>
 	Probe.codec.decode(
-		`${name}.${Buffer.from(Workdir.codec.encode(workdir)).toString("base64url")}`,
+		`${name}.${Buffer.from(WorkdirCodec.encode(workdir)).toString("base64url")}`,
 	);
 
 const writtenReview = (review: Review): string =>

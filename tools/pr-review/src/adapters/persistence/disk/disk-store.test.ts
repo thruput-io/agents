@@ -11,14 +11,15 @@ import {
 	urlSample,
 } from "../../../domain/sample.test-support.ts";
 import { Verdict } from "../../../domain/verdict.ts";
+import type { Workdir } from "../../../domain/workdir.ts";
 import { WorkdirFailed } from "../../../domain/workdir-failed.ts";
 import type { Probe } from "../../../generated/domain/probe.g.ts";
 import { Rule } from "../../../generated/domain/rule.g.ts";
-import { Workdir } from "../../../generated/domain/workdir.g.ts";
 import { probeIn } from "../../../perimeters/disk.ts";
+import { WorkdirCodec } from "../../../perimeters/workdir.ts";
 import { diskStoreOver, type Files } from "./disk-store.ts";
 
-const workdir: Workdir = Workdir.codec.decode("/work");
+const workdir: Workdir = WorkdirCodec.decode("/work");
 const probe: Probe = probeIn(workdir, "probe-1");
 const purpose: Rule = ruleSample("Stated purpose");
 const review: Review = Change.of(urlSample(), []).review([

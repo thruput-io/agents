@@ -3,15 +3,16 @@ import { test as it } from "node:test";
 import { Effect } from "effect";
 import type { Task } from "../domain/task.ts";
 import { Term } from "../domain/term.ts";
+import type { Workdir } from "../domain/workdir.ts";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
 import { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
 import { Definition } from "../generated/domain/definition.g.ts";
 import { Rule } from "../generated/domain/rule.g.ts";
-import { Workdir } from "../generated/domain/workdir.g.ts";
+import { WorkdirCodec } from "../perimeters/workdir.ts";
 import { probeIn } from "./disk.ts";
 import { probesIn } from "./rulebook.ts";
 
-const workdir: Workdir = Workdir.codec.decode("/work");
+const workdir: Workdir = WorkdirCodec.decode("/work");
 const purpose = probeIn(workdir, "purpose");
 
 const taskOfPurpose = (): readonly Task[] =>
