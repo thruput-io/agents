@@ -18,5 +18,7 @@ rules:
       - pattern: "$X.codec.decode(...)"
       - pattern: "$X.codec.parse(...)"
       - pattern: "$X.codec.safeDecode(...)"
+      - pattern: "$X.decode(...)"
+      - pattern: "$X.safeDecode(...)"
       - pattern: "$X.parse(...)"
       - pattern: "$X.safeParse(...)"
