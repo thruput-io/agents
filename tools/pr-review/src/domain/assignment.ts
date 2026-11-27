@@ -24,12 +24,6 @@ interface Happened {
 	readonly position: number;
 }
 
-interface AssignmentParts {
-	readonly task: Task;
-	readonly pages: readonly Page[];
-	readonly happened: Happened;
-}
-
 const BEFORE_FIRST = -1;
 
 const isAcknowledgement = (entry: Entry): entry is Acknowledgement =>
@@ -48,14 +42,6 @@ class Assignment {
 		this.pages = pages;
 		this.happened = happened;
 		Object.freeze(this);
-	}
-
-	static from({ task, pages, happened }: AssignmentParts): Assignment {
-		return new Assignment(task, pages, happened);
-	}
-
-	static partsOf({ task, pages, happened }: Assignment): AssignmentParts {
-		return { task, pages, happened };
 	}
 
 	static of(task: Task, pages: readonly Page[]): Assignment {
@@ -152,5 +138,5 @@ class Assignment {
 	}
 }
 
-export type { AssignmentParts, Entry };
+export type { Entry };
 export { Assignment };

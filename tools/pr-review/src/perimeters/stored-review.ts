@@ -1,26 +1,25 @@
 import { Match } from "effect";
 import { z } from "zod";
 import { Acknowledgement } from "../domain/acknowledgement.ts";
-import type { Assignment } from "../domain/assignment.ts";
 import { Back } from "../domain/back.ts";
+import { Change } from "../domain/change.ts";
 import { Forward } from "../domain/forward.ts";
 import { HostError } from "../domain/host-error.ts";
-import type { Post } from "../domain/post.ts";
+import { Page } from "../domain/page.ts";
 import { Posted } from "../domain/posted.ts";
 import { Probe } from "../domain/probe.ts";
-import { type Recorded, Review } from "../domain/review.ts";
+import type { Recorded, Review } from "../domain/review.ts";
 import { TargetUrl } from "../domain/target-url.ts";
+import type { Probes } from "../domain/task.ts";
 import { Verdict } from "../domain/verdict.ts";
-import type { StoredAssigned } from "../generated/perimeters/stored-assigned.g.ts";
-import type { StoredPost } from "../generated/perimeters/stored-post.g.ts";
 import { StoredRecording } from "../generated/perimeters/stored-recording.g.ts";
-import { StoredReview } from "../generated/perimeters/stored-review.g.ts";
+import type { StoredStart } from "../generated/perimeters/stored-start.g.ts";
 import {
-	assignmentFrom,
-	storedAssignment,
+	storedTask,
 	storedVerdict,
+	taskFrom,
 	verdictFrom,
-} from "./stored-assignment.ts";
+} from "./stored-task.ts";
 
 type StoredRecorded = StoredRecording["recorded"];
 
@@ -39,13 +38,6 @@ const isVerdict = (given: Recorded): given is Verdict =>
 	given instanceof Verdict;
 const isAcknowledgement = (given: Recorded): given is Acknowledgement =>
 	given instanceof Acknowledgement;
-
-const POSTS = {
-	posted: (): Post => Posted.create(),
-	"host-error": (): Post => HostError.create(),
-};
-
-const postFrom = (stored: StoredPost): Post => POSTS[stored]();
 
 const recordedFrom = (stored: StoredRecorded): Recorded =>
 	Match.value(stored).pipe(
@@ -85,45 +77,17 @@ const storedRecorded = (recorded: Recorded): StoredRecorded =>
 		Match.exhaustive,
 	);
 
-const storedPost = (post: Post): StoredPost =>
-	Match.value(post).pipe(
-		Match.when(isPosted, (): StoredPost => "posted"),
-		Match.when(isHostError, (): StoredPost => "host-error"),
-		Match.exhaustive,
+const startedFrom = ({ url, pages, tasks }: StoredStart): Review =>
+	Change.of(TargetUrl.of(url), pages.map(Page.of)).review(tasks.map(taskFrom));
+
+const storedStart = (review: Review): StoredStart =>
+	review.started(
+		(url: TargetUrl, pages: readonly Page[], probes: Probes): StoredStart => ({
+			url: TargetUrl.shapeOf(url),
+			pages: pages.map(Page.shapeOf),
+			tasks: probes.map(storedTask),
+		}),
 	);
-
-const ReviewCodec = z.codec(
-	StoredReview,
-	z.custom<Review>((value): boolean => value instanceof Review),
-	{
-		decode: (stored: StoredReview): Review =>
-			Review.from({
-				url: TargetUrl.of(stored.url),
-				assigned: stored.assigned.map(
-					({ probe, assignment }: StoredAssigned) =>
-						[Probe.of(probe), assignmentFrom(assignment)] as const,
-				),
-				posts: stored.posts.map(postFrom),
-			}),
-		encode: (review: Review): StoredReview => {
-			const { url, assigned, posts } = Review.partsOf(review);
-
-			return {
-				url: TargetUrl.shapeOf(url),
-				assigned: assigned.map(
-					([probe, assignment]: readonly [
-						Probe,
-						Assignment,
-					]): StoredAssigned => ({
-						probe: Probe.shapeOf(probe),
-						assignment: storedAssignment(assignment),
-					}),
-				),
-				posts: posts.map(storedPost),
-			};
-		},
-	},
-);
 
 const RecordingCodec = z.codec(StoredRecording, z.custom<Recording>(), {
 	decode: ({ probe, recorded }: StoredRecording): Recording => ({
@@ -137,4 +101,4 @@ const RecordingCodec = z.codec(StoredRecording, z.custom<Recording>(), {
 });
 
 export type { Recording };
-export { RecordingCodec, ReviewCodec };
+export { RecordingCodec, startedFrom, storedStart };

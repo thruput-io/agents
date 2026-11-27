@@ -3,23 +3,25 @@ import type { Probe } from "../domain/probe.ts";
 import type { Rule } from "../domain/rule.ts";
 import type { TargetUrl } from "../domain/target-url.ts";
 import type { Agent } from "./agent.ts";
-import type { Assignment, Entry } from "./assignment.ts";
+import { Assignment, type Entry } from "./assignment.ts";
 import { HostError } from "./host-error.ts";
 import { NoReview } from "./no-review.ts";
 import { NotDue } from "./not-due.ts";
 import type { NotStarted } from "./not-started.ts";
+import type { Page } from "./page.ts";
 import type { Post } from "./post.ts";
 import { Posted } from "./posted.ts";
 import type { Poster } from "./posting.ts";
+import type { Probes, Task } from "./task.ts";
 
 type Recorded = Entry | Post;
 
 type Assigned = readonly [Probe, Assignment];
 
-interface ReviewParts {
+interface Start {
 	readonly url: TargetUrl;
-	readonly assigned: readonly Assigned[];
-	readonly posts: readonly Post[];
+	readonly pages: readonly Page[];
+	readonly probes: Probes;
 }
 
 interface ReviewStatus {
@@ -33,31 +35,35 @@ const isEntry = (recorded: Recorded): recorded is Entry => !isPost(recorded);
 const isPosted = (post: Post): boolean => post instanceof Posted;
 
 class Review {
-	private readonly url: TargetUrl;
+	private readonly start: Start;
 	private readonly assigned: readonly Assigned[];
 	private readonly posts: readonly Post[];
 
 	private constructor(
-		url: TargetUrl,
+		start: Start,
 		assigned: readonly Assigned[],
 		posts: readonly Post[],
 	) {
-		this.url = url;
+		this.start = start;
 		this.assigned = assigned;
 		this.posts = posts;
 		Object.freeze(this);
 	}
 
-	static from({ url, assigned, posts }: ReviewParts): Review {
-		return new Review(url, assigned, posts);
+	static of(url: TargetUrl, pages: readonly Page[], probes: Probes): Review {
+		return new Review(
+			{ url, pages, probes },
+			probes.map(
+				(task: Task): Assigned => [task.probe, Assignment.of(task, pages)],
+			),
+			[],
+		);
 	}
 
-	static partsOf({ url, assigned, posts }: Review): ReviewParts {
-		return { url, assigned, posts };
-	}
-
-	static of(url: TargetUrl, assigned: readonly Assigned[]): Review {
-		return new Review(url, assigned, []);
+	started<Kept>(
+		keep: (url: TargetUrl, pages: readonly Page[], probes: Probes) => Kept,
+	): Kept {
+		return keep(this.start.url, this.start.pages, this.start.probes);
 	}
 
 	assignmentOf(probe: Probe): Effect.Effect<Assignment, NoReview> {
@@ -74,13 +80,13 @@ class Review {
 			Match.when(
 				isPost,
 				(post: Post): Review =>
-					new Review(this.url, this.assigned, [...this.posts, post]),
+					new Review(this.start, this.assigned, [...this.posts, post]),
 			),
 			Match.when(
 				isEntry,
 				(entry: Entry): Review =>
 					new Review(
-						this.url,
+						this.start,
 						[
 							...this.assigned.filter(
 								([owner]: Assigned): boolean => !owner.isSameAs(probe),
@@ -122,7 +128,7 @@ class Review {
 				onFailure: (): Effect.Effect<readonly Post[]> => Effect.succeed([]),
 				onSuccess: (): Effect.Effect<readonly Post[]> =>
 					poster
-						.post(this.url, {
+						.post(this.start.url, {
 							verdicts: this.assigned.flatMap(
 								([, assignment]: Assigned) => assignment.ledger().verdicts,
 							),

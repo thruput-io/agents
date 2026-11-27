@@ -6,17 +6,18 @@ import type { Recorded, Review } from "../domain/review.ts";
 import type { Workdir } from "../domain/workdir.ts";
 import { WorkdirFailed } from "../domain/workdir-failed.ts";
 import { StoredRecording } from "../generated/perimeters/stored-recording.g.ts";
-import { StoredReview } from "../generated/perimeters/stored-review.g.ts";
+import { StoredStart } from "../generated/perimeters/stored-start.g.ts";
 import { jsonOf } from "./json.ts";
 import {
 	type Recording,
 	RecordingCodec,
-	ReviewCodec,
+	startedFrom,
+	storedStart,
 } from "./stored-review.ts";
 import { ProbeCodec, WorkdirCodec } from "./values.ts";
 
 const FILE = "review.jsonl";
-const ReviewLine = jsonOf(StoredReview);
+const StartLine = jsonOf(StoredStart);
 const RecordingLine = jsonOf(StoredRecording);
 
 const fileIn = (workdir: Workdir): string =>
@@ -35,7 +36,7 @@ const probeIn = (workdir: Workdir, name: string): Probe =>
 	);
 
 const writtenReview = (review: Review): string =>
-	`${ReviewLine.encode(ReviewCodec.encode(review))}\n`;
+	`${StartLine.encode(storedStart(review))}\n`;
 
 const writtenRecording = (probe: Probe, recorded: Recorded): string =>
 	`${RecordingLine.encode(RecordingCodec.encode({ probe, recorded }))}\n`;
@@ -51,7 +52,7 @@ const reviewOfText = (text: string): Review => {
 		.reduce(
 			(review: Review, { probe, recorded }: Recording): Review =>
 				review.after(probe, recorded),
-			ReviewCodec.decode(ReviewLine.decode(first)),
+			startedFrom(StartLine.decode(first)),
 		);
 };
 

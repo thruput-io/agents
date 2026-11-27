@@ -17,27 +17,29 @@ import {
 	urlSample,
 } from "../domain/sample.test-support.ts";
 import { Verdict } from "../domain/verdict.ts";
-import { ReviewCodec } from "./stored-review.ts";
+import { reviewOfText, writtenRecording, writtenReview } from "./disk.ts";
 import { TermCodec } from "./term.ts";
 import { AcknowledgementCodec, PageCodec, RuleCodec } from "./values.ts";
 
 const probe: Probe = probeSample("probe-1");
 const sentence =
 	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
-const review: Review = Change.of(urlSample(), [pageSample()])
-	.review([
-		taskSample(probe, [
-			ruleSample("Stated purpose"),
-			ruleSample("Delete unused"),
-		]),
-	])
-	.after(probe, AcknowledgementCodec.decode(sentence))
-	.after(probe, Forward.create())
-	.after(probe, Verdict.on(ruleSample("Stated purpose")))
-	.after(probe, HostError.create())
-	.after(probe, Posted.create());
+const started: Review = Change.of(urlSample(), [pageSample()]).review([
+	taskSample(probe, [
+		ruleSample("Stated purpose"),
+		ruleSample("Delete unused"),
+	]),
+]);
+const text = [
+	writtenReview(started),
+	writtenRecording(probe, AcknowledgementCodec.decode(sentence)),
+	writtenRecording(probe, Forward.create()),
+	writtenRecording(probe, Verdict.on(ruleSample("Stated purpose"))),
+	writtenRecording(probe, HostError.create()),
+	writtenRecording(probe, Posted.create()),
+].join("");
 
-const readBack = (): Review => ReviewCodec.decode(ReviewCodec.encode(review));
+const readBack = (): Review => reviewOfText(text);
 
 it("a review read back has the same rules left", () => {
 	assert.deepEqual(
@@ -81,6 +83,6 @@ it("a review read back still defines its terms", () => {
 	assert.equal(Effect.runSync(defined), "object");
 });
 
-it("data that is not a review is not read", () => {
-	assert.equal(ReviewCodec.safeParse({ url: "" }).success, false);
+it("text that does not hold what a review was started from is not read", () => {
+	assert.throws((): Review => reviewOfText('{"url":""}\n'));
 });

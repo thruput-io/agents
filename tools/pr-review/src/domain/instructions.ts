@@ -22,10 +22,6 @@ class Instructions {
 		return new Instructions(parts);
 	}
 
-	static partsOf(instructions: Instructions): InstructionsParts {
-		return instructions.parts;
-	}
-
 	workflow(): Workflow {
 		return this.parts.workflow;
 	}

@@ -3,54 +3,17 @@
 	"info": {
 		"title": "stored-review",
 		"version": "0.0.0",
-		"description": "What the file of a review holds in its workdir, one JSON value on each line: the review as it started, then everything recorded since, in order."
+		"description": "What the file of a review holds in its workdir, one JSON value on each line: what the review was started from, then everything recorded since, in order."
 	},
 	"paths": {},
 	"components": {
 		"schemas": {
-			"StoredReview": {
-				"description": "A review as it stood when it was written",
+			"StoredStart": {
+				"description": "What a review was started from",
 				"type": "object",
 				"properties": {
 					"url": {
 						"$ref": "domain.openapi.json#/components/schemas/TargetUrl"
-					},
-					"assigned": {
-						"description": "Each probe with its part of the review",
-						"type": "array",
-						"items": {
-							"$ref": "#/components/schemas/StoredAssigned"
-						}
-					},
-					"posts": {
-						"description": "Each time the review was posted, in order",
-						"type": "array",
-						"items": {
-							"$ref": "#/components/schemas/StoredPost"
-						}
-					}
-				},
-				"required": ["url", "assigned", "posts"]
-			},
-			"StoredAssigned": {
-				"description": "A probe and its part of the review",
-				"type": "object",
-				"properties": {
-					"probe": {
-						"$ref": "domain.openapi.json#/components/schemas/Probe"
-					},
-					"assignment": {
-						"$ref": "#/components/schemas/StoredAssignment"
-					}
-				},
-				"required": ["probe", "assignment"]
-			},
-			"StoredAssignment": {
-				"description": "The part of a review one probe holds",
-				"type": "object",
-				"properties": {
-					"task": {
-						"$ref": "#/components/schemas/StoredTask"
 					},
 					"pages": {
 						"description": "The pages of the surface",
@@ -59,11 +22,15 @@
 							"$ref": "domain.openapi.json#/components/schemas/Page"
 						}
 					},
-					"happened": {
-						"$ref": "#/components/schemas/StoredHappened"
+					"tasks": {
+						"description": "What each probe is handed",
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/StoredTask"
+						}
 					}
 				},
-				"required": ["task", "pages", "happened"]
+				"required": ["url", "pages", "tasks"]
 			},
 			"StoredTask": {
 				"description": "What a probe is handed",
@@ -109,32 +76,6 @@
 					}
 				},
 				"required": ["term", "definition"]
-			},
-			"StoredHappened": {
-				"description": "What a probe has done so far",
-				"type": "object",
-				"properties": {
-					"acknowledgements": {
-						"description": "Each acknowledgement the sub agent sent",
-						"type": "array",
-						"items": {
-							"$ref": "domain.openapi.json#/components/schemas/Acknowledgement"
-						}
-					},
-					"verdicts": {
-						"description": "The verdict on each rule that is judged",
-						"type": "array",
-						"items": {
-							"$ref": "#/components/schemas/StoredVerdict"
-						}
-					},
-					"position": {
-						"description": "The page the sub agent stands on, counted from 0, and -1 before the first",
-						"type": "integer",
-						"minimum": -1
-					}
-				},
-				"required": ["acknowledgements", "verdicts", "position"]
 			},
 			"StoredVerdict": {
 				"description": "That a rule is judged",

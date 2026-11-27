@@ -1,8 +1,7 @@
 import type { Page } from "../domain/page.ts";
 import type { TargetUrl } from "../domain/target-url.ts";
-import { Assignment } from "./assignment.ts";
 import { Review } from "./review.ts";
-import type { Probes, Task } from "./task.ts";
+import type { Probes } from "./task.ts";
 
 class Change {
 	private readonly url: TargetUrl;
@@ -19,10 +18,7 @@ class Change {
 	}
 
 	review(probes: Probes): Review {
-		return Review.of(
-			this.url,
-			probes.map((task: Task) => [task.probe, Assignment.of(task, this.pages)]),
-		);
+		return Review.of(this.url, this.pages, probes);
 	}
 }
 
