@@ -13,3 +13,4 @@ trap 'kill "$server"' EXIT
 read -r <&3
 
 node --test "$tool/src/**/*.narrow-test.ts"
+node --test "$tool/src/integration-test/*.integration-test.ts"
