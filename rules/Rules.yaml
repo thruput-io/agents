@@ -121,7 +121,7 @@ rules:
   group: Conventions
   parent: Less is more
   body: |
-    Keep every prose [[Representation]] concise, on point, and free of repetition.
+    Keep every prose [[Representation]] on point and adhering to [[Single Source of Truth]].
   smells:
   - Repeating in a prose [[Representation]] what code or a [[Contract]] already defines.
   - Unmotivated inline code snippets in a prose [[Representation]].
@@ -134,7 +134,7 @@ rules:
   group: Conventions
   parent: No Comments
   body: |
-    Write every [[Architectural Direction]] record in accordance with [[Principle]]s to state future direction and decisions—which override these [[Rule]]s—without describing current codebase state, [[File]] inventory, or implementation walkthroughs.
+    Write every [[Architectural Direction]] record in accordance with [[Principle]]s and [[On point prose]] to state future direction and decisions—which override these [[Rule]]s—without describing current codebase state, [[File]] inventory, or implementation walkthroughs.
   smells:
   - An [[Architectural Direction]] record describing current codebase state, [[File]] inventory, or a step-by-step implementation walkthrough.
   - An [[Architectural Direction]] record that embeds code snippets or rollout phases instead of the decision itself.
