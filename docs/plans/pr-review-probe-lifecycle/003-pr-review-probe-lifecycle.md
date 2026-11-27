@@ -84,10 +84,10 @@ count is zero, the stand-ins are deleted, and none of the 65 [[Violation]]s of v
 - A plain git repository can be served to the tool as git over HTTP by a mock host of its own. Tested: the narrow
   tests of the git adapter run against it in the build.
 - An agent's command-line tool can be started by the tool with only the permissions of one probe, and stopped by
-  it. Not tested; a tracer bullet proves it before M2 starts.
+  it. Not tested; a tracer bullet proves it before M3 starts.
 - A client that holds only the operations in use can be generated from the specification a host publishes. Tested
   in M1 of version 002 with orval; the build of the skeleton no longer holds that generator, so it is proven again
-  at the start of M4.
+  at the start of M5.
 
 ### Risks
 
@@ -139,6 +139,8 @@ continue their numbering and quote the human.
      skeleton shows how stuff should be built, gueardrails are much better now".
 120. What does the new version start from? "we did the skeleton and you implmented one spike".
 121. May the goals change in it? No: "plz do it, do not touch objectives".
+122. Text is turned into values and back in the code with no schema behind it: "completely missing the point in
+     haveing schemas". Is that fixed before the rest? Yes: "Ye skeletong has to be perfect before we start".
 
 ## Open questions
 
@@ -244,13 +246,13 @@ Unless the human approves it first:
 
 | Goal | Milestones               |
 |------|--------------------------|
-| 1    | M2, M3, M4, M5, M6       |
-| 2    | M2, M3                   |
-| 3    | M2, M3                   |
+| 1    | M2 to M7                 |
+| 2    | M3, M4                   |
+| 3    | M2, M3, M4               |
 | 4    | later plan; guarded here |
 | 5    | later plan; guarded here |
 | 6    | later plan; guarded here |
-| 7    | M1 to M6                 |
+| 7    | M1 to M7                 |
 
 ### Running all tests
 
@@ -266,7 +268,18 @@ question 5 is answered.
 Verification: a stand-in planted in an entry point fails the build. For each of the 65 the progress log names
 where it stood and that it is gone, and the build passes.
 
-### Milestone M2: The tool starts and stops its sub agents
+### Milestone M2: Every shape that leaves the tool comes from a schema
+
+The skeleton is made right before anything is built on it. The answer of every command and the stored review are
+defined in the tool's schemas, and the perimeters encode and decode through what is generated from them. The
+codecs written by hand leave the domain. Text becomes a checked value, and a value becomes text, in one place of
+the perimeters; the generator checks the schemas it reads, and the tests check the lines they read. A guardrail
+then refuses the two calls that turn text into an unchecked value and back, anywhere else in the tool.
+
+Verification: the build passes, no file of the domain holds a codec, and one of the two calls planted in each
+layer fails the build.
+
+### Milestone M3: The tool starts and stops its sub agents
 
 The stand-in for the sub agents is replaced by an adapter that starts one sub agent for each probe, with the
 permissions of that probe and nothing else to tell it what to do but its first command, and stops it when it has
@@ -275,7 +288,7 @@ nothing left. The sub agent's entry point works on the stored review and no long
 Verification: the unit tests of the controllers pass with the adapter replaced by a stand-in of the tests, a
 narrow test starts and stops a real sub agent, and the count of stand-ins has fallen by those removed.
 
-### Milestone M3: One review on plain git, from the first command to the outcome
+### Milestone M4: One review on plain git, from the first command to the outcome
 
 Posting gets its adapter for plain git, as open question 2 is answered. The black-box suite is started: it drives
 only the built tool through its command line, against the fixture repository served over HTTP, and holds the
@@ -285,7 +298,7 @@ human first.
 Verification: the suite passes on plain git, an import planted from the suite into the production code and from
 the production code into the suite fails the build, and no stand-in of the host is left in an entry point.
 
-### Milestone M4: GitHub
+### Milestone M5: GitHub
 
 The GitHub adapter reads a [[Change]] and posts an outcome through a client generated from the specification
 GitHub publishes, holding only the operations in use. A stateless mock host answers in GitHub's own protocol from
@@ -295,13 +308,13 @@ version 002 that involve a host.
 Verification: the suite passes on plain git and on GitHub with the same outcome posted for the same use case, and
 the assertions on a post are made on the log of the mock host.
 
-### Milestone M5: Azure DevOps
+### Milestone M6: Azure DevOps
 
 The same for Azure DevOps, in its own shapes and failures.
 
 Verification: the suite passes on all three hosts.
 
-### Milestone M6: Zero
+### Milestone M7: Zero
 
 The use cases of version 002 not yet covered, concurrency and timing among them, join the suite. The stand-in
 adapters, their count, and the rules that exist only for them are removed.
