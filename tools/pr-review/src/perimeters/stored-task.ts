@@ -12,15 +12,6 @@ import type { StoredDefined } from "../generated/perimeters/stored-defined.g.ts"
 import type { StoredTask } from "../generated/perimeters/stored-task.g.ts";
 import type { StoredVerdict } from "../generated/perimeters/stored-verdict.g.ts";
 import { TermCodec } from "./term.ts";
-import {
-	AcknowledgementRequestCodec,
-	ContextCodec,
-	DefinitionCodec,
-	ProbeCodec,
-	RuleCodec,
-	UsageCodec,
-	WorkflowCodec,
-} from "./values.ts";
 
 type StoredInstructions = StoredTask["instructions"];
 
@@ -28,7 +19,7 @@ const verdictFrom = ({ rule }: StoredVerdict): Verdict =>
 	Verdict.on(Rule.of(rule));
 
 const storedVerdict = (verdict: Verdict): StoredVerdict => ({
-	rule: verdict.foldedBy(RuleCodec),
+	rule: Rule.shapeOf(Verdict.ruleOf(verdict)),
 });
 
 const instructionsFrom = (stored: StoredInstructions): Instructions =>
@@ -42,10 +33,10 @@ const instructionsFrom = (stored: StoredInstructions): Instructions =>
 const storedInstructions = (
 	instructions: Instructions,
 ): StoredInstructions => ({
-	workflow: WorkflowCodec.encode(instructions.workflow()),
-	context: ContextCodec.encode(instructions.context()),
-	usage: UsageCodec.encode(instructions.usage()),
-	request: AcknowledgementRequestCodec.encode(instructions.request()),
+	workflow: Workflow.shapeOf(instructions.workflow()),
+	context: Context.shapeOf(instructions.context()),
+	usage: Usage.shapeOf(instructions.usage()),
+	request: AcknowledgementRequest.shapeOf(instructions.request()),
 });
 
 const taskFrom = (stored: StoredTask): Task => ({
@@ -62,14 +53,14 @@ const taskFrom = (stored: StoredTask): Task => ({
 });
 
 const storedTask = (task: Task): StoredTask => ({
-	probe: ProbeCodec.encode(task.probe),
+	probe: Probe.shapeOf(task.probe),
 	instructions: storedInstructions(task.instructions),
 	detailed: storedInstructions(task.detailed),
-	rules: task.rules.map((rule: Rule): string => RuleCodec.encode(rule)),
+	rules: task.rules.map(Rule.shapeOf),
 	glossary: task.glossary.map(
 		([term, definition]: Defined): StoredDefined => ({
 			term: TermCodec.encode(term),
-			definition: DefinitionCodec.encode(definition),
+			definition: Definition.shapeOf(definition),
 		}),
 	),
 });

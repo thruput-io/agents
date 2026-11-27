@@ -27,11 +27,7 @@ const AcknowledgementCodec = z.codec(
 	z.custom<Acknowledgement>(
 		(value): boolean => value instanceof Acknowledgement,
 	),
-	{
-		decode: Acknowledgement.of,
-		encode: (acknowledgement: Acknowledgement): AcknowledgementShape =>
-			acknowledgement.foldedBy(AcknowledgementShape),
-	},
+	{ decode: Acknowledgement.of, encode: Acknowledgement.shapeOf },
 );
 
 const AcknowledgementRequestCodec = z.codec(
@@ -39,97 +35,61 @@ const AcknowledgementRequestCodec = z.codec(
 	z.custom<AcknowledgementRequest>(
 		(value): boolean => value instanceof AcknowledgementRequest,
 	),
-	{
-		decode: AcknowledgementRequest.of,
-		encode: (
-			acknowledgementRequest: AcknowledgementRequest,
-		): AcknowledgementRequestShape =>
-			acknowledgementRequest.foldedBy(AcknowledgementRequestShape),
-	},
+	{ decode: AcknowledgementRequest.of, encode: AcknowledgementRequest.shapeOf },
 );
 
 const ContextCodec = z.codec(
 	ContextShape,
 	z.custom<Context>((value): boolean => value instanceof Context),
-	{
-		decode: Context.of,
-		encode: (context: Context): ContextShape => context.foldedBy(ContextShape),
-	},
+	{ decode: Context.of, encode: Context.shapeOf },
 );
 
 const DefinitionCodec = z.codec(
 	DefinitionShape,
 	z.custom<Definition>((value): boolean => value instanceof Definition),
-	{
-		decode: Definition.of,
-		encode: (definition: Definition): DefinitionShape =>
-			definition.foldedBy(DefinitionShape),
-	},
+	{ decode: Definition.of, encode: Definition.shapeOf },
 );
 
 const PageCodec = z.codec(
 	PageShape,
 	z.custom<Page>((value): boolean => value instanceof Page),
-	{
-		decode: Page.of,
-		encode: (page: Page): PageShape => page.foldedBy(PageShape),
-	},
+	{ decode: Page.of, encode: Page.shapeOf },
 );
 
 const ProbeCodec = z.codec(
 	ProbeShape,
 	z.custom<Probe>((value): boolean => value instanceof Probe),
-	{
-		decode: Probe.of,
-		encode: (probe: Probe): ProbeShape => probe.foldedBy(ProbeShape),
-	},
+	{ decode: Probe.of, encode: Probe.shapeOf },
 );
 
 const RuleCodec = z.codec(
 	RuleShape,
 	z.custom<Rule>((value): boolean => value instanceof Rule),
-	{
-		decode: Rule.of,
-		encode: (rule: Rule): RuleShape => rule.foldedBy(RuleShape),
-	},
+	{ decode: Rule.of, encode: Rule.shapeOf },
 );
 
 const TargetUrlCodec = z.codec(
 	TargetUrlShape,
 	z.custom<TargetUrl>((value): boolean => value instanceof TargetUrl),
-	{
-		decode: TargetUrl.of,
-		encode: (targetUrl: TargetUrl): TargetUrlShape =>
-			targetUrl.foldedBy(TargetUrlShape),
-	},
+	{ decode: TargetUrl.of, encode: TargetUrl.shapeOf },
 );
 
 const UsageCodec = z.codec(
 	UsageShape,
 	z.custom<Usage>((value): boolean => value instanceof Usage),
-	{
-		decode: Usage.of,
-		encode: (usage: Usage): UsageShape => usage.foldedBy(UsageShape),
-	},
+	{ decode: Usage.of, encode: Usage.shapeOf },
 );
 
 const WorkdirCodec = z.codec(
 	WorkdirShape,
 	z.custom<Workdir>((value): boolean => value instanceof Workdir),
-	{
-		decode: Workdir.of,
-		encode: (workdir: Workdir): WorkdirShape => workdir.foldedBy(WorkdirShape),
-	},
+	{ decode: Workdir.of, encode: Workdir.shapeOf },
 );
 
 const WorkflowCodec = z.codec(
 	WorkflowShape,
 	z.custom<Workflow>((value): boolean => value instanceof Workflow),
-	{
-		decode: Workflow.of,
-		encode: (workflow: Workflow): WorkflowShape =>
-			workflow.foldedBy(WorkflowShape),
-	},
+	{ decode: Workflow.of, encode: Workflow.shapeOf },
 );
 
 export {

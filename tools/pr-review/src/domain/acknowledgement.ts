@@ -1,5 +1,4 @@
 import type { Acknowledgement as AcknowledgementShape } from "../generated/domain/acknowledgement.g.ts";
-import type { Folding } from "./folding.ts";
 
 class Acknowledgement {
 	private readonly shape: AcknowledgementShape;
@@ -13,8 +12,8 @@ class Acknowledgement {
 		return new Acknowledgement(shape);
 	}
 
-	foldedBy<Foreign>(contract: Folding<AcknowledgementShape, Foreign>): Foreign {
-		return contract.encode(this.shape);
+	static shapeOf(acknowledgement: Acknowledgement): AcknowledgementShape {
+		return acknowledgement.shape;
 	}
 }
 

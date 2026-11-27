@@ -1,5 +1,4 @@
 import type { TargetUrl as TargetUrlShape } from "../generated/domain/target-url.g.ts";
-import type { Folding } from "./folding.ts";
 
 class TargetUrl {
 	private readonly shape: TargetUrlShape;
@@ -13,8 +12,8 @@ class TargetUrl {
 		return new TargetUrl(shape);
 	}
 
-	foldedBy<Foreign>(contract: Folding<TargetUrlShape, Foreign>): Foreign {
-		return contract.encode(this.shape);
+	static shapeOf(targetUrl: TargetUrl): TargetUrlShape {
+		return targetUrl.shape;
 	}
 }
 

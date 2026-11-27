@@ -1,5 +1,4 @@
 import type { Workflow as WorkflowShape } from "../generated/domain/workflow.g.ts";
-import type { Folding } from "./folding.ts";
 
 class Workflow {
 	private readonly shape: WorkflowShape;
@@ -13,8 +12,8 @@ class Workflow {
 		return new Workflow(shape);
 	}
 
-	foldedBy<Foreign>(contract: Folding<WorkflowShape, Foreign>): Foreign {
-		return contract.encode(this.shape);
+	static shapeOf(workflow: Workflow): WorkflowShape {
+		return workflow.shape;
 	}
 }
 

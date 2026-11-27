@@ -1,6 +1,5 @@
 import { Effect } from "effect";
 import type { Rule } from "../domain/rule.ts";
-import type { Folding } from "./folding.ts";
 import { NotAssigned } from "./not-assigned.ts";
 
 class Verdict {
@@ -15,8 +14,8 @@ class Verdict {
 		return new Verdict(rule);
 	}
 
-	foldedBy<Foreign>(contract: Folding<Rule, Foreign>): Foreign {
-		return contract.encode(this.rule);
+	static ruleOf(verdict: Verdict): Rule {
+		return verdict.rule;
 	}
 
 	isOn(rule: Rule): boolean {

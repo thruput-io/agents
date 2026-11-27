@@ -20,12 +20,6 @@ import {
 	taskFrom,
 	verdictFrom,
 } from "./stored-task.ts";
-import {
-	AcknowledgementCodec,
-	PageCodec,
-	ProbeCodec,
-	TargetUrlCodec,
-} from "./values.ts";
 
 type StoredRecorded = StoredRecording["recorded"];
 
@@ -71,7 +65,7 @@ const storedRecorded = (recorded: Recorded): StoredRecorded =>
 		Match.when(
 			isAcknowledgement,
 			(sent: Acknowledgement): StoredRecorded => ({
-				acknowledgement: AcknowledgementCodec.encode(sent),
+				acknowledgement: Acknowledgement.shapeOf(sent),
 			}),
 		),
 		Match.when(
@@ -89,8 +83,8 @@ const startedFrom = ({ url, pages, tasks }: StoredStart): Review =>
 const storedStart = (review: Review): StoredStart =>
 	review.started(
 		(url: TargetUrl, pages: readonly Page[], probes: Probes): StoredStart => ({
-			url: TargetUrlCodec.encode(url),
-			pages: pages.map((page: Page): string => PageCodec.encode(page)),
+			url: TargetUrl.shapeOf(url),
+			pages: pages.map(Page.shapeOf),
 			tasks: probes.map(storedTask),
 		}),
 	);
@@ -101,7 +95,7 @@ const RecordingCodec = z.codec(StoredRecording, z.custom<Recording>(), {
 		recorded: recordedFrom(recorded),
 	}),
 	encode: ({ probe, recorded }: Recording): StoredRecording => ({
-		probe: ProbeCodec.encode(probe),
+		probe: Probe.shapeOf(probe),
 		recorded: storedRecorded(recorded),
 	}),
 });
