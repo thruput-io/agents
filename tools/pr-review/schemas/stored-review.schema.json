@@ -1,0 +1,204 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "stored-review",
+	"description": "What the file of a review holds in its workdir, one JSON value on each line: the review as it started, then everything recorded since, in order.",
+	"type": "array",
+	"prefixItems": [
+		{
+			"$ref": "#/$defs/Review"
+		}
+	],
+	"items": {
+		"$ref": "#/$defs/Recording"
+	},
+	"minItems": 1,
+	"$defs": {
+		"Review": {
+			"description": "A review as it stood when it was written",
+			"type": "object",
+			"properties": {
+				"url": {
+					"$ref": "domain.schema.json#/$defs/TargetUrl"
+				},
+				"assigned": {
+					"description": "Each probe with its part of the review",
+					"type": "array",
+					"items": {
+						"description": "A probe and its part of the review",
+						"type": "array",
+						"prefixItems": [
+							{
+								"$ref": "domain.schema.json#/$defs/Probe"
+							},
+							{
+								"$ref": "#/$defs/Assignment"
+							}
+						],
+						"items": false,
+						"minItems": 2
+					}
+				},
+				"posts": {
+					"description": "Each time the review was posted, in order",
+					"type": "array",
+					"items": {
+						"$ref": "#/$defs/Post"
+					}
+				}
+			},
+			"required": ["url", "assigned", "posts"]
+		},
+		"Assignment": {
+			"description": "The part of a review one probe holds",
+			"type": "object",
+			"properties": {
+				"task": {
+					"$ref": "#/$defs/Task"
+				},
+				"pages": {
+					"description": "The pages of the surface",
+					"type": "array",
+					"items": {
+						"$ref": "domain.schema.json#/$defs/Page"
+					}
+				},
+				"happened": {
+					"$ref": "#/$defs/Happened"
+				}
+			},
+			"required": ["task", "pages", "happened"]
+		},
+		"Task": {
+			"description": "What a probe is handed",
+			"type": "object",
+			"properties": {
+				"probe": {
+					"$ref": "domain.schema.json#/$defs/Probe"
+				},
+				"instructions": {
+					"$ref": "answers.schema.json#/$defs/Instructions"
+				},
+				"detailed": {
+					"$ref": "answers.schema.json#/$defs/Instructions"
+				},
+				"rules": {
+					"description": "The rules the probe judges",
+					"type": "array",
+					"items": {
+						"$ref": "domain.schema.json#/$defs/Rule"
+					}
+				},
+				"glossary": {
+					"description": "Each term the probe can ask for, with what it means",
+					"type": "array",
+					"items": {
+						"description": "A term and what it means",
+						"type": "array",
+						"prefixItems": [
+							{
+								"$ref": "#/$defs/Term"
+							},
+							{
+								"$ref": "domain.schema.json#/$defs/Definition"
+							}
+						],
+						"items": false,
+						"minItems": 2
+					}
+				}
+			},
+			"required": ["probe", "instructions", "detailed", "rules", "glossary"]
+		},
+		"Happened": {
+			"description": "What a probe has done so far",
+			"type": "object",
+			"properties": {
+				"acknowledgements": {
+					"description": "Each acknowledgement the sub agent sent",
+					"type": "array",
+					"items": {
+						"$ref": "domain.schema.json#/$defs/Acknowledgement"
+					}
+				},
+				"verdicts": {
+					"description": "The verdict on each rule that is judged",
+					"type": "array",
+					"items": {
+						"$ref": "#/$defs/Verdict"
+					}
+				},
+				"position": {
+					"description": "The page the sub agent stands on, counted from 0, and -1 before the first",
+					"type": "integer",
+					"minimum": -1
+				}
+			},
+			"required": ["acknowledgements", "verdicts", "position"]
+		},
+		"Verdict": {
+			"description": "That a rule is judged",
+			"type": "object",
+			"properties": {
+				"rule": {
+					"$ref": "domain.schema.json#/$defs/Rule"
+				}
+			},
+			"required": ["rule"]
+		},
+		"Term": {
+			"description": "A word of the glossary, as it is looked up",
+			"type": "string",
+			"minLength": 1
+		},
+		"Post": {
+			"description": "How posting the review went",
+			"enum": ["posted", "host-error"]
+		},
+		"Recording": {
+			"description": "One thing that happened in a review, and the probe it happened to",
+			"type": "object",
+			"properties": {
+				"probe": {
+					"$ref": "domain.schema.json#/$defs/Probe"
+				},
+				"recorded": {
+					"description": "What happened",
+					"anyOf": [
+						{
+							"description": "The sub agent acknowledged its instructions",
+							"type": "object",
+							"properties": {
+								"acknowledgement": {
+									"$ref": "domain.schema.json#/$defs/Acknowledgement"
+								}
+							},
+							"required": ["acknowledgement"]
+						},
+						{
+							"description": "The sub agent judged a rule",
+							"type": "object",
+							"properties": {
+								"verdict": {
+									"$ref": "#/$defs/Verdict"
+								}
+							},
+							"required": ["verdict"]
+						},
+						{
+							"description": "The sub agent turned to the next page",
+							"const": "forward"
+						},
+						{
+							"description": "The sub agent turned to the previous page",
+							"const": "back"
+						},
+						{
+							"$ref": "#/$defs/Post"
+						}
+					]
+				}
+			},
+			"required": ["probe", "recorded"]
+		}
+	}
+}
