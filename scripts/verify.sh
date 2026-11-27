@@ -6,6 +6,7 @@ jsonschema=(npx --yes @sourcemeta/jsonschema@17.0.0)
 git -C "$PROJECT_ROOT" ls-files -z '*.sh' | xargs -0 -I{} shellcheck "$PROJECT_ROOT/{}"
 shellcheck "$PROJECT_ROOT/.githooks/pre-push"
 shasum --algorithm 256 --check --strict --quiet "$PROJECT_ROOT/guardrails.sha256"
+jq --compact-output --sort-keys "{scripts, allowScripts}" "$PROJECT_ROOT/tools/pr-review/package.json" | shasum --algorithm 256 --check --strict --quiet "$PROJECT_ROOT/tools/pr-review/package-scripts.sha256"
 semgrep --test --metrics=off "$PROJECT_ROOT/semgrep"
 test "$(grep --only-matching --no-filename 'notYetImplemented[A-Za-z]*' "$PROJECT_ROOT"/tools/pr-review/src/client/*/review-tool*.ts | wc -l)" -le "$(cat "$PROJECT_ROOT/tools/pr-review/not-yet-implemented.count")"
 
