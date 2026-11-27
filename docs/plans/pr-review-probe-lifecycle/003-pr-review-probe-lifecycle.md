@@ -59,17 +59,27 @@ The cheapest passing interpretations and exclusions are the [[AI agent]]'s propo
 
 ## Summary
 
-The skeleton shows how every part is built, and the rest is built the same way.
+The goals are reached by holding the code to the guidance below, each point decided in
+[Discussions](#discussions). Where the skeleton departs from it, M2 brings the skeleton to it.
 
-- A value of the domain is generated from the tool's schemas as a frozen class with a private constructor. It is
-  created and read back only through its zod codec, and only the perimeters parse.
-- The domain holds the ports the controllers work against: the host, the sub agents and the store of reviews. A
-  result and its failure travel in an Effect and are folded at the perimeter.
-- The main agent and the sub agent each have an entry point, a client and a controller of their own, and neither
-  depends on the other's. Their commands, arguments and help are generated from one schema each.
-- A probe is YAML data inside the tool and names exactly one rule group.
-- Only the entry points connect adapters to controllers. An adapter that does not exist yet is a stand-in that
-  stops the program, and the build counts the stand-ins in use.
+- Each agent has its own generated surface and sees nothing it does not use. A probe is YAML data inside the tool, with
+  one rule group and no more permissions than it needs.
+- The domain is closed. Its objects are transport agnostic, opaque, [[Immutable]] and have only methods. They are
+  created only in the perimeters or by a method on another [[Domain object]], and leave only there, through zod
+  codecs; nothing is parsed anywhere else.
+- A [[Domain object]] is its generated data and its methods in one frozen object, seen outside its package only as an
+  interface with methods. A [[Domain primitive]] is such an object too. The interfaces, the friend module that reads
+  the data back, and the codecs are one package whose entry points keep the friend module private; a second package
+  re-exports the interfaces as types for the controller.
+- A result and its failure travel in an Effect, folded only at the perimeter.
+- Every boundary is generated from a spec, with interfaces in OpenAPI: the controller and client APIs, the host adapter
+  (get the [[Change]] for an opaque URL, post the outcome), the persistence adapter (in memory and on disk), and a
+  generated folder for each layer.
+- Behaviour is pinned by black-box integration tests on one immutable fixture repository, with stateless mock hosts.
+  The production code, the mock hosts and the integration tests are three independent parts with nothing in common.
+- No generator is written by hand. Things start with a schema, the build invokes the generating tool, and the
+  tool's configuration points to the files. An adapter that does not exist yet is a stand-in that stops the
+  program, and the build counts the stand-ins in use.
 
 The work is done one stand-in at a time. Each milestone replaces stand-ins by real adapters, proves the result
 from outside with black-box tests against stateless mock hosts, and lowers the count. The plan is executed when the
@@ -150,25 +160,24 @@ continue their numbering and quote the human.
      be a desciption of the clients method in an openapi spec".
 125. Is the whole package file of the tool a guardrail? No: "group the invoication of guardrails in it and only
      restrict that part", and of the install permissions: "ok add allowScripts as wel".
+126. May a generator be written by hand? No: "no hand-written generator is accpeted, things STARTS with a
+     schema", and "package-json invokes tool, configs point to files".
 
 ## Open questions
 
 Each has the agent's recommendation. None is decided.
 
-1. Rows 13 and 96 decide that the adapter interfaces are generated from OpenAPI by orval. The skeleton writes its
-   ports by hand in the domain. Which stands? Recommendation: the skeleton, since the ports take and return only
-   [[Domain object]]s and no shape crosses a boundary there; a new row then replaces rows 13 and 96 for the ports.
-2. What does posting the outcome mean on plain git? Rows 83, 87 and 105 leave it open. Recommendation: the outcome
+1. What does posting the outcome mean on plain git? Rows 83, 87 and 105 leave it open. Recommendation: the outcome
    is written into the workdir of the review and answered to the main agent, and nothing is written to the
    repository.
-3. Which agent's command-line tool is the first the tool starts sub agents with? Recommendation: claude, behind
+2. Which agent's command-line tool is the first the tool starts sub agents with? Recommendation: claude, behind
    the port, so that each of the other three is one more adapter.
-4. How is a change to a guardrail delivered, given that the hook refuses it? Recommendation: in a push that holds
+3. How is a change to a guardrail delivered, given that the hook refuses it? Recommendation: in a push that holds
    nothing else, made by the human past the hook, and the plan names that as the one governed use of it.
-5. Version 002 promised a code owners file, a file of counts compared by the pull request check, and a linter for
+4. Version 002 promised a code owners file, a file of counts compared by the pull request check, and a linter for
    Markdown, YAML and Dockerfiles. None exists. Are they built or dropped? Recommendation: build the linters in M1,
    and drop the other two, since the checksum list and the hook now do their work.
-6. Do the use cases of version 002 that the human has not agreed, 23 to 31, stand? Recommendation: each is agreed
+5. Do the use cases of version 002 that the human has not agreed, 23 to 31, stand? Recommendation: each is agreed
    or dropped when the milestone it belongs to starts.
 
 ## Baseline
@@ -272,7 +281,7 @@ Unless the human approves it first:
 The ceiling on stand-ins is set to the number in the code, and it is set again at the end of every milestone. Of
 the 65 [[Violation]]s of version 002, those whose cited file still exists are checked against the code as it is
 now, and each one still present is resolved. Every kind of source file that has no linter gets one, as open
-question 5 is answered.
+question 4 is answered.
 
 Verification: a stand-in planted in an entry point fails the build. For each of the 65 the progress log names
 where it stood and that it is gone, and the build passes.
@@ -299,7 +308,7 @@ narrow test starts and stops a real sub agent, and the count of stand-ins has fa
 
 ### Milestone M4: One review on plain git, from the first command to the outcome
 
-Posting gets its adapter for plain git, as open question 2 is answered. The black-box suite is started: it drives
+Posting gets its adapter for plain git, as open question 1 is answered. The black-box suite is started: it drives
 only the built tool through its command line, against the fixture repository served over HTTP, and holds the
 complete happy path of version 002, use cases 1 to 4. The fixture and the list of use cases are agreed with the
 human first.
