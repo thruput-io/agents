@@ -22,7 +22,7 @@ import { gitHostOver } from "./git-host.ts";
 
 const mockHost = "http://localhost:8617";
 const sentence =
-	"By sending this ack I acknowledge that I have read all instructions, and implicitly that I know how to use the review tool.";
+	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
 
 const emptyWorkdir = (): Workdir =>
 	Workdir.codec.decode(mkdtempSync(join(tmpdir(), "narrow-git-")));

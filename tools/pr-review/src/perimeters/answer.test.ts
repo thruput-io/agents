@@ -31,7 +31,12 @@ import {
 	statusAnswer,
 } from "./answer.ts";
 
-const fourEmptyParts = { workflow: {}, context: {}, usage: {}, request: {} };
+const fourEmptyParts = {
+	workflow: {},
+	context: {},
+	usage: {},
+	request: "a request",
+};
 
 it("rules are answered by their ids", () => {
 	assert.deepEqual(rulesAnswer([ruleSample("Stated purpose")]), {

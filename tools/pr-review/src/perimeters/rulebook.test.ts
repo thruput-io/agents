@@ -3,6 +3,8 @@ import { test as it } from "node:test";
 import { Effect } from "effect";
 import type { Task } from "../domain/task.ts";
 import { Term } from "../domain/term.ts";
+import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
+import { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
 import { Definition } from "../generated/domain/definition.g.ts";
 import { Rule } from "../generated/domain/rule.g.ts";
 import { Workdir } from "../generated/domain/workdir.g.ts";
@@ -62,4 +64,25 @@ it("the glossary of a probe defines a rule, a principle and a definition", () =>
 
 	assert.deepEqual(defined.slice(0, 1), ["State the"]);
 	assert.equal(defined.length, "abc".length);
+});
+
+it("the instructions of a probe end by asking for the sentence the acknowledgement accepts", () => {
+	const asked = taskOfPurpose().map((task: Task): string =>
+		AcknowledgementRequest.codec.encode(task.instructions.request()),
+	);
+	const sentences = asked.map(
+		(text: string): boolean =>
+			Acknowledgement.codec.safeParse(text.slice(text.indexOf("By sending")))
+				.success,
+	);
+
+	assert.deepEqual(
+		[asked, sentences],
+		[
+			[
+				"Acknowledge these instructions by sending exactly this sentence with the ack command: By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool",
+			],
+			[true],
+		],
+	);
 });

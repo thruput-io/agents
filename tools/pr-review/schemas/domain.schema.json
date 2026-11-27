@@ -42,12 +42,13 @@
 		},
 		"AcknowledgementRequest": {
 			"description": "What a sub agent sends back to show it read its instructions",
-			"type": "object"
+			"type": "string",
+			"minLength": 1
 		},
 		"Acknowledgement": {
 			"description": "The one sentence a sub agent sends to acknowledge its instructions",
 			"type": "string",
-			"const": "By sending this ack I acknowledge that I have read all instructions, and implicitly that I know how to use the review tool."
+			"const": "By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool"
 		},
 		"Page": {
 			"description": "One page of the surface: the lines of one changed file, each added line led by the place to report on",

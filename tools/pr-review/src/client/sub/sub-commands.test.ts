@@ -10,8 +10,9 @@ import { type Commands, run } from "../common/runner.ts";
 import { subTool } from "./sub-commands.ts";
 
 const sentence =
-	"By sending this ack I acknowledge that I have read all instructions, and implicitly that I know how to use the review tool.";
-const fourEmptyParts = '{"workflow":{},"context":{},"usage":{},"request":{}}\n';
+	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
+const fourEmptyParts =
+	'{"workflow":{},"context":{},"usage":{},"request":"a request"}\n';
 
 const tool = (): Commands => subTool(host, storeWithReview(), agent);
 

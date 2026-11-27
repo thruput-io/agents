@@ -16,7 +16,7 @@ const instructionsSample = (): Instructions =>
 		workflow: Workflow.codec.decode({}),
 		context: Context.codec.decode({}),
 		usage: Usage.codec.decode({}),
-		request: AcknowledgementRequest.codec.decode({}),
+		request: AcknowledgementRequest.codec.decode("a request"),
 	});
 
 const ruleSample = (id: string): Rule => Rule.codec.decode(id);

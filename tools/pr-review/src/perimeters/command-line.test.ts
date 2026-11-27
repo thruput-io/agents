@@ -19,7 +19,7 @@ import {
 } from "./command-line.ts";
 
 const sentence =
-	"By sending this ack I acknowledge that I have read all instructions, and implicitly that I know how to use the review tool.";
+	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
 
 it("a command line gives the name and the arguments after it", () => {
 	assert.deepEqual(Effect.runSync(commandLineOf(["prepare", "one", "two"])), {

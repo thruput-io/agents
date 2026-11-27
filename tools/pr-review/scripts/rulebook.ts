@@ -7,12 +7,25 @@ const text = z.string().min(1);
 const PROBE_NAME = /^[a-z]+(?:-[a-z]+)*$/u;
 
 interface Rulebook {
+	readonly acknowledgementRequest: string;
 	readonly probes: readonly {
 		readonly name: string;
 		readonly rules: readonly string[];
 	}[];
 	readonly glossary: readonly (readonly string[])[];
 }
+
+const moduleOf = (rulebook: Rulebook): string =>
+	[
+		"interface Rulebook {",
+		"\treadonly acknowledgementRequest: string;",
+		"\treadonly probes: readonly { readonly name: string; readonly rules: readonly string[] }[];",
+		"\treadonly glossary: readonly (readonly [string, string])[];",
+		"}",
+		"",
+		`export const rulebook: Rulebook = ${JSON.stringify(rulebook, undefined, "\t")};`,
+		"",
+	].join("\n");
 
 const rulebookModule = (rulesFolder: string, probesFile: string): string => {
 	const { rules } = z
@@ -33,8 +46,9 @@ const rulebookModule = (rulesFolder: string, probesFile: string): string => {
 			parse(readFileSync(resolve(rulesFolder, "Definitions.yaml"), "utf8")),
 		);
 
-	const { probes } = z
+	const { probes, acknowledgementRequest } = z
 		.strictObject({
+			acknowledgementRequest: text,
 			probes: z.array(
 				z.strictObject({
 					name: z.string().regex(PROBE_NAME),
@@ -47,6 +61,7 @@ const rulebookModule = (rulesFolder: string, probesFile: string): string => {
 		.parse(parse(readFileSync(probesFile, "utf8")));
 
 	const rulebook: Rulebook = {
+		acknowledgementRequest,
 		probes: probes.map(({ name, group }) => ({
 			name,
 			rules: rules
@@ -60,15 +75,7 @@ const rulebookModule = (rulesFolder: string, probesFile: string): string => {
 		],
 	};
 
-	return [
-		"interface Rulebook {",
-		"\treadonly probes: readonly { readonly name: string; readonly rules: readonly string[] }[];",
-		"\treadonly glossary: readonly (readonly [string, string])[];",
-		"}",
-		"",
-		`export const rulebook: Rulebook = ${JSON.stringify(rulebook, undefined, "\t")};`,
-		"",
-	].join("\n");
+	return moduleOf(rulebook);
 };
 
 export { rulebookModule };

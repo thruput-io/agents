@@ -27,7 +27,7 @@ const probe: Probe = probeSample("probe-1");
 const purpose: Rule = ruleSample("Stated purpose");
 const unused: Rule = ruleSample("Delete unused");
 const sent: Acknowledgement = Acknowledgement.codec.decode(
-	"By sending this ack I acknowledge that I have read all instructions, and implicitly that I know how to use the review tool.",
+	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool",
 );
 const change: Change = Change.of(urlSample(), [pageSample()]);
 

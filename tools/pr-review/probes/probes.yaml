@@ -1,3 +1,5 @@
+acknowledgementRequest: >-
+  Acknowledge these instructions by sending exactly this sentence with the ack command: By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool
 probes:
   - name: contracts
     group: Contracts

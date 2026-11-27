@@ -22,7 +22,7 @@ import { Verdict } from "./verdict.ts";
 
 const probe: Probe = probeSample("probe-1");
 const sentence =
-	"By sending this ack I acknowledge that I have read all instructions, and implicitly that I know how to use the review tool.";
+	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
 const review: Review = Change.of(urlSample(), [pageSample()])
 	.review([
 		taskSample(probe, [

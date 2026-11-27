@@ -25,7 +25,7 @@ const second: Rule = ruleSample("Delete unused");
 const pages: readonly Page[] = [pageSample(), pageSample()];
 const task: Task = taskSample(probeSample("probe-1"), [first, second]);
 const sentence =
-	"By sending this ack I acknowledge that I have read all instructions, and implicitly that I know how to use the review tool.";
+	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
 const briefed: Assignment = Assignment.of(task, pages);
 const working: Assignment = briefed.after(
 	Acknowledgement.codec.decode(sentence),

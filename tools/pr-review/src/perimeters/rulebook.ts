@@ -16,7 +16,9 @@ const probesIn = (workdir: Workdir): Probes => {
 		workflow: Workflow.codec.decode({}),
 		context: Context.codec.decode({}),
 		usage: Usage.codec.decode({}),
-		request: AcknowledgementRequest.codec.decode({}),
+		request: AcknowledgementRequest.codec.decode(
+			rulebook.acknowledgementRequest,
+		),
 	});
 	const glossary = rulebook.glossary.map(
 		([id, text]: readonly [string, string]): Defined => [

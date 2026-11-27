@@ -11,7 +11,7 @@ import { Verdict } from "./verdict.ts";
 
 const probe = probeSample("probe-1");
 const sentence =
-	"By sending this ack I acknowledge that I have read all instructions, and implicitly that I know how to use the review tool.";
+	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
 
 it("each thing recorded is written out in a form of its own", () => {
 	const written = [

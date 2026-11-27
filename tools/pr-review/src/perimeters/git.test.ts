@@ -24,7 +24,7 @@ const url: TargetUrl = TargetUrl.codec.decode(
 	"https://host.test/change.git@main..feature",
 );
 const sentence =
-	"By sending this ack I acknowledge that I have read all instructions, and implicitly that I know how to use the review tool.";
+	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
 const diff = [
 	"diff --git a/src/one.ts b/src/one.ts",
 	"index 1111111..2222222 100644",
