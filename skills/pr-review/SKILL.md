@@ -24,6 +24,8 @@ arguments. Each answers one line of JSON, and exits with 0 for an answer and 1 f
 - **Do not read or change the workdir,** and do not run `<skill>/dist/bin/review-tool-probe.mjs`. That executable
   belongs to the sub agents.
 - **On a failure, report the answer to the user and stop.** Do not review another way.
+- **When a command prints no line of JSON, the tool stopped at a step it does not implement yet.** Report what it wrote
+  on standard error to the user and stop. Do not run it again, and do not review another way.
 
 ## 1. Prepare
 
