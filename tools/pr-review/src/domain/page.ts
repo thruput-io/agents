@@ -1,4 +1,5 @@
 import type { Page as PageShape } from "../generated/domain/page.g.ts";
+import type { Folding } from "./folding.ts";
 
 class Page {
 	private readonly shape: PageShape;
@@ -12,8 +13,8 @@ class Page {
 		return new Page(shape);
 	}
 
-	static shapeOf(page: Page): PageShape {
-		return page.shape;
+	foldedBy<Foreign>(contract: Folding<PageShape, Foreign>): Foreign {
+		return contract.encode(this.shape);
 	}
 }
 

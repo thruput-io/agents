@@ -1,4 +1,5 @@
 import type { Workdir as WorkdirShape } from "../generated/domain/workdir.g.ts";
+import type { Folding } from "./folding.ts";
 
 class Workdir {
 	private readonly shape: WorkdirShape;
@@ -12,8 +13,8 @@ class Workdir {
 		return new Workdir(shape);
 	}
 
-	static shapeOf(workdir: Workdir): WorkdirShape {
-		return workdir.shape;
+	foldedBy<Foreign>(contract: Folding<WorkdirShape, Foreign>): Foreign {
+		return contract.encode(this.shape);
 	}
 }
 

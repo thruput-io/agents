@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import type { Folding } from "./folding.ts";
 import { NotValid } from "./not-valid.ts";
 
 const WRAPPING = /["'`‘’“”[\]]/gu;
@@ -30,8 +31,8 @@ class Term {
 		);
 	}
 
-	static slugOf(term: Term): string {
-		return term.slug;
+	foldedBy<Foreign>(contract: Folding<string, Foreign>): Foreign {
+		return contract.encode(this.slug);
 	}
 
 	isSameAs(other: Term): boolean {

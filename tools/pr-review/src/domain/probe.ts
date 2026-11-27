@@ -1,4 +1,5 @@
 import type { Probe as ProbeShape } from "../generated/domain/probe.g.ts";
+import type { Folding } from "./folding.ts";
 
 class Probe {
 	private readonly shape: ProbeShape;
@@ -12,8 +13,8 @@ class Probe {
 		return new Probe(shape);
 	}
 
-	static shapeOf(probe: Probe): ProbeShape {
-		return probe.shape;
+	foldedBy<Foreign>(contract: Folding<ProbeShape, Foreign>): Foreign {
+		return contract.encode(this.shape);
 	}
 
 	isSameAs(other: Probe): boolean {

@@ -1,4 +1,5 @@
 import type { AcknowledgementRequest as AcknowledgementRequestShape } from "../generated/domain/acknowledgement-request.g.ts";
+import type { Folding } from "./folding.ts";
 
 class AcknowledgementRequest {
 	private readonly shape: AcknowledgementRequestShape;
@@ -12,10 +13,10 @@ class AcknowledgementRequest {
 		return new AcknowledgementRequest(shape);
 	}
 
-	static shapeOf(
-		acknowledgementRequest: AcknowledgementRequest,
-	): AcknowledgementRequestShape {
-		return acknowledgementRequest.shape;
+	foldedBy<Foreign>(
+		contract: Folding<AcknowledgementRequestShape, Foreign>,
+	): Foreign {
+		return contract.encode(this.shape);
 	}
 }
 

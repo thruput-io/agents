@@ -1,4 +1,5 @@
 import type { Context as ContextShape } from "../generated/domain/context.g.ts";
+import type { Folding } from "./folding.ts";
 
 class Context {
 	private readonly shape: ContextShape;
@@ -12,8 +13,8 @@ class Context {
 		return new Context(shape);
 	}
 
-	static shapeOf(context: Context): ContextShape {
-		return context.shape;
+	foldedBy<Foreign>(contract: Folding<ContextShape, Foreign>): Foreign {
+		return contract.encode(this.shape);
 	}
 }
 
