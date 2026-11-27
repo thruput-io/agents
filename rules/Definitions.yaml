@@ -60,7 +60,7 @@ definitions:
     A program that pursues a goal autonomously, using a model to decide its next action.
 - id: Developer
   specification: |
-    A person or [[AI agent]] who writes, reviews, or maintains code and applies every [[Rule]] on a [[Change]].
+    A person or [[AI agent]] who writes, reviews, or maintains the code; a [[Developer]] is not a [[User]].
 - id: Type
   specification: |
     A construct that defines a set of values together with the valid operations on them.
