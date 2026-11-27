@@ -3,17 +3,17 @@ import { test as it } from "node:test";
 import { Effect } from "effect";
 import { Change } from "../../domain/change.ts";
 import { HostError } from "../../domain/host-error.ts";
+import type { Session } from "../../domain/session.ts";
 import type { TargetUrl } from "../../domain/target-url.ts";
 import { UnknownFormat } from "../../domain/unknown-format.ts";
-import type { Workdir } from "../../domain/workdir.ts";
+import { sessionAt } from "../../perimeters/session.test-support.ts";
 import { TargetUrlCodec } from "../../perimeters/values.ts";
-import { prepareDto } from "../../perimeters/workdir.ts";
 import { type Git, gitHostOver } from "./git-host.ts";
 
 const url: TargetUrl = TargetUrlCodec.decode(
 	"https://host.test/change.git@main..feature",
 );
-const workdir: Workdir = prepareDto({ workdir: "/work" }).toDomain();
+const workdir: Session = sessionAt("/work");
 
 it("get change clones the remote into the workdir and takes the diff of the range", async () => {
 	const asked: (readonly string[])[] = [];

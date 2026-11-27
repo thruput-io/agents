@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
 import { UnknownFormat } from "../../domain/unknown-format.ts";
+import { sessionAt } from "../../perimeters/session.test-support.ts";
 import { TargetUrlCodec } from "../../perimeters/values.ts";
-import { prepareDto } from "../../perimeters/workdir.ts";
 import { addressOf, repositoryOf } from "./git-address.ts";
 
 it("an address names the remote, the base and the head", () => {
@@ -28,8 +28,5 @@ it("an address without a range is of an unknown format", () => {
 });
 
 it("the repository is kept inside the workdir", () => {
-	assert.equal(
-		repositoryOf(prepareDto({ workdir: "/work" }).toDomain()),
-		"/work/repository.git",
-	);
+	assert.equal(repositoryOf(sessionAt("/work")), "/work/repository.git");
 });

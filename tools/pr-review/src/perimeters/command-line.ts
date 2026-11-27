@@ -3,11 +3,11 @@ import { z } from "zod";
 import type { Acknowledgement } from "../domain/acknowledgement.ts";
 import type { NotValid } from "../domain/not-valid.ts";
 import type { Probe } from "../domain/probe.ts";
+import type { Session } from "../domain/session.ts";
 import type { TargetUrl } from "../domain/target-url.ts";
 import type { Probes } from "../domain/task.ts";
 import type { Term } from "../domain/term.ts";
 import { Verdict } from "../domain/verdict.ts";
-import type { Workdir } from "../domain/workdir.ts";
 import {
 	PrepareParams,
 	StatusParams,
@@ -21,8 +21,9 @@ import {
 	ReportParams,
 	RulesParams,
 } from "../generated/perimeters/review-tool-probe.g.ts";
-import { decoded, namedBy, parsedBy } from "./parsing.ts";
+import { decoded, made, namedBy, parsedBy } from "./parsing.ts";
 import { probesIn } from "./rulebook.ts";
+import { prepareDto, statusDto } from "./session.ts";
 import { TermCodec } from "./term.ts";
 import {
 	AcknowledgementCodec,
@@ -30,7 +31,6 @@ import {
 	RuleCodec,
 	TargetUrlCodec,
 } from "./values.ts";
-import { prepareDto, statusDto } from "./workdir.ts";
 
 interface CommandLine {
 	readonly name: string;
@@ -39,7 +39,7 @@ interface CommandLine {
 
 interface PrepareCommand {
 	readonly url: TargetUrl;
-	readonly workdir: Workdir;
+	readonly workdir: Session;
 	readonly probes: Probes;
 }
 
@@ -80,7 +80,7 @@ const prepareCommandOf = (
 			(params): Effect.Effect<PrepareCommand, NotValid> =>
 				Effect.all({
 					url: decoded(TargetUrlCodec, params.url),
-					workdir: Effect.succeed(prepareDto(params).toDomain()),
+					workdir: made((): Session => prepareDto(params).toDomain()),
 				}).pipe(
 					Effect.map(
 						(given): PrepareCommand => ({
@@ -94,11 +94,11 @@ const prepareCommandOf = (
 
 const statusCommandOf = (
 	commandArguments: readonly string[],
-): Effect.Effect<Workdir, NotValid> =>
+): Effect.Effect<Session, NotValid> =>
 	namedBy(StatusParams, commandArguments).pipe(
 		Effect.flatMap(
-			(params): Effect.Effect<Workdir, NotValid> =>
-				Effect.succeed(statusDto(params).toDomain()),
+			(params): Effect.Effect<Session, NotValid> =>
+				made((): Session => statusDto(params).toDomain()),
 		),
 	);
 

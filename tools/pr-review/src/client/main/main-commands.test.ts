@@ -6,6 +6,8 @@ import {
 	emptyStore,
 	host,
 } from "../../controller/common/stand-in.test-support.ts";
+import { sessionAt } from "../../perimeters/session.test-support.ts";
+import { askedOf } from "../../perimeters/session.ts";
 import { type Commands, type Printed, run } from "../common/runner.ts";
 import { mainTool } from "./main-commands.ts";
 
@@ -39,22 +41,31 @@ it("prepare without a workdir is answered as not valid", () => {
 	});
 });
 
-it("status of a workdir without a review is answered as no review", () => {
-	assert.deepEqual(Effect.runSync(run(tool(), ["status", "/work"])), {
-		line: '{"failure":"no-review"}\n',
-		exitCode: 1,
-	});
+it("status of a session without a review is answered as no review", () => {
+	assert.deepEqual(
+		Effect.runSync(
+			run(tool(), ["status", askedOf(sessionAt("/work")).session]),
+		),
+		{
+			line: '{"failure":"no-review"}\n',
+			exitCode: 1,
+		},
+	);
 });
 
 it("status after prepare answers how the review stands", () => {
 	const commands: Commands = tool();
 
-	Effect.runSync(
+	const prepared = Effect.runSync(
 		run(commands, ["prepare", "https://host.test/change", "/work"]),
 	);
 
 	assert.deepEqual(
-		standingIn(Effect.runSync(run(commands, ["status", "/work"]))),
+		standingIn(
+			Effect.runSync(
+				run(commands, ["status", JSON.parse(prepared.line).session]),
+			),
+		),
 		[true, false, false, 0],
 	);
 });

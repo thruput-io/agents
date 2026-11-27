@@ -13,21 +13,21 @@ import type { Rule } from "../../domain/rule.ts";
 import {
 	probeSample,
 	ruleSample,
+	sessionSample,
 	taskSample,
 	urlSample,
-	workdirSample,
 } from "../../domain/sample.test-support.ts";
+import type { Session } from "../../domain/session.ts";
 import type { TargetUrl } from "../../domain/target-url.ts";
 import type { Probes } from "../../domain/task.ts";
 import { UnknownFormat } from "../../domain/unknown-format.ts";
-import type { Workdir } from "../../domain/workdir.ts";
 import { emptyStore } from "../common/stand-in.test-support.ts";
 import { MainController } from "./main-controller.ts";
 
 type Outcome = Parameters<Poster["post"]>[1];
 
 const url: TargetUrl = urlSample();
-const workdir: Workdir = workdirSample();
+const workdir: Session = sessionSample();
 const purpose: Rule = ruleSample("Stated purpose");
 const probes: Probes = [taskSample(probeSample("probe-1"), [purpose])];
 

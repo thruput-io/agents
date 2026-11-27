@@ -73,8 +73,8 @@ it("prepare for a repository the host does not serve is a host error", () => {
 	);
 });
 
-it("status for a session that has no review is no review", () => {
-	assert.deepEqual(failureOf(ran(["status", "none"])), [1, "no-review"]);
+it("status for a session that cannot be read is not valid", () => {
+	assert.deepEqual(failureOf(ran(["status", "none"])), [1, "not-valid"]);
 });
 
 it("prepare stops where starting the sub agents is not implemented, and answers nothing", () => {

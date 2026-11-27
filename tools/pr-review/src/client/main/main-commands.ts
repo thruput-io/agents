@@ -6,7 +6,7 @@ import { MainController } from "../../controller/main/main-controller.ts";
 import type { Agent } from "../../domain/agent.ts";
 import type { Host } from "../../domain/host.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
-import type { Workdir } from "../../domain/workdir.ts";
+import type { Session } from "../../domain/session.ts";
 import {
 	type Answer,
 	failureAnswer,
@@ -35,7 +35,7 @@ const mainCommands = (controller: MainController): Commands => ({
 		commandArguments: readonly string[],
 	): Effect.Effect<Answer, Answer> =>
 		statusCommandOf(commandArguments).pipe(
-			Effect.flatMap((workdir: Workdir) =>
+			Effect.flatMap((workdir: Session) =>
 				controller.status(workdir).pipe(Effect.map(statusAnswer(workdir))),
 			),
 			Effect.mapError(failureAnswer),

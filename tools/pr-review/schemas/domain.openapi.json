@@ -8,16 +8,6 @@
 	"paths": {},
 	"components": {
 		"schemas": {
-			"Workdir": {
-				"description": "The directory a review is kept in",
-				"type": "object",
-				"properties": {
-					"path": {
-						"$ref": "#/components/schemas/WorkdirPath"
-					}
-				},
-				"required": ["path"]
-			},
 			"TargetUrl": {
 				"description": "The address of the change to review",
 				"type": "string",
@@ -69,6 +59,21 @@
 				"description": "The path of the directory a review is kept in",
 				"type": "string",
 				"minLength": 1
+			},
+			"Session": {
+				"description": "One review in progress, and where it is kept",
+				"type": "object",
+				"properties": {
+					"id": {
+						"description": "What identifies the review",
+						"type": "string",
+						"format": "uuid"
+					},
+					"directory": {
+						"$ref": "#/components/schemas/WorkdirPath"
+					}
+				},
+				"required": ["id", "directory"]
 			}
 		}
 	}

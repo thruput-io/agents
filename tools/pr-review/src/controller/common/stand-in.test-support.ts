@@ -15,12 +15,12 @@ import {
 	pageSample,
 	probeSample,
 	ruleSample,
+	sessionSample,
 	taskSample,
 	urlSample,
-	workdirSample,
 } from "../../domain/sample.test-support.ts";
+import type { Session } from "../../domain/session.ts";
 import type { TargetUrl } from "../../domain/target-url.ts";
-import type { Workdir } from "../../domain/workdir.ts";
 
 type Outcome = Parameters<Poster["post"]>[1];
 
@@ -66,7 +66,7 @@ const emptyStore = (): ReviewStore => {
 	const keeping = keepingIn(kept);
 
 	return {
-		save: (_workdir: Workdir, review: Review): Effect.Effect<Review> =>
+		save: (_workdir: Session, review: Review): Effect.Effect<Review> =>
 			keeping(review),
 		inWorkdir: latest,
 		ofProbe: (holder: Probe): Effect.Effect<Assignment, NoReview> =>
@@ -94,7 +94,7 @@ const storeWithReview = (): ReviewStore => {
 
 	Effect.runSync(
 		store.save(
-			workdirSample(),
+			sessionSample(),
 			change.review([taskSample(probe, [purpose, unused])]),
 		),
 	);

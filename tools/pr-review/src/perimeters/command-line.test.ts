@@ -12,9 +12,10 @@ import {
 	rulesCommandOf,
 	statusCommandOf,
 } from "./command-line.ts";
+import { sessionAt } from "./session.test-support.ts";
+import { askedOf, placeOf } from "./session.ts";
 import { TermCodec } from "./term.ts";
 import { AcknowledgementCodec, ProbeCodec, TargetUrlCodec } from "./values.ts";
-import { placeOf } from "./workdir.ts";
 
 const sentence =
 	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
@@ -37,9 +38,11 @@ it("the arguments of prepare give the target URL and the workdir", () => {
 		prepareCommandOf(["https://host.test/change", "/work"]),
 	);
 
+	const { session, directory } = placeOf(command.workdir);
+
 	assert.deepEqual(
-		[TargetUrlCodec.encode(command.url), placeOf(command.workdir).directory],
-		["https://host.test/change", "/work"],
+		[TargetUrlCodec.encode(command.url), directory],
+		["https://host.test/change", `/work/${session}`],
 	);
 });
 
@@ -55,10 +58,18 @@ it("an empty target URL is not valid", () => {
 	assert.equal(refused instanceof NotValid, true);
 });
 
-it("the session given to status leads to the workdir it was made for", () => {
-	const workdir = Effect.runSync(statusCommandOf(["L3dvcms"]));
+it("the session given to status leads to where its review is kept", () => {
+	const workdir = Effect.runSync(
+		statusCommandOf([askedOf(sessionAt("/work")).session]),
+	);
 
 	assert.equal(placeOf(workdir).directory, "/work");
+});
+
+it("a session that cannot be read is not valid", () => {
+	const refused = Effect.runSync(Effect.flip(statusCommandOf(["none"])));
+
+	assert.deepEqual(refused, NotValid.create());
 });
 
 it("the argument of a probe command gives the probe", () => {

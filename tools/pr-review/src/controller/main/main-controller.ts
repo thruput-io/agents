@@ -6,9 +6,9 @@ import type { NoReview } from "../../domain/no-review.ts";
 import type { NotStarted } from "../../domain/not-started.ts";
 import type { Review, ReviewStatus } from "../../domain/review.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
+import type { Session } from "../../domain/session.ts";
 import type { TargetUrl } from "../../domain/target-url.ts";
 import type { Probes } from "../../domain/task.ts";
-import type { Workdir } from "../../domain/workdir.ts";
 import type { WorkdirFailed } from "../../domain/workdir-failed.ts";
 
 class MainController {
@@ -28,7 +28,7 @@ class MainController {
 
 	prepare(
 		url: TargetUrl,
-		workdir: Workdir,
+		workdir: Session,
 		probes: Probes,
 	): Effect.Effect<ReviewStatus, NotReviewable | NotStarted | WorkdirFailed> {
 		return this.host.getChange(url, workdir).pipe(
@@ -44,7 +44,7 @@ class MainController {
 		);
 	}
 
-	status(workdir: Workdir): Effect.Effect<ReviewStatus, NoReview> {
+	status(workdir: Session): Effect.Effect<ReviewStatus, NoReview> {
 		return this.store
 			.inWorkdir(workdir)
 			.pipe(Effect.map((review: Review): ReviewStatus => review.status()));

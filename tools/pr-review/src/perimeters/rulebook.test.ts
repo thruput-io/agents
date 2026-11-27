@@ -2,10 +2,11 @@ import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
 import type { Rule } from "../domain/rule.ts";
+import type { Session } from "../domain/session.ts";
 import type { Task } from "../domain/task.ts";
-import type { Workdir } from "../domain/workdir.ts";
 import { probeIn } from "./disk.ts";
 import { probesIn } from "./rulebook.ts";
+import { sessionAt } from "./session.test-support.ts";
 import { TermCodec } from "./term.ts";
 import {
 	AcknowledgementCodec,
@@ -13,9 +14,8 @@ import {
 	DefinitionCodec,
 	RuleCodec,
 } from "./values.ts";
-import { prepareDto } from "./workdir.ts";
 
-const workdir: Workdir = prepareDto({ workdir: "/work" }).toDomain();
+const workdir: Session = sessionAt("/work");
 const purpose = probeIn(workdir, "purpose");
 
 const taskOfPurpose = (): readonly Task[] =>

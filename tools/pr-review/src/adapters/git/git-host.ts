@@ -2,8 +2,8 @@ import { Effect } from "effect";
 import type { Change } from "../../domain/change.ts";
 import type { Host, NotReviewable } from "../../domain/host.ts";
 import { HostError } from "../../domain/host-error.ts";
+import type { Session } from "../../domain/session.ts";
 import type { TargetUrl } from "../../domain/target-url.ts";
-import type { Workdir } from "../../domain/workdir.ts";
 import { changeOf } from "../../perimeters/change.ts";
 import { addressOf, repositoryOf } from "./git-address.ts";
 import { pagesOf } from "./git-diff.ts";
@@ -21,7 +21,7 @@ const askedOver =
 			catch: (): HostError => HostError.create(),
 		});
 
-const cloneOf = (remote: string, workdir: Workdir): readonly string[] => [
+const cloneOf = (remote: string, workdir: Session): readonly string[] => [
 	"clone",
 	"--quiet",
 	"--bare",
@@ -29,7 +29,7 @@ const cloneOf = (remote: string, workdir: Workdir): readonly string[] => [
 	repositoryOf(workdir),
 ];
 
-const diffOf = (workdir: Workdir, range: string): readonly string[] => [
+const diffOf = (workdir: Session, range: string): readonly string[] => [
 	"-C",
 	repositoryOf(workdir),
 	"diff",
@@ -43,7 +43,7 @@ const gitHostOver = (git: Git): Pick<Host, "getChange"> => {
 	return {
 		getChange: (
 			url: TargetUrl,
-			workdir: Workdir,
+			workdir: Session,
 		): Effect.Effect<Change, NotReviewable> =>
 			addressOf(url).pipe(
 				Effect.flatMap(({ remote, base, head }) =>

@@ -1,6 +1,6 @@
 import type { Effect } from "effect";
+import type { Session } from "../domain/session.ts";
 import type { TargetUrl } from "../domain/target-url.ts";
-import type { Workdir } from "../domain/workdir.ts";
 import type { AlreadyReviewed } from "./already-reviewed.ts";
 import type { Change } from "./change.ts";
 import type { HostError } from "./host-error.ts";
@@ -19,7 +19,7 @@ type NotReviewable =
 interface Host extends Poster {
 	getChange: (
 		url: TargetUrl,
-		workdir: Workdir,
+		workdir: Session,
 	) => Effect.Effect<Change, NotReviewable>;
 }
 

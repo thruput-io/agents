@@ -46,4 +46,7 @@ const namedBy = <Shape extends z.ZodObject>(
 		),
 	);
 
-export { decoded, namedBy, parsedBy };
+const made = <Value>(make: () => Value): Effect.Effect<Value, NotValid> =>
+	Effect.try({ try: make, catch: notValid });
+
+export { decoded, made, namedBy, parsedBy };

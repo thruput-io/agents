@@ -12,15 +12,15 @@ import {
 	taskSample,
 	urlSample,
 } from "../../../domain/sample.test-support.ts";
+import type { Session } from "../../../domain/session.ts";
 import { Verdict } from "../../../domain/verdict.ts";
-import type { Workdir } from "../../../domain/workdir.ts";
 import { WorkdirFailed } from "../../../domain/workdir-failed.ts";
 import { probeIn } from "../../../perimeters/disk.ts";
+import { sessionAt } from "../../../perimeters/session.test-support.ts";
 import { RuleCodec } from "../../../perimeters/values.ts";
-import { prepareDto } from "../../../perimeters/workdir.ts";
 import { diskStoreOver, type Files } from "./disk-store.ts";
 
-const workdir: Workdir = prepareDto({ workdir: "/work" }).toDomain();
+const workdir: Session = sessionAt("/work");
 const probe: Probe = probeIn(workdir, "probe-1");
 const purpose: Rule = ruleSample("Stated purpose");
 const review: Review = Change.of(urlSample(), []).review([

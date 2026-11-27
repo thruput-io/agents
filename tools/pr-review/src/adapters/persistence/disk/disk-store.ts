@@ -4,7 +4,7 @@ import type { NoReview } from "../../../domain/no-review.ts";
 import type { Probe } from "../../../domain/probe.ts";
 import type { Recorded, Review } from "../../../domain/review.ts";
 import type { NotRecorded, ReviewStore } from "../../../domain/review-store.ts";
-import type { Workdir } from "../../../domain/workdir.ts";
+import type { Session } from "../../../domain/session.ts";
 import type { WorkdirFailed } from "../../../domain/workdir-failed.ts";
 import {
 	fileIn,
@@ -32,7 +32,7 @@ const readingOver =
 
 const savingOver =
 	(files: Files) =>
-	(workdir: Workdir, review: Review): Effect.Effect<Review, WorkdirFailed> =>
+	(workdir: Session, review: Review): Effect.Effect<Review, WorkdirFailed> =>
 		Effect.tryPromise({
 			try: (): Promise<void> =>
 				files.write(fileIn(workdir), writtenReview(review)),
@@ -62,7 +62,7 @@ const diskStoreOver = (files: Files): ReviewStore => {
 
 	return {
 		save: savingOver(files),
-		inWorkdir: (workdir: Workdir): Effect.Effect<Review, NoReview> =>
+		inWorkdir: (workdir: Session): Effect.Effect<Review, NoReview> =>
 			read(fileIn(workdir)),
 		ofProbe: assignmentIn,
 		append: (

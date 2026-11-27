@@ -1,6 +1,6 @@
 import type { Effect } from "effect";
 import type { Probe } from "../domain/probe.ts";
-import type { Workdir } from "../domain/workdir.ts";
+import type { Session } from "../domain/session.ts";
 import type { Assignment } from "./assignment.ts";
 import type { NoReview } from "./no-review.ts";
 import type { Recorded, Review } from "./review.ts";
@@ -10,10 +10,10 @@ type NotRecorded = NoReview | WorkdirFailed;
 
 interface ReviewStore {
 	save: (
-		workdir: Workdir,
+		workdir: Session,
 		review: Review,
 	) => Effect.Effect<Review, WorkdirFailed>;
-	inWorkdir: (workdir: Workdir) => Effect.Effect<Review, NoReview>;
+	inWorkdir: (workdir: Session) => Effect.Effect<Review, NoReview>;
 	ofProbe: (probe: Probe) => Effect.Effect<Assignment, NoReview>;
 	append: (
 		probe: Probe,

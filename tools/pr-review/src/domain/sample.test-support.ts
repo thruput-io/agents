@@ -5,9 +5,9 @@ import { Definition } from "../domain/definition.ts";
 import { Page } from "../domain/page.ts";
 import { Probe } from "../domain/probe.ts";
 import { Rule } from "../domain/rule.ts";
+import { Session } from "../domain/session.ts";
 import { TargetUrl } from "../domain/target-url.ts";
 import { Usage } from "../domain/usage.ts";
-import { Workdir } from "../domain/workdir.ts";
 import { Workflow } from "../domain/workflow.ts";
 import { Instructions } from "./instructions.ts";
 import type { Task } from "./task.ts";
@@ -21,8 +21,10 @@ const instructionsSample = (): Instructions =>
 		request: AcknowledgementRequest.of("a request"),
 	});
 
-const workdirSample = (): Workdir =>
-	Reflect.construct(Workdir, [{ path: "/work" }]);
+const sessionSample = (): Session =>
+	Reflect.construct(Session, [
+		{ id: "00000000-0000-4000-8000-000000000000", directory: "/work" },
+	]);
 
 const ruleSample = (id: string): Rule => Rule.of(id);
 
@@ -47,7 +49,7 @@ export {
 	pageSample,
 	probeSample,
 	ruleSample,
+	sessionSample,
 	taskSample,
 	urlSample,
-	workdirSample,
 };

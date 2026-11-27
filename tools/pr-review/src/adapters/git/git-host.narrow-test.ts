@@ -14,14 +14,14 @@ import {
 	ruleSample,
 	taskSample,
 } from "../../domain/sample.test-support.ts";
+import type { Session } from "../../domain/session.ts";
 import type { TargetUrl } from "../../domain/target-url.ts";
-import type { Workdir } from "../../domain/workdir.ts";
+import { sessionAt } from "../../perimeters/session.test-support.ts";
 import {
 	AcknowledgementCodec,
 	PageCodec,
 	TargetUrlCodec,
 } from "../../perimeters/values.ts";
-import { prepareDto } from "../../perimeters/workdir.ts";
 import { gitBinary } from "./git-binary.ts";
 import { gitHostOver } from "./git-host.ts";
 
@@ -29,10 +29,8 @@ const mockHost = "http://localhost:8617";
 const sentence =
 	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
 
-const emptyWorkdir = (): Workdir =>
-	prepareDto({
-		workdir: mkdtempSync(join(tmpdir(), "narrow-git-")),
-	}).toDomain();
+const emptyWorkdir = (): Session =>
+	sessionAt(mkdtempSync(join(tmpdir(), "narrow-git-")));
 
 const firstPageOf = (change: Change): string => {
 	const probe: Probe = probeSample("probe-1");

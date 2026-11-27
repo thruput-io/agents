@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test as it } from "node:test";
@@ -17,8 +17,8 @@ import {
 import { Verdict } from "../../../domain/verdict.ts";
 import { WorkdirFailed } from "../../../domain/workdir-failed.ts";
 import { probeIn } from "../../../perimeters/disk.ts";
+import { sessionAt } from "../../../perimeters/session.test-support.ts";
 import { RuleCodec } from "../../../perimeters/values.ts";
-import { prepareDto } from "../../../perimeters/workdir.ts";
 import { diskFiles } from "./disk-files.ts";
 import { diskStoreOver } from "./disk-store.ts";
 
@@ -26,7 +26,7 @@ const purpose: Rule = ruleSample("Stated purpose");
 const emptyDirectory = (): string =>
 	mkdtempSync(join(tmpdir(), "narrow-disk-"));
 const probeOf = (directory: string): Probe =>
-	probeIn(prepareDto({ workdir: directory }).toDomain(), "probe-1");
+	probeIn(sessionAt(directory), "probe-1");
 const reviewOf = (probe: Probe): Review =>
 	Change.of(urlSample(), []).review([
 		taskSample(probe, [purpose, ruleSample("Delete unused")]),
@@ -35,7 +35,7 @@ const reviewOf = (probe: Probe): Review =>
 it("a review saved on disk and appended to is read back by a store that starts later", async () => {
 	const directory = emptyDirectory();
 	const probe = probeOf(directory);
-	const workdir = prepareDto({ workdir: directory }).toDomain();
+	const workdir = sessionAt(directory);
 
 	await Effect.runPromise(
 		diskStoreOver(diskFiles).save(workdir, reviewOf(probe)),
@@ -58,25 +58,41 @@ it("a review saved on disk and appended to is read back by a store that starts l
 it("an empty directory holds no review", async () => {
 	const missing = await Effect.runPromise(
 		Effect.flip(
-			diskStoreOver(diskFiles).inWorkdir(
-				prepareDto({ workdir: emptyDirectory() }).toDomain(),
-			),
+			diskStoreOver(diskFiles).inWorkdir(sessionAt(emptyDirectory())),
 		),
 	);
 
 	assert.equal(missing instanceof NoReview, true);
 });
 
-it("a review cannot be saved in a directory that does not exist", async () => {
-	const directory = join(emptyDirectory(), "missing");
+it("a review is saved in a directory that the store creates", async () => {
+	const directory = join(emptyDirectory(), "created");
+	const session = sessionAt(directory);
+	const kept = await Effect.runPromise(
+		diskStoreOver(diskFiles)
+			.save(session, reviewOf(probeOf(directory)))
+			.pipe(Effect.flatMap(() => diskStoreOver(diskFiles).inWorkdir(session))),
+	);
+
+	assert.deepEqual(
+		kept.status().remaining.map((rule: Rule): string => RuleCodec.encode(rule)),
+		["Stated purpose", "Delete unused"],
+	);
+});
+
+it("a review cannot be saved where a file is in the way of its directory", async () => {
+	const directory = join(emptyDirectory(), "taken");
+
+	writeFileSync(directory, "a file");
+
 	const failed = await Effect.runPromise(
 		Effect.flip(
 			diskStoreOver(diskFiles).save(
-				prepareDto({ workdir: directory }).toDomain(),
+				sessionAt(join(directory, "below")),
 				reviewOf(probeOf(directory)),
 			),
 		),
 	);
 
-	assert.equal(failed instanceof WorkdirFailed, true);
+	assert.deepEqual(failed, WorkdirFailed.create());
 });

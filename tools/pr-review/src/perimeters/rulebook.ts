@@ -1,7 +1,7 @@
 import { Instructions } from "../domain/instructions.ts";
 import type { Rule } from "../domain/rule.ts";
+import type { Session } from "../domain/session.ts";
 import type { Defined, Probes, Task } from "../domain/task.ts";
-import type { Workdir } from "../domain/workdir.ts";
 import { rulebook } from "../generated/perimeters/rulebook.g.ts";
 import { probeIn } from "./disk.ts";
 import { TermCodec } from "./term.ts";
@@ -14,7 +14,7 @@ import {
 	WorkflowCodec,
 } from "./values.ts";
 
-const probesIn = (workdir: Workdir): Probes => {
+const probesIn = (workdir: Session): Probes => {
 	const instructions = Instructions.of({
 		workflow: WorkflowCodec.decode({}),
 		context: ContextCodec.decode({}),
