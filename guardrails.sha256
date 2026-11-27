@@ -1,5 +1,5 @@
 d934c780e039544b2ab4adc364ff80ac45bd6d1fe6938dd351d8fb6ae6ca24af  build.sh
-c255f3de6bab71d13e62ed3eb9adf9cbc527b6317894fc9edc92026738067a5f  scripts/verify.sh
+0458b362b3cb91e5a085df9ecf726745d798407e2e7aca951c0c40a861942610  scripts/verify.sh
 8356a12e44aa0d4328e5767abdbe01fc2c0dba85019621310314f381bd3c7851  scripts/build_site.sh
 a1038a0df8239443879908bfec0b99a177b17c889ee68bd38954688dd309af0b  scripts/declared-ids.schema.sh
 0bd8750e4ce069797787a3d30b63a17d797d1639959064478d2037748b91fb60  .githooks/pre-push
@@ -26,3 +26,7 @@ c566eff99831392ae73d14876f553840c91da0a9b23f0bd039cf21b050514a6c  semgrep/pr-rev
 49c295762be2797e94d33dfed62bfe4996ad09c3d3b66fbeca47f191ce95c32a  semgrep/pr-review/no-type-tag-in-domain.ts
 c41795caa3ff6a97516c3d6ccd4f77cd6906a6e77cd5cfc9216ae86b3d964fe7  semgrep/pr-review/parse-only-at-the-perimeter.ts
 828803d676c81bcddcf6c5056d2892fd10361a1df9c8012182a93868dc58e8f0  semgrep/pr-review/stop-only-where-not-yet-implemented.ts
+aa67a169b0bba217aa0aa88a65346920c84c42447c36ba5f7ea65f422c1fe5d8  tools/pr-review/ceilings/files-with-zod-in-domain-and-controller.count
+3840bc236ee03aacbb1ef7d5108ddfa347c59f10b68d4174affbb53140f31273  tools/pr-review/ceilings/generated-files-not-by-orval.count
+53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3  tools/pr-review/ceilings/hand-written-generators.count
+a1fb50e6c86fae1679ef3351296fd6713411a08cf8dd1790a4fd05fae8688164  tools/pr-review/ceilings/lines-with-json-parse-or-stringify.count
