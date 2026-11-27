@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
+import { Back } from "../domain/back.ts";
+import { Forward } from "../domain/forward.ts";
+import { HostError } from "../domain/host-error.ts";
+import { Posted } from "../domain/posted.ts";
+import { probeSample, ruleSample } from "../domain/sample.test-support.ts";
+import { Verdict } from "../domain/verdict.ts";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { Back } from "./back.ts";
-import { Forward } from "./forward.ts";
-import { HostError } from "./host-error.ts";
-import { Posted } from "./posted.ts";
-import { RecordingShape } from "./recording.ts";
-import { probeSample, ruleSample } from "./sample.test-support.ts";
-import { Verdict } from "./verdict.ts";
+import { RecordingShape } from "./stored-review.ts";
 
 const probe = probeSample("probe-1");
 const sentence =

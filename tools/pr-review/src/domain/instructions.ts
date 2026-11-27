@@ -1,8 +1,7 @@
-import { z } from "zod";
-import { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
-import { Context } from "../generated/domain/context.g.ts";
-import { Usage } from "../generated/domain/usage.g.ts";
-import { Workflow } from "../generated/domain/workflow.g.ts";
+import type { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
+import type { Context } from "../generated/domain/context.g.ts";
+import type { Usage } from "../generated/domain/usage.g.ts";
+import type { Workflow } from "../generated/domain/workflow.g.ts";
 
 interface InstructionsParts {
 	readonly workflow: Workflow;
@@ -19,24 +18,12 @@ class Instructions {
 		Object.freeze(this);
 	}
 
-	static readonly codec = z.codec(
-		z.object({
-			workflow: Workflow.codec,
-			context: Context.codec,
-			usage: Usage.codec,
-			request: AcknowledgementRequest.codec,
-		}),
-		z.custom<Instructions>((value): boolean => value instanceof Instructions),
-		{
-			decode: (parts: InstructionsParts): Instructions =>
-				new Instructions(parts),
-			encode: (instructions: Instructions): InstructionsParts =>
-				instructions.parts,
-		},
-	);
-
 	static of(parts: InstructionsParts): Instructions {
 		return new Instructions(parts);
+	}
+
+	static partsOf(instructions: Instructions): InstructionsParts {
+		return instructions.parts;
 	}
 
 	workflow(): Workflow {
@@ -56,4 +43,5 @@ class Instructions {
 	}
 }
 
+export type { InstructionsParts };
 export { Instructions };

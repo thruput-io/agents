@@ -1,24 +1,25 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
-import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { Page } from "../generated/domain/page.g.ts";
-import type { Probe } from "../generated/domain/probe.g.ts";
-import { Rule } from "../generated/domain/rule.g.ts";
-import { Change } from "./change.ts";
-import { Forward } from "./forward.ts";
-import { HostError } from "./host-error.ts";
-import { Posted } from "./posted.ts";
-import { Review } from "./review.ts";
+import { Change } from "../domain/change.ts";
+import { Forward } from "../domain/forward.ts";
+import { HostError } from "../domain/host-error.ts";
+import { Posted } from "../domain/posted.ts";
+import type { Review } from "../domain/review.ts";
 import {
 	pageSample,
 	probeSample,
 	ruleSample,
 	taskSample,
 	urlSample,
-} from "./sample.test-support.ts";
-import { Term } from "./term.ts";
-import { Verdict } from "./verdict.ts";
+} from "../domain/sample.test-support.ts";
+import { Verdict } from "../domain/verdict.ts";
+import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
+import { Page } from "../generated/domain/page.g.ts";
+import type { Probe } from "../generated/domain/probe.g.ts";
+import { Rule } from "../generated/domain/rule.g.ts";
+import { ReviewCodec } from "./stored-review.ts";
+import { TermCodec } from "./term.ts";
 
 const probe: Probe = probeSample("probe-1");
 const sentence =
@@ -36,7 +37,7 @@ const review: Review = Change.of(urlSample(), [pageSample()])
 	.after(probe, HostError.create())
 	.after(probe, Posted.create());
 
-const readBack = (): Review => Review.codec.decode(Review.codec.encode(review));
+const readBack = (): Review => ReviewCodec.decode(ReviewCodec.encode(review));
 
 it("a review read back has the same rules left", () => {
 	assert.deepEqual(
@@ -72,7 +73,7 @@ it("a review read back still defines its terms", () => {
 		.assignmentOf(probe)
 		.pipe(
 			Effect.flatMap((assignment) =>
-				assignment.briefing().definitionOf(Term.codec.decode("ledger")),
+				assignment.briefing().definitionOf(TermCodec.decode("ledger")),
 			),
 			Effect.map((definition): string => typeof definition),
 		);
@@ -81,5 +82,5 @@ it("a review read back still defines its terms", () => {
 });
 
 it("data that is not a review is not read", () => {
-	assert.equal(Review.codec.safeParse({ url: "" }).success, false);
+	assert.equal(ReviewCodec.safeParse({ url: "" }).success, false);
 });

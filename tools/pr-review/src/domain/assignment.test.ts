@@ -123,14 +123,16 @@ it("turning back answers the page before", () => {
 it("a term the glossary holds is defined, however it is written", () => {
 	const definition = briefed
 		.briefing()
-		.definitionOf(Term.codec.decode("[[LEDGER]]"));
+		.definitionOf(Effect.runSync(Term.of("[[LEDGER]]")));
 
 	assert.equal(Effect.runSync(definition), task.glossary[0]?.[1]);
 });
 
 it("a term the glossary does not hold is not defined", () => {
 	const refused = Effect.runSync(
-		Effect.flip(briefed.briefing().definitionOf(Term.codec.decode("Nothing"))),
+		Effect.flip(
+			briefed.briefing().definitionOf(Effect.runSync(Term.of("Nothing"))),
+		),
 	);
 
 	assert.equal(refused instanceof NotDefined, true);

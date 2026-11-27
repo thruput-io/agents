@@ -1,23 +1,19 @@
-import { z } from "zod";
-import { Definition } from "../generated/domain/definition.g.ts";
-import { Probe } from "../generated/domain/probe.g.ts";
-import { Rule } from "../generated/domain/rule.g.ts";
-import { Instructions } from "./instructions.ts";
-import { Term } from "./term.ts";
+import type { Definition } from "../generated/domain/definition.g.ts";
+import type { Probe } from "../generated/domain/probe.g.ts";
+import type { Rule } from "../generated/domain/rule.g.ts";
+import type { Instructions } from "./instructions.ts";
+import type { Term } from "./term.ts";
 
-const TaskShape = z.object({
-	probe: Probe.codec,
-	instructions: Instructions.codec,
-	detailed: Instructions.codec,
-	rules: z.array(Rule.codec).readonly(),
-	glossary: z
-		.array(z.tuple([Term.codec, Definition.codec]).readonly())
-		.readonly(),
-});
+type Defined = readonly [Term, Definition];
 
-type Task = z.output<typeof TaskShape>;
-type Defined = Task["glossary"][number];
+interface Task {
+	readonly probe: Probe;
+	readonly instructions: Instructions;
+	readonly detailed: Instructions;
+	readonly rules: readonly Rule[];
+	readonly glossary: readonly Defined[];
+}
+
 type Probes = readonly Task[];
 
 export type { Defined, Probes, Task };
-export { TaskShape };

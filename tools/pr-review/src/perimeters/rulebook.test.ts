@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
 import type { Task } from "../domain/task.ts";
-import { Term } from "../domain/term.ts";
 import type { Workdir } from "../domain/workdir.ts";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
 import { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
@@ -11,6 +10,7 @@ import { Rule } from "../generated/domain/rule.g.ts";
 import { WorkdirCodec } from "../perimeters/workdir.ts";
 import { probeIn } from "./disk.ts";
 import { probesIn } from "./rulebook.ts";
+import { TermCodec } from "./term.ts";
 
 const workdir: Workdir = WorkdirCodec.decode("/work");
 const purpose = probeIn(workdir, "purpose");
@@ -27,7 +27,7 @@ const startOf = (task: Task, asked: string): string =>
 	Effect.runSync(
 		Effect.fromNullishOr(
 			task.glossary.find(([term]): boolean =>
-				term.isSameAs(Term.codec.decode(asked)),
+				term.isSameAs(TermCodec.decode(asked)),
 			),
 		).pipe(
 			Effect.map(([, definition]): string =>

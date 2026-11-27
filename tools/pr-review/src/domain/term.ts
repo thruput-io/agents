@@ -1,4 +1,5 @@
-import { z } from "zod";
+import { Effect } from "effect";
+import { NotValid } from "./not-valid.ts";
 
 const WRAPPING = /["'`‘’“”[\]]/gu;
 const SEPARATORS = /[\s_-]+/gu;
@@ -19,14 +20,19 @@ class Term {
 		Object.freeze(this);
 	}
 
-	static readonly codec = z.codec(
-		z.string().refine((text: string): boolean => slugOf(text).length > 0),
-		z.custom<Term>((value): boolean => value instanceof Term),
-		{
-			decode: (text: string): Term => new Term(slugOf(text)),
-			encode: (term: Term): string => term.slug,
-		},
-	);
+	static of(text: string): Effect.Effect<Term, NotValid> {
+		return Effect.succeed(slugOf(text)).pipe(
+			Effect.filterOrFail(
+				(slug: string): boolean => slug.length > 0,
+				(): NotValid => NotValid.create(),
+			),
+			Effect.map((slug: string): Term => new Term(slug)),
+		);
+	}
+
+	static slugOf(term: Term): string {
+		return term.slug;
+	}
 
 	isSameAs(other: Term): boolean {
 		return this.slug === other.slug;

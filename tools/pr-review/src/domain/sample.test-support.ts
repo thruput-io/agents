@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
 import { Context } from "../generated/domain/context.g.ts";
 import { Definition } from "../generated/domain/definition.g.ts";
@@ -34,7 +35,10 @@ const taskSample = (probe: Probe, rules: readonly Rule[]): Task => ({
 	detailed: instructionsSample(),
 	rules,
 	glossary: [
-		[Term.codec.decode("Ledger"), Definition.codec.decode("a definition")],
+		[
+			Effect.runSync(Term.of("Ledger")),
+			Definition.codec.decode("a definition"),
+		],
 	],
 });
 

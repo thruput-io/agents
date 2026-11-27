@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import { z } from "zod";
 import type { NotValid } from "../domain/not-valid.ts";
 import type { Probes } from "../domain/task.ts";
-import { Term } from "../domain/term.ts";
+import type { Term } from "../domain/term.ts";
 import { Verdict } from "../domain/verdict.ts";
 import type { Workdir } from "../domain/workdir.ts";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
@@ -25,6 +25,7 @@ import {
 import { WorkdirCodec } from "../perimeters/workdir.ts";
 import { decoded, namedBy, parsedBy } from "./parsing.ts";
 import { probesIn } from "./rulebook.ts";
+import { TermCodec } from "./term.ts";
 
 interface CommandLine {
 	readonly name: string;
@@ -119,7 +120,7 @@ const defineCommandOf = (
 			({ probe, term }): Effect.Effect<DefineCommand, NotValid> =>
 				Effect.all({
 					probe: decoded(Probe.codec, probe),
-					term: decoded(Term.codec, term),
+					term: decoded(TermCodec, term),
 				}),
 		),
 	);

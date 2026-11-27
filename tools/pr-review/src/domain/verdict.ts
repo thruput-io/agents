@@ -1,6 +1,5 @@
 import { Effect } from "effect";
-import { z } from "zod";
-import { Rule } from "../generated/domain/rule.g.ts";
+import type { Rule } from "../generated/domain/rule.g.ts";
 import { NotAssigned } from "./not-assigned.ts";
 
 class Verdict {
@@ -11,19 +10,12 @@ class Verdict {
 		Object.freeze(this);
 	}
 
-	static readonly codec = z.codec(
-		z.object({ rule: Rule.codec }),
-		z.custom<Verdict>((value): boolean => value instanceof Verdict),
-		{
-			decode: ({ rule }: { readonly rule: Rule }): Verdict => new Verdict(rule),
-			encode: (verdict: Verdict): { readonly rule: Rule } => ({
-				rule: verdict.rule,
-			}),
-		},
-	);
-
 	static on(rule: Rule): Verdict {
 		return new Verdict(rule);
+	}
+
+	static ruleOf(verdict: Verdict): Rule {
+		return verdict.rule;
 	}
 
 	isOn(rule: Rule): boolean {

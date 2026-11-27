@@ -1,12 +1,16 @@
 import { Buffer } from "node:buffer";
 import { join } from "node:path";
 import { NoReview } from "../domain/no-review.ts";
-import { type Recording, RecordingShape } from "../domain/recording.ts";
-import { type Recorded, Review } from "../domain/review.ts";
+import type { Recorded, Review } from "../domain/review.ts";
 import type { Workdir } from "../domain/workdir.ts";
 import { WorkdirFailed } from "../domain/workdir-failed.ts";
 import { Probe } from "../generated/domain/probe.g.ts";
-import { WorkdirCodec } from "../perimeters/workdir.ts";
+import {
+	type Recording,
+	RecordingShape,
+	ReviewCodec,
+} from "./stored-review.ts";
+import { WorkdirCodec } from "./workdir.ts";
 
 const FILE = "review.jsonl";
 
@@ -26,7 +30,7 @@ const probeIn = (workdir: Workdir, name: string): Probe =>
 	);
 
 const writtenReview = (review: Review): string =>
-	`${JSON.stringify(Review.codec.encode(review))}\n`;
+	`${JSON.stringify(ReviewCodec.encode(review))}\n`;
 
 const writtenRecording = (probe: Probe, recorded: Recorded): string =>
 	`${JSON.stringify(RecordingShape.encode({ probe, recorded }))}\n`;
@@ -39,7 +43,7 @@ const reviewOfText = (text: string): Review => {
 		.reduce(
 			(review: Review, { probe, recorded }: Recording): Review =>
 				review.after(probe, recorded),
-			Review.codec.parse(JSON.parse(first)),
+			ReviewCodec.parse(JSON.parse(first)),
 		);
 };
 

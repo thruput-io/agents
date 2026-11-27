@@ -1,30 +1,26 @@
 import { Effect, Match } from "effect";
-import { z } from "zod";
-import { Probe } from "../generated/domain/probe.g.ts";
+import type { Probe } from "../generated/domain/probe.g.ts";
 import type { Rule } from "../generated/domain/rule.g.ts";
-import { TargetUrl } from "../generated/domain/target-url.g.ts";
+import type { TargetUrl } from "../generated/domain/target-url.g.ts";
 import type { Agent } from "./agent.ts";
-import { Assignment, type Entry } from "./assignment.ts";
+import type { Assignment, Entry } from "./assignment.ts";
 import { HostError } from "./host-error.ts";
 import { NoReview } from "./no-review.ts";
 import { NotDue } from "./not-due.ts";
 import type { NotStarted } from "./not-started.ts";
-import { type Post, PostShape } from "./post.ts";
+import type { Post } from "./post.ts";
 import { Posted } from "./posted.ts";
 import type { Poster } from "./posting.ts";
 
 type Recorded = Entry | Post;
 
-const ReviewShape = z.object({
-	url: TargetUrl.codec,
-	assigned: z
-		.array(z.tuple([Probe.codec, Assignment.codec]).readonly())
-		.readonly(),
-	posts: z.array(PostShape).readonly(),
-});
+type Assigned = readonly [Probe, Assignment];
 
-type ReviewParts = z.output<typeof ReviewShape>;
-type Assigned = ReviewParts["assigned"][number];
+interface ReviewParts {
+	readonly url: TargetUrl;
+	readonly assigned: readonly Assigned[];
+	readonly posts: readonly Post[];
+}
 
 interface ReviewStatus {
 	readonly remaining: readonly Rule[];
@@ -52,19 +48,13 @@ class Review {
 		Object.freeze(this);
 	}
 
-	static readonly codec = z.codec(
-		ReviewShape,
-		z.custom<Review>((value): boolean => value instanceof Review),
-		{
-			decode: ({ url, assigned, posts }: ReviewParts): Review =>
-				new Review(url, assigned, posts),
-			encode: ({ url, assigned, posts }: Review): ReviewParts => ({
-				url,
-				assigned,
-				posts,
-			}),
-		},
-	);
+	static from({ url, assigned, posts }: ReviewParts): Review {
+		return new Review(url, assigned, posts);
+	}
+
+	static partsOf({ url, assigned, posts }: Review): ReviewParts {
+		return { url, assigned, posts };
+	}
 
 	static of(url: TargetUrl, assigned: readonly Assigned[]): Review {
 		return new Review(url, assigned, []);
@@ -169,5 +159,5 @@ class Review {
 	}
 }
 
-export type { Recorded, ReviewStatus };
+export type { Recorded, ReviewParts, ReviewStatus };
 export { Review };

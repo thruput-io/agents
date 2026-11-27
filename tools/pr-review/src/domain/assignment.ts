@@ -1,7 +1,6 @@
 import { Effect, Match } from "effect";
-import { z } from "zod";
 import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { Page } from "../generated/domain/page.g.ts";
+import type { Page } from "../generated/domain/page.g.ts";
 import type { Rule } from "../generated/domain/rule.g.ts";
 import { Back } from "./back.ts";
 import { Briefing } from "./briefing.ts";
@@ -9,7 +8,7 @@ import { Forward } from "./forward.ts";
 import type { Instructions } from "./instructions.ts";
 import { NoPage } from "./no-page.ts";
 import { NotAcknowledged } from "./not-acknowledged.ts";
-import { type Task, TaskShape } from "./task.ts";
+import type { Task } from "./task.ts";
 import { Verdict } from "./verdict.ts";
 
 type Entry = Acknowledgement | Verdict | Forward | Back;
@@ -19,20 +18,17 @@ interface Ledger {
 	readonly verdicts: readonly Verdict[];
 }
 
-const HappenedShape = z.object({
-	acknowledgements: z.array(Acknowledgement.codec).readonly(),
-	verdicts: z.array(Verdict.codec).readonly(),
-	position: z.int(),
-});
+interface Happened {
+	readonly acknowledgements: readonly Acknowledgement[];
+	readonly verdicts: readonly Verdict[];
+	readonly position: number;
+}
 
-const AssignmentShape = z.object({
-	task: TaskShape,
-	pages: z.array(Page.codec).readonly(),
-	happened: HappenedShape,
-});
-
-type Happened = z.output<typeof HappenedShape>;
-type AssignmentParts = z.output<typeof AssignmentShape>;
+interface AssignmentParts {
+	readonly task: Task;
+	readonly pages: readonly Page[];
+	readonly happened: Happened;
+}
 
 const BEFORE_FIRST = -1;
 
@@ -54,19 +50,13 @@ class Assignment {
 		Object.freeze(this);
 	}
 
-	static readonly codec = z.codec(
-		AssignmentShape,
-		z.custom<Assignment>((value): boolean => value instanceof Assignment),
-		{
-			decode: ({ task, pages, happened }: AssignmentParts): Assignment =>
-				new Assignment(task, pages, happened),
-			encode: ({ task, pages, happened }: Assignment): AssignmentParts => ({
-				task,
-				pages,
-				happened,
-			}),
-		},
-	);
+	static from({ task, pages, happened }: AssignmentParts): Assignment {
+		return new Assignment(task, pages, happened);
+	}
+
+	static partsOf({ task, pages, happened }: Assignment): AssignmentParts {
+		return { task, pages, happened };
+	}
 
 	static of(task: Task, pages: readonly Page[]): Assignment {
 		return new Assignment(task, pages, {
@@ -162,5 +152,5 @@ class Assignment {
 	}
 }
 
-export type { Entry };
+export type { AssignmentParts, Entry };
 export { Assignment };

@@ -50,7 +50,7 @@ it("rules answers the rules of the probe once acknowledged", () => {
 
 it("define answers the definition of a term the glossary holds", () => {
 	const answered = BriefingController.over(storeWithReview())
-		.define(probe, Term.codec.decode("ledger"))
+		.define(probe, Effect.runSync(Term.of("ledger")))
 		.pipe(Effect.map((definition) => typeof definition));
 
 	assert.equal(Effect.runSync(answered), "object");
@@ -59,7 +59,7 @@ it("define answers the definition of a term the glossary holds", () => {
 it("define fails for a term nothing declares", () => {
 	const answered = BriefingController.over(storeWithReview()).define(
 		probe,
-		Term.codec.decode("Nothing"),
+		Effect.runSync(Term.of("Nothing")),
 	);
 
 	assert.equal(
