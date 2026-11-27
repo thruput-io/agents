@@ -21,4 +21,4 @@ levels:
 - id: Standard
   parent: Rule
   specification: |
-    A [[Rule]] implemented for a specific technology so [[Static code analysis]] can enforce it deterministically.
+    A [[Rule]] implemented for a specific technology so [[Static code analysis]] can enforce it deterministically; most live in dedicated linter repositories rather than in this document.
