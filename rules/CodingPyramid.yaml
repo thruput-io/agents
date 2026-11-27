@@ -17,7 +17,7 @@ levels:
 - id: Rule
   parent: Principle
   specification: |
-    A [[MUST]] or [[MUST NOT]] requirement in a [[Group]] that a [[Developer]] answers with [[Violation]] or non-violation on a diff; local repository rules and [[Architectural Direction]] override a [[Rule]].
+    A [[MUST]] or [[MUST NOT]] requirement in a [[Group]] that a [[Developer]] answers with [[Violation]] or non-violation on a diff; [[Architectural Direction]] overrides a [[Rule]].
 - id: Standard
   parent: Rule
   specification: |
