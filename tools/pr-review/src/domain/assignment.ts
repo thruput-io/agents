@@ -1,7 +1,7 @@
 import { Effect, Match } from "effect";
-import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import type { Page } from "../generated/domain/page.g.ts";
-import type { Rule } from "../generated/domain/rule.g.ts";
+import { Acknowledgement } from "../domain/acknowledgement.ts";
+import type { Page } from "../domain/page.ts";
+import type { Rule } from "../domain/rule.ts";
 import { Back } from "./back.ts";
 import { Briefing } from "./briefing.ts";
 import { Forward } from "./forward.ts";

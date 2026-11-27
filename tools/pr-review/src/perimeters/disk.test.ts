@@ -3,6 +3,7 @@ import { test as it } from "node:test";
 import { Change } from "../domain/change.ts";
 import { NoReview } from "../domain/no-review.ts";
 import type { Review } from "../domain/review.ts";
+import type { Rule } from "../domain/rule.ts";
 import {
 	probeSample,
 	ruleSample,
@@ -11,8 +12,6 @@ import {
 } from "../domain/sample.test-support.ts";
 import { Verdict } from "../domain/verdict.ts";
 import { WorkdirFailed } from "../domain/workdir-failed.ts";
-import { Rule } from "../generated/domain/rule.g.ts";
-import { WorkdirCodec } from "../perimeters/workdir.ts";
 import {
 	fileIn,
 	fileOf,
@@ -23,6 +22,7 @@ import {
 	writtenRecording,
 	writtenReview,
 } from "./disk.ts";
+import { RuleCodec, WorkdirCodec } from "./values.ts";
 
 const probe = probeSample("probe-1");
 const review: Review = Change.of(urlSample(), []).review([
@@ -35,7 +35,7 @@ const review: Review = Change.of(urlSample(), []).review([
 const remainingIn = (text: string): readonly string[] =>
 	reviewOfText(text)
 		.status()
-		.remaining.map((rule: Rule): string => Rule.codec.encode(rule));
+		.remaining.map((rule: Rule): string => RuleCodec.encode(rule));
 
 it("a review is kept in one file in its workdir", () => {
 	assert.equal(fileIn(WorkdirCodec.decode("/work")), "/work/review.jsonl");

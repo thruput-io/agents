@@ -3,13 +3,13 @@ import { test as it } from "node:test";
 import { Effect } from "effect";
 import { Change } from "../../domain/change.ts";
 import { HostError } from "../../domain/host-error.ts";
+import type { TargetUrl } from "../../domain/target-url.ts";
 import { UnknownFormat } from "../../domain/unknown-format.ts";
 import type { Workdir } from "../../domain/workdir.ts";
-import { TargetUrl } from "../../generated/domain/target-url.g.ts";
-import { WorkdirCodec } from "../../perimeters/workdir.ts";
+import { TargetUrlCodec, WorkdirCodec } from "../../perimeters/values.ts";
 import { type Git, gitHostOver } from "./git-host.ts";
 
-const url: TargetUrl = TargetUrl.codec.decode(
+const url: TargetUrl = TargetUrlCodec.decode(
 	"https://host.test/change.git@main..feature",
 );
 const workdir: Workdir = WorkdirCodec.decode("/work");
@@ -65,7 +65,7 @@ it("get change does not ask git about an address of an unknown format", async ()
 	const failed = await Effect.runPromise(
 		Effect.flip(
 			gitHostOver(git).getChange(
-				TargetUrl.codec.decode("https://host.test/change"),
+				TargetUrlCodec.decode("https://host.test/change"),
 				workdir,
 			),
 		),

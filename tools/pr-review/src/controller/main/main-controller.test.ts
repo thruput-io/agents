@@ -9,17 +9,17 @@ import { HostError } from "../../domain/host-error.ts";
 import { NoReview } from "../../domain/no-review.ts";
 import { NotStarted } from "../../domain/not-started.ts";
 import type { Poster } from "../../domain/posting.ts";
+import type { Rule } from "../../domain/rule.ts";
 import {
 	probeSample,
 	ruleSample,
 	taskSample,
 	urlSample,
 } from "../../domain/sample.test-support.ts";
+import type { TargetUrl } from "../../domain/target-url.ts";
 import type { Probes } from "../../domain/task.ts";
 import { UnknownFormat } from "../../domain/unknown-format.ts";
 import { Workdir } from "../../domain/workdir.ts";
-import type { Rule } from "../../generated/domain/rule.g.ts";
-import type { TargetUrl } from "../../generated/domain/target-url.g.ts";
 import { emptyStore } from "../common/stand-in.test-support.ts";
 import { MainController } from "./main-controller.ts";
 

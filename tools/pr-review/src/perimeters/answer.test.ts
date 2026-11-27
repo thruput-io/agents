@@ -18,8 +18,6 @@ import {
 import { TooLarge } from "../domain/too-large.ts";
 import { UnknownFormat } from "../domain/unknown-format.ts";
 import { WorkdirFailed } from "../domain/workdir-failed.ts";
-import { Definition } from "../generated/domain/definition.g.ts";
-import { Page } from "../generated/domain/page.g.ts";
 import {
 	definitionAnswer,
 	failureAnswer,
@@ -30,6 +28,7 @@ import {
 	standingAnswer,
 	statusAnswer,
 } from "./answer.ts";
+import { DefinitionCodec, PageCodec } from "./values.ts";
 
 const fourEmptyParts = {
 	workflow: {},
@@ -74,13 +73,13 @@ it("a status says that posting failed", () => {
 
 it("a definition is answered as an object without properties", () => {
 	assert.equal(
-		definitionAnswer(Definition.codec.decode("a definition")),
+		definitionAnswer(DefinitionCodec.decode("a definition")),
 		"a definition",
 	);
 });
 
 it("a page is answered as its text", () => {
-	assert.equal(pageAnswer(Page.codec.decode("a page")), "a page");
+	assert.equal(pageAnswer(PageCodec.decode("a page")), "a page");
 });
 
 it("instructions are answered by their four parts", () => {

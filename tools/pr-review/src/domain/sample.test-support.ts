@@ -1,33 +1,32 @@
 import { Effect } from "effect";
-import { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
-import { Context } from "../generated/domain/context.g.ts";
-import { Definition } from "../generated/domain/definition.g.ts";
-import { Page } from "../generated/domain/page.g.ts";
-import { Probe } from "../generated/domain/probe.g.ts";
-import { Rule } from "../generated/domain/rule.g.ts";
-import { TargetUrl } from "../generated/domain/target-url.g.ts";
-import { Usage } from "../generated/domain/usage.g.ts";
-import { Workflow } from "../generated/domain/workflow.g.ts";
+import { AcknowledgementRequest } from "../domain/acknowledgement-request.ts";
+import { Context } from "../domain/context.ts";
+import { Definition } from "../domain/definition.ts";
+import { Page } from "../domain/page.ts";
+import { Probe } from "../domain/probe.ts";
+import { Rule } from "../domain/rule.ts";
+import { TargetUrl } from "../domain/target-url.ts";
+import { Usage } from "../domain/usage.ts";
+import { Workflow } from "../domain/workflow.ts";
 import { Instructions } from "./instructions.ts";
 import type { Task } from "./task.ts";
 import { Term } from "./term.ts";
 
 const instructionsSample = (): Instructions =>
 	Instructions.of({
-		workflow: Workflow.codec.decode({}),
-		context: Context.codec.decode({}),
-		usage: Usage.codec.decode({}),
-		request: AcknowledgementRequest.codec.decode("a request"),
+		workflow: Workflow.of({}),
+		context: Context.of({}),
+		usage: Usage.of({}),
+		request: AcknowledgementRequest.of("a request"),
 	});
 
-const ruleSample = (id: string): Rule => Rule.codec.decode(id);
+const ruleSample = (id: string): Rule => Rule.of(id);
 
-const probeSample = (name: string): Probe => Probe.codec.decode(name);
+const probeSample = (name: string): Probe => Probe.of(name);
 
-const pageSample = (): Page => Page.codec.decode("a page");
+const pageSample = (): Page => Page.of("a page");
 
-const urlSample = (): TargetUrl =>
-	TargetUrl.codec.decode("https://host.test/change");
+const urlSample = (): TargetUrl => TargetUrl.of("https://host.test/change");
 
 const taskSample = (probe: Probe, rules: readonly Rule[]): Task => ({
 	probe,
@@ -35,10 +34,7 @@ const taskSample = (probe: Probe, rules: readonly Rule[]): Task => ({
 	detailed: instructionsSample(),
 	rules,
 	glossary: [
-		[
-			Effect.runSync(Term.of("Ledger")),
-			Definition.codec.decode("a definition"),
-		],
+		[Effect.runSync(Term.of("Ledger")), Definition.of("a definition")],
 	],
 });
 

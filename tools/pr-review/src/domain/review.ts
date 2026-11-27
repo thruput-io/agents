@@ -1,7 +1,7 @@
 import { Effect, Match } from "effect";
-import type { Probe } from "../generated/domain/probe.g.ts";
-import type { Rule } from "../generated/domain/rule.g.ts";
-import type { TargetUrl } from "../generated/domain/target-url.g.ts";
+import type { Probe } from "../domain/probe.ts";
+import type { Rule } from "../domain/rule.ts";
+import type { TargetUrl } from "../domain/target-url.ts";
 import type { Agent } from "./agent.ts";
 import type { Assignment, Entry } from "./assignment.ts";
 import { HostError } from "./host-error.ts";

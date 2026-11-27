@@ -2,8 +2,8 @@ import { Effect } from "effect";
 import type { Change } from "../../domain/change.ts";
 import type { Host, NotReviewable } from "../../domain/host.ts";
 import type { HostError } from "../../domain/host-error.ts";
+import type { TargetUrl } from "../../domain/target-url.ts";
 import type { Workdir } from "../../domain/workdir.ts";
-import type { TargetUrl } from "../../generated/domain/target-url.g.ts";
 import {
 	addressOf,
 	changeOfDiff,

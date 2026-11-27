@@ -1,14 +1,14 @@
 import { Effect } from "effect";
 import type { Assignment } from "../../domain/assignment.ts";
+import type { Definition } from "../../domain/definition.ts";
 import type { Instructions } from "../../domain/instructions.ts";
 import type { NoReview } from "../../domain/no-review.ts";
 import type { NotAcknowledged } from "../../domain/not-acknowledged.ts";
 import type { NotDefined } from "../../domain/not-defined.ts";
+import type { Probe } from "../../domain/probe.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
+import type { Rule } from "../../domain/rule.ts";
 import type { Term } from "../../domain/term.ts";
-import type { Definition } from "../../generated/domain/definition.g.ts";
-import type { Probe } from "../../generated/domain/probe.g.ts";
-import type { Rule } from "../../generated/domain/rule.g.ts";
 
 class BriefingController {
 	private readonly store: ReviewStore;

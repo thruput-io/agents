@@ -4,24 +4,27 @@ import {
 	Instructions,
 	type InstructionsParts,
 } from "../domain/instructions.ts";
+import type { Rule } from "../domain/rule.ts";
 import { Verdict } from "../domain/verdict.ts";
-import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
-import { Context } from "../generated/domain/context.g.ts";
-import { Definition } from "../generated/domain/definition.g.ts";
-import { Page } from "../generated/domain/page.g.ts";
-import { Probe } from "../generated/domain/probe.g.ts";
-import { Rule } from "../generated/domain/rule.g.ts";
-import { Usage } from "../generated/domain/usage.g.ts";
-import { Workflow } from "../generated/domain/workflow.g.ts";
 import { TermCodec } from "./term.ts";
+import {
+	AcknowledgementCodec,
+	AcknowledgementRequestCodec,
+	ContextCodec,
+	DefinitionCodec,
+	PageCodec,
+	ProbeCodec,
+	RuleCodec,
+	UsageCodec,
+	WorkflowCodec,
+} from "./values.ts";
 
 interface Judged {
 	readonly rule: Rule;
 }
 
 const VerdictCodec = z.codec(
-	z.object({ rule: Rule.codec }),
+	z.object({ rule: RuleCodec }),
 	z.custom<Verdict>((value): boolean => value instanceof Verdict),
 	{
 		decode: ({ rule }: Judged): Verdict => Verdict.on(rule),
@@ -31,10 +34,10 @@ const VerdictCodec = z.codec(
 
 const InstructionsCodec = z.codec(
 	z.object({
-		workflow: Workflow.codec,
-		context: Context.codec,
-		usage: Usage.codec,
-		request: AcknowledgementRequest.codec,
+		workflow: WorkflowCodec,
+		context: ContextCodec,
+		usage: UsageCodec,
+		request: AcknowledgementRequestCodec,
 	}),
 	z.custom<Instructions>((value): boolean => value instanceof Instructions),
 	{
@@ -45,17 +48,17 @@ const InstructionsCodec = z.codec(
 );
 
 const TaskShape = z.object({
-	probe: Probe.codec,
+	probe: ProbeCodec,
 	instructions: InstructionsCodec,
 	detailed: InstructionsCodec,
-	rules: z.array(Rule.codec).readonly(),
+	rules: z.array(RuleCodec).readonly(),
 	glossary: z
-		.array(z.tuple([TermCodec, Definition.codec]).readonly())
+		.array(z.tuple([TermCodec, DefinitionCodec]).readonly())
 		.readonly(),
 });
 
 const HappenedShape = z.object({
-	acknowledgements: z.array(Acknowledgement.codec).readonly(),
+	acknowledgements: z.array(AcknowledgementCodec).readonly(),
 	verdicts: z.array(VerdictCodec).readonly(),
 	position: z.int(),
 });
@@ -63,7 +66,7 @@ const HappenedShape = z.object({
 const AssignmentCodec = z.codec(
 	z.object({
 		task: TaskShape,
-		pages: z.array(Page.codec).readonly(),
+		pages: z.array(PageCodec).readonly(),
 		happened: HappenedShape,
 	}),
 	z.custom<Assignment>((value): boolean => value instanceof Assignment),

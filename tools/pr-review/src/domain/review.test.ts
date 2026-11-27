@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
-import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import type { Probe } from "../generated/domain/probe.g.ts";
-import type { Rule } from "../generated/domain/rule.g.ts";
-import type { TargetUrl } from "../generated/domain/target-url.g.ts";
+import { Acknowledgement } from "../domain/acknowledgement.ts";
+import type { Probe } from "../domain/probe.ts";
+import type { Rule } from "../domain/rule.ts";
+import type { TargetUrl } from "../domain/target-url.ts";
 import type { Agent } from "./agent.ts";
 import type { Assignment } from "./assignment.ts";
 import { Change } from "./change.ts";
@@ -29,7 +29,7 @@ const one: Probe = probeSample("probe-1");
 const two: Probe = probeSample("probe-2");
 const purpose: Rule = ruleSample("Stated purpose");
 const unused: Rule = ruleSample("Delete unused");
-const sent: Acknowledgement = Acknowledgement.codec.decode(
+const sent: Acknowledgement = Acknowledgement.of(
 	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool",
 );
 const started: Review = Change.of(url, []).review([

@@ -12,6 +12,53 @@
 				"description": "The directory a review is kept in",
 				"type": "string",
 				"minLength": 1
+			},
+			"TargetUrl": {
+				"description": "The address of the change to review",
+				"type": "string",
+				"minLength": 1
+			},
+			"Probe": {
+				"description": "What a sub agent holds for its part of a review",
+				"type": "string",
+				"minLength": 1
+			},
+			"Rule": {
+				"description": "One rule a change is judged against, by its id",
+				"type": "string",
+				"minLength": 1
+			},
+			"Page": {
+				"description": "One page of the surface: the lines of one changed file, each added line led by the place to report on",
+				"type": "string",
+				"minLength": 1
+			},
+			"Definition": {
+				"description": "What a term means",
+				"type": "string",
+				"minLength": 1
+			},
+			"Acknowledgement": {
+				"description": "The one sentence a sub agent sends to acknowledge its instructions",
+				"type": "string",
+				"const": "By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool"
+			},
+			"AcknowledgementRequest": {
+				"description": "What a sub agent sends back to show it read its instructions",
+				"type": "string",
+				"minLength": 1
+			},
+			"Workflow": {
+				"description": "The steps a sub agent follows",
+				"type": "object"
+			},
+			"Context": {
+				"description": "What is special for one review",
+				"type": "object"
+			},
+			"Usage": {
+				"description": "How the review tool is called",
+				"type": "object"
 			}
 		}
 	}

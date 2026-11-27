@@ -1,5 +1,6 @@
 import { Match } from "effect";
 import { z } from "zod";
+import { Acknowledgement } from "../domain/acknowledgement.ts";
 import { Back } from "../domain/back.ts";
 import { Forward } from "../domain/forward.ts";
 import { HostError } from "../domain/host-error.ts";
@@ -7,10 +8,8 @@ import type { Post } from "../domain/post.ts";
 import { Posted } from "../domain/posted.ts";
 import { Review, type ReviewParts } from "../domain/review.ts";
 import { Verdict } from "../domain/verdict.ts";
-import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { Probe } from "../generated/domain/probe.g.ts";
-import { TargetUrl } from "../generated/domain/target-url.g.ts";
 import { AssignmentCodec, VerdictCodec } from "./stored-assignment.ts";
+import { AcknowledgementCodec, ProbeCodec, TargetUrlCodec } from "./values.ts";
 
 interface Sent {
 	readonly acknowledgement: Acknowledgement;
@@ -49,9 +48,9 @@ const PostShape = z.codec(
 
 const ReviewCodec = z.codec(
 	z.object({
-		url: TargetUrl.codec,
+		url: TargetUrlCodec,
 		assigned: z
-			.array(z.tuple([Probe.codec, AssignmentCodec]).readonly())
+			.array(z.tuple([ProbeCodec, AssignmentCodec]).readonly())
 			.readonly(),
 		posts: z.array(PostShape).readonly(),
 	}),
@@ -63,7 +62,7 @@ const ReviewCodec = z.codec(
 );
 
 const SentShape = z.codec(
-	z.object({ acknowledgement: Acknowledgement.codec }),
+	z.object({ acknowledgement: AcknowledgementCodec }),
 	z.custom<Acknowledgement>(
 		(value): boolean => value instanceof Acknowledgement,
 	),
@@ -101,7 +100,7 @@ const BackShape = z.codec(
 );
 
 const RecordingShape = z.object({
-	probe: Probe.codec,
+	probe: ProbeCodec,
 	recorded: z.union([
 		SentShape,
 		JudgedShape,

@@ -3,8 +3,8 @@ import { test as it } from "node:test";
 import { Effect } from "effect";
 import { NoPage } from "../../domain/no-page.ts";
 import { NotAcknowledged } from "../../domain/not-acknowledged.ts";
+import { Page } from "../../domain/page.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
-import { Page } from "../../generated/domain/page.g.ts";
 import {
 	probe,
 	sent,

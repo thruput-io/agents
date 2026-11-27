@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
-import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import type { Page } from "../generated/domain/page.g.ts";
-import type { Rule } from "../generated/domain/rule.g.ts";
+import { Acknowledgement } from "../domain/acknowledgement.ts";
+import type { Page } from "../domain/page.ts";
+import type { Rule } from "../domain/rule.ts";
 import { Assignment } from "./assignment.ts";
 import { Back } from "./back.ts";
 import { Forward } from "./forward.ts";
@@ -27,9 +27,7 @@ const task: Task = taskSample(probeSample("probe-1"), [first, second]);
 const sentence =
 	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
 const briefed: Assignment = Assignment.of(task, pages);
-const working: Assignment = briefed.after(
-	Acknowledgement.codec.decode(sentence),
-);
+const working: Assignment = briefed.after(Acknowledgement.of(sentence));
 
 it("the instructions are answered before they are acknowledged", () => {
 	assert.equal(briefed.briefing().instructions(), task.instructions);

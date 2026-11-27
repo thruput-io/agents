@@ -3,24 +3,28 @@ import { test as it } from "node:test";
 import { Effect } from "effect";
 import { Forward } from "../domain/forward.ts";
 import { HostError } from "../domain/host-error.ts";
+import type { Page } from "../domain/page.ts";
 import {
 	probeSample,
 	ruleSample,
 	taskSample,
 } from "../domain/sample.test-support.ts";
+import type { TargetUrl } from "../domain/target-url.ts";
 import { UnknownFormat } from "../domain/unknown-format.ts";
-import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { Page } from "../generated/domain/page.g.ts";
-import { TargetUrl } from "../generated/domain/target-url.g.ts";
-import { WorkdirCodec } from "../perimeters/workdir.ts";
 import {
 	addressOf,
 	changeOfDiff,
 	repositoryIn,
 	unreachableRemote,
 } from "./git.ts";
+import {
+	AcknowledgementCodec,
+	PageCodec,
+	TargetUrlCodec,
+	WorkdirCodec,
+} from "./values.ts";
 
-const url: TargetUrl = TargetUrl.codec.decode(
+const url: TargetUrl = TargetUrlCodec.decode(
 	"https://host.test/change.git@main..feature",
 );
 const sentence =
@@ -53,7 +57,7 @@ const pagesOf = (text: string): readonly string[] => {
 	const probe = probeSample("probe-1");
 	const started = changeOfDiff(url, text)
 		.review([taskSample(probe, [ruleSample("A rule")])])
-		.after(probe, Acknowledgement.codec.decode(sentence));
+		.after(probe, AcknowledgementCodec.decode(sentence));
 	const first = started.after(probe, Forward.create());
 	const second = first.after(probe, Forward.create());
 
@@ -61,7 +65,7 @@ const pagesOf = (text: string): readonly string[] => {
 		Effect.runSync(
 			review.assignmentOf(probe).pipe(
 				Effect.flatMap((assignment) => assignment.briefing().page()),
-				Effect.map((page: Page): string => Page.codec.encode(page)),
+				Effect.map((page: Page): string => PageCodec.encode(page)),
 			),
 		),
 	);
@@ -76,7 +80,7 @@ it("an address names the remote, the base and the head", () => {
 });
 
 it("an address without a range is of an unknown format", () => {
-	const plain: TargetUrl = TargetUrl.codec.decode("https://host.test/change");
+	const plain: TargetUrl = TargetUrlCodec.decode("https://host.test/change");
 	const refused = Effect.runSync(Effect.flip(addressOf(plain)));
 
 	assert.equal(refused instanceof UnknownFormat, true);

@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { Rule } from "../generated/domain/rule.g.ts";
+import type { Rule } from "../domain/rule.ts";
 import { NotAssigned } from "./not-assigned.ts";
 
 class Verdict {

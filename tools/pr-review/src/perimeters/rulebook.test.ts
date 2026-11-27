@@ -1,16 +1,19 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { Effect } from "effect";
+import type { Rule } from "../domain/rule.ts";
 import type { Task } from "../domain/task.ts";
 import type { Workdir } from "../domain/workdir.ts";
-import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
-import { Definition } from "../generated/domain/definition.g.ts";
-import { Rule } from "../generated/domain/rule.g.ts";
-import { WorkdirCodec } from "../perimeters/workdir.ts";
 import { probeIn } from "./disk.ts";
 import { probesIn } from "./rulebook.ts";
 import { TermCodec } from "./term.ts";
+import {
+	AcknowledgementCodec,
+	AcknowledgementRequestCodec,
+	DefinitionCodec,
+	RuleCodec,
+	WorkdirCodec,
+} from "./values.ts";
 
 const workdir: Workdir = WorkdirCodec.decode("/work");
 const purpose = probeIn(workdir, "purpose");
@@ -21,7 +24,7 @@ const taskOfPurpose = (): readonly Task[] =>
 	);
 
 const rulesOf = (task: Task): readonly string[] =>
-	task.rules.map((rule: Rule): string => Rule.codec.encode(rule));
+	task.rules.map((rule: Rule): string => RuleCodec.encode(rule));
 
 const startOf = (task: Task, asked: string): string =>
 	Effect.runSync(
@@ -31,7 +34,7 @@ const startOf = (task: Task, asked: string): string =>
 			),
 		).pipe(
 			Effect.map(([, definition]): string =>
-				Definition.codec.encode(definition).slice(0, "State the".length),
+				DefinitionCodec.encode(definition).slice(0, "State the".length),
 			),
 		),
 	);
@@ -71,11 +74,11 @@ it("the glossary of a probe defines a rule, a principle and a definition", () =>
 
 it("the instructions of a probe end by asking for the sentence the acknowledgement accepts", () => {
 	const asked = taskOfPurpose().map((task: Task): string =>
-		AcknowledgementRequest.codec.encode(task.instructions.request()),
+		AcknowledgementRequestCodec.encode(task.instructions.request()),
 	);
 	const sentences = asked.map(
 		(text: string): boolean =>
-			Acknowledgement.codec.safeParse(text.slice(text.indexOf("By sending")))
+			AcknowledgementCodec.safeParse(text.slice(text.indexOf("By sending")))
 				.success,
 	);
 

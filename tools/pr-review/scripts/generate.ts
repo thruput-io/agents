@@ -1,23 +1,9 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import process from "node:process";
-import { jsonSchemaToZod } from "json-schema-to-zod";
 import { generate } from "orval";
 import { z } from "zod";
 import { rulebookModule } from "./rulebook.ts";
-
-interface ValueSchema {
-	readonly type: "string" | "object";
-}
-
-interface DomainDocument {
-	readonly $defs: Readonly<Record<string, ValueSchema>>;
-}
-
-const WORD_START = /(?<lower>[a-z])(?<upper>[A-Z])/gu;
-
-const kebabOf = (name: string): string =>
-	name.replace(WORD_START, "$<lower>-$<upper>").toLowerCase();
 
 const FIRST_ARGUMENT = 2;
 const [projectRoot] = z
@@ -25,63 +11,9 @@ const [projectRoot] = z
 	.parse(process.argv.slice(FIRST_ARGUMENT));
 const root = resolve(projectRoot, "tools/pr-review");
 const generated = resolve(root, "src/generated");
-const target = resolve(generated, "domain");
 
 rmSync(generated, { recursive: true, force: true });
-mkdirSync(target, { recursive: true });
 
-const document: DomainDocument = JSON.parse(
-	readFileSync(resolve(root, "schemas/domain.schema.json"), "utf8"),
-);
-
-const valueModuleOf = {
-	string: (name: string, schema: ValueSchema): string =>
-		[
-			'import { z } from "zod";',
-			"",
-			`const schema = ${jsonSchemaToZod(schema, { zodVersion: 4 })};`,
-			"",
-			`export class ${name} {`,
-			"\tprivate readonly data: z.infer<typeof schema>;",
-			"\tprivate constructor(data: z.infer<typeof schema>) {",
-			"\t\tthis.data = data;",
-			"\t\tObject.freeze(this);",
-			"\t}",
-			`\tstatic readonly codec = z.codec(schema, z.custom<${name}>((value) => value instanceof ${name}), {`,
-			`\t\tdecode: (data) => new ${name}(data),`,
-			"\t\tencode: (value) => value.data,",
-			"\t});",
-			`\tisSameAs(other: ${name}): boolean {`,
-			"\t\treturn this.data === other.data;",
-			"\t}",
-			"}",
-			"",
-		].join("\n"),
-	object: (name: string): string =>
-		[
-			'import { z } from "zod";',
-			"",
-			`export class ${name} {`,
-			"\tprivate readonly data: Readonly<Record<string, never>>;",
-			"\tprivate constructor(data: Readonly<Record<string, never>>) {",
-			"\t\tthis.data = data;",
-			"\t\tObject.freeze(this);",
-			"\t}",
-			`\tstatic readonly codec = z.codec(z.strictObject({}), z.custom<${name}>((value) => value instanceof ${name}), {`,
-			`\t\tdecode: (data) => new ${name}(data),`,
-			"\t\tencode: (value) => value.data,",
-			"\t});",
-			"}",
-			"",
-		].join("\n"),
-};
-
-Object.entries(document.$defs).map(([name, schema]) =>
-	writeFileSync(
-		resolve(target, `${kebabOf(name)}.g.ts`),
-		valueModuleOf[schema.type](name, schema),
-	),
-);
 const perimeters = resolve(generated, "perimeters");
 
 mkdirSync(perimeters, { recursive: true });

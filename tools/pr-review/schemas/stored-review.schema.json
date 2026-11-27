@@ -18,7 +18,7 @@
 			"type": "object",
 			"properties": {
 				"url": {
-					"$ref": "domain.schema.json#/$defs/TargetUrl"
+					"$ref": "domain.openapi.json#/components/schemas/TargetUrl"
 				},
 				"assigned": {
 					"description": "Each probe with its part of the review",
@@ -28,7 +28,7 @@
 						"type": "array",
 						"prefixItems": [
 							{
-								"$ref": "domain.schema.json#/$defs/Probe"
+								"$ref": "domain.openapi.json#/components/schemas/Probe"
 							},
 							{
 								"$ref": "#/$defs/Assignment"
@@ -59,7 +59,7 @@
 					"description": "The pages of the surface",
 					"type": "array",
 					"items": {
-						"$ref": "domain.schema.json#/$defs/Page"
+						"$ref": "domain.openapi.json#/components/schemas/Page"
 					}
 				},
 				"happened": {
@@ -73,7 +73,7 @@
 			"type": "object",
 			"properties": {
 				"probe": {
-					"$ref": "domain.schema.json#/$defs/Probe"
+					"$ref": "domain.openapi.json#/components/schemas/Probe"
 				},
 				"instructions": {
 					"$ref": "review-tool-probe.openapi.json#/components/schemas/Instructions"
@@ -85,7 +85,7 @@
 					"description": "The rules the probe judges",
 					"type": "array",
 					"items": {
-						"$ref": "domain.schema.json#/$defs/Rule"
+						"$ref": "domain.openapi.json#/components/schemas/Rule"
 					}
 				},
 				"glossary": {
@@ -99,7 +99,7 @@
 								"$ref": "#/$defs/Term"
 							},
 							{
-								"$ref": "domain.schema.json#/$defs/Definition"
+								"$ref": "domain.openapi.json#/components/schemas/Definition"
 							}
 						],
 						"items": false,
@@ -117,7 +117,7 @@
 					"description": "Each acknowledgement the sub agent sent",
 					"type": "array",
 					"items": {
-						"$ref": "domain.schema.json#/$defs/Acknowledgement"
+						"$ref": "domain.openapi.json#/components/schemas/Acknowledgement"
 					}
 				},
 				"verdicts": {
@@ -140,7 +140,7 @@
 			"type": "object",
 			"properties": {
 				"rule": {
-					"$ref": "domain.schema.json#/$defs/Rule"
+					"$ref": "domain.openapi.json#/components/schemas/Rule"
 				}
 			},
 			"required": ["rule"]
@@ -159,7 +159,7 @@
 			"type": "object",
 			"properties": {
 				"probe": {
-					"$ref": "domain.schema.json#/$defs/Probe"
+					"$ref": "domain.openapi.json#/components/schemas/Probe"
 				},
 				"recorded": {
 					"description": "What happened",
@@ -169,7 +169,7 @@
 							"type": "object",
 							"properties": {
 								"acknowledgement": {
-									"$ref": "domain.schema.json#/$defs/Acknowledgement"
+									"$ref": "domain.openapi.json#/components/schemas/Acknowledgement"
 								}
 							},
 							"required": ["acknowledgement"]

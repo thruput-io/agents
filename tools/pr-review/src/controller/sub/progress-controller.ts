@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import type { Acknowledgement } from "../../domain/acknowledgement.ts";
 import type { Agent } from "../../domain/agent.ts";
 import type { Assignment } from "../../domain/assignment.ts";
 import type { Host } from "../../domain/host.ts";
@@ -6,12 +7,11 @@ import type { Instructions } from "../../domain/instructions.ts";
 import type { NotAcknowledged } from "../../domain/not-acknowledged.ts";
 import type { NotAssigned } from "../../domain/not-assigned.ts";
 import type { Post } from "../../domain/post.ts";
+import type { Probe } from "../../domain/probe.ts";
 import type { Review } from "../../domain/review.ts";
 import type { NotRecorded, ReviewStore } from "../../domain/review-store.ts";
+import type { Rule } from "../../domain/rule.ts";
 import type { Verdict } from "../../domain/verdict.ts";
-import type { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
-import type { Probe } from "../../generated/domain/probe.g.ts";
-import type { Rule } from "../../generated/domain/rule.g.ts";
 
 const LATEST = -1;
 

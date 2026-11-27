@@ -1,16 +1,16 @@
 import { Buffer } from "node:buffer";
 import { join } from "node:path";
 import { NoReview } from "../domain/no-review.ts";
+import type { Probe } from "../domain/probe.ts";
 import type { Recorded, Review } from "../domain/review.ts";
 import type { Workdir } from "../domain/workdir.ts";
 import { WorkdirFailed } from "../domain/workdir-failed.ts";
-import { Probe } from "../generated/domain/probe.g.ts";
 import {
 	type Recording,
 	RecordingShape,
 	ReviewCodec,
 } from "./stored-review.ts";
-import { WorkdirCodec } from "./workdir.ts";
+import { ProbeCodec, WorkdirCodec } from "./values.ts";
 
 const FILE = "review.jsonl";
 
@@ -18,14 +18,14 @@ const fileIn = (workdir: Workdir): string =>
 	join(WorkdirCodec.encode(workdir), FILE);
 
 const fileOf = (probe: Probe): string => {
-	const held = Probe.codec.encode(probe);
+	const held = ProbeCodec.encode(probe);
 	const place = held.slice(held.lastIndexOf(".") + 1);
 
 	return join(Buffer.from(place, "base64url").toString(), FILE);
 };
 
 const probeIn = (workdir: Workdir, name: string): Probe =>
-	Probe.codec.decode(
+	ProbeCodec.decode(
 		`${name}.${Buffer.from(WorkdirCodec.encode(workdir)).toString("base64url")}`,
 	);
 

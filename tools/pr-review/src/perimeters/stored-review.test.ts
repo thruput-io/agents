@@ -4,8 +4,11 @@ import { Effect } from "effect";
 import { Change } from "../domain/change.ts";
 import { Forward } from "../domain/forward.ts";
 import { HostError } from "../domain/host-error.ts";
+import type { Page } from "../domain/page.ts";
 import { Posted } from "../domain/posted.ts";
+import type { Probe } from "../domain/probe.ts";
 import type { Review } from "../domain/review.ts";
+import type { Rule } from "../domain/rule.ts";
 import {
 	pageSample,
 	probeSample,
@@ -14,12 +17,9 @@ import {
 	urlSample,
 } from "../domain/sample.test-support.ts";
 import { Verdict } from "../domain/verdict.ts";
-import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
-import { Page } from "../generated/domain/page.g.ts";
-import type { Probe } from "../generated/domain/probe.g.ts";
-import { Rule } from "../generated/domain/rule.g.ts";
 import { ReviewCodec } from "./stored-review.ts";
 import { TermCodec } from "./term.ts";
+import { AcknowledgementCodec, PageCodec, RuleCodec } from "./values.ts";
 
 const probe: Probe = probeSample("probe-1");
 const sentence =
@@ -31,7 +31,7 @@ const review: Review = Change.of(urlSample(), [pageSample()])
 			ruleSample("Delete unused"),
 		]),
 	])
-	.after(probe, Acknowledgement.codec.decode(sentence))
+	.after(probe, AcknowledgementCodec.decode(sentence))
 	.after(probe, Forward.create())
 	.after(probe, Verdict.on(ruleSample("Stated purpose")))
 	.after(probe, HostError.create())
@@ -43,7 +43,7 @@ it("a review read back has the same rules left", () => {
 	assert.deepEqual(
 		readBack()
 			.status()
-			.remaining.map((rule: Rule): string => Rule.codec.encode(rule)),
+			.remaining.map((rule: Rule): string => RuleCodec.encode(rule)),
 		["Delete unused"],
 	);
 });
@@ -62,7 +62,7 @@ it("a review read back is on the same page", () => {
 		.assignmentOf(probe)
 		.pipe(
 			Effect.flatMap((assignment) => assignment.briefing().page()),
-			Effect.map((found: Page): string => Page.codec.encode(found)),
+			Effect.map((found: Page): string => PageCodec.encode(found)),
 		);
 
 	assert.equal(Effect.runSync(page), "a page");

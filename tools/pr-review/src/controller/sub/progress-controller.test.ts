@@ -12,9 +12,9 @@ import type { Poster } from "../../domain/posting.ts";
 import type { Review } from "../../domain/review.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
 import { ruleSample } from "../../domain/sample.test-support.ts";
+import type { TargetUrl } from "../../domain/target-url.ts";
 import { Verdict } from "../../domain/verdict.ts";
 import { Workdir } from "../../domain/workdir.ts";
-import type { TargetUrl } from "../../generated/domain/target-url.g.ts";
 import {
 	agent,
 	host,

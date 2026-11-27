@@ -1,5 +1,5 @@
-import type { Page } from "../generated/domain/page.g.ts";
-import type { TargetUrl } from "../generated/domain/target-url.g.ts";
+import type { Page } from "../domain/page.ts";
+import type { TargetUrl } from "../domain/target-url.ts";
 import { Assignment } from "./assignment.ts";
 import { Review } from "./review.ts";
 import type { Probes, Task } from "./task.ts";

@@ -4,7 +4,9 @@ import { Effect } from "effect";
 import { z } from "zod";
 import { Change } from "../../../domain/change.ts";
 import { NoReview } from "../../../domain/no-review.ts";
+import type { Probe } from "../../../domain/probe.ts";
 import type { Review } from "../../../domain/review.ts";
+import type { Rule } from "../../../domain/rule.ts";
 import {
 	ruleSample,
 	taskSample,
@@ -13,10 +15,8 @@ import {
 import { Verdict } from "../../../domain/verdict.ts";
 import type { Workdir } from "../../../domain/workdir.ts";
 import { WorkdirFailed } from "../../../domain/workdir-failed.ts";
-import type { Probe } from "../../../generated/domain/probe.g.ts";
-import { Rule } from "../../../generated/domain/rule.g.ts";
 import { probeIn } from "../../../perimeters/disk.ts";
-import { WorkdirCodec } from "../../../perimeters/workdir.ts";
+import { RuleCodec, WorkdirCodec } from "../../../perimeters/values.ts";
 import { diskStoreOver, type Files } from "./disk-store.ts";
 
 const workdir: Workdir = WorkdirCodec.decode("/work");
@@ -48,7 +48,7 @@ const readOnly = (kept: Map<string, string>): Files => ({
 });
 
 const remainingOf = (found: Review): readonly string[] =>
-	found.status().remaining.map((rule: Rule): string => Rule.codec.encode(rule));
+	found.status().remaining.map((rule: Rule): string => RuleCodec.encode(rule));
 
 it("a saved review is found in its workdir by a store that starts later", async () => {
 	const kept = new Map<string, string>();

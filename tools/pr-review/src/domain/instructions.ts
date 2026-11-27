@@ -1,7 +1,7 @@
-import type { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
-import type { Context } from "../generated/domain/context.g.ts";
-import type { Usage } from "../generated/domain/usage.g.ts";
-import type { Workflow } from "../generated/domain/workflow.g.ts";
+import type { AcknowledgementRequest } from "../domain/acknowledgement-request.ts";
+import type { Context } from "../domain/context.ts";
+import type { Usage } from "../domain/usage.ts";
+import type { Workflow } from "../domain/workflow.ts";
 
 interface InstructionsParts {
 	readonly workflow: Workflow;

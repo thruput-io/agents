@@ -3,11 +3,11 @@ import { Effect } from "effect";
 import { z } from "zod";
 import { Change } from "../domain/change.ts";
 import { HostError } from "../domain/host-error.ts";
+import type { Page } from "../domain/page.ts";
+import type { TargetUrl } from "../domain/target-url.ts";
 import { UnknownFormat } from "../domain/unknown-format.ts";
 import type { Workdir } from "../domain/workdir.ts";
-import { Page } from "../generated/domain/page.g.ts";
-import { TargetUrl } from "../generated/domain/target-url.g.ts";
-import { WorkdirCodec } from "../perimeters/workdir.ts";
+import { PageCodec, TargetUrlCodec, WorkdirCodec } from "./values.ts";
 
 interface Address {
 	readonly remote: string;
@@ -35,7 +35,7 @@ const FIRST_HUNK = /^@@ /mu;
 const addressOf = (url: TargetUrl): Effect.Effect<Address, UnknownFormat> =>
 	Effect.try({
 		try: (): Address =>
-			AddressShape.parse(RANGE.exec(TargetUrl.codec.encode(url))?.groups),
+			AddressShape.parse(RANGE.exec(TargetUrlCodec.encode(url))?.groups),
 		catch: (): UnknownFormat => UnknownFormat.create(),
 	});
 
@@ -90,7 +90,7 @@ const changeOfDiff = (url: TargetUrl, diff: string): Change =>
 			.split(FILE_START)
 			.flatMap(pageTextOf)
 			.filter((text: string): boolean => text.length > 0)
-			.map((text: string): Page => Page.codec.decode(text)),
+			.map((text: string): Page => PageCodec.decode(text)),
 	);
 
 const unreachableRemote = (): HostError => HostError.create();

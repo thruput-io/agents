@@ -1,7 +1,7 @@
 import { Effect } from "effect";
-import type { Definition } from "../generated/domain/definition.g.ts";
-import type { Page } from "../generated/domain/page.g.ts";
-import type { Rule } from "../generated/domain/rule.g.ts";
+import type { Definition } from "../domain/definition.ts";
+import type { Page } from "../domain/page.ts";
+import type { Rule } from "../domain/rule.ts";
 import type { Instructions } from "./instructions.ts";
 import type { NoPage } from "./no-page.ts";
 import type { NotAcknowledged } from "./not-acknowledged.ts";

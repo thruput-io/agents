@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
+import { Acknowledgement } from "../domain/acknowledgement.ts";
 import { Back } from "../domain/back.ts";
 import { Forward } from "../domain/forward.ts";
 import { HostError } from "../domain/host-error.ts";
 import { Posted } from "../domain/posted.ts";
 import { probeSample, ruleSample } from "../domain/sample.test-support.ts";
 import { Verdict } from "../domain/verdict.ts";
-import { Acknowledgement } from "../generated/domain/acknowledgement.g.ts";
 import { RecordingShape } from "./stored-review.ts";
+import { AcknowledgementCodec } from "./values.ts";
 
 const probe = probeSample("probe-1");
 const sentence =
@@ -15,7 +16,7 @@ const sentence =
 
 it("each thing recorded is written out in a form of its own", () => {
 	const written = [
-		Acknowledgement.codec.decode(sentence),
+		AcknowledgementCodec.decode(sentence),
 		Verdict.on(ruleSample("Stated purpose")),
 		Forward.create(),
 		Back.create(),

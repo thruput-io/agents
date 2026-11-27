@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import { Acknowledgement } from "../../domain/acknowledgement.ts";
 import type { Agent } from "../../domain/agent.ts";
 import type { Assignment } from "../../domain/assignment.ts";
 import { Change } from "../../domain/change.ts";
@@ -6,8 +7,10 @@ import type { Host, NotReviewable } from "../../domain/host.ts";
 import type { HostError } from "../../domain/host-error.ts";
 import { NoReview } from "../../domain/no-review.ts";
 import type { Poster } from "../../domain/posting.ts";
+import type { Probe } from "../../domain/probe.ts";
 import type { Recorded, Review } from "../../domain/review.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
+import type { Rule } from "../../domain/rule.ts";
 import {
 	pageSample,
 	probeSample,
@@ -15,18 +18,15 @@ import {
 	taskSample,
 	urlSample,
 } from "../../domain/sample.test-support.ts";
+import type { TargetUrl } from "../../domain/target-url.ts";
 import { Workdir } from "../../domain/workdir.ts";
-import { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
-import type { Probe } from "../../generated/domain/probe.g.ts";
-import type { Rule } from "../../generated/domain/rule.g.ts";
-import type { TargetUrl } from "../../generated/domain/target-url.g.ts";
 
 type Outcome = Parameters<Poster["post"]>[1];
 
 const probe: Probe = probeSample("probe-1");
 const purpose: Rule = ruleSample("Stated purpose");
 const unused: Rule = ruleSample("Delete unused");
-const sent: Acknowledgement = Acknowledgement.codec.decode(
+const sent: Acknowledgement = Acknowledgement.of(
 	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool",
 );
 const change: Change = Change.of(urlSample(), [pageSample()]);

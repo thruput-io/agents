@@ -16,7 +16,7 @@
 						"in": "path",
 						"required": true,
 						"schema": {
-							"$ref": "domain.schema.json#/$defs/TargetUrl"
+							"$ref": "domain.openapi.json#/components/schemas/TargetUrl"
 						}
 					},
 					{
@@ -101,7 +101,7 @@
 						"description": "The rules not yet judged, by their ids",
 						"type": "array",
 						"items": {
-							"$ref": "domain.schema.json#/$defs/Rule"
+							"$ref": "domain.openapi.json#/components/schemas/Rule"
 						}
 					},
 					"posted": {

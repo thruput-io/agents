@@ -6,10 +6,10 @@ import type { NoReview } from "../../domain/no-review.ts";
 import type { NotStarted } from "../../domain/not-started.ts";
 import type { Review, ReviewStatus } from "../../domain/review.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
+import type { TargetUrl } from "../../domain/target-url.ts";
 import type { Probes } from "../../domain/task.ts";
 import type { Workdir } from "../../domain/workdir.ts";
 import type { WorkdirFailed } from "../../domain/workdir-failed.ts";
-import type { TargetUrl } from "../../generated/domain/target-url.g.ts";
 
 class MainController {
 	private readonly host: Host;

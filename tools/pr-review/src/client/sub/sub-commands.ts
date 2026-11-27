@@ -5,13 +5,13 @@ import document from "../../../schemas/review-tool-probe.openapi.json" with {
 import { BriefingController } from "../../controller/sub/briefing-controller.ts";
 import { PagingController } from "../../controller/sub/paging-controller.ts";
 import { ProgressController } from "../../controller/sub/progress-controller.ts";
+import type { Acknowledgement } from "../../domain/acknowledgement.ts";
 import type { Agent } from "../../domain/agent.ts";
 import type { Host } from "../../domain/host.ts";
 import type { Instructions } from "../../domain/instructions.ts";
+import type { Probe } from "../../domain/probe.ts";
 import type { NotRecorded, ReviewStore } from "../../domain/review-store.ts";
-import type { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
-import type { Probe } from "../../generated/domain/probe.g.ts";
-import type { Rule } from "../../generated/domain/rule.g.ts";
+import type { Rule } from "../../domain/rule.ts";
 import {
 	type Answer,
 	definitionAnswer,

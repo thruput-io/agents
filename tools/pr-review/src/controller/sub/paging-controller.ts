@@ -5,10 +5,10 @@ import { Forward } from "../../domain/forward.ts";
 import type { NoPage } from "../../domain/no-page.ts";
 import type { NoReview } from "../../domain/no-review.ts";
 import type { NotAcknowledged } from "../../domain/not-acknowledged.ts";
+import type { Page } from "../../domain/page.ts";
+import type { Probe } from "../../domain/probe.ts";
 import type { Review } from "../../domain/review.ts";
 import type { NotRecorded, ReviewStore } from "../../domain/review-store.ts";
-import type { Page } from "../../generated/domain/page.g.ts";
-import type { Probe } from "../../generated/domain/probe.g.ts";
 
 type Turned = Effect.Effect<Page, NotRecorded | NoPage | NotAcknowledged>;
 

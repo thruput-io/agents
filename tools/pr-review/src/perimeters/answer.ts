@@ -1,6 +1,7 @@
 import { Match } from "effect";
 import type { z } from "zod";
 import { AlreadyReviewed } from "../domain/already-reviewed.ts";
+import type { Definition } from "../domain/definition.ts";
 import { HostError } from "../domain/host-error.ts";
 import { Instructions } from "../domain/instructions.ts";
 import { NoPage } from "../domain/no-page.ts";
@@ -10,20 +11,15 @@ import { NotAssigned } from "../domain/not-assigned.ts";
 import { NotDefined } from "../domain/not-defined.ts";
 import { NotStarted } from "../domain/not-started.ts";
 import { NotValid } from "../domain/not-valid.ts";
+import type { Page } from "../domain/page.ts";
 import type { Post } from "../domain/post.ts";
 import { Posted } from "../domain/posted.ts";
 import { Refused } from "../domain/refused.ts";
 import type { ReviewStatus } from "../domain/review.ts";
+import type { Rule } from "../domain/rule.ts";
 import { TooLarge } from "../domain/too-large.ts";
 import { UnknownFormat } from "../domain/unknown-format.ts";
 import { WorkdirFailed } from "../domain/workdir-failed.ts";
-import { AcknowledgementRequest } from "../generated/domain/acknowledgement-request.g.ts";
-import { Context } from "../generated/domain/context.g.ts";
-import { Definition } from "../generated/domain/definition.g.ts";
-import { Page } from "../generated/domain/page.g.ts";
-import { Rule } from "../generated/domain/rule.g.ts";
-import { Usage } from "../generated/domain/usage.g.ts";
-import { Workflow } from "../generated/domain/workflow.g.ts";
 import type {
 	Prepare200Response,
 	PrepareDefaultResponse,
@@ -39,6 +35,15 @@ import type {
 	Report200Response,
 	Rules200Response,
 } from "../generated/perimeters/review-tool-probe.g.ts";
+import {
+	AcknowledgementRequestCodec,
+	ContextCodec,
+	DefinitionCodec,
+	PageCodec,
+	RuleCodec,
+	UsageCodec,
+	WorkflowCodec,
+} from "./values.ts";
 
 type Refusal = z.infer<typeof PrepareDefaultResponse>;
 type Rules = z.infer<typeof Rules200Response>;
@@ -115,7 +120,7 @@ const helpAnswer = ({ info, paths }: ClientDocument): Help => ({
 });
 
 const idsOf = (rules: readonly Rule[]): string[] =>
-	rules.map((rule: Rule): string => Rule.codec.encode(rule));
+	rules.map((rule: Rule): string => RuleCodec.encode(rule));
 
 const rulesAnswer = (rules: readonly Rule[]): Rules => ({
 	rules: idsOf(rules),
@@ -132,15 +137,15 @@ const statusAnswer = ({ remaining, posts }: ReviewStatus): Status => ({
 });
 
 const definitionAnswer = (definition: Definition): Defined =>
-	Definition.codec.encode(definition);
+	DefinitionCodec.encode(definition);
 
-const pageAnswer = (page: Page): Paged => Page.codec.encode(page);
+const pageAnswer = (page: Page): Paged => PageCodec.encode(page);
 
 const instructionsAnswer = (instructions: Instructions): Told => ({
-	workflow: Workflow.codec.encode(instructions.workflow()),
-	context: Context.codec.encode(instructions.context()),
-	usage: Usage.codec.encode(instructions.usage()),
-	request: AcknowledgementRequest.codec.encode(instructions.request()),
+	workflow: WorkflowCodec.encode(instructions.workflow()),
+	context: ContextCodec.encode(instructions.context()),
+	usage: UsageCodec.encode(instructions.usage()),
+	request: AcknowledgementRequestCodec.encode(instructions.request()),
 });
 
 const failureAnswer: (failure: Failure) => Refusal = Match.type<Failure>().pipe(

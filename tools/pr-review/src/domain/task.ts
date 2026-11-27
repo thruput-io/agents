@@ -1,6 +1,6 @@
-import type { Definition } from "../generated/domain/definition.g.ts";
-import type { Probe } from "../generated/domain/probe.g.ts";
-import type { Rule } from "../generated/domain/rule.g.ts";
+import type { Definition } from "../domain/definition.ts";
+import type { Probe } from "../domain/probe.ts";
+import type { Rule } from "../domain/rule.ts";
 import type { Instructions } from "./instructions.ts";
 import type { Term } from "./term.ts";
 

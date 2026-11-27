@@ -7,17 +7,21 @@ import { Effect } from "effect";
 import type { Change } from "../../domain/change.ts";
 import { Forward } from "../../domain/forward.ts";
 import { HostError } from "../../domain/host-error.ts";
+import type { Page } from "../../domain/page.ts";
+import type { Probe } from "../../domain/probe.ts";
 import {
 	probeSample,
 	ruleSample,
 	taskSample,
 } from "../../domain/sample.test-support.ts";
+import type { TargetUrl } from "../../domain/target-url.ts";
 import type { Workdir } from "../../domain/workdir.ts";
-import { Acknowledgement } from "../../generated/domain/acknowledgement.g.ts";
-import { Page } from "../../generated/domain/page.g.ts";
-import type { Probe } from "../../generated/domain/probe.g.ts";
-import { TargetUrl } from "../../generated/domain/target-url.g.ts";
-import { WorkdirCodec } from "../../perimeters/workdir.ts";
+import {
+	AcknowledgementCodec,
+	PageCodec,
+	TargetUrlCodec,
+	WorkdirCodec,
+} from "../../perimeters/values.ts";
 import { gitBinary } from "./git-binary.ts";
 import { gitHostOver } from "./git-host.ts";
 
@@ -32,19 +36,19 @@ const firstPageOf = (change: Change): string => {
 	const probe: Probe = probeSample("probe-1");
 	const review = change
 		.review([taskSample(probe, [ruleSample("A rule")])])
-		.after(probe, Acknowledgement.codec.decode(sentence))
+		.after(probe, AcknowledgementCodec.decode(sentence))
 		.after(probe, Forward.create());
 
 	return Effect.runSync(
 		review.assignmentOf(probe).pipe(
 			Effect.flatMap((assignment) => assignment.briefing().page()),
-			Effect.map((page: Page): string => Page.codec.encode(page)),
+			Effect.map((page: Page): string => PageCodec.encode(page)),
 		),
 	);
 };
 
 it("get change reads the lines a branch adds from a repository the host serves", async () => {
-	const url: TargetUrl = TargetUrl.codec.decode(
+	const url: TargetUrl = TargetUrlCodec.decode(
 		`${mockHost}/first-review.git@main..first-review`,
 	);
 	const change: Change = await Effect.runPromise(
@@ -55,7 +59,7 @@ it("get change reads the lines a branch adds from a repository the host serves",
 });
 
 it("get change fails with a host error for a repository the host does not serve", async () => {
-	const url: TargetUrl = TargetUrl.codec.decode(
+	const url: TargetUrl = TargetUrlCodec.decode(
 		`${mockHost}/missing.git@main..first-review`,
 	);
 	const failed = await Effect.runPromise(

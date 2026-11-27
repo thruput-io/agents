@@ -6,7 +6,9 @@ import { test as it } from "node:test";
 import { Effect } from "effect";
 import { Change } from "../../../domain/change.ts";
 import { NoReview } from "../../../domain/no-review.ts";
+import type { Probe } from "../../../domain/probe.ts";
 import type { Review } from "../../../domain/review.ts";
+import type { Rule } from "../../../domain/rule.ts";
 import {
 	ruleSample,
 	taskSample,
@@ -14,10 +16,8 @@ import {
 } from "../../../domain/sample.test-support.ts";
 import { Verdict } from "../../../domain/verdict.ts";
 import { WorkdirFailed } from "../../../domain/workdir-failed.ts";
-import type { Probe } from "../../../generated/domain/probe.g.ts";
-import { Rule } from "../../../generated/domain/rule.g.ts";
 import { probeIn } from "../../../perimeters/disk.ts";
-import { WorkdirCodec } from "../../../perimeters/workdir.ts";
+import { RuleCodec, WorkdirCodec } from "../../../perimeters/values.ts";
 import { diskFiles } from "./disk-files.ts";
 import { diskStoreOver } from "./disk-store.ts";
 
@@ -49,7 +49,7 @@ it("a review saved on disk and appended to is read back by a store that starts l
 	assert.deepEqual(
 		found
 			.status()
-			.remaining.map((rule: Rule): string => Rule.codec.encode(rule)),
+			.remaining.map((rule: Rule): string => RuleCodec.encode(rule)),
 		["Delete unused"],
 	);
 });
