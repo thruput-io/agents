@@ -162,6 +162,10 @@ continue their numbering and quote the human.
      restrict that part", and of the install permissions: "ok add allowScripts as wel".
 126. May a generator be written by hand? No: "no hand-written generator is accpeted, things STARTS with a
      schema", and "package-json invokes tool, configs point to files".
+127. Does a [[Domain object]] carry a mark? No: "THere is nno \"mark\"".
+128. What is the design? What the rows say, read in order: "ITS A PROJECTION OF EVERYTHIGN EARLIER SAID, LATER
+     REPLACES EARLIER, JUST AS DISCUSSIONS WORK".
+129. What keeps the agent to it? Guardrails: "DO AS SAID, HELP ME WITH GUARDRAILS FOR IT".
 
 ## Open questions
 
