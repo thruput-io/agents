@@ -1,0 +1,81 @@
+{
+	"openapi": "3.1.0",
+	"info": {
+		"title": "review-tool-probe",
+		"version": "0.0.0",
+		"description": "The commands of a sub agent."
+	},
+	"paths": {
+		"/ack/{probe}/{acknowledgement}": {
+			"post": {
+				"operationId": "ack",
+				"description": "ack <probe> <acknowledgement>: acknowledges the instructions and answers the progress.",
+				"parameters": [
+					{
+						"name": "probe",
+						"in": "path",
+						"required": true,
+						"schema": { "$ref": "domain.schema.json#/$defs/Probe" }
+					},
+					{
+						"name": "acknowledgement",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "string", "minLength": 1 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "What is left to judge",
+						"content": {
+							"application/json": {
+								"schema": { "$ref": "#/components/schemas/Standing" }
+							}
+						}
+					},
+					"default": {
+						"description": "Why the command did not answer",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{ "$ref": "#/components/schemas/Instructions" },
+										{ "$ref": "#/components/schemas/Failure" }
+									]
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"Standing": {
+				"type": "object",
+				"properties": {
+					"remaining": {
+						"type": "array",
+						"items": { "$ref": "domain.schema.json#/$defs/Rule" }
+					}
+				},
+				"required": ["remaining"]
+			},
+			"Instructions": {
+				"type": "object",
+				"properties": {
+					"request": { "type": "string", "minLength": 1 }
+				},
+				"required": ["request"]
+			},
+			"Failure": {
+				"type": "object",
+				"properties": {
+					"failure": { "enum": ["not-valid", "no-review"] }
+				},
+				"required": ["failure"]
+			}
+		}
+	}
+}

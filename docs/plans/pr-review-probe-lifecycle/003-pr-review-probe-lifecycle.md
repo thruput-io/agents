@@ -83,6 +83,9 @@ count is zero, the stand-ins are deleted, and none of the 65 [[Violation]]s of v
   of the skeleton is built so, and the unit tests of the build create and read them back.
 - A plain git repository can be served to the tool as git over HTTP by a mock host of its own. Tested: the narrow
   tests of the git adapter run against it in the build.
+- Orval generates checked shapes for the named arguments, the answer and the refusal of a command from an OpenAPI
+  document, and follows a reference from it into the domain schema. Tested in `tracer-bullets/orval-client-shapes`,
+  which is built and run with docker and fails when the document changes or the reference is not allowed.
 - An agent's command-line tool can be started by the tool with only the permissions of one probe, and stopped by
   it. Not tested; a tracer bullet proves it before M3 starts.
 - A client that holds only the operations in use can be generated from the specification a host publishes. Tested
@@ -141,6 +144,12 @@ continue their numbering and quote the human.
 121. May the goals change in it? No: "plz do it, do not touch objectives".
 122. Text is turned into values and back in the code with no schema behind it: "completely missing the point in
      haveing schemas". Is that fixed before the rest? Yes: "Ye skeletong has to be perfect before we start".
+123. Where is the answer of a command defined? With the command, not in a file of answers: "answers.schema.json
+     seems completely wrong, it should be incosporated in the other schemas".
+124. What defines a client, and what does its help answer? "The help tool should only return what should already
+     be a desciption of the clients method in an openapi spec".
+125. Is the whole package file of the tool a guardrail? No: "group the invoication of guardrails in it and only
+     restrict that part", and of the install permissions: "ok add allowScripts as wel".
 
 ## Open questions
 
