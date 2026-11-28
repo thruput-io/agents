@@ -1,0 +1,17 @@
+rules:
+  - id: no-type-tag-in-domain
+    languages: [typescript]
+    severity: ERROR
+    message: "A domain or controller class holds no text that names what it is. Its type says so."
+    paths:
+      include:
+        - "**/src/domain/**"
+        - "**/src/controller/**"
+      exclude:
+        - "**/*.test.ts"
+        - "**/*.test-support.ts"
+        - "**/*.narrow-test.ts"
+        - "**/src/generated/**"
+    pattern-either:
+      - pattern: "class $C { ... $F = \"...\"; ... }"
+      - pattern: "class $C { ... $F: string = \"...\"; ... }"

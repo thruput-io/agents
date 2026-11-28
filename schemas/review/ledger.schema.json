@@ -274,17 +274,6 @@
               "observation": "Losing the check's exit status in a pipe into tail"
             }
           ]
-        },
-        {
-          "bookRule": {
-            "ruleset": "https://github.com/ciembor/agent-rules-books/blob/main/domain-driven-design/domain-driven-design.md",
-            "heading": "Make implicit concepts explicit"
-          },
-          "examined": [
-            "scripts/verify.sh"
-          ],
-          "verdict": "clean",
-          "evidence": "The change adds one check to a script and introduces no domain concept that could be left implicit."
         }
       ]
     }

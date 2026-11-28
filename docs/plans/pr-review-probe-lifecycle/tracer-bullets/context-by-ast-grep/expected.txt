@@ -1,0 +1,16 @@
+== call sites into the change
+repo/ts/order.ts:5
+repo/ts/shipping.test.ts:3
+repo/py/order.py:5
+repo/py/test_shipping.py:5
+repo/go/order.go:6
+repo/go/shipping_test.go:6
+repo/cs/Order.cs:5
+repo/sh/order.sh:5
+repo/sh/shipping.bats:2
+== definitions the change calls out to
+RateFor func repo/go/rates.go:3
+RateFor method repo/cs/Rates.cs:3
+rateFor function repo/ts/rates.ts:1
+rate_for function repo/py/rates.py:1
+rate_for function repo/sh/rates.sh:3

@@ -1,0 +1,16 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "Domain",
+	"$defs": {
+		"Probe": {
+			"description": "What a sub agent holds for its part of a review",
+			"type": "string",
+			"minLength": 1
+		},
+		"Rule": {
+			"description": "One rule a change is judged against, by its id",
+			"type": "string",
+			"minLength": 1
+		}
+	}
+}

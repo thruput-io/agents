@@ -1,0 +1,133 @@
+{
+	"main": {
+		"input": {
+			"target": "schemas/review-tool.openapi.json",
+			"parserOptions": {
+				"externalRefs": {
+					"allow": ["domain.openapi.json", "failures.schema.json"]
+				}
+			}
+		},
+		"output": {
+			"client": "zod",
+			"mode": "single",
+			"target": "src/generated/perimeters/review-tool.g.ts",
+			"override": {
+				"zod": {
+					"version": 4,
+					"generateEachHttpStatus": true
+				}
+			}
+		}
+	},
+	"sub": {
+		"input": {
+			"target": "schemas/review-tool-probe.openapi.json",
+			"parserOptions": {
+				"externalRefs": {
+					"allow": ["domain.openapi.json", "failures.schema.json"]
+				}
+			}
+		},
+		"output": {
+			"client": "zod",
+			"mode": "single",
+			"target": "src/generated/perimeters/review-tool-probe.g.ts",
+			"override": {
+				"zod": {
+					"version": 4,
+					"generateEachHttpStatus": true
+				}
+			}
+		}
+	},
+	"domain": {
+		"input": {
+			"target": "schemas/domain.openapi.json"
+		},
+		"output": {
+			"client": "zod",
+			"mode": "single",
+			"schemas": {
+				"path": "src/generated/domain",
+				"type": "zod"
+			},
+			"schemaFileExtension": ".g.ts",
+			"indexFiles": false,
+			"namingConvention": "kebab-case",
+			"override": {
+				"zod": {
+					"version": 4
+				}
+			}
+		}
+	},
+	"git": {
+		"input": {
+			"target": "schemas/git-host.openapi.json"
+		},
+		"output": {
+			"client": "zod",
+			"mode": "single",
+			"schemas": {
+				"path": "src/generated/perimeters",
+				"type": "zod"
+			},
+			"schemaFileExtension": ".g.ts",
+			"indexFiles": false,
+			"namingConvention": "kebab-case",
+			"override": {
+				"zod": {
+					"version": 4
+				}
+			}
+		}
+	},
+	"stored": {
+		"input": {
+			"target": "schemas/stored-review.openapi.json",
+			"parserOptions": {
+				"externalRefs": {
+					"allow": ["domain.openapi.json"]
+				}
+			}
+		},
+		"output": {
+			"client": "zod",
+			"mode": "single",
+			"schemas": {
+				"path": "src/generated/perimeters",
+				"type": "zod"
+			},
+			"schemaFileExtension": ".g.ts",
+			"indexFiles": false,
+			"namingConvention": "kebab-case",
+			"override": {
+				"zod": {
+					"version": 4
+				}
+			}
+		}
+	},
+	"integration": {
+		"input": {
+			"target": "schemas/review-tool.openapi.json",
+			"parserOptions": {
+				"externalRefs": {
+					"allow": ["domain.openapi.json", "failures.schema.json"]
+				}
+			}
+		},
+		"output": {
+			"client": "zod",
+			"mode": "single",
+			"target": "src/generated/integration-test/review-tool.g.ts",
+			"override": {
+				"zod": {
+					"version": 4,
+					"generateEachHttpStatus": true
+				}
+			}
+		}
+	}
+}

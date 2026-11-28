@@ -1,0 +1,117 @@
+import { Effect } from "effect";
+import { Acknowledgement } from "../../domain/acknowledgement.ts";
+import type { Agent } from "../../domain/agent.ts";
+import type { Assignment } from "../../domain/assignment.ts";
+import { Change } from "../../domain/change.ts";
+import type { CreatedDir } from "../../domain/created-dir.ts";
+import type { Host, NotReviewable } from "../../domain/host.ts";
+import type { HostError } from "../../domain/host-error.ts";
+import { NoReview } from "../../domain/no-review.ts";
+import type { Poster } from "../../domain/posting.ts";
+import type { Probe } from "../../domain/probe.ts";
+import type { Recorded, Review } from "../../domain/review.ts";
+import type { ReviewStore } from "../../domain/review-store.ts";
+import type { Rule } from "../../domain/rule.ts";
+import {
+	createdSample,
+	pageSample,
+	probeSample,
+	ruleSample,
+	sessionSample,
+	taskSample,
+	urlSample,
+} from "../../domain/sample.test-support.ts";
+import type { Session } from "../../domain/session.ts";
+import type { TargetUrl } from "../../domain/target-url.ts";
+
+type Outcome = Parameters<Poster["post"]>[1];
+
+const probe: Probe = probeSample("probe-1");
+const purpose: Rule = ruleSample("Stated purpose");
+const unused: Rule = ruleSample("Delete unused");
+const sent: Acknowledgement = Acknowledgement.of(
+	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool",
+);
+const change: Change = Change.of(urlSample(), [pageSample()]);
+
+const host: Host = {
+	getChange: (): Effect.Effect<Change, NotReviewable> => Effect.succeed(change),
+	post: (_to: TargetUrl, outcome: Outcome): Effect.Effect<Outcome, HostError> =>
+		Effect.succeed(outcome),
+};
+
+const agent: Agent = {
+	spawn: (assignment: Assignment): Effect.Effect<Assignment> =>
+		Effect.succeed(assignment),
+	terminate: (assignment: Assignment): Effect.Effect<Assignment> =>
+		Effect.succeed(assignment),
+};
+
+const latestOf =
+	(kept: readonly Review[]) => (): Effect.Effect<Review, NoReview> =>
+		Effect.fromNullishOr(kept.at(-1)).pipe(
+			Effect.mapError((): NoReview => NoReview.create()),
+		);
+
+const keepingIn =
+	(kept: Review[]) =>
+	(review: Review): Effect.Effect<Review> =>
+		Effect.sync((): Review => {
+			kept.push(review);
+
+			return review;
+		});
+
+const emptyStore = (): ReviewStore => {
+	const kept: Review[] = [];
+	const latest = latestOf(kept);
+	const keeping = keepingIn(kept);
+
+	return {
+		created: (): Effect.Effect<CreatedDir> => Effect.succeed(createdSample()),
+		save: (_workdir: Session, review: Review): Effect.Effect<Review> =>
+			keeping(review),
+		inWorkdir: latest,
+		ofProbe: (holder: Probe): Effect.Effect<Assignment, NoReview> =>
+			latest().pipe(
+				Effect.flatMap(
+					(review: Review): Effect.Effect<Assignment, NoReview> =>
+						review.assignmentOf(holder),
+				),
+			),
+		append: (
+			holder: Probe,
+			recorded: Recorded,
+		): Effect.Effect<Review, NoReview> =>
+			latest().pipe(
+				Effect.flatMap(
+					(review: Review): Effect.Effect<Review> =>
+						keeping(review.after(holder, recorded)),
+				),
+			),
+	};
+};
+
+const storeWithReview = (): ReviewStore => {
+	const store: ReviewStore = emptyStore();
+
+	Effect.runSync(
+		store.save(
+			sessionSample(),
+			change.review([taskSample(probe, [purpose, unused])]),
+		),
+	);
+
+	return store;
+};
+
+export {
+	agent,
+	emptyStore,
+	host,
+	probe,
+	purpose,
+	sent,
+	storeWithReview,
+	unused,
+};

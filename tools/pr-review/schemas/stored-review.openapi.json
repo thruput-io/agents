@@ -1,0 +1,148 @@
+{
+	"openapi": "3.1.0",
+	"info": {
+		"title": "stored-review",
+		"version": "0.0.0",
+		"description": "What the file of a review holds in its workdir, one JSON value on each line: what the review was started from, then everything recorded since, in order. Nothing about the rules is written."
+	},
+	"paths": {},
+	"components": {
+		"schemas": {
+			"StoredStart": {
+				"description": "What a review was started from",
+				"type": "object",
+				"properties": {
+					"url": {
+						"$ref": "domain.openapi.json#/components/schemas/TargetUrl"
+					},
+					"pages": {
+						"description": "The pages of the surface",
+						"type": "array",
+						"items": {
+							"$ref": "domain.openapi.json#/components/schemas/Page"
+						}
+					},
+					"probes": {
+						"description": "The session of each sub agent of the review",
+						"type": "array",
+						"items": {
+							"$ref": "domain.openapi.json#/components/schemas/Probe"
+						}
+					}
+				},
+				"required": ["url", "pages", "probes"]
+			},
+			"StoredVerdict": {
+				"description": "That a rule is judged",
+				"type": "object",
+				"properties": {
+					"rule": {
+						"$ref": "domain.openapi.json#/components/schemas/Rule"
+					}
+				},
+				"required": ["rule"]
+			},
+			"StoredPost": {
+				"description": "How posting the review went",
+				"type": "string",
+				"enum": ["posted", "host-error"]
+			},
+			"StoredTurn": {
+				"description": "The sub agent turned a page: forward to the next, back to the previous",
+				"type": "string",
+				"enum": ["forward", "back"]
+			},
+			"StoredSent": {
+				"description": "The sub agent acknowledged its instructions",
+				"type": "object",
+				"properties": {
+					"acknowledgement": {
+						"$ref": "domain.openapi.json#/components/schemas/Acknowledgement"
+					}
+				},
+				"required": ["acknowledgement"]
+			},
+			"StoredJudged": {
+				"description": "The sub agent judged a rule",
+				"type": "object",
+				"properties": {
+					"verdict": {
+						"$ref": "#/components/schemas/StoredVerdict"
+					}
+				},
+				"required": ["verdict"]
+			},
+			"StoredRecording": {
+				"description": "One thing that happened in a review, and the probe it happened to",
+				"type": "object",
+				"properties": {
+					"probe": {
+						"$ref": "domain.openapi.json#/components/schemas/Probe"
+					},
+					"recorded": {
+						"description": "What happened",
+						"anyOf": [
+							{
+								"$ref": "#/components/schemas/StoredSent"
+							},
+							{
+								"$ref": "#/components/schemas/StoredJudged"
+							},
+							{
+								"$ref": "#/components/schemas/StoredTurn"
+							},
+							{
+								"$ref": "#/components/schemas/StoredPost"
+							}
+						]
+					}
+				},
+				"required": ["probe", "recorded"]
+			},
+			"StoredPlace": {
+				"description": "Where the file of a review is kept",
+				"type": "object",
+				"properties": {
+					"session": {
+						"description": "What identifies the review",
+						"type": "string",
+						"format": "uuid"
+					},
+					"directory": {
+						"description": "The directory the review is kept in",
+						"type": "string",
+						"minLength": 1
+					}
+				},
+				"required": ["session", "directory"]
+			},
+			"StoredProbe": {
+				"description": "What the session of a sub agent holds: its part of a review, and where that review is kept",
+				"type": "object",
+				"properties": {
+					"name": {
+						"description": "The name of the part of the review",
+						"type": "string",
+						"minLength": 1
+					},
+					"place": {
+						"$ref": "#/components/schemas/StoredPlace"
+					}
+				},
+				"required": ["name", "place"]
+			},
+			"StoredFolder": {
+				"description": "The folder a review gets a directory of its own in",
+				"type": "object",
+				"properties": {
+					"directory": {
+						"description": "The folder the main agent chose",
+						"type": "string",
+						"minLength": 1
+					}
+				},
+				"required": ["directory"]
+			}
+		}
+	}
+}

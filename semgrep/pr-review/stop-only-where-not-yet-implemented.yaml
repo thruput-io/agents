@@ -1,0 +1,17 @@
+rules:
+  - id: stop-only-where-not-yet-implemented
+    languages: [typescript]
+    severity: ERROR
+    message: "A failure is answered as a value. Only the not-yet-implemented adapter stops the program."
+    paths:
+      include:
+        - "**/src/**"
+      exclude:
+        - "**/*.test.ts"
+        - "**/*.test-support.ts"
+        - "**/*.narrow-test.ts"
+        - "**/src/generated/**"
+        - "**/src/adapters/not-yet-implemented/**"
+    pattern-either:
+      - pattern: "throw $E"
+      - pattern: "Effect.die(...)"

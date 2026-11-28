@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+shasum --algorithm 256 --check --strict --quiet guardrails.sha256
+git diff --quiet "@{upstream}" -- guardrails.sha256
+
+written=$(git diff --numstat "@{upstream}" HEAD -- . ':!*package-lock.json' ':!tools/pr-review/references' | awk '{ total += $1 + $2 } END { print total + 0 }')
+test "$written" -le 400

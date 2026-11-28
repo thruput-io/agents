@@ -1,0 +1,39 @@
+acknowledgementRequest: >-
+  Acknowledge these instructions by sending exactly this sentence with the ack command: By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool
+probes:
+  - name: contracts
+    group: Contracts
+    context: Full context
+  - name: conventions
+    group: Conventions
+    context: Full context
+  - name: dead-code
+    group: Dead Code
+    context: Checkout
+  - name: domain-model
+    group: Domain Model
+    context: Full context
+  - name: failure-handling
+    group: Failure Handling
+    context: Full context
+  - name: performance
+    group: Performance
+    context: Full context
+  - name: purpose
+    group: Purpose
+    context: Full context
+  - name: reuse
+    group: Reuse
+    context: Checkout
+  - name: test-pyramid
+    group: Test Pyramid
+    context: Full context
+  - name: tests
+    group: Tests
+    context: Full context
+  - name: toolchain-environment
+    group: Toolchain & Environment
+    context: Full context
+  - name: types
+    group: Types
+    context: Full context

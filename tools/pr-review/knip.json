@@ -1,0 +1,20 @@
+{
+	"$schema": "https://unpkg.com/knip@6/schema.json",
+	"entry": [
+		"src/client/main/review-tool.ts!",
+		"src/client/sub/review-tool-probe.ts!",
+		"src/mock-server/serve.ts",
+		"src/**/*.narrow-test.ts",
+		"src/integration-test/*.integration-test.ts"
+	],
+	"project": [
+		"src/**/*.ts!",
+		"!src/**/*.test.ts!",
+		"!src/**/*.narrow-test.ts!",
+		"!src/integration-test/**!",
+		"!src/**/*.test-support.ts!",
+		"!src/architecture.ts!",
+		"scripts/*.ts"
+	],
+	"ignoreBinaries": ["semgrep"]
+}

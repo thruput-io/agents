@@ -1,0 +1,343 @@
+{
+	"openapi": "3.1.0",
+	"info": {
+		"title": "review-tool-probe",
+		"version": "0.0.0",
+		"description": "The commands of a sub agent. Each answers one line of JSON and exits with 0 for an answer and 1 for a failure."
+	},
+	"paths": {
+		"/instructions/{probe}": {
+			"get": {
+				"operationId": "instructions",
+				"description": "instructions <probe>: answers the instructions of the probe.",
+				"parameters": [
+					{
+						"name": "probe",
+						"in": "path",
+						"required": true,
+						"description": "What the sub agent was handed for its part of the review",
+						"schema": {
+							"$ref": "domain.openapi.json#/components/schemas/Probe"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "The instructions of the probe",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Instructions"
+								}
+							}
+						}
+					},
+					"default": {
+						"$ref": "#/components/responses/Failed"
+					}
+				}
+			}
+		},
+		"/ack/{probe}/{acknowledgement}": {
+			"post": {
+				"operationId": "ack",
+				"description": "ack <probe> <acknowledgement>: acknowledges the instructions and answers the progress, or answers more detailed instructions when the acknowledgement is not the one asked for.",
+				"parameters": [
+					{
+						"name": "probe",
+						"in": "path",
+						"required": true,
+						"description": "What the sub agent was handed for its part of the review",
+						"schema": {
+							"$ref": "domain.openapi.json#/components/schemas/Probe"
+						}
+					},
+					{
+						"name": "acknowledgement",
+						"in": "path",
+						"required": true,
+						"description": "The phrase the instructions ask for",
+						"schema": {
+							"type": "string",
+							"minLength": 1
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "What is left to judge",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Standing"
+								}
+							}
+						}
+					},
+					"default": {
+						"$ref": "#/components/responses/NotReady"
+					}
+				}
+			}
+		},
+		"/rules/{probe}": {
+			"get": {
+				"operationId": "rules",
+				"description": "rules <probe>: answers the rules of the probe.",
+				"parameters": [
+					{
+						"name": "probe",
+						"in": "path",
+						"required": true,
+						"description": "What the sub agent was handed for its part of the review",
+						"schema": {
+							"$ref": "domain.openapi.json#/components/schemas/Probe"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "The rules of the probe",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Rules"
+								}
+							}
+						}
+					},
+					"default": {
+						"$ref": "#/components/responses/Failed"
+					}
+				}
+			}
+		},
+		"/define/{probe}/{term}": {
+			"get": {
+				"operationId": "define",
+				"description": "define <probe> <term>: answers the definition of the term.",
+				"parameters": [
+					{
+						"name": "probe",
+						"in": "path",
+						"required": true,
+						"description": "What the sub agent was handed for its part of the review",
+						"schema": {
+							"$ref": "domain.openapi.json#/components/schemas/Probe"
+						}
+					},
+					{
+						"name": "term",
+						"in": "path",
+						"required": true,
+						"description": "A word of the glossary",
+						"schema": {
+							"type": "string",
+							"minLength": 1
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "What the term means",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "domain.openapi.json#/components/schemas/Definition"
+								}
+							}
+						}
+					},
+					"default": {
+						"$ref": "#/components/responses/Failed"
+					}
+				}
+			}
+		},
+		"/next/{probe}": {
+			"post": {
+				"operationId": "next",
+				"description": "next <probe>: answers the next page of the surface.",
+				"parameters": [
+					{
+						"name": "probe",
+						"in": "path",
+						"required": true,
+						"description": "What the sub agent was handed for its part of the review",
+						"schema": {
+							"$ref": "domain.openapi.json#/components/schemas/Probe"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "The next page of the surface",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "domain.openapi.json#/components/schemas/Page"
+								}
+							}
+						}
+					},
+					"default": {
+						"$ref": "#/components/responses/Failed"
+					}
+				}
+			}
+		},
+		"/prev/{probe}": {
+			"post": {
+				"operationId": "prev",
+				"description": "prev <probe>: answers the previous page of the surface.",
+				"parameters": [
+					{
+						"name": "probe",
+						"in": "path",
+						"required": true,
+						"description": "What the sub agent was handed for its part of the review",
+						"schema": {
+							"$ref": "domain.openapi.json#/components/schemas/Probe"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "The previous page of the surface",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "domain.openapi.json#/components/schemas/Page"
+								}
+							}
+						}
+					},
+					"default": {
+						"$ref": "#/components/responses/Failed"
+					}
+				}
+			}
+		},
+		"/report/{probe}/{rule}": {
+			"post": {
+				"operationId": "report",
+				"description": "report <probe> <rule>: records that the rule is judged and answers the rules still to judge.",
+				"parameters": [
+					{
+						"name": "probe",
+						"in": "path",
+						"required": true,
+						"description": "What the sub agent was handed for its part of the review",
+						"schema": {
+							"$ref": "domain.openapi.json#/components/schemas/Probe"
+						}
+					},
+					{
+						"name": "rule",
+						"in": "path",
+						"required": true,
+						"description": "The id of the rule that is judged",
+						"schema": {
+							"$ref": "domain.openapi.json#/components/schemas/Rule"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "What is left to judge",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Standing"
+								}
+							}
+						}
+					},
+					"default": {
+						"$ref": "#/components/responses/NotReady"
+					}
+				}
+			}
+		}
+	},
+	"components": {
+		"responses": {
+			"Failed": {
+				"description": "Why the command failed",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "failures.schema.json"
+						}
+					}
+				}
+			},
+			"NotReady": {
+				"description": "The detailed instructions when the sub agent has not acknowledged them, or why the command failed",
+				"content": {
+					"application/json": {
+						"schema": {
+							"anyOf": [
+								{
+									"$ref": "#/components/schemas/Instructions"
+								},
+								{
+									"$ref": "failures.schema.json"
+								}
+							]
+						}
+					}
+				}
+			}
+		},
+		"schemas": {
+			"Rules": {
+				"description": "The rules of a probe",
+				"type": "object",
+				"properties": {
+					"rules": {
+						"description": "The rules of the probe, by their ids",
+						"type": "array",
+						"items": {
+							"$ref": "domain.openapi.json#/components/schemas/Rule"
+						}
+					}
+				},
+				"required": ["rules"]
+			},
+			"Standing": {
+				"description": "What a probe has left to judge",
+				"type": "object",
+				"properties": {
+					"remaining": {
+						"description": "The rules not yet judged, by their ids",
+						"type": "array",
+						"items": {
+							"$ref": "domain.openapi.json#/components/schemas/Rule"
+						}
+					}
+				},
+				"required": ["remaining"]
+			},
+			"Instructions": {
+				"description": "What a sub agent is told to do",
+				"type": "object",
+				"properties": {
+					"workflow": {
+						"$ref": "domain.openapi.json#/components/schemas/Workflow"
+					},
+					"context": {
+						"$ref": "domain.openapi.json#/components/schemas/Context"
+					},
+					"usage": {
+						"$ref": "domain.openapi.json#/components/schemas/Usage"
+					},
+					"request": {
+						"$ref": "domain.openapi.json#/components/schemas/AcknowledgementRequest"
+					}
+				},
+				"required": ["workflow", "context", "usage", "request"]
+			}
+		}
+	}
+}
