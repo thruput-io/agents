@@ -9,17 +9,15 @@ import { Page } from "../domain/page.ts";
 import { Posted } from "../domain/posted.ts";
 import { Probe } from "../domain/probe.ts";
 import type { Recorded, Review } from "../domain/review.ts";
+import { Rule } from "../domain/rule.ts";
 import { TargetUrl } from "../domain/target-url.ts";
-import type { Probes } from "../domain/task.ts";
+import type { Probes, Task } from "../domain/task.ts";
 import { Verdict } from "../domain/verdict.ts";
 import { StoredRecording } from "../generated/perimeters/stored-recording.g.ts";
 import type { StoredStart } from "../generated/perimeters/stored-start.g.ts";
-import {
-	storedTask,
-	storedVerdict,
-	taskFrom,
-	verdictFrom,
-} from "./stored-task.ts";
+import type { StoredVerdict } from "../generated/perimeters/stored-verdict.g.ts";
+import { tasksOf } from "./rulebook.ts";
+import { ProbeCodec } from "./values.ts";
 
 type StoredRecorded = StoredRecording["recorded"];
 
@@ -38,6 +36,13 @@ const isVerdict = (given: Recorded): given is Verdict =>
 	given instanceof Verdict;
 const isAcknowledgement = (given: Recorded): given is Acknowledgement =>
 	given instanceof Acknowledgement;
+
+const verdictFrom = ({ rule }: StoredVerdict): Verdict =>
+	Verdict.on(Rule.of(rule));
+
+const storedVerdict = (verdict: Verdict): StoredVerdict => ({
+	rule: Rule.shapeOf(Verdict.ruleOf(verdict)),
+});
 
 const recordedFrom = (stored: StoredRecorded): Recorded =>
 	Match.value(stored).pipe(
@@ -77,15 +82,19 @@ const storedRecorded = (recorded: Recorded): StoredRecorded =>
 		Match.exhaustive,
 	);
 
-const startedFrom = ({ url, pages, tasks }: StoredStart): Review =>
-	Change.of(TargetUrl.of(url), pages.map(Page.of)).review(tasks.map(taskFrom));
+const startedFrom = ({ url, pages, probes }: StoredStart): Review =>
+	Change.of(TargetUrl.of(url), pages.map(Page.of)).review(
+		probes.flatMap(
+			(probe: string): Probes => tasksOf(ProbeCodec.decode(probe)),
+		),
+	);
 
 const storedStart = (review: Review): StoredStart =>
 	review.started(
 		(url: TargetUrl, pages: readonly Page[], probes: Probes): StoredStart => ({
 			url: TargetUrl.shapeOf(url),
 			pages: pages.map(Page.shapeOf),
-			tasks: probes.map(storedTask),
+			probes: probes.map((task: Task): string => ProbeCodec.encode(task.probe)),
 		}),
 	);
 

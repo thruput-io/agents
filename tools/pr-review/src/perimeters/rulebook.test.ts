@@ -4,7 +4,7 @@ import { Effect } from "effect";
 import type { Rule } from "../domain/rule.ts";
 import type { Session } from "../domain/session.ts";
 import type { Task } from "../domain/task.ts";
-import { probeIn } from "./disk.ts";
+import { probeIn } from "./probe-session.ts";
 import { probesIn } from "./rulebook.ts";
 import { sessionAt } from "./session.test-support.ts";
 import { TermCodec } from "./term.ts";

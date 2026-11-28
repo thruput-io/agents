@@ -9,15 +9,16 @@ import { NoReview } from "../../../domain/no-review.ts";
 import type { Probe } from "../../../domain/probe.ts";
 import type { Review } from "../../../domain/review.ts";
 import type { Rule } from "../../../domain/rule.ts";
-import {
-	ruleSample,
-	taskSample,
-	urlSample,
-} from "../../../domain/sample.test-support.ts";
+import { ruleSample, urlSample } from "../../../domain/sample.test-support.ts";
 import { Session } from "../../../domain/session.ts";
 import { Verdict } from "../../../domain/verdict.ts";
 import { WorkdirFailed } from "../../../domain/workdir-failed.ts";
-import { probeIn } from "../../../perimeters/disk.ts";
+import { probeIn } from "../../../perimeters/probe-session.ts";
+import {
+	purposeRules,
+	purposeRulesAfterTheFirst,
+} from "../../../perimeters/rulebook.test-support.ts";
+import { tasksOf } from "../../../perimeters/rulebook.ts";
 import { sessionAt } from "../../../perimeters/session.test-support.ts";
 import { prepareDto } from "../../../perimeters/session.ts";
 import { RuleCodec } from "../../../perimeters/values.ts";
@@ -28,11 +29,9 @@ const purpose: Rule = ruleSample("Stated purpose");
 const emptyDirectory = (): string =>
 	mkdtempSync(join(tmpdir(), "narrow-disk-"));
 const probeOf = (directory: string): Probe =>
-	probeIn(sessionAt(directory), "probe-1");
+	probeIn(sessionAt(directory), "purpose");
 const reviewOf = (probe: Probe): Review =>
-	Change.of(urlSample(), []).review([
-		taskSample(probe, [purpose, ruleSample("Delete unused")]),
-	]);
+	Change.of(urlSample(), []).review(tasksOf(probe));
 
 it("a review saved on disk and appended to is read back by a store that starts later", async () => {
 	const directory = emptyDirectory();
@@ -53,7 +52,7 @@ it("a review saved on disk and appended to is read back by a store that starts l
 		found
 			.status()
 			.remaining.map((rule: Rule): string => RuleCodec.encode(rule)),
-		["Delete unused"],
+		purposeRulesAfterTheFirst,
 	);
 });
 
@@ -82,7 +81,7 @@ it("a review is saved in the directory the store created for it", async () => {
 
 	assert.deepEqual(
 		kept.status().remaining.map((rule: Rule): string => RuleCodec.encode(rule)),
-		["Stated purpose", "Delete unused"],
+		purposeRules,
 	);
 });
 

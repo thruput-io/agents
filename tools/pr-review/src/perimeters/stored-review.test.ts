@@ -11,25 +11,24 @@ import type { Review } from "../domain/review.ts";
 import type { Rule } from "../domain/rule.ts";
 import {
 	pageSample,
-	probeSample,
 	ruleSample,
-	taskSample,
 	urlSample,
 } from "../domain/sample.test-support.ts";
 import { Verdict } from "../domain/verdict.ts";
 import { reviewOfText, writtenRecording, writtenReview } from "./disk.ts";
+import { probeIn } from "./probe-session.ts";
+import { purposeRulesAfterTheFirst } from "./rulebook.test-support.ts";
+import { tasksOf } from "./rulebook.ts";
+import { sessionAt } from "./session.test-support.ts";
 import { TermCodec } from "./term.ts";
 import { AcknowledgementCodec, PageCodec, RuleCodec } from "./values.ts";
 
-const probe: Probe = probeSample("probe-1");
+const probe: Probe = probeIn(sessionAt("/work"), "purpose");
 const sentence =
 	"By sending this ack I acknowledge I read all instructions and implicitly I know how to use the review tool";
-const started: Review = Change.of(urlSample(), [pageSample()]).review([
-	taskSample(probe, [
-		ruleSample("Stated purpose"),
-		ruleSample("Delete unused"),
-	]),
-]);
+const started: Review = Change.of(urlSample(), [pageSample()]).review(
+	tasksOf(probe),
+);
 const text = [
 	writtenReview(started),
 	writtenRecording(probe, AcknowledgementCodec.decode(sentence)),
@@ -46,7 +45,7 @@ it("a review read back has the same rules left", () => {
 		readBack()
 			.status()
 			.remaining.map((rule: Rule): string => RuleCodec.encode(rule)),
-		["Delete unused"],
+		purposeRulesAfterTheFirst,
 	);
 });
 

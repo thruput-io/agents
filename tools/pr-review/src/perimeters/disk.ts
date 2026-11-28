@@ -1,14 +1,13 @@
-import { Buffer } from "node:buffer";
 import { join } from "node:path";
 import { NoReview } from "../domain/no-review.ts";
 import type { Probe } from "../domain/probe.ts";
 import type { Recorded, Review } from "../domain/review.ts";
 import type { Session } from "../domain/session.ts";
 import { WorkdirFailed } from "../domain/workdir-failed.ts";
-import { StoredProbe } from "../generated/perimeters/stored-probe.g.ts";
 import { StoredRecording } from "../generated/perimeters/stored-recording.g.ts";
 import { StoredStart } from "../generated/perimeters/stored-start.g.ts";
 import { jsonOf } from "./json.ts";
+import { heldBy } from "./probe-session.ts";
 import { placeOf } from "./session.ts";
 import {
 	type Recording,
@@ -16,30 +15,16 @@ import {
 	startedFrom,
 	storedStart,
 } from "./stored-review.ts";
-import { ProbeCodec } from "./values.ts";
 
 const FILE = "review.jsonl";
 const StartLine = jsonOf(StoredStart);
 const RecordingLine = jsonOf(StoredRecording);
-const ProbeText = jsonOf(StoredProbe);
 
 const fileIn = (workdir: Session): string =>
 	join(placeOf(workdir).directory, FILE);
 
-const held = (probe: Probe): StoredProbe =>
-	ProbeText.decode(
-		Buffer.from(ProbeCodec.encode(probe), "base64url").toString(),
-	);
-
 const fileOf = (probe: Probe): string =>
-	join(held(probe).place.directory, FILE);
-
-const probeIn = (workdir: Session, name: string): Probe =>
-	ProbeCodec.decode(
-		Buffer.from(ProbeText.encode({ name, place: placeOf(workdir) })).toString(
-			"base64url",
-		),
-	);
+	join(heldBy(probe).place.directory, FILE);
 
 const writtenReview = (review: Review): string =>
 	`${StartLine.encode(storedStart(review))}\n`;
@@ -71,7 +56,6 @@ export {
 	fileOf,
 	nothingStored,
 	notWritable,
-	probeIn,
 	reviewOfText,
 	writtenRecording,
 	writtenReview,

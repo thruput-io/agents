@@ -3,7 +3,7 @@
 	"info": {
 		"title": "stored-review",
 		"version": "0.0.0",
-		"description": "What the file of a review holds in its workdir, one JSON value on each line: what the review was started from, then everything recorded since, in order."
+		"description": "What the file of a review holds in its workdir, one JSON value on each line: what the review was started from, then everything recorded since, in order. Nothing about the rules is written."
 	},
 	"paths": {},
 	"components": {
@@ -22,60 +22,15 @@
 							"$ref": "domain.openapi.json#/components/schemas/Page"
 						}
 					},
-					"tasks": {
-						"description": "What each probe is handed",
+					"probes": {
+						"description": "The session of each sub agent of the review",
 						"type": "array",
 						"items": {
-							"$ref": "#/components/schemas/StoredTask"
+							"$ref": "domain.openapi.json#/components/schemas/Probe"
 						}
 					}
 				},
-				"required": ["url", "pages", "tasks"]
-			},
-			"StoredTask": {
-				"description": "What a probe is handed",
-				"type": "object",
-				"properties": {
-					"probe": {
-						"$ref": "domain.openapi.json#/components/schemas/Probe"
-					},
-					"instructions": {
-						"$ref": "review-tool-probe.openapi.json#/components/schemas/Instructions"
-					},
-					"detailed": {
-						"$ref": "review-tool-probe.openapi.json#/components/schemas/Instructions"
-					},
-					"rules": {
-						"description": "The rules the probe judges",
-						"type": "array",
-						"items": {
-							"$ref": "domain.openapi.json#/components/schemas/Rule"
-						}
-					},
-					"glossary": {
-						"description": "Each term the probe can ask for, with what it means",
-						"type": "array",
-						"items": {
-							"$ref": "#/components/schemas/StoredDefined"
-						}
-					}
-				},
-				"required": ["probe", "instructions", "detailed", "rules", "glossary"]
-			},
-			"StoredDefined": {
-				"description": "A term and what it means",
-				"type": "object",
-				"properties": {
-					"term": {
-						"description": "A word of the glossary, as it is looked up",
-						"type": "string",
-						"minLength": 1
-					},
-					"definition": {
-						"$ref": "domain.openapi.json#/components/schemas/Definition"
-					}
-				},
-				"required": ["term", "definition"]
+				"required": ["url", "pages", "probes"]
 			},
 			"StoredVerdict": {
 				"description": "That a rule is judged",

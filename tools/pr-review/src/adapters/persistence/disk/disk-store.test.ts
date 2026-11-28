@@ -7,25 +7,24 @@ import { NoReview } from "../../../domain/no-review.ts";
 import type { Probe } from "../../../domain/probe.ts";
 import type { Review } from "../../../domain/review.ts";
 import type { Rule } from "../../../domain/rule.ts";
-import {
-	ruleSample,
-	taskSample,
-	urlSample,
-} from "../../../domain/sample.test-support.ts";
+import { ruleSample, urlSample } from "../../../domain/sample.test-support.ts";
 import type { Session } from "../../../domain/session.ts";
 import { Verdict } from "../../../domain/verdict.ts";
 import { WorkdirFailed } from "../../../domain/workdir-failed.ts";
-import { probeIn } from "../../../perimeters/disk.ts";
+import { probeIn } from "../../../perimeters/probe-session.ts";
+import {
+	purposeRules,
+	purposeRulesAfterTheFirst,
+} from "../../../perimeters/rulebook.test-support.ts";
+import { tasksOf } from "../../../perimeters/rulebook.ts";
 import { sessionAt } from "../../../perimeters/session.test-support.ts";
 import { ProbeCodec, RuleCodec } from "../../../perimeters/values.ts";
 import { diskStoreOver, type Files } from "./disk-store.ts";
 
 const workdir: Session = sessionAt("/work");
-const probe: Probe = probeIn(workdir, "probe-1");
+const probe: Probe = probeIn(workdir, "purpose");
 const purpose: Rule = ruleSample("Stated purpose");
-const review: Review = Change.of(urlSample(), []).review([
-	taskSample(probe, [purpose, ruleSample("Delete unused")]),
-]);
+const review: Review = Change.of(urlSample(), []).review(tasksOf(probe));
 
 const filesOver = (kept: Map<string, string>): Files => ({
 	make: (): Promise<void> => Promise.resolve(),
@@ -60,7 +59,7 @@ it("a saved review is found in its workdir by a store that starts later", async 
 		diskStoreOver(filesOver(kept)).inWorkdir(workdir),
 	);
 
-	assert.deepEqual(remainingOf(found), ["Stated purpose", "Delete unused"]);
+	assert.deepEqual(remainingOf(found), purposeRules);
 });
 
 it("a workdir nothing was saved in holds no review", async () => {
@@ -76,13 +75,12 @@ it("a probe finds its assignment in the workdir it leads to", async () => {
 	const store = diskStoreOver(filesOver(kept));
 
 	await Effect.runPromise(store.save(workdir, review));
-	const rules = await Effect.runPromise(
-		store
-			.ofProbe(probe)
-			.pipe(Effect.map((assignment) => assignment.ledger().remaining.length)),
-	);
+	const assignment = await Effect.runPromise(store.ofProbe(probe));
+	const rules = assignment
+		.ledger()
+		.remaining.map((rule: Rule): string => RuleCodec.encode(rule));
 
-	assert.equal(rules, 2);
+	assert.deepEqual(rules, purposeRules);
 });
 
 it("what is appended is added as a line and is in the review read after", async () => {
@@ -106,7 +104,7 @@ it("what is appended is added as a line and is in the review read after", async 
 	assert.deepEqual(
 		[remainingOf(after), text],
 		[
-			["Delete unused"],
+			purposeRulesAfterTheFirst,
 			`${saved}{"probe":"${ProbeCodec.encode(probe)}","recorded":{"verdict":{"rule":"Stated purpose"}}}\n`,
 		],
 	);
@@ -119,7 +117,7 @@ it("a probe the review does not know appends nothing", async () => {
 	await Effect.runPromise(store.save(workdir, review));
 	const saved = kept.get("/work/review.jsonl");
 	const missing = await Effect.runPromise(
-		Effect.flip(store.append(probeIn(workdir, "probe-2"), Verdict.on(purpose))),
+		Effect.flip(store.append(probeIn(workdir, "types"), Verdict.on(purpose))),
 	);
 
 	assert.deepEqual(
