@@ -2,19 +2,19 @@ principles:
 - id: You aren't gonna need it
   parent: Validated user need over speculative scope
   body: |
-    Always implement things when you actually need them, never when you just foresee that you need them ([Ron Jeffries](https://ronjeffries.com/xprog/articles/practices/pracnotneed/)).
+    Always implement things when you actually need them, never when you just foresee that you need them.
 - id: Do One Thing
   parent: Validated user need over speculative scope
   body: |
-    Make each [[Change]] a minimal, self-contained change that addresses its one stated [[Purpose]] and nothing outside it ([Google Engineering Practices, Small CLs](https://google.github.io/eng-practices/review/developer/small-cls.html)).
+    Make each [[Change]] a minimal, self-contained change that addresses its one stated [[Purpose]] and nothing outside it.
 - id: Principle of Least Astonishment
   parent: Validated user need over speculative scope
   body: |
-    A system behaves in the way [[Users]] expect it to behave, without hidden side effects or surprising outcomes ([Saltzer and Kaashoek](https://en.wikipedia.org/wiki/Principle_of_least_astonishment)).
-- id: Choose boring technology
+    A system behaves in the way [[Users]] expect it to behave, without hidden side effects or surprising outcomes.
+- id: The best code is no code
   parent: Code is a liability, not an asset
   body: |
-    Keep the [[Development Stack]] small and well known: "every company gets about three innovation tokens" ([Dan McKinley](https://mcfunley.com/choose-boring-technology)).
+    Satisfy every need at the highest rung of the [[Development Stack]] that serves, descending to a lower rung only when the one above cannot.
 - id: Convention over Invention
   parent: Clarity over cleverness
   body: |
@@ -32,7 +32,7 @@ principles:
   body: |
     A system fails loudly and at once on an unexpected state; it never continues on a guess. A safeguard that swallows a failure is added only where [[Evidence]] shows the need.
 - id: Fold at Perimeter
-  parent: Translate at the door
+  parent: Anti-Corruption Layer
   body: |
     The [[Foreign shape]] is folded into an [[Encapsulated type]] at the [[Perimeter]] and back only there. Inward of that point nothing sees it.
 - id: Make illegal states unrepresentable
@@ -40,9 +40,9 @@ principles:
   body: |
     Choose the [[Type system]] over a [[Runtime check]], and model every business rule, transition, and entity as a dedicated type rather than a data bag. A state that cannot be held needs no validator, no test, and no bug report.
 - id: Parse, don't validate
-  parent: Translate at the door
+  parent: Encapsulation
   body: |
-    Parse raw input once, at the [[Perimeter]], through the [[Validating path of creation]], and pass the type on; never check a primitive and pass the primitive on.
+    Parse raw input once at the [[Perimeter]] through a [[Validating path of creation]] into an [[Encapsulated type]], and pass the validated [[Type]] inward. Never check an input without encapsulating it as proof of the check; where the language provides no [[Encapsulated type]], at least tag or rename the value by a convention.
 - id: Immutable by default
   parent: Encapsulation
   body: |
@@ -70,7 +70,7 @@ principles:
 - id: Never trust a test you haven't seen fail
   parent: Tests prove behavior, not execution
   body: |
-    A test counts only once it has failed for the behaviour it checks; a test that cannot fail checks nothing.
+    A test counts only once it has failed for the behavior it checks; a test that cannot fail checks nothing.
 - id: F.I.R.S.T.
   parent: Tests prove behavior, not execution
   body: |
@@ -78,15 +78,19 @@ principles:
 - id: Verification ends the chain
   parent: Tests prove behavior, not execution
   body: |
-    All [[Production code]] is tested. [[Verification code]] is not [[Production code]] and is not tested.
+    All [[Production code]] is verified by [[Test]]s, whereas [[Verification code]] is not [[Production code]] and is not itself tested.
 - id: Separation of Concerns
   parent: One concern, one owner
   body: |
-    Each concern has one owner in one layer, and a change to a behaviour touches only its owner.
+    Each concern has one owner in one layer, and a change to a behavior touches only its owner.
 - id: The Toolchain Is the Guardrail
   parent: Make the wrong thing fail
   body: |
     The quality bar is defined once, in the build, and the build makes the wrong thing fail; it is never weakened to let a change through.
+- id: Quality axes over competing goods
+  parent: What wins when values collide
+  body: |
+    Uphold every [[Software quality axis]] over any [[Competing good]], and report any weakening of [[Guardrails Against Doing the Wrong Thing]] on detection.
 - id: Prepare reader for evolving producer
   parent: Robustness Principle
   body: |
@@ -94,7 +98,7 @@ principles:
 - id: Adoption is articulation
   parent: The practitioner decides the outcome
   body: |
-    Adopting a tool that applies our standard begins by writing the standard down: the rule an [[AI agent]] needs is the rule a new colleague needs, and the reason it was never written is that it lived as habit. An adoption that leaves our craft no more clearly stated than before has adopted nothing.
+    Adopting a tool that applies our [[Coding standard]] begins by writing the standard down: the [[Rule]] an [[AI agent]] needs is the [[Rule]] a new colleague needs, and the reason it was never written is that it lived as habit. An adoption that leaves our craft no more clearly stated than before has adopted nothing.
 - id: Production Parity
   parent: Environment parity
   body: |
@@ -110,7 +114,7 @@ principles:
 - id: Don't Repeat Yourself
   parent: Duplication drifts
   body: |
-    Every piece of knowledge must have a single, unambiguous, authoritative representation within a system ([The Pragmatic Programmer, Tip 15](https://pragprog.com/tips/)).
+    Every piece of knowledge must have a single, unambiguous, authoritative representation within a system.
 - id: Replace conditional with polymorphism
   parent: Polymorphism over conditionals
   body: |
@@ -122,15 +126,11 @@ principles:
 - id: Less is more
   parent: Clarity over cleverness
   body: |
-    Perfection is achieved, not when there is nothing more to add, but when there is nothing left to take away ([Antoine de Saint-Exupéry](https://en.wikiquote.org/wiki/Antoine_de_Saint-Exup%C3%A9ry)). Keep only what serves the intent and remove everything else.
+    Perfection is achieved, not when there is nothing more to add, but when there is nothing left to take away. Keep only what serves the intent and remove everything else.
 - id: Make it work, make it right, make it fast
   parent: Premature optimization and Jackson's rules
   body: |
-    Deliver working behaviour in small slices first, structure the code clearly for the reader second, and optimise only measured bottlenecks last ([Kent Beck](https://wiki.c2.com/?MakeItWorkMakeItRightMakeItFast)); speed is never bought with less readable code.
-  solutions:
-  - marker: SHOULD
-    body: |
-      Reduce scope, split the [[Pull request]] into several smaller ones, and ship a working slice.
+    Deliver working behavior in small slices first, structure code for [[Readability]] second, and optimize only bottlenecks proved by [[Evidence]] last.
 - id: Iterations over calls over the network is bad design
   parent: Amdahl's Law and the I/O-bound reality
   body: |
