@@ -162,7 +162,7 @@ definitions:
     An external tool or remote service integrated with or called by the system.
 - id: New code
   specification: |
-    Source code written in the current codebase.
+    Source code newly written in a [[Change]].
 - id: Test Pyramid
   specification: |
     The places a defect can be caught, from the base, earliest and cheapest, to the top, latest and costliest.
@@ -194,7 +194,7 @@ definitions:
     A [[Test]] that exercises fully deployed services across a running staging [[Environment]].
 - id: Manual test
   specification: |
-    A [[Test]] performed by a person exercising the running system.
+    A person exercising the running system to catch a defect; a [[Manual test]] is not a [[Test]].
 - id: Evidence
   specification: |
     A verifiable reference that grounds a [[Change]] or assumption; a practice recalled from experience is not [[Evidence]].
@@ -260,6 +260,9 @@ definitions:
 - id: Bad Code
   specification: |
     Code that drives a software system through [[System Decay]] toward a [[System Failed State]].
+- id: Accuracy
+  specification: |
+    Alias for [[Correctness]].
 - id: Inaccurate
   specification: |
     The state where the system diverges from what [[Users]] need, failing to fulfill their intended outcome.
@@ -450,6 +453,9 @@ definitions:
 - id: Compatibility branch
   specification: |
     A conditional path that runs only on a particular platform, shell, or [[Environment]].
+- id: Dependency
+  specification: |
+    Alias for [[External dependency]].
 - id: Representation
   specification: |
     One place where a piece of knowledge is written down: in code, configuration, schema, or documentation.
@@ -562,7 +568,7 @@ definitions:
     One discrete scenario within a [[Test]] suite comprising [[Test setup]], an action, and the expected [[Assertion]].
 - id: Muted test
   specification: |
-    A [[Test]] that is switched off, omitted from CI/CD [[Pull request]] checks, or prevented from failing the build.
+    A [[Test]] that is not executed, or whose failure does not fail the build.
 - id: Code coverage
   specification: |
     The proportion of [[Production code]] executed while the [[Test]]s run.
@@ -642,6 +648,9 @@ definitions:
   - Access to filesystem
   - Access to database
   - Access to HTTP
+- id: Call over the network
+  specification: |
+    Alias for [[Calls over the network]].
 - id: Access to filesystem
   specification: |
     Accessing a local or remote file system.

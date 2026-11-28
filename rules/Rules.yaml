@@ -138,6 +138,7 @@ rules:
   smells:
   - An [[Architectural Direction]] record describing current codebase state, [[File]] inventory, or a step-by-step implementation walkthrough.
   - An [[Architectural Direction]] record that embeds code snippets or rollout phases instead of the decision itself.
+  - An [[Architectural Direction]] record that enumerates [[File]]s, references, or other items that belong in a definition.
 - id: Validating factory
   marker: MUST
   group: Types
@@ -155,7 +156,7 @@ rules:
   group: Types
   parent: Parse, don't validate
   body: |
-    Return an [[Illegal state]] from a [[Factory]] in its [[Signature]] rather than throwing an [[Exception]].
+    Return the rejection of input that would form an [[Illegal state]] from a [[Factory]] in its [[Signature]] rather than throwing an [[Exception]].
 - id: Sum types
   marker: MUST
   group: Types
@@ -297,7 +298,7 @@ rules:
   group: Failure Handling
   parent: Fail fast
   body: |
-    Use [[Try/catch block]]s that neither [[Rethrow]], fold the [[Exception]] into a failure [[Return value]] at the [[Perimeter]], nor trigger monitoring [[Function]]s.
+    Use [[Try/catch block]]s that neither [[Rethrow]] nor fold the [[Exception]] into a failure [[Return value]] at the [[Perimeter]].
 - id: No default on failure
   marker: MUST NOT
   group: Failure Handling

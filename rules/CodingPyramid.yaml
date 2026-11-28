@@ -9,7 +9,7 @@ levels:
 - id: Rationale
   parent: Axiom
   specification: |
-    The reasoning that turns an [[Axiom]] into a [[Principle]] by weighing competing goods or explaining a mechanism, backed by a [[Document reference]].
+    The reasoning that turns an [[Axiom]] into a [[Principle]], backed by a [[Document reference]]; it may weigh competing goods.
 - id: Principle
   parent: Rationale
   specification: |

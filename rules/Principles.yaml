@@ -42,7 +42,7 @@ principles:
 - id: Parse, don't validate
   parent: Encapsulation
   body: |
-    Parse raw input once at the [[Perimeter]] through a [[Validating path of creation]] into an [[Encapsulated type]], and pass the validated [[Type]] inward.
+    Parse raw input once at the [[Perimeter]] through a [[Validating path of creation]] into an [[Encapsulated type]], and pass the validated [[Type]] inward. Never check an input without encapsulating it as proof of the check; where the language provides no [[Encapsulated type]], at least tag or rename the value by a convention.
 - id: Immutable by default
   parent: Encapsulation
   body: |
