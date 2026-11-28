@@ -71,6 +71,7 @@ const assignedIn = (probesFile: string, rules: Rules): Assigned =>
 					group: text.refine((group: string): boolean =>
 						rules.some((rule): boolean => rule.group === group),
 					),
+					context: z.enum(["Checkout", "Full context"]),
 				}),
 			),
 		})
