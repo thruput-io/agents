@@ -16,6 +16,7 @@ import {
 	prepareCommandOf,
 	statusCommandOf,
 } from "../../perimeters/command-line.ts";
+import { probesIn } from "../../perimeters/rulebook.ts";
 import { statusAnswer } from "../../perimeters/status-answer.ts";
 import type { Commands } from "../common/runner.ts";
 
@@ -24,10 +25,11 @@ const mainCommands = (controller: MainController): Commands => ({
 		commandArguments: readonly string[],
 	): Effect.Effect<Answer, Answer> =>
 		prepareCommandOf(commandArguments).pipe(
-			Effect.flatMap(({ url, workdir, probes }) =>
-				controller
-					.prepare(url, workdir, probes)
-					.pipe(Effect.map(statusAnswer(workdir))),
+			Effect.flatMap(({ url, workdir }) =>
+				controller.prepare(url, workdir, probesIn),
+			),
+			Effect.flatMap((session: Session) =>
+				controller.status(session).pipe(Effect.map(statusAnswer(session))),
 			),
 			Effect.mapError(failureAnswer),
 		),

@@ -1,11 +1,14 @@
 import { Effect } from "effect";
 import type { Assignment } from "../../../domain/assignment.ts";
+import type { CreatedDir } from "../../../domain/created-dir.ts";
 import type { NoReview } from "../../../domain/no-review.ts";
 import type { Probe } from "../../../domain/probe.ts";
 import type { Recorded, Review } from "../../../domain/review.ts";
 import type { NotRecorded, ReviewStore } from "../../../domain/review-store.ts";
 import type { Session } from "../../../domain/session.ts";
+import type { Workdir } from "../../../domain/workdir.ts";
 import type { WorkdirFailed } from "../../../domain/workdir-failed.ts";
+import type { StoredPlace } from "../../../generated/perimeters/stored-place.g.ts";
 import {
 	fileIn,
 	fileOf,
@@ -15,8 +18,10 @@ import {
 	writtenRecording,
 	writtenReview,
 } from "../../../perimeters/disk.ts";
+import { createdAt, placeUnder } from "../../../perimeters/session.ts";
 
 interface Files {
+	make: (path: string) => Promise<void>;
 	read: (path: string) => Promise<string>;
 	write: (path: string, text: string) => Promise<void>;
 	append: (path: string, text: string) => Promise<void>;
@@ -48,6 +53,19 @@ const appendingOver =
 			catch: (): WorkdirFailed => notWritable(),
 		});
 
+const creatingOver =
+	(files: Files) =>
+	(workdir: Workdir): Effect.Effect<CreatedDir, WorkdirFailed> =>
+		Effect.succeed(placeUnder(workdir)).pipe(
+			Effect.flatMap(
+				(place: StoredPlace): Effect.Effect<CreatedDir, WorkdirFailed> =>
+					Effect.tryPromise({
+						try: (): Promise<void> => files.make(place.directory),
+						catch: (): WorkdirFailed => notWritable(),
+					}).pipe(Effect.map((): CreatedDir => createdAt(place))),
+			),
+		);
+
 const diskStoreOver = (files: Files): ReviewStore => {
 	const read = readingOver(files);
 	const appended = appendingOver(files);
@@ -61,6 +79,7 @@ const diskStoreOver = (files: Files): ReviewStore => {
 		);
 
 	return {
+		created: creatingOver(files),
 		save: savingOver(files),
 		inWorkdir: (workdir: Session): Effect.Effect<Review, NoReview> =>
 			read(fileIn(workdir)),

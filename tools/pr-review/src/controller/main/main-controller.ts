@@ -6,9 +6,10 @@ import type { NoReview } from "../../domain/no-review.ts";
 import type { NotStarted } from "../../domain/not-started.ts";
 import type { Review, ReviewStatus } from "../../domain/review.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
-import type { Session } from "../../domain/session.ts";
+import { Session } from "../../domain/session.ts";
 import type { TargetUrl } from "../../domain/target-url.ts";
 import type { Probes } from "../../domain/task.ts";
+import type { Workdir } from "../../domain/workdir.ts";
 import type { WorkdirFailed } from "../../domain/workdir-failed.ts";
 
 class MainController {
@@ -28,19 +29,35 @@ class MainController {
 
 	prepare(
 		url: TargetUrl,
-		workdir: Session,
+		workdir: Workdir,
+		probesFor: (session: Session) => Probes,
+	): Effect.Effect<Session, NotReviewable | NotStarted | WorkdirFailed> {
+		return this.store.created(workdir).pipe(
+			Effect.map(Session.in),
+			Effect.flatMap(
+				(
+					session: Session,
+				): Effect.Effect<Session, NotReviewable | NotStarted | WorkdirFailed> =>
+					this.started(url, session, probesFor(session)),
+			),
+		);
+	}
+
+	private started(
+		url: TargetUrl,
+		session: Session,
 		probes: Probes,
-	): Effect.Effect<ReviewStatus, NotReviewable | NotStarted | WorkdirFailed> {
-		return this.host.getChange(url, workdir).pipe(
+	): Effect.Effect<Session, NotReviewable | NotStarted | WorkdirFailed> {
+		return this.host.getChange(url, session).pipe(
 			Effect.flatMap(
 				(change: Change): Effect.Effect<Review, WorkdirFailed> =>
-					this.store.save(workdir, change.review(probes)),
+					this.store.save(session, change.review(probes)),
 			),
 			Effect.flatMap(
 				(review: Review): Effect.Effect<Review, NotStarted> =>
 					review.spawnedBy(this.agent),
 			),
-			Effect.map((review: Review): ReviewStatus => review.status()),
+			Effect.map((): Session => session),
 		);
 	}
 

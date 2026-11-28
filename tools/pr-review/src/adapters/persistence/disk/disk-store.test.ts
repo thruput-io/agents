@@ -28,6 +28,7 @@ const review: Review = Change.of(urlSample(), []).review([
 ]);
 
 const filesOver = (kept: Map<string, string>): Files => ({
+	make: (): Promise<void> => Promise.resolve(),
 	read: (path: string): Promise<string> =>
 		Promise.resolve(path).then((asked: string): string =>
 			z.string().parse(kept.get(asked)),

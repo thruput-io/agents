@@ -13,7 +13,7 @@ import {
 	statusCommandOf,
 } from "./command-line.ts";
 import { sessionAt } from "./session.test-support.ts";
-import { askedOf, placeOf } from "./session.ts";
+import { askedOf, placeOf, placeUnder } from "./session.ts";
 import { TermCodec } from "./term.ts";
 import { AcknowledgementCodec, ProbeCodec, TargetUrlCodec } from "./values.ts";
 
@@ -38,7 +38,7 @@ it("the arguments of prepare give the target URL and the workdir", () => {
 		prepareCommandOf(["https://host.test/change", "/work"]),
 	);
 
-	const { session, directory } = placeOf(command.workdir);
+	const { session, directory } = placeUnder(command.workdir);
 
 	assert.deepEqual(
 		[TargetUrlCodec.encode(command.url), directory],

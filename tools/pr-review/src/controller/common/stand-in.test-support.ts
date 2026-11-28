@@ -3,6 +3,7 @@ import { Acknowledgement } from "../../domain/acknowledgement.ts";
 import type { Agent } from "../../domain/agent.ts";
 import type { Assignment } from "../../domain/assignment.ts";
 import { Change } from "../../domain/change.ts";
+import type { CreatedDir } from "../../domain/created-dir.ts";
 import type { Host, NotReviewable } from "../../domain/host.ts";
 import type { HostError } from "../../domain/host-error.ts";
 import { NoReview } from "../../domain/no-review.ts";
@@ -12,6 +13,7 @@ import type { Recorded, Review } from "../../domain/review.ts";
 import type { ReviewStore } from "../../domain/review-store.ts";
 import type { Rule } from "../../domain/rule.ts";
 import {
+	createdSample,
 	pageSample,
 	probeSample,
 	ruleSample,
@@ -66,6 +68,7 @@ const emptyStore = (): ReviewStore => {
 	const keeping = keepingIn(kept);
 
 	return {
+		created: (): Effect.Effect<CreatedDir> => Effect.succeed(createdSample()),
 		save: (_workdir: Session, review: Review): Effect.Effect<Review> =>
 			keeping(review),
 		inWorkdir: latest,

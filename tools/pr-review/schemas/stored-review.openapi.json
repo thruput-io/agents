@@ -175,6 +175,18 @@
 					}
 				},
 				"required": ["name", "place"]
+			},
+			"StoredFolder": {
+				"description": "The folder a review gets a directory of its own in",
+				"type": "object",
+				"properties": {
+					"directory": {
+						"description": "The folder the main agent chose",
+						"type": "string",
+						"minLength": 1
+					}
+				},
+				"required": ["directory"]
 			}
 		}
 	}

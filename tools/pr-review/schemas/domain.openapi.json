@@ -61,7 +61,27 @@
 				"minLength": 1
 			},
 			"Session": {
-				"description": "One review in progress, and where it is kept",
+				"description": "One review in progress, and the directory it is kept in",
+				"type": "object",
+				"properties": {
+					"directory": {
+						"$ref": "#/components/schemas/CreatedDir"
+					}
+				},
+				"required": ["directory"]
+			},
+			"Workdir": {
+				"description": "The folder the main agent chose to keep reviews in",
+				"type": "object",
+				"properties": {
+					"path": {
+						"$ref": "#/components/schemas/WorkdirPath"
+					}
+				},
+				"required": ["path"]
+			},
+			"CreatedDir": {
+				"description": "A directory that was created for one review",
 				"type": "object",
 				"properties": {
 					"id": {
@@ -69,11 +89,11 @@
 						"type": "string",
 						"format": "uuid"
 					},
-					"directory": {
+					"path": {
 						"$ref": "#/components/schemas/WorkdirPath"
 					}
 				},
-				"required": ["id", "directory"]
+				"required": ["id", "path"]
 			}
 		}
 	}

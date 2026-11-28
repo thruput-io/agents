@@ -1,10 +1,19 @@
 import assert from "node:assert/strict";
 import { test as it } from "node:test";
 import { sessionAt } from "./session.test-support.ts";
-import { askedOf, placeOf, prepareDto, statusDto } from "./session.ts";
+import {
+	askedOf,
+	createdAt,
+	placeOf,
+	placeUnder,
+	prepareDto,
+	statusDto,
+} from "./session.ts";
 
-it("a session made by prepare is kept in a folder of its own inside the workdir", () => {
-	const { session, directory } = placeOf(
+const id = "00000000-0000-4000-8000-000000000000";
+
+it("a review gets a directory of its own inside the workdir the agent chose", () => {
+	const { session, directory } = placeUnder(
 		prepareDto({ workdir: "/work" }).toDomain(),
 	);
 
@@ -15,14 +24,14 @@ it("what status is asked with leads back to the same session", () => {
 	const asked = askedOf(sessionAt("/work/review"));
 
 	assert.deepEqual(placeOf(statusDto(asked).toDomain()), {
-		session: "00000000-0000-4000-8000-000000000000",
+		session: id,
 		directory: "/work/review",
 	});
 });
 
-it("prepare parameters with an empty workdir make no session", () => {
+it("a place that is no directory makes no created directory", () => {
 	assert.throws(
-		(): ReturnType<typeof placeOf> =>
-			placeOf(prepareDto({ workdir: "" }).toDomain()),
+		(): ReturnType<typeof createdAt> =>
+			createdAt({ session: id, directory: "" }),
 	);
 });

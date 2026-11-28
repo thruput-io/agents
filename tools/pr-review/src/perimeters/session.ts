@@ -1,14 +1,18 @@
 import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { z } from "zod";
+import { CreatedDir } from "../domain/created-dir.ts";
 import { Session } from "../domain/session.ts";
+import { Workdir } from "../domain/workdir.ts";
 import { Session as SessionShape } from "../generated/domain/session.g.ts";
+import { Workdir as WorkdirShape } from "../generated/domain/workdir.g.ts";
 import { GitCheckout } from "../generated/perimeters/git-checkout.g.ts";
 import {
 	PrepareParams,
 	StatusParams,
 } from "../generated/perimeters/review-tool.g.ts";
+import { StoredFolder } from "../generated/perimeters/stored-folder.g.ts";
 import { StoredPlace } from "../generated/perimeters/stored-place.g.ts";
 import { jsonOf } from "./json.ts";
 
@@ -18,43 +22,38 @@ const PlaceText = jsonOf(StoredPlace);
 type Prepared = z.output<typeof PrepareWorkdir>;
 type Asked = z.output<typeof StatusParams>;
 
-interface Dto<Params> {
+interface Dto<Params, Made> {
 	readonly params: Params;
-	readonly toDomain: () => Session;
+	readonly toDomain: () => Made;
 }
 
-const started = (workdir: string, id: string): SessionShape => ({
-	id,
-	directory: join(workdir, id),
+const WorkdirOfPrepare = z.codec(PrepareWorkdir, WorkdirShape, {
+	decode: ({ workdir }: Prepared): WorkdirShape => ({ path: workdir }),
+	encode: ({ path }: WorkdirShape): Prepared => ({ workdir: path }),
 });
 
-const SessionOfPrepare = z.codec(PrepareWorkdir, SessionShape, {
-	decode: ({ workdir }: Prepared): SessionShape =>
-		started(workdir, randomUUID()),
-	encode: ({ directory }: SessionShape): Prepared => ({
-		workdir: dirname(directory),
-	}),
+const WorkdirOfFolder = z.codec(StoredFolder, WorkdirShape, {
+	decode: ({ directory }: StoredFolder): WorkdirShape => ({ path: directory }),
+	encode: ({ path }: WorkdirShape): StoredFolder => ({ directory: path }),
 });
 
 const SessionOfPlace = z.codec(StoredPlace, SessionShape, {
 	decode: ({ session, directory }: StoredPlace): SessionShape => ({
-		id: session,
-		directory,
+		directory: { id: session, path: directory },
 	}),
-	encode: ({ id, directory }: SessionShape): StoredPlace => ({
-		session: id,
-		directory,
+	encode: ({ directory }: SessionShape): StoredPlace => ({
+		session: directory.id,
+		directory: directory.path,
 	}),
 });
 
 const SessionOfCheckout = z.codec(GitCheckout, SessionShape, {
 	decode: ({ session, directory }: GitCheckout): SessionShape => ({
-		id: session,
-		directory,
+		directory: { id: session, path: directory },
 	}),
-	encode: ({ id, directory }: SessionShape): GitCheckout => ({
-		session: id,
-		directory,
+	encode: ({ directory }: SessionShape): GitCheckout => ({
+		session: directory.id,
+		directory: directory.path,
 	}),
 });
 
@@ -70,16 +69,28 @@ const SessionOfAsked = z.codec(StatusParams, SessionShape, {
 	}),
 });
 
-const prepareDto = (params: Prepared): Dto<Prepared> => ({
+const createdAt = (place: StoredPlace): CreatedDir =>
+	Reflect.construct(CreatedDir, [SessionOfPlace.decode(place).directory]);
+
+const placeUnder = (workdir: Workdir): StoredPlace => {
+	const session = randomUUID();
+	const { directory } = WorkdirOfFolder.encode(WorkdirShape.parse(workdir));
+
+	return { session, directory: join(directory, session) };
+};
+
+const prepareDto = (params: Prepared): Dto<Prepared, Workdir> => ({
 	params,
-	toDomain: (): Session =>
-		Reflect.construct(Session, [SessionOfPrepare.decode(params)]),
+	toDomain: (): Workdir =>
+		Reflect.construct(Workdir, [WorkdirOfPrepare.decode(params)]),
 });
 
-const statusDto = (params: Asked): Dto<Asked> => ({
+const statusDto = (params: Asked): Dto<Asked, Session> => ({
 	params,
 	toDomain: (): Session =>
-		Reflect.construct(Session, [SessionOfAsked.decode(params)]),
+		Session.in(
+			Reflect.construct(CreatedDir, [SessionOfAsked.decode(params).directory]),
+		),
 });
 
 const askedOf = (session: Session): Asked =>
@@ -91,4 +102,12 @@ const checkoutOf = (session: Session): GitCheckout =>
 const placeOf = (session: Session): StoredPlace =>
 	SessionOfPlace.encode(SessionShape.parse(session));
 
-export { askedOf, checkoutOf, placeOf, prepareDto, statusDto };
+export {
+	askedOf,
+	checkoutOf,
+	createdAt,
+	placeOf,
+	placeUnder,
+	prepareDto,
+	statusDto,
+};

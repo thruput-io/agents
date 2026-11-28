@@ -16,18 +16,21 @@ import {
 	sessionSample,
 	taskSample,
 	urlSample,
+	workdirSample,
 } from "../../domain/sample.test-support.ts";
 import type { Session } from "../../domain/session.ts";
 import type { TargetUrl } from "../../domain/target-url.ts";
 import type { Probes } from "../../domain/task.ts";
 import { UnknownFormat } from "../../domain/unknown-format.ts";
+import type { Workdir } from "../../domain/workdir.ts";
 import { emptyStore } from "../common/stand-in.test-support.ts";
 import { MainController } from "./main-controller.ts";
 
 type Outcome = Parameters<Poster["post"]>[1];
 
 const url: TargetUrl = urlSample();
-const workdir: Session = sessionSample();
+const workdir: Workdir = workdirSample();
+const probesFor = (): Probes => probes;
 const purpose: Rule = ruleSample("Stated purpose");
 const probes: Probes = [taskSample(probeSample("probe-1"), [purpose])];
 
@@ -51,7 +54,9 @@ it("prepare answers the rules the review has to judge", () => {
 		emptyStore(),
 		agent,
 	);
-	const prepared = controller.prepare(url, workdir, probes);
+	const prepared = controller
+		.prepare(url, workdir, probesFor)
+		.pipe(Effect.flatMap((session: Session) => controller.status(session)));
 
 	assert.deepEqual(Effect.runSync(prepared).remaining, [purpose]);
 });
@@ -72,7 +77,7 @@ it("prepare spawns a sub agent for each probe", () => {
 		MainController.over(host, emptyStore(), recording).prepare(
 			url,
 			workdir,
-			probes,
+			probesFor,
 		),
 	);
 
@@ -89,7 +94,7 @@ it("prepare fails with what the host answers", () => {
 	const prepared = MainController.over(refusing, emptyStore(), agent).prepare(
 		url,
 		workdir,
-		probes,
+		probesFor,
 	);
 
 	assert.equal(Effect.runSync(Effect.flip(prepared)), unknownFormat);
@@ -104,7 +109,7 @@ it("prepare fails when a sub agent is not started", () => {
 	const prepared = MainController.over(host, emptyStore(), stalling).prepare(
 		url,
 		workdir,
-		probes,
+		probesFor,
 	);
 
 	assert.equal(Effect.runSync(Effect.flip(prepared)), notStarted);
@@ -117,15 +122,15 @@ it("status answers how the prepared review stands", () => {
 		agent,
 	);
 	const answered = controller
-		.prepare(url, workdir, probes)
-		.pipe(Effect.flatMap(() => controller.status(workdir)));
+		.prepare(url, workdir, probesFor)
+		.pipe(Effect.flatMap((session: Session) => controller.status(session)));
 
 	assert.deepEqual(Effect.runSync(answered).remaining, [purpose]);
 });
 
 it("status fails when the workdir holds no review", () => {
 	const answered = MainController.over(host, emptyStore(), agent).status(
-		workdir,
+		sessionSample(),
 	);
 
 	assert.equal(Effect.runSync(Effect.flip(answered)) instanceof NoReview, true);

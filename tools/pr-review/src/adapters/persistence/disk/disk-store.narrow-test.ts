@@ -14,10 +14,12 @@ import {
 	taskSample,
 	urlSample,
 } from "../../../domain/sample.test-support.ts";
+import { Session } from "../../../domain/session.ts";
 import { Verdict } from "../../../domain/verdict.ts";
 import { WorkdirFailed } from "../../../domain/workdir-failed.ts";
 import { probeIn } from "../../../perimeters/disk.ts";
 import { sessionAt } from "../../../perimeters/session.test-support.ts";
+import { prepareDto } from "../../../perimeters/session.ts";
 import { RuleCodec } from "../../../perimeters/values.ts";
 import { diskFiles } from "./disk-files.ts";
 import { diskStoreOver } from "./disk-store.ts";
@@ -65,14 +67,18 @@ it("an empty directory holds no review", async () => {
 	assert.equal(missing instanceof NoReview, true);
 });
 
-it("a review is saved in a directory that the store creates", async () => {
-	const directory = join(emptyDirectory(), "created");
-	const session = sessionAt(directory);
-	const kept = await Effect.runPromise(
-		diskStoreOver(diskFiles)
-			.save(session, reviewOf(probeOf(directory)))
-			.pipe(Effect.flatMap(() => diskStoreOver(diskFiles).inWorkdir(session))),
+it("a review is saved in the directory the store created for it", async () => {
+	const store = diskStoreOver(diskFiles);
+	const chosen = emptyDirectory();
+	const session = await Effect.runPromise(
+		store
+			.created(prepareDto({ workdir: chosen }).toDomain())
+			.pipe(Effect.map(Session.in)),
 	);
+
+	await Effect.runPromise(store.save(session, reviewOf(probeOf(chosen))));
+
+	const kept = await Effect.runPromise(store.inWorkdir(session));
 
 	assert.deepEqual(
 		kept.status().remaining.map((rule: Rule): string => RuleCodec.encode(rule)),

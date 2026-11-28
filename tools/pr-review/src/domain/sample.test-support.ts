@@ -9,9 +9,11 @@ import { Session } from "../domain/session.ts";
 import { TargetUrl } from "../domain/target-url.ts";
 import { Usage } from "../domain/usage.ts";
 import { Workflow } from "../domain/workflow.ts";
+import { CreatedDir } from "./created-dir.ts";
 import { Instructions } from "./instructions.ts";
 import type { Task } from "./task.ts";
 import { Term } from "./term.ts";
+import { Workdir } from "./workdir.ts";
 
 const instructionsSample = (): Instructions =>
 	Instructions.of({
@@ -21,10 +23,15 @@ const instructionsSample = (): Instructions =>
 		request: AcknowledgementRequest.of("a request"),
 	});
 
-const sessionSample = (): Session =>
-	Reflect.construct(Session, [
-		{ id: "00000000-0000-4000-8000-000000000000", directory: "/work" },
+const workdirSample = (): Workdir =>
+	Reflect.construct(Workdir, [{ path: "/work" }]);
+
+const createdSample = (): CreatedDir =>
+	Reflect.construct(CreatedDir, [
+		{ id: "00000000-0000-4000-8000-000000000000", path: "/work" },
 	]);
+
+const sessionSample = (): Session => Session.in(createdSample());
 
 const ruleSample = (id: string): Rule => Rule.of(id);
 
@@ -45,6 +52,7 @@ const taskSample = (probe: Probe, rules: readonly Rule[]): Task => ({
 });
 
 export {
+	createdSample,
 	instructionsSample,
 	pageSample,
 	probeSample,
@@ -52,4 +60,5 @@ export {
 	sessionSample,
 	taskSample,
 	urlSample,
+	workdirSample,
 };

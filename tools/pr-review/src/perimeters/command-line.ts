@@ -5,9 +5,9 @@ import type { NotValid } from "../domain/not-valid.ts";
 import type { Probe } from "../domain/probe.ts";
 import type { Session } from "../domain/session.ts";
 import type { TargetUrl } from "../domain/target-url.ts";
-import type { Probes } from "../domain/task.ts";
 import type { Term } from "../domain/term.ts";
 import { Verdict } from "../domain/verdict.ts";
+import type { Workdir } from "../domain/workdir.ts";
 import {
 	PrepareParams,
 	StatusParams,
@@ -22,7 +22,6 @@ import {
 	RulesParams,
 } from "../generated/perimeters/review-tool-probe.g.ts";
 import { decoded, made, namedBy, parsedBy } from "./parsing.ts";
-import { probesIn } from "./rulebook.ts";
 import { prepareDto, statusDto } from "./session.ts";
 import { TermCodec } from "./term.ts";
 import {
@@ -39,8 +38,7 @@ interface CommandLine {
 
 interface PrepareCommand {
 	readonly url: TargetUrl;
-	readonly workdir: Session;
-	readonly probes: Probes;
+	readonly workdir: Workdir;
 }
 
 interface DefineCommand {
@@ -80,15 +78,8 @@ const prepareCommandOf = (
 			(params): Effect.Effect<PrepareCommand, NotValid> =>
 				Effect.all({
 					url: decoded(TargetUrlCodec, params.url),
-					workdir: made((): Session => prepareDto(params).toDomain()),
-				}).pipe(
-					Effect.map(
-						(given): PrepareCommand => ({
-							...given,
-							probes: probesIn(given.workdir),
-						}),
-					),
-				),
+					workdir: made((): Workdir => prepareDto(params).toDomain()),
+				}),
 		),
 	);
 
