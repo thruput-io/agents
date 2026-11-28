@@ -1,0 +1,5 @@
+typescript	shippingCost($$$)	repo/ts
+python	shipping_cost($$$)	repo/py
+go	ShippingCost($$$)	repo/go
+csharp	$A.ShippingCost($$$)	repo/cs
+bash	shipping_cost $$$	repo/sh
